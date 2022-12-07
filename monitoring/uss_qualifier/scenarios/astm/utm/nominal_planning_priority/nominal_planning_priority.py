@@ -11,6 +11,9 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
 )
+from monitoring.uss_qualifier.resources.flight_planning.flight_planners import (
+    FlightPlannerResource,
+)
 from monitoring.uss_qualifier.scenarios.astm.utm.test_steps import (
     validate_shared_operational_intent,
 )
@@ -33,15 +36,13 @@ class NominalPlanningPriority(TestScenario):
     def __init__(
         self,
         flight_intents: FlightIntentsResource,
-        flight_planners: FlightPlannersResource,
+        uss1: FlightPlannerResource,
+        uss2: FlightPlannerResource,
         dss: DSSInstanceResource,
     ):
         super().__init__()
-        if len(flight_planners.flight_planners) != 2:
-            raise ValueError(
-                f"`{self.me()}` TestScenario requires exactly 2 flight_planners; found {len(flight_planners.flight_planners)}"
-            )
-        self.uss1, self.uss2 = flight_planners.flight_planners
+        self.uss1 = uss1.flight_planner
+        self.uss2 = uss2.flight_planner
 
         flight_intents = flight_intents.get_flight_intents()
         if len(flight_intents) < 2:

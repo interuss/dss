@@ -1,0 +1,34 @@
+{
+  "v1": {
+    "test_run": {
+      "resources": {
+        "resource_declarations": {
+          "source_document": {
+            "resource_type": "resources.eurocae.ed269.source_document.SourceDocument",
+            "specification": {
+              "url": "file://./test_data/che/geoawareness/cis_source_sample.json"
+            }
+          }
+        }
+      },
+      "action": {
+        "test_suite": {
+          "suite_type": "suites.uspace.geo_awareness_cis",
+          "resources": {
+            "source_document": "source_document"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "tested_roles": {
+        "report_path": "tested_requirements.html",
+        "roles": []
+      },
+      "report_path": "report.json",
+      "graph": {
+        "gv_path": "report.gv"
+      }
+    }
+  }
+}

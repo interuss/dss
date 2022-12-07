@@ -4,24 +4,20 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
-	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/models"
-
 	"github.com/golang-jwt/jwt"
+	"github.com/interuss/dss/pkg/api"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
-func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) context.Context {
+func rsaTokenReq(key *rsa.PrivateKey, exp, nbf int64) *http.Request {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"foo": "bar",
 		"exp": exp,
@@ -33,11 +29,11 @@ func rsaTokenCtx(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) conte
 	// Sign and get the complete encoded token as a string using the secret
 	// Ignore the error, it will fail the test anyways if it is not nil.
 	tokenString, _ := token.SignedString(key)
-	return metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
-		"Authorization": "Bearer " + tokenString,
-	}))
+	req := &http.Request{Header: make(http.Header)}
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	return req
 }
-func rsaTokenCtxWithMissingIssuer(ctx context.Context, key *rsa.PrivateKey, exp, nbf int64) context.Context {
+func rsaTokenReqWithMissingIssuer(key *rsa.PrivateKey, exp, nbf int64) *http.Request {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"foo": "bar",
 		"exp": exp,
@@ -48,16 +44,16 @@ func rsaTokenCtxWithMissingIssuer(ctx context.Context, key *rsa.PrivateKey, exp,
 	// Sign and get the complete encoded token as a string using the secret
 	// Ignore the error, it will fail the test anyways if it is not nil.
 	tokenString, _ := token.SignedString(key)
-	return metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
-		"Authorization": "Bearer " + tokenString,
-	}))
+	req := &http.Request{Header: make(http.Header)}
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	return req
 }
 
 func TestNewRSAAuthClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tmpfile, err := ioutil.TempFile("/tmp", "bad.pem")
+	tmpfile, err := os.CreateTemp("/tmp", "bad.pem")
 	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
@@ -80,8 +76,9 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		jwt.TimeFunc = time.Now
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	noHeaderReq := &http.Request{Header: make(http.Header)}
+	noTokenReq := &http.Request{Header: make(http.Header)}
+	noTokenReq.Header.Set("Authorization", "Bearer ")
 
 	key, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
@@ -92,19 +89,19 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		t.Fatal(err)
 	}
 	var authTests = []struct {
-		ctx  context.Context
+		req  *http.Request
 		code stacktrace.ErrorCode
 	}{
-		{ctx, dsserr.Unauthenticated},
-		{metadata.NewIncomingContext(ctx, metadata.New(nil)), dsserr.Unauthenticated},
-		{rsaTokenCtx(ctx, badKey, 100, 20), dsserr.Unauthenticated},
-		{rsaTokenCtx(ctx, key, 100, 20), stacktrace.NoCode},
-		{rsaTokenCtxWithMissingIssuer(ctx, key, 100, 20), dsserr.Unauthenticated},
-		{rsaTokenCtx(ctx, key, 30, 20), dsserr.Unauthenticated},
-		{rsaTokenCtx(ctx, key, 100, 50), dsserr.Unauthenticated},
+		{noHeaderReq, dsserr.Unauthenticated},
+		{noTokenReq, dsserr.Unauthenticated},
+		{rsaTokenReq(badKey, 100, 20), dsserr.Unauthenticated},
+		{rsaTokenReq(key, 100, 20), stacktrace.NoCode},
+		{rsaTokenReqWithMissingIssuer(key, 100, 20), dsserr.Unauthenticated},
+		{rsaTokenReq(key, 30, 20), dsserr.Unauthenticated},
+		{rsaTokenReq(key, 100, 50), dsserr.Unauthenticated},
 	}
 
-	a, err := NewRSAAuthorizer(ctx, Configuration{
+	a, err := NewRSAAuthorizer(context.Background(), Configuration{
 		KeyResolver: &fromMemoryKeyResolver{
 			Keys: []interface{}{&key.PublicKey},
 		},
@@ -116,56 +113,80 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			_, err := a.AuthInterceptor(test.ctx, nil, &grpc.UnaryServerInfo{},
-				func(ctx context.Context, req interface{}) (interface{}, error) { return nil, nil })
-			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(err) != test.code {
-				t.Errorf("expected: %v, got: %v, with message %s", test.code, status.Code(err), err.Error())
+			res := a.Authorize(nil, test.req, []api.AuthorizationOption{})
+			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(res.Error) != test.code {
+				t.Logf("%v", res.Error)
+				t.Errorf("expected: %v, got: %v, with message %s", test.code, stacktrace.GetCode(res.Error), res.Error.Error())
 			}
 		})
 	}
 }
 
 func TestMissingScopes(t *testing.T) {
-	ac := &Authorizer{scopesValidators: map[Operation]KeyClaimedScopesValidator{
-		"/dss.SyncService/PutFoo": RequireAnyScope(("required1"), Scope("required2")),
-	}}
+	authOptions := []api.AuthorizationOption{
+		{"TestAuth1": {"required1"}},
+		{"TestAuth2": {"required2"}},
+		{"TestAuth3": {"required3", "required4"}},
+	}
 
 	var tests = []struct {
-		info                  *grpc.UnaryServerInfo
-		scopes                map[Scope]struct{}
+		scopes                map[string]struct{}
 		matchesRequiredScopes bool
 	}{
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
-			map[Scope]struct{}{
+			map[string]struct{}{
 				"required1": {},
 				"required2": {},
 			},
 			true,
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
-			map[Scope]struct{}{
+			map[string]struct{}{
 				"required2": {},
 			},
 			true,
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
-			map[Scope]struct{}{
+			map[string]struct{}{
 				"required1": {},
 			},
 			true,
 		},
 		{
-			&grpc.UnaryServerInfo{FullMethod: "/dss.SyncService/PutFoo"},
-			map[Scope]struct{}{},
+			map[string]struct{}{},
 			false,
+		},
+		{
+			map[string]struct{}{
+				"required3": {},
+				"required4": {},
+			},
+			true,
+		},
+		{
+			map[string]struct{}{
+				"required4": {},
+			},
+			false,
+		},
+		{
+			map[string]struct{}{
+				"required3": {},
+			},
+			false,
+		},
+		{
+			map[string]struct{}{
+				"required1": {},
+				"required3": {},
+				"required4": {},
+			},
+			true,
 		},
 	}
 	for _, tc := range tests {
-		_, err := ac.validateKeyClaimedScopes(context.Background(), tc.info, tc.scopes)
-		require.Equal(t, tc.matchesRequiredScopes, err == nil)
+		pass, _ := validateScopes(authOptions, tc.scopes)
+		require.Equal(t, tc.matchesRequiredScopes, pass)
 	}
 }
 
@@ -198,15 +219,4 @@ func TestClaimsValidation(t *testing.T) {
 	claims.Issuer = ""
 	claims.ExpiresAt = 45
 	require.Error(t, claims.Valid())
-}
-
-func TestContextWithOwner(t *testing.T) {
-	ctx := context.Background()
-	_, ok := OwnerFromContext(ctx)
-	require.False(t, ok)
-
-	ctx = ContextWithOwner(ctx, "real_owner")
-	owner, ok := OwnerFromContext(ctx)
-	require.True(t, ok)
-	require.Equal(t, models.Owner("real_owner"), owner)
 }

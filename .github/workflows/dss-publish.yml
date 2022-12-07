@@ -9,7 +9,11 @@ on:
   push:
     tags:
       # To modify to trigger the job for fork's releases
-      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+"
+      # Note: GitHub's filter pattern capabilities are limited[1], so this
+      # pattern matches more often than it should.  A more correct regex would
+      # be the one found in scripts/tag.sh.
+      # [1] https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
 jobs:
   docker-hub-push:
     name: DSS Build and Push to Docker Hub

@@ -26,7 +26,7 @@ type (
 
 // NewOVNFromTime encodes t as an OVN.
 func NewOVNFromTime(t time.Time, salt string) OVN {
-	sum := sha256.Sum256([]byte(salt + t.Format(time.RFC3339)))
+	sum := sha256.Sum256([]byte(salt + t.Format(time.RFC3339Nano)))
 	ovn := base64.StdEncoding.EncodeToString(
 		sum[:],
 	)

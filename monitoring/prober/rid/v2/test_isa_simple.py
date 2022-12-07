@@ -81,6 +81,7 @@ def test_get_isa_by_id(ids, session_ridv2):
 @default_scope(SCOPE_SP)
 def test_update_isa(ids, session_ridv2):
   resp = session_ridv2.get('{}/{}'.format(ISA_PATH, ids(ISA_TYPE)))
+  assert resp.status_code == 200, resp.content
   version = resp.json()['service_area']['version']
 
   resp = session_ridv2.put(

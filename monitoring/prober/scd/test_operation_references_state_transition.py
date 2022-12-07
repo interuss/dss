@@ -25,7 +25,7 @@ def test_op_accepted(ids, scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
 
 @for_api_versions(scd.API_0_3_17)

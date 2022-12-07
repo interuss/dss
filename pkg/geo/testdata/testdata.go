@@ -1,18 +1,23 @@
 package testdata
 
 import (
-	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
+	"time"
 
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
+	dssmodels "github.com/interuss/dss/pkg/models"
 )
 
 var (
+	Owner       = "foo"
+	Version, _  = dssmodels.VersionFromString("bar")
+	CallbackURL = restapi.IdentificationServiceAreaURL("https://example.com")
+
 	Loop                           = `37.427636,-122.170502,37.408799,-122.064069,37.421265,-122.086504`
 	LoopWithOddNumberOfCoordinates = `37.427636,-122.170502,37.408799`
 	LoopWithOnlyTwoPoints          = `37.427636,-122.170502,37.408799,-122.064069`
 
-	LoopPolygon = &ridpb.GeoPolygon{
-		Vertices: []*ridpb.LatLngPoint{
+	LoopPolygon = restapi.GeoPolygon{
+		Vertices: []restapi.LatLngPoint{
 			{
 				Lat: 37.427636,
 				Lng: -122.170502,
@@ -28,19 +33,21 @@ var (
 		},
 	}
 
-	LoopVolume3D = &ridpb.Volume3D{
-		AltitudeHi: 456,
-		AltitudeLo: 123,
+	AltitudeHi = restapi.Altitude(456)
+	AltitudeLo = restapi.Altitude(123)
+
+	LoopVolume3D = restapi.Volume3D{
+		AltitudeHi: &AltitudeHi,
+		AltitudeLo: &AltitudeLo,
 		Footprint:  LoopPolygon,
 	}
 
-	LoopVolume4D = &ridpb.Volume4D{
+	TimeStart = time.Unix(10000, 0).Format(time.RFC3339Nano)
+	TimeEnd   = time.Unix(10060, 0).Format(time.RFC3339Nano)
+
+	LoopVolume4D = restapi.Volume4D{
 		SpatialVolume: LoopVolume3D,
-		TimeStart: &tspb.Timestamp{
-			Seconds: 10000,
-		},
-		TimeEnd: &tspb.Timestamp{
-			Seconds: 10060,
-		},
+		TimeStart:     &TimeStart,
+		TimeEnd:       &TimeEnd,
 	}
 )

@@ -1,9 +1,9 @@
 package testdata
 
 import (
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 )
 
 var (
@@ -11,8 +11,8 @@ var (
 	LoopWithOddNumberOfCoordinates = `37.427636,-122.170502,37.408799`
 	LoopWithOnlyTwoPoints          = `37.427636,-122.170502,37.408799,-122.064069`
 
-	LoopPolygon = &scdpb.Polygon{
-		Vertices: []*scdpb.LatLngPoint{
+	LoopPolygon = &restapi.Polygon{
+		Vertices: []restapi.LatLngPoint{
 			{
 				Lat: 37.427636,
 				Lng: -122.170502,
@@ -28,26 +28,26 @@ var (
 		},
 	}
 
-	LoopVolume3D = &scdpb.Volume3D{
-		AltitudeUpper: &scdpb.Altitude{
+	LoopVolume3D = restapi.Volume3D{
+		AltitudeUpper: &restapi.Altitude{
 			Value:     456,
 			Reference: "W84",
 		},
-		AltitudeLower: &scdpb.Altitude{
+		AltitudeLower: &restapi.Altitude{
 			Value:     123,
 			Reference: "W84",
 		},
 		OutlinePolygon: LoopPolygon,
 	}
 
-	LoopVolume4D = &scdpb.Volume4D{
+	LoopVolume4D = &restapi.Volume4D{
 		Volume: LoopVolume3D,
-		TimeStart: &scdpb.Time{
-			Value:  ptypes.TimestampNow(),
+		TimeStart: &restapi.Time{
+			Value:  time.Now().Format(time.RFC3339Nano),
 			Format: "RFC3339",
 		},
-		TimeEnd: &scdpb.Time{
-			Value:  ptypes.TimestampNow(),
+		TimeEnd: &restapi.Time{
+			Value:  time.Now().Format(time.RFC3339Nano),
 			Format: "RFC3339",
 		},
 	}

@@ -7,6 +7,8 @@ In order to maximize the quality of contributions while keeping the time and ene
 ## General principles
 1. Any change to resources in this repository must be handled through a [Pull Request (PR)](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
+1. PRs to the master branch are expected to pass [continuous integration automated tests](.github/workflows/CI.md).
+
 1. No PR on the master branch can be merged without being reviewed.
 
 1. The master branch should remain stable at all times. Before a PR is merged into the master branch, it shall pass the tests described in the [Development Guidelines](./DEVELOPMENT.md). Checks are run automatically on every PR.

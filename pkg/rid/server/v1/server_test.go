@@ -5,35 +5,32 @@ import (
 	"testing"
 	"time"
 
-	ridpb "github.com/interuss/dss/pkg/api/v1/ridpbv1"
-	"github.com/interuss/dss/pkg/auth"
+	"github.com/golang/geo/s2"
+	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	"github.com/interuss/dss/pkg/geo/testdata"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
-
-	"github.com/golang/geo/s2"
-	"github.com/google/uuid"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var timeout = time.Second * 10
 
-func mustTimestamp(ts *tspb.Timestamp) *time.Time {
-	t := ts.AsTime()
-	err := ts.CheckValid()
+func mustTimestamp(ts *string) *time.Time {
+	t, err := time.Parse(time.RFC3339Nano, *ts)
 	if err != nil {
 		panic(err)
 	}
 	return &t
 }
 
-func mustPolygonToCellIDs(p *ridpb.GeoPolygon) s2.CellUnion {
+func mustPolygonToCellIDs(p *restapi.GeoPolygon) s2.CellUnion {
 	cells, err := apiv1.FromGeoPolygon(p).CalculateCovering()
 	if err != nil {
 		panic(err)
@@ -112,43 +109,52 @@ func (ma *mockApp) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest 
 }
 
 func TestDeleteSubscription(t *testing.T) {
-	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := dssmodels.VersionFromString("bar")
-
+	var respSet restapi.DeleteSubscriptionResponseSet
 	for _, r := range []struct {
 		name         string
 		id           dssmodels.ID
 		version      *dssmodels.Version
 		subscription *ridmodels.Subscription
-		wantErr      stacktrace.ErrorCode
+		appErr       stacktrace.ErrorCode
+		wantErr      **restapi.ErrorResponse
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
 			id:           dssmodels.ID(uuid.New().String()),
-			version:      version,
+			version:      testdata.Version,
 			subscription: &ridmodels.Subscription{},
 		},
 		{
 			name:    "error-is-returned-if-returned-from-app",
 			id:      dssmodels.ID(uuid.New().String()),
-			version: version,
-			wantErr: dsserr.NotFound,
+			version: testdata.Version,
+			appErr:  dsserr.NotFound,
+			wantErr: &respSet.Response404,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
-			ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
-				r.subscription, stacktrace.NewErrorWithCode(r.wantErr, "Expected error"),
-			)
+			if r.appErr == stacktrace.ErrorCode(0) {
+				ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
+					r.subscription, nil,
+				)
+			} else {
+				ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
+					(*ridmodels.Subscription)(nil), stacktrace.NewErrorWithCode(r.appErr, "Expected error"),
+				)
+			}
+
 			s := &Server{
 				App: ma,
 			}
 
-			_, err := s.DeleteSubscription(ctx, &ridpb.DeleteSubscriptionRequest{
-				Id: r.id.String(), Version: r.version.String(),
+			respSet = s.DeleteSubscription(context.Background(), &restapi.DeleteSubscriptionRequest{
+				Id: restapi.SubscriptionUUID(r.id.String()), Version: r.version.String(), Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 			})
-			if r.wantErr != stacktrace.ErrorCode(0) {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			if r.wantErr != nil {
+				require.NotNil(t, *r.wantErr)
+			} else {
+				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
 		})
@@ -156,85 +162,80 @@ func TestDeleteSubscription(t *testing.T) {
 }
 
 func TestCreateSubscription(t *testing.T) {
-	ctx := auth.ContextWithOwner(context.Background(), "foo")
-
+	var respSet restapi.CreateSubscriptionResponseSet
 	for _, r := range []struct {
 		name             string
 		id               dssmodels.ID
-		callbacks        *ridpb.SubscriptionCallbacks
-		extents          *ridpb.Volume4D
+		callbacks        restapi.SubscriptionCallbacks
+		extents          restapi.Volume4D
 		wantSubscription *ridmodels.Subscription
-		wantErr          stacktrace.ErrorCode
+		appErr           stacktrace.ErrorCode
+		wantErr          **restapi.ErrorResponse
 	}{
 		{
-			name: "success",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
-			},
-			extents: testdata.LoopVolume4D,
+			name:      "success",
+			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+			extents:   testdata.LoopVolume4D,
 			wantSubscription: &ridmodels.Subscription{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				Owner:      "foo",
 				URL:        "https://example.com",
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
-				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
-				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
-				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
 			},
 		},
 		{
-			name: "missing-extents",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
-			},
-			wantErr: dsserr.BadRequest,
+			name:      "missing-extents",
+			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+			appErr:    dsserr.BadRequest,
+			wantErr:   &respSet.Response400,
 		},
 		{
-			name: "missing-extents-spatial-volume",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
-			},
-			extents: &ridpb.Volume4D{},
-			wantErr: dsserr.BadRequest,
+			name:      "missing-extents-spatial-volume",
+			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+			extents:   restapi.Volume4D{},
+			appErr:    dsserr.BadRequest,
+			wantErr:   &respSet.Response400,
 		},
 		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
+			name:      "missing-spatial-volume-footprint",
+			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{},
 			},
-			extents: &ridpb.Volume4D{
-				SpatialVolume: &ridpb.Volume3D{},
-			},
-			wantErr: dsserr.BadRequest,
+			appErr:  dsserr.BadRequest,
+			wantErr: &respSet.Response400,
 		},
 		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: "https://example.com",
-			},
-			extents: &ridpb.Volume4D{
-				SpatialVolume: &ridpb.Volume3D{
-					Footprint: &ridpb.GeoPolygon{},
+			name:      "missing-spatial-volume-footprint",
+			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{
+					Footprint: restapi.GeoPolygon{},
 				},
 			},
-			wantErr: dsserr.BadRequest,
+			appErr:  dsserr.BadRequest,
+			wantErr: &respSet.Response400,
 		},
 		{
 			name:    "missing-callbacks",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest,
+			appErr:  dsserr.BadRequest,
+			wantErr: &respSet.Response400,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
-			if r.wantErr == stacktrace.ErrorCode(0) {
+			if r.appErr == stacktrace.ErrorCode(0) {
 				ma.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*ridmodels.IdentificationServiceArea(nil), nil)
 				ma.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
@@ -243,15 +244,18 @@ func TestCreateSubscription(t *testing.T) {
 			}
 			s := &Server{App: ma}
 
-			_, err := s.CreateSubscription(ctx, &ridpb.CreateSubscriptionRequest{
-				Id: r.id.String(),
-				Params: &ridpb.CreateSubscriptionParameters{
+			respSet = s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
+				Id: restapi.SubscriptionUUID(r.id.String()),
+				Body: &restapi.CreateSubscriptionParameters{
 					Callbacks: r.callbacks,
 					Extents:   r.extents,
 				},
+				Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 			})
-			if r.wantErr != stacktrace.ErrorCode(0) {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			if r.wantErr != nil {
+				require.NotNil(t, *r.wantErr)
+			} else {
+				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
 		})
@@ -259,8 +263,6 @@ func TestCreateSubscription(t *testing.T) {
 }
 
 func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
-	ctx := auth.ContextWithOwner(context.Background(), "foo")
-
 	isas := []*ridmodels.IdentificationServiceArea{
 		{
 			ID:    dssmodels.ID("8265221b-9528-4d45-900d-59a148e13850"),
@@ -269,15 +271,15 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		},
 	}
 
-	cells := mustPolygonToCellIDs(testdata.LoopPolygon)
+	cells := mustPolygonToCellIDs(&testdata.LoopPolygon)
 	sub := &ridmodels.Subscription{
 		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 		Owner:      "foo",
-		URL:        "https://example.com",
-		StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
-		EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
-		AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
-		AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+		URL:        string(testdata.CallbackURL),
+		StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+		EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+		AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+		AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 		Cells:      cells,
 	}
 
@@ -289,33 +291,35 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		App: ma,
 	}
 
-	resp, err := s.CreateSubscription(ctx, &ridpb.CreateSubscriptionRequest{
-		Id: sub.ID.String(),
-		Params: &ridpb.CreateSubscriptionParameters{
-			Callbacks: &ridpb.SubscriptionCallbacks{
-				IdentificationServiceAreaUrl: sub.URL,
+	respSet := s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
+		Id: restapi.SubscriptionUUID(sub.ID.String()),
+		Body: &restapi.CreateSubscriptionParameters{
+			Callbacks: restapi.SubscriptionCallbacks{
+				IdentificationServiceAreaUrl: &testdata.CallbackURL,
 			},
 			Extents: testdata.LoopVolume4D,
 		},
+		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
-	require.Nil(t, err)
+	require.NotNil(t, respSet.Response200)
 	require.True(t, ma.AssertExpectations(t))
 
-	require.Equal(t, []*ridpb.IdentificationServiceArea{
+	require.Equal(t, []restapi.IdentificationServiceArea{
 		{
 			FlightsUrl: "https://no/place/like/home",
 			Id:         "8265221b-9528-4d45-900d-59a148e13850",
 			Owner:      "me-myself-and-i",
 		},
-	}, resp.ServiceAreas)
+	}, *respSet.Response200.ServiceAreas)
 }
 
 func TestGetSubscription(t *testing.T) {
+	var respSet restapi.GetSubscriptionResponseSet
 	for _, r := range []struct {
 		name         string
 		id           dssmodels.ID
 		subscription *ridmodels.Subscription
-		err          stacktrace.ErrorCode
+		wantErr      **restapi.ErrorResponse
 	}{
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
@@ -323,25 +327,28 @@ func TestGetSubscription(t *testing.T) {
 			subscription: &ridmodels.Subscription{},
 		},
 		{
-			name: "error-is-returned-if-returned-from-app",
-			id:   dssmodels.ID(uuid.New().String()),
-			err:  dsserr.NotFound,
+			name:    "error-is-returned-if-returned-from-app",
+			id:      dssmodels.ID(uuid.New().String()),
+			wantErr: &respSet.Response404,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
-
 			ma.On("GetSubscription", mock.Anything, r.id).Return(
-				r.subscription, stacktrace.NewErrorWithCode(r.err, "Expected error"),
+				r.subscription, nil,
 			)
 			s := &Server{
 				App: ma,
 			}
 
-			_, err := s.GetSubscription(context.Background(), &ridpb.GetSubscriptionRequest{
-				Id: r.id.String(),
+			respSet = s.GetSubscription(context.Background(), &restapi.GetSubscriptionRequest{
+				Id: restapi.SubscriptionUUID(r.id.String()),
 			})
-			require.Equal(t, stacktrace.GetCode(err), r.err)
+			if r.wantErr != nil {
+				require.NotNil(t, *r.wantErr)
+			} else {
+				require.NotNil(t, respSet.Response200)
+			}
 			require.True(t, ma.AssertExpectations(t))
 		})
 	}
@@ -349,80 +356,77 @@ func TestGetSubscription(t *testing.T) {
 
 func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
 	var (
-		ctx = context.Background()
-		ma  = &mockApp{}
-		s   = &Server{
+		ma = &mockApp{}
+		s  = &Server{
 			App: ma,
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &ridpb.SearchSubscriptionsRequest{
-		Area: testdata.Loop,
+	respSet := s.SearchSubscriptions(context.Background(), &restapi.SearchSubscriptionsRequest{
+		Area: (*restapi.GeoPolygonString)(&testdata.Loop),
 	})
 
-	require.Error(t, err)
+	require.NotNil(t, respSet.Response403)
 	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 	var (
-		ctx = auth.ContextWithOwner(context.Background(), "foo")
-		ma  = &mockApp{}
-		s   = &Server{
+		ma = &mockApp{}
+		s  = &Server{
 			App: ma,
 		}
 	)
 
-	_, err := s.SearchSubscriptions(ctx, &ridpb.SearchSubscriptionsRequest{
-		Area: testdata.LoopWithOddNumberOfCoordinates,
+	respSet := s.SearchSubscriptions(context.Background(), &restapi.SearchSubscriptionsRequest{
+		Area: (*restapi.GeoPolygonString)(&testdata.LoopWithOddNumberOfCoordinates),
+		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
 
-	require.Error(t, err)
+	require.NotNil(t, respSet.Response400)
 	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestSearchSubscriptions(t *testing.T) {
 	var (
-		owner = dssmodels.Owner("foo")
-		ctx   = auth.ContextWithOwner(context.Background(), owner)
-		ma    = &mockApp{}
-		s     = &Server{
+		ma = &mockApp{}
+		s  = &Server{
 			App: ma,
 		}
 	)
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	ma.On("SearchSubscriptionsByOwner", mock.Anything, mock.Anything, owner).Return(
+	ma.On("SearchSubscriptionsByOwner", mock.Anything, mock.Anything, dssmodels.Owner(testdata.Owner)).Return(
 		[]*ridmodels.Subscription{
 			{
 				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             owner,
+				Owner:             dssmodels.Owner(testdata.Owner),
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchSubscriptions(ctx, &ridpb.SearchSubscriptionsRequest{
-		Area: testdata.Loop,
+	respSet := s.SearchSubscriptions(ctx, &restapi.SearchSubscriptionsRequest{
+		Area: (*restapi.GeoPolygonString)(&testdata.Loop),
+		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
 
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.Len(t, resp.Subscriptions, 1)
+	require.NotNil(t, respSet.Response200)
+	require.Len(t, respSet.Response200.Subscriptions, 1)
 	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestCreateISA(t *testing.T) {
-	ctx := auth.ContextWithOwner(context.Background(), "foo")
-
+	var respSet restapi.CreateIdentificationServiceAreaResponseSet
 	for _, r := range []struct {
 		name       string
 		id         dssmodels.ID
-		extents    *ridpb.Volume4D
+		extents    restapi.Volume4D
 		flightsURL string
 		wantISA    *ridmodels.IdentificationServiceArea
-		wantErr    stacktrace.ErrorCode
+		appErr     stacktrace.ErrorCode
+		wantErr    **restapi.ErrorResponse
 	}{
 		{
 			name:       "success",
@@ -433,51 +437,56 @@ func TestCreateISA(t *testing.T) {
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				URL:        "https://example.com",
 				Owner:      "foo",
-				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
-				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
-				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 			},
 		},
 		{
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest,
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
 		},
 		{
 			name:       "missing-extents-spatial-volume",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents:    &ridpb.Volume4D{},
+			extents:    restapi.Volume4D{},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest,
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: &ridpb.Volume4D{
-				SpatialVolume: &ridpb.Volume3D{},
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest,
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
 		},
 		{
 			name: "missing-spatial-volume-footprint",
 			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: &ridpb.Volume4D{
-				SpatialVolume: &ridpb.Volume3D{
-					Footprint: &ridpb.GeoPolygon{},
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{
+					Footprint: restapi.GeoPolygon{},
 				},
 			},
 			flightsURL: "https://example.com",
-			wantErr:    dsserr.BadRequest,
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
 		},
 		{
 			name:    "missing-flights-url",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			wantErr: dsserr.BadRequest,
+			appErr:  dsserr.BadRequest,
+			wantErr: &respSet.Response400,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -490,15 +499,18 @@ func TestCreateISA(t *testing.T) {
 				App: ma,
 			}
 
-			_, err := s.CreateIdentificationServiceArea(ctx, &ridpb.CreateIdentificationServiceAreaRequest{
-				Id: r.id.String(),
-				Params: &ridpb.CreateIdentificationServiceAreaParameters{
+			respSet = s.CreateIdentificationServiceArea(context.Background(), &restapi.CreateIdentificationServiceAreaRequest{
+				Id: restapi.EntityUUID(r.id.String()),
+				Body: &restapi.CreateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
-					FlightsUrl: r.flightsURL,
+					FlightsUrl: restapi.RIDFlightsURL(r.flightsURL),
 				},
+				Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 			})
-			if r.wantErr != stacktrace.ErrorCode(0) {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			if r.wantErr != nil {
+				require.NotNil(t, *r.wantErr)
+			} else {
+				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
 		})
@@ -506,15 +518,15 @@ func TestCreateISA(t *testing.T) {
 }
 
 func TestUpdateISA(t *testing.T) {
-	ctx := auth.ContextWithOwner(context.Background(), "foo")
-	version, _ := dssmodels.VersionFromString("bar")
+	var respSet restapi.UpdateIdentificationServiceAreaResponseSet
 	for _, r := range []struct {
 		name       string
 		id         dssmodels.ID
-		extents    *ridpb.Volume4D
+		extents    restapi.Volume4D
 		flightsURL string
 		wantISA    *ridmodels.IdentificationServiceArea
-		wantErr    stacktrace.ErrorCode
+		appErr     stacktrace.ErrorCode
+		wantErr    **restapi.ErrorResponse
 		version    *dssmodels.Version
 	}{
 		{
@@ -522,33 +534,35 @@ func TestUpdateISA(t *testing.T) {
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents:    testdata.LoopVolume4D,
 			flightsURL: "https://example.com",
-			version:    version,
+			version:    testdata.Version,
 			wantISA: &ridmodels.IdentificationServiceArea{
 				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
 				URL:        "https://example.com",
 				Owner:      "foo",
-				Cells:      mustPolygonToCellIDs(testdata.LoopPolygon),
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.GetTimeStart()),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.GetTimeEnd()),
-				AltitudeHi: &testdata.LoopVolume3D.AltitudeHi,
-				AltitudeLo: &testdata.LoopVolume3D.AltitudeLo,
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 				Writer:     "locality value",
-				Version:    version,
+				Version:    testdata.Version,
 			},
 		},
 		{
 			name:    "missing-flights-url",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
-			version: version,
-			wantErr: dsserr.BadRequest,
+			version: testdata.Version,
+			appErr:  dsserr.BadRequest,
+			wantErr: &respSet.Response400,
 		},
 		{
 			name:       "missing-extents",
 			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			flightsURL: "https://example.com",
-			version:    version,
-			wantErr:    dsserr.BadRequest,
+			version:    testdata.Version,
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
@@ -561,16 +575,19 @@ func TestUpdateISA(t *testing.T) {
 				App:      ma,
 				Locality: "locality value",
 			}
-			_, err := s.UpdateIdentificationServiceArea(ctx, &ridpb.UpdateIdentificationServiceAreaRequest{
-				Id:      r.id.String(),
+			respSet = s.UpdateIdentificationServiceArea(context.Background(), &restapi.UpdateIdentificationServiceAreaRequest{
+				Id:      restapi.EntityUUID(r.id.String()),
 				Version: r.version.String(),
-				Params: &ridpb.UpdateIdentificationServiceAreaParameters{
+				Body: &restapi.UpdateIdentificationServiceAreaParameters{
 					Extents:    r.extents,
-					FlightsUrl: r.flightsURL,
+					FlightsUrl: restapi.RIDFlightsURL(r.flightsURL),
 				},
+				Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 			})
-			if r.wantErr != stacktrace.ErrorCode(0) {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+			if r.wantErr != nil {
+				require.NotNil(t, *r.wantErr)
+			} else {
+				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
 		})
@@ -587,35 +604,32 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 		}
 	)
 
-	_, err := s.DeleteIdentificationServiceArea(context.Background(), &ridpb.DeleteIdentificationServiceAreaRequest{
-		Id: id,
+	respSet := s.DeleteIdentificationServiceArea(context.Background(), &restapi.DeleteIdentificationServiceAreaRequest{
+		Id: restapi.EntityUUID(id),
 	})
 
-	require.Error(t, err)
+	require.NotNil(t, respSet.Response403)
 	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
-		owner      = dssmodels.Owner("foo")
-		id         = dssmodels.ID(uuid.New().String())
-		version, _ = dssmodels.VersionFromString("bar")
-		ctx        = auth.ContextWithOwner(context.Background(), owner)
-		ma         = &mockApp{}
+		id = dssmodels.ID(uuid.New().String())
+		ma = &mockApp{}
 
 		s = &Server{
 			App: ma,
 		}
 	)
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	ma.On("DeleteISA", mock.Anything, id, owner, mock.Anything).Return(
+	ma.On("DeleteISA", mock.Anything, id, dssmodels.Owner(testdata.Owner), mock.Anything).Return(
 		&ridmodels.IdentificationServiceArea{
 			ID:      dssmodels.ID(id),
 			Owner:   dssmodels.Owner("me-myself-and-i"),
 			URL:     "https://no/place/like/home",
-			Version: version,
+			Version: testdata.Version,
 		},
 		[]*ridmodels.Subscription{
 			{
@@ -624,27 +638,26 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.DeleteIdentificationServiceArea(ctx, &ridpb.DeleteIdentificationServiceAreaRequest{
-		Id: id.String(), Version: version.String(),
+	respSet := s.DeleteIdentificationServiceArea(ctx, &restapi.DeleteIdentificationServiceAreaRequest{
+		Id: restapi.EntityUUID(id.String()), Version: testdata.Version.String(),
+		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
 
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.Len(t, resp.Subscribers, 1)
+	require.NotNil(t, respSet.Response200)
+	require.Len(t, respSet.Response200.Subscribers, 1)
 	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestSearchIdentificationServiceAreas(t *testing.T) {
 	var (
-		ctx = context.Background()
-		ma  = &mockApp{}
+		ma = &mockApp{}
 
 		s = &Server{
 			App: ma,
 		}
 	)
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	ma.On("SearchISAs", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*ridmodels.IdentificationServiceArea{
@@ -655,13 +668,13 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 			},
 		}, error(nil),
 	)
-	resp, err := s.SearchIdentificationServiceAreas(ctx, &ridpb.SearchIdentificationServiceAreasRequest{
-		Area: testdata.Loop,
+	respSet := s.SearchIdentificationServiceAreas(ctx, &restapi.SearchIdentificationServiceAreasRequest{
+		Area: (*restapi.GeoPolygonString)(&testdata.Loop),
+		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
 
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.Len(t, resp.ServiceAreas, 1)
+	require.NotNil(t, respSet.Response200)
+	require.Len(t, respSet.Response200.ServiceAreas, 1)
 	require.True(t, ma.AssertExpectations(t))
 }
 

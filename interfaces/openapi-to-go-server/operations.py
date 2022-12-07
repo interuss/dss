@@ -26,18 +26,18 @@ class StringParameter:
 
 @dataclasses.dataclass
 class AuthorizationOption:
-    """One acceptable option for authorization to invoke a particular Operation under a particular security scheme"""
+    """One acceptable option for authorization to invoke a particular Operation"""
 
-    required_scopes: List[str]
-    """Set of scopes that all must be presented in the access token simultaneously to use this option"""
+    option: Dict[str, List[str]]
+    """Mapping between authorization scheme name and a list of scope combination options that may be used to access the Operation under that authorization scheme"""
 
 
 @dataclasses.dataclass
 class Security:
-    """Set of all defined authorization schemes for a particular Operation"""
+    """Set of all defined authorization options for a particular Operation"""
 
-    schemes: Dict[str, List[AuthorizationOption]]
-    """Mapping between authorization scheme name and a list of scope combination options that may be used to access the Operation under that authorization scheme"""
+    options: List[AuthorizationOption]
+    """List of authorization options that may be used to access the Operation"""
 
 
 @dataclasses.dataclass
@@ -116,6 +116,10 @@ class Operation:
         """Name of the Go type that contains the non-body request parameters"""
         return self.interface_name + 'Request'
 
+    @property
+    def verb_const_name(self) -> str:
+        """Name of the Go const that contains the HTTP verb"""
+        return 'http.Method' + formatting.capitalize_first_letter(self.verb.lower())
 
 def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringParameter], List[data_types.DataType]]:
     """Parse operation parameters from an OpenAPI schema for path or verb
@@ -161,7 +165,7 @@ def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringP
 
 def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data_types.DataType]]:
     """Parse all operations defined within the specified path definition.
-    
+
     :param path: Relative path of operations described in `schema`
     :param schema: Definition of operations accessible at `path`
     :return:
@@ -193,12 +197,12 @@ def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data
         query_parameters += common_query_parameters
         additional_data_types.extend(further_data_types)
 
-        security = Security(schemes={})
+        security = Security(options=[])
         for security_option in action.get('security', []):
+            auth_option = AuthorizationOption(option={})
             for scheme, scopes in security_option.items():
-                options = security.schemes.get(scheme, [])
-                options.append(AuthorizationOption(required_scopes=scopes))
-                security.schemes[scheme] = options
+                auth_option.option[scheme] = scopes
+            security.options.append(auth_option)
 
         responses: List[Response] = []
         for code, response in action.get('responses', {}).items():

@@ -276,16 +276,17 @@ def make_graph(report: TestRunReport) -> graphviz.Digraph:
     # Make nodes for resources
     nodes, nodes_by_id = _make_resource_nodes(report.configuration.resources, namer)
 
-    # Translate resource names into the suite frame
-    suite_nodes_by_id = _translate_ids(
-        nodes_by_id, report.configuration.test_suite.resources
-    )
+    if report.configuration.action.get_action_type() != ActionType.TestSuite:
+        raise NotImplementedError()
+    test_suite = report.configuration.action.test_suite
+    test_suite_report = report.report.test_suite
+
+    # Translate resource names into the action frame
+    suite_nodes_by_id = _translate_ids(nodes_by_id, test_suite.resources)
 
     # Make nodes for the suite
     nodes.extend(
-        _make_test_suite_nodes(
-            report.configuration.test_suite, report.report, suite_nodes_by_id, namer
-        )
+        _make_test_suite_nodes(test_suite, test_suite_report, suite_nodes_by_id, namer)
     )
 
     # Translate nodes into GraphViz

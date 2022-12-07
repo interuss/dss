@@ -34,6 +34,16 @@ from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, Res
 from monitoring.uss_qualifier.scenarios.documentation.parsing import get_documentation
 
 
+class ScenarioCannotContinueError(Exception):
+    def __init__(self, msg):
+        super(ScenarioCannotContinueError, self).__init__(msg)
+
+
+class TestRunCannotContinueError(Exception):
+    def __init__(self, msg):
+        super(TestRunCannotContinueError, self).__init__(msg)
+
+
 class ScenarioPhase(str, Enum):
     Undefined = "Undefined"
     NotStarted = "NotStarted"
@@ -107,6 +117,10 @@ class PendingCheck(object):
         self._step_report.failed_checks.append(failed_check)
         if self._on_failed_check is not None:
             self._on_failed_check(failed_check)
+        if severity == Severity.High:
+            raise ScenarioCannotContinueError(f"{severity}-severity issue: {summary}")
+        if severity == Severity.Critical:
+            raise TestRunCannotContinueError(f"{severity}-severity issue: {summary}")
 
     def record_passed(
         self,
@@ -173,7 +187,7 @@ class TestScenario(ABC):
             if arg_name not in resource_pool:
                 available_pool = ", ".join(resource_pool)
                 raise ValueError(
-                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {declaration.scenario_type} test scenario (resource pool: {available_pool})'
                 )
             constructor_args[arg_name] = resource_pool[arg_name]
 

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/auth"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -16,20 +16,28 @@ import (
 
 // DeleteConstraintReference deletes a single constraint ref for a given ID at
 // the specified version.
-func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.DeleteConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
+func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.DeleteConstraintReferenceRequest,
+) restapi.DeleteConstraintReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.DeleteConstraintReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	// Retrieve Constraint ID
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return restapi.DeleteConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
 	}
 
 	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+	if req.Auth.ClientID == nil {
+		return restapi.DeleteConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *scdpb.ChangeConstraintReferenceResponse
+	var response *restapi.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Make sure deletion request is valid
 		old, err := r.GetConstraint(ctx, id)
@@ -38,9 +46,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 		case err != nil:
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
-		case old.Manager != manager:
+		case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"Constraint owned by %s, but %s attempted to delete", old.Manager, manager)
+				"Constraint owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -59,7 +67,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		var subs repos.Subscriptions
+		subs := repos.Subscriptions{}
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
@@ -78,15 +86,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
 
-		// Convert deleted Constraint to proto
-		constraintProto, err := old.ToProto()
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert Constraint to proto")
-		}
-
 		// Return response to client
-		response = &scdpb.ChangeConstraintReferenceResponse{
-			ConstraintReference: constraintProto,
+		response = &restapi.ChangeConstraintReferenceResponse{
+			ConstraintReference: *old.ToRest(),
 			Subscribers:         makeSubscribersToNotify(subs),
 		}
 
@@ -95,25 +97,45 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *scdpb.Delet
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		err = stacktrace.Propagate(err, "Could not delete constraint")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.DeleteConstraintReferenceResponseSet{Response403: errResp}
+		case dsserr.BadRequest:
+			return restapi.DeleteConstraintReferenceResponseSet{Response400: errResp}
+		case dsserr.NotFound:
+			return restapi.DeleteConstraintReferenceResponseSet{Response404: errResp}
+		default:
+			return restapi.DeleteConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
 
-	return response, nil
+	return restapi.DeleteConstraintReferenceResponseSet{Response200: response}
 }
 
 // GetConstraintReference returns a single constraint ref for the given ID.
-func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConstraintReferenceRequest) (*scdpb.GetConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetConstraintReferenceRequest,
+) restapi.GetConstraintReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.GetConstraintReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return restapi.GetConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
 	}
 
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+	if req.Auth.ClientID == nil {
+		return restapi.GetConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *scdpb.GetConstraintReferenceResponse
+	var response *restapi.GetConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		constraint, err := r.GetConstraint(ctx, id)
 		switch {
@@ -123,19 +145,13 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
 		}
 
-		if constraint.Manager != manager {
-			constraint.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
-		}
-
-		// Convert retrieved Constraint to proto
-		p, err := constraint.ToProto()
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert Constraint to proto")
+		if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+			constraint.OVN = scdmodels.NoOvnPhrase
 		}
 
 		// Return response to client
-		response = &scdpb.GetConstraintReferenceResponse{
-			ConstraintReference: p,
+		response = &restapi.GetConstraintReferenceResponse{
+			ConstraintReference: *constraint.ToRest(),
 		}
 
 		return nil
@@ -143,51 +159,117 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *scdpb.GetConst
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		err = stacktrace.Propagate(err, "Could not get constraint")
+		if stacktrace.GetCode(err) == dsserr.NotFound {
+			return restapi.GetConstraintReferenceResponseSet{Response404: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
+		}
+		return restapi.GetConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
-	return response, nil
+	return restapi.GetConstraintReferenceResponseSet{Response200: response}
 }
 
-func (a *Server) CreateConstraintReference(ctx context.Context, req *scdpb.CreateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	return a.PutConstraintReference(ctx, req.GetEntityid(), "", req.GetParams())
+func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.CreateConstraintReferenceRequest,
+) restapi.CreateConstraintReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.CreateConstraintReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.CreateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+	if req.Auth.ClientID == nil {
+		return restapi.CreateConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
+	}
+
+	res, err := a.PutConstraintReference(ctx, *req.Auth.ClientID, req.Entityid, "", req.Body)
+	if err != nil {
+		err = stacktrace.Propagate(err, "Could not put constraint")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.CreateConstraintReferenceResponseSet{Response403: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.CreateConstraintReferenceResponseSet{Response409: errResp}
+		case dsserr.BadRequest:
+			return restapi.CreateConstraintReferenceResponseSet{Response400: errResp}
+		default:
+			return restapi.CreateConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
+	}
+
+	return restapi.CreateConstraintReferenceResponseSet{Response201: res}
 }
 
-func (a *Server) UpdateConstraintReference(ctx context.Context, req *scdpb.UpdateConstraintReferenceRequest) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	return a.PutConstraintReference(ctx, req.GetEntityid(), req.GetOvn(), req.GetParams())
+func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.UpdateConstraintReferenceRequest,
+) restapi.UpdateConstraintReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.UpdateConstraintReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.UpdateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+	if req.Auth.ClientID == nil {
+		return restapi.UpdateConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
+	}
+
+	res, err := a.PutConstraintReference(ctx, *req.Auth.ClientID, req.Entityid, req.Ovn, req.Body)
+	if err != nil {
+		err = stacktrace.Propagate(err, "Could not put constraint")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.UpdateConstraintReferenceResponseSet{Response403: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.UpdateConstraintReferenceResponseSet{Response409: errResp}
+		case dsserr.BadRequest:
+			return restapi.UpdateConstraintReferenceResponseSet{Response400: errResp}
+		default:
+			return restapi.UpdateConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
+	}
+
+	return restapi.UpdateConstraintReferenceResponseSet{Response200: res}
 }
 
 // PutConstraintReference inserts or updates a Constraint.
 // If the ovn argument is empty (""), it will attempt to create a new Constraint.
-func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutConstraintReferenceParameters) (*scdpb.ChangeConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(entityid)
+func (a *Server) PutConstraintReference(ctx context.Context, manager string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutConstraintReferenceParameters,
+) (*restapi.ChangeConstraintReferenceResponse, error) {
+	id, err := dssmodels.IDFromString(string(entityid))
 
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
-	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
-	}
-
-	var extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
+	var extents = make([]*dssmodels.Volume4D, len(params.Extents))
 
 	if len(params.UssBaseUrl) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
 	if !a.EnableHTTP {
-		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 		}
 	}
 
 	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
-	for idx, extent := range params.GetExtents() {
-		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
+	for idx, extent := range params.Extents {
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
 		}
@@ -210,7 +292,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
-	var response *scdpb.ChangeConstraintReferenceResponse
+	var response *restapi.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		var version int32 // Version of the Constraint (0 means creation requested).
 
@@ -227,7 +309,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 			return stacktrace.Propagate(err, "Could not get Constraint from repo")
 		}
 		if old != nil {
-			if old.Manager != manager {
+			if old.Manager != dssmodels.Manager(manager) {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"Constraint owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
@@ -262,7 +344,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 		// Upsert the Constraint
 		constraint, err := r.UpsertConstraint(ctx, &scdmodels.Constraint{
 			ID:      id,
-			Manager: manager,
+			Manager: dssmodels.Manager(manager),
 			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
@@ -270,7 +352,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 			AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
 			AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
 
-			USSBaseURL: params.UssBaseUrl,
+			USSBaseURL: string(params.UssBaseUrl),
 			Cells:      cells,
 		})
 		if err != nil {
@@ -284,7 +366,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 		}
 
 		// Limit Subscription notifications to only those interested in Constraints
-		var subs repos.Subscriptions
+		subs := repos.Subscriptions{}
 		for _, sub := range allsubs {
 			if sub.NotifyForConstraints {
 				subs = append(subs, sub)
@@ -297,15 +379,9 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 			return err
 		}
 
-		// Convert upserted Constraint to proto
-		p, err := constraint.ToProto()
-		if err != nil {
-			return err
-		}
-
 		// Return response to client
-		response = &scdpb.ChangeConstraintReferenceResponse{
-			ConstraintReference: p,
+		response = &restapi.ChangeConstraintReferenceResponse{
+			ConstraintReference: *constraint.ToRest(),
 			Subscribers:         makeSubscribersToNotify(subs),
 		}
 
@@ -322,26 +398,34 @@ func (a *Server) PutConstraintReference(ctx context.Context, entityid string, ov
 
 // QueryConstraintReferences queries existing contraint refs in the given
 // bounds.
-func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.QueryConstraintReferencesRequest) (*scdpb.QueryConstraintReferencesResponse, error) {
+func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.QueryConstraintReferencesRequest,
+) restapi.QueryConstraintReferencesResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.QueryConstraintReferencesResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
 	// Retrieve the area of interest parameter
-	aoi := req.GetParams().AreaOfInterest
+	aoi := req.Body.AreaOfInterest
 	if aoi == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
+		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest"))}}
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
-		return nil, err
+		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
 	}
 
-	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
-	}
-
-	var response *scdpb.QueryConstraintReferencesResponse
+	var response *restapi.QueryConstraintReferencesResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
 		constraints, err := r.SearchConstraints(ctx, vol4)
@@ -350,16 +434,16 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 		}
 
 		// Create response for client
-		response = &scdpb.QueryConstraintReferencesResponse{}
+		response = &restapi.QueryConstraintReferencesResponse{
+			ConstraintReferences: make([]restapi.ConstraintReference, 0, len(constraints)),
+		}
 		for _, constraint := range constraints {
-			p, err := constraint.ToProto()
-			if err != nil {
-				return err
+			p := constraint.ToRest()
+			if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+				noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+				p.Ovn = &noOvnPhrase
 			}
-			if constraint.Manager != manager {
-				p.Ovn = scdmodels.NoOvnPhrase
-			}
-			response.ConstraintReferences = append(response.ConstraintReferences, p)
+			response.ConstraintReferences = append(response.ConstraintReferences, *p)
 		}
 
 		return nil
@@ -367,8 +451,9 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *scdpb.Query
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		return restapi.QueryConstraintReferencesResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
-	return response, nil
+	return restapi.QueryConstraintReferencesResponseSet{Response200: response}
 }

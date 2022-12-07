@@ -6,33 +6,39 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/auth"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	scderr "github.com/interuss/dss/pkg/scd/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
-	"google.golang.org/grpc/status"
 )
 
 // DeleteOperationalIntentReference deletes a single operational intent ref for a given ID at
 // the specified version.
-func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdpb.DeleteOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
+func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *restapi.DeleteOperationalIntentReferenceRequest,
+) restapi.DeleteOperationalIntentReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.DeleteOperationalIntentReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
 	// Retrieve OperationalIntent ID
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return restapi.DeleteOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
 	}
 
 	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+	if req.Auth.ClientID == nil {
+		return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *scdpb.ChangeOperationalIntentReferenceResponse
+	var response *restapi.ChangeOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get OperationalIntent to delete
 		old, err := r.GetOperationalIntent(ctx, id)
@@ -44,9 +50,9 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdp
 		}
 
 		// Validate deletion request
-		if old.Manager != manager {
+		if old.Manager != dssmodels.Manager(*req.Auth.ClientID) {
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, manager)
+				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
 		// Get the Subscription supporting the OperationalIntent
@@ -88,7 +94,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdp
 		}
 
 		// Limit Subscription notifications to only those interested in OperationalIntents
-		var subs repos.Subscriptions
+		subs := repos.Subscriptions{}
 		for _, s := range allsubs {
 			if s.NotifyForOperationalIntents {
 				subs = append(subs, s)
@@ -113,15 +119,9 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdp
 			}
 		}
 
-		// Convert deleted OperationalIntent to proto
-		opProto, err := old.ToProto()
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
-		}
-
 		// Return response to client
-		response = &scdpb.ChangeOperationalIntentReferenceResponse{
-			OperationalIntentReference: opProto,
+		response = &restapi.ChangeOperationalIntentReferenceResponse{
+			OperationalIntentReference: *old.ToRest(),
 			Subscribers:                makeSubscribersToNotify(subs),
 		}
 
@@ -130,25 +130,43 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *scdp
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		err = stacktrace.Propagate(err, "Could not delete operational intent")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: errResp}
+		case dsserr.NotFound:
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response404: errResp}
+		default:
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
 	}
 
-	return response, nil
+	return restapi.DeleteOperationalIntentReferenceResponseSet{Response200: response}
 }
 
 // GetOperationalIntentReference returns a single operation intent ref for the given ID.
-func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.GetOperationalIntentReferenceRequest) (*scdpb.GetOperationalIntentReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(req.GetEntityid())
+func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi.GetOperationalIntentReferenceRequest,
+) restapi.GetOperationalIntentReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.GetOperationalIntentReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.GetEntityid())
+		return restapi.GetOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
 	}
 
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+	if req.Auth.ClientID == nil {
+		return restapi.GetOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *scdpb.GetOperationalIntentReferenceResponse
+	var response *restapi.GetOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		op, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {
@@ -158,17 +176,12 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.G
 			return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
 		}
 
-		if op.Manager != manager {
-			op.OVN = scdmodels.OVN(scdmodels.NoOvnPhrase)
+		if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+			op.OVN = scdmodels.NoOvnPhrase
 		}
 
-		p, err := op.ToProto()
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
-		}
-
-		response = &scdpb.GetOperationalIntentReferenceResponse{
-			OperationalIntentReference: p,
+		response = &restapi.GetOperationalIntentReferenceResponse{
+			OperationalIntentReference: *op.ToRest(),
 		}
 
 		return nil
@@ -176,34 +189,53 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *scdpb.G
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		err = stacktrace.Propagate(err, "Could not get operational intent")
+		if stacktrace.GetCode(err) == dsserr.NotFound {
+			return restapi.GetOperationalIntentReferenceResponseSet{Response404: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
+		}
+		return restapi.GetOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
-	return response, nil
+	return restapi.GetOperationalIntentReferenceResponseSet{Response200: response}
 }
 
-// QueryOperationalIntentsReferences queries existing operational intent refs in the given
+// QueryOperationalIntentReferences queries existing operational intent refs in the given
 // bounds.
-func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdpb.QueryOperationalIntentReferencesRequest) (*scdpb.QueryOperationalIntentReferenceResponse, error) {
+func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *restapi.QueryOperationalIntentReferencesRequest,
+) restapi.QueryOperationalIntentReferencesResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.QueryOperationalIntentReferencesResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
 	// Retrieve the area of interest parameter
-	aoi := req.GetParams().AreaOfInterest
+	aoi := req.Body.AreaOfInterest
 	if aoi == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest"))}}
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDProto(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry")
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
 	}
 
 	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+	if req.Auth.ClientID == nil {
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *scdpb.QueryOperationalIntentReferenceResponse
+	var response *restapi.QueryOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Perform search query on Store
 		ops, err := r.SearchOperationalIntents(ctx, vol4)
@@ -212,16 +244,16 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdp
 		}
 
 		// Create response for client
-		response = &scdpb.QueryOperationalIntentReferenceResponse{}
+		response = &restapi.QueryOperationalIntentReferenceResponse{
+			OperationalIntentReferences: make([]restapi.OperationalIntentReference, 0, len(ops)),
+		}
 		for _, op := range ops {
-			p, err := op.ToProto()
-			if err != nil {
-				return stacktrace.Propagate(err, "Could not convert OperationalIntent model to proto")
+			p := op.ToRest()
+			if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+				noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+				p.Ovn = &noOvnPhrase
 			}
-			if op.Manager != manager {
-				p.Ovn = scdmodels.NoOvnPhrase
-			}
-			response.OperationalIntentReferences = append(response.OperationalIntentReferences, p)
+			response.OperationalIntentReferences = append(response.OperationalIntentReferences, *p)
 		}
 
 		return nil
@@ -229,96 +261,172 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *scdp
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		err = stacktrace.Propagate(err, "Could not query operational intent")
+		if stacktrace.GetCode(err) == dsserr.BadRequest {
+			return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
+		}
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 	}
 
-	return response, nil
+	return restapi.QueryOperationalIntentReferencesResponseSet{Response200: response}
 }
 
-func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *scdpb.CreateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), "", req.GetParams())
+func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *restapi.CreateOperationalIntentReferenceRequest,
+) restapi.CreateOperationalIntentReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.CreateOperationalIntentReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+	if req.Auth.ClientID == nil {
+		return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
+	}
+
+	respOK, respConflict, err := a.PutOperationalIntentReference(ctx, *req.Auth.ClientID, req.Entityid, "", req.Body)
+	if err != nil {
+		err = stacktrace.Propagate(err, "Could not put subscription")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: errResp}
+		case dsserr.BadRequest, dsserr.NotFound:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response400: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
+				Message: dsserr.Handle(ctx, err)}}
+		case dsserr.MissingOVNs:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response409: respConflict}
+		default:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
+	}
+
+	return restapi.CreateOperationalIntentReferenceResponseSet{Response201: respOK}
 }
 
-func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *scdpb.UpdateOperationalIntentReferenceRequest) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	return a.PutOperationalIntentReference(ctx, req.GetEntityid(), req.Ovn, req.GetParams())
+func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *restapi.UpdateOperationalIntentReferenceRequest,
+) restapi.UpdateOperationalIntentReferenceResponseSet {
+	if req.Auth.Error != nil {
+		resp := restapi.UpdateOperationalIntentReferenceResponseSet{}
+		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
+		return resp
+	}
+
+	if req.BodyParseError != nil {
+		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+	if req.Auth.ClientID == nil {
+		return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
+	}
+
+	respOK, respConflict, err := a.PutOperationalIntentReference(ctx, *req.Auth.ClientID, req.Entityid, req.Ovn, req.Body)
+	if err != nil {
+		err = stacktrace.Propagate(err, "Could not put subscription")
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.PermissionDenied:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: errResp}
+		case dsserr.BadRequest, dsserr.NotFound:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
+				Message: dsserr.Handle(ctx, err)}}
+		case dsserr.MissingOVNs:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: respConflict}
+		default:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+		}
+	}
+
+	return restapi.UpdateOperationalIntentReferenceResponseSet{Response200: respOK}
 }
 
 // PutOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
-func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid string, ovn string, params *scdpb.PutOperationalIntentReferenceParameters) (*scdpb.ChangeOperationalIntentReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(entityid)
+func (a *Server) PutOperationalIntentReference(ctx context.Context, manager string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
+) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
+	id, err := dssmodels.IDFromString(string(entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
-	}
-
-	// Retrieve ID of client making call
-	manager, ok := auth.ManagerFromContext(ctx)
-	if !ok {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager from context")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
 	}
 
 	var (
-		extents = make([]*dssmodels.Volume4D, len(params.GetExtents()))
+		extents = make([]*dssmodels.Volume4D, len(params.Extents))
 	)
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
 	if !a.EnableHTTP {
-		err = scdmodels.ValidateUSSBaseURL(params.UssBaseUrl)
+		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+			return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
 		}
 	}
 
 	state := scdmodels.OperationalIntentState(params.State)
 	if !state.IsValidInDSS() {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
 	}
 
-	for idx, extent := range params.GetExtents() {
-		cExtent, err := dssmodels.Volume4DFromSCDProto(extent)
+	for idx, extent := range params.Extents {
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
+			return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
 		}
 		extents[idx] = cExtent
 	}
 	uExtent, err := dssmodels.UnionVolumes4D(extents...)
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
+		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
 	}
 
 	if uExtent.StartTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
 	}
 	if uExtent.EndTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
 	}
 
 	if time.Now().After(*uExtent.EndTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "OperationalIntents may not end in the past")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "OperationalIntents may not end in the past")
 	}
 
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
 	if uExtent.EndTime.Before(*uExtent.StartTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
 	}
 
-	if ovn == "" && params.State != "Accepted" {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
+	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
 	}
 
-	subscriptionID, err := dssmodels.IDFromOptionalString(params.GetSubscriptionId())
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", params.GetSubscriptionId())
+	subscriptionID := dssmodels.ID("")
+	if params.SubscriptionId != nil {
+		subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
+		if err != nil {
+			return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
+		}
 	}
 
-	var response *scdpb.ChangeOperationalIntentReferenceResponse
+	var responseOK *restapi.ChangeOperationalIntentReferenceResponse
+	var responseConflict *restapi.AirspaceConflictResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		var version int32 // Version of the Operational Intent (0 means creation requested).
 
@@ -328,7 +436,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 		if old != nil {
-			if old.Manager != manager {
+			if old.Manager != dssmodels.Manager(manager) {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
@@ -349,12 +457,11 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		var sub *scdmodels.Subscription
 		if subscriptionID.Empty() {
 			// Create implicit Subscription
-			subBaseURL := params.GetNewSubscription().GetUssBaseUrl()
-			if subBaseURL == "" {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing uss_base_url in new_subscription")
+			if params.NewSubscription == nil || params.NewSubscription.UssBaseUrl == "" {
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing new_subscription or uss_base_url in new_subscription")
 			}
 			if !a.EnableHTTP {
-				err := scdmodels.ValidateUSSBaseURL(subBaseURL)
+				err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
 				if err != nil {
 					return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 				}
@@ -362,19 +469,21 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 
 			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
 				ID:                          dssmodels.ID(uuid.New().String()),
-				Manager:                     manager,
+				Manager:                     dssmodels.Manager(manager),
 				StartTime:                   uExtent.StartTime,
 				EndTime:                     uExtent.EndTime,
 				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
 				AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
 				Cells:                       cells,
-				USSBaseURL:                  subBaseURL,
+				USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
 				NotifyForOperationalIntents: true,
-				NotifyForConstraints:        params.GetNewSubscription().GetNotifyForConstraints(),
 				ImplicitSubscription:        true,
 			})
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to create implicit subscription")
+			}
+			if params.NewSubscription.NotifyForConstraints != nil {
+				sub.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
 			}
 		} else {
 			// Use existing Subscription
@@ -385,7 +494,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			if sub == nil {
 				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", subscriptionID)
 			}
-			if sub.Manager != manager {
+			if sub.Manager != dssmodels.Manager(manager) {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
 					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", subscriptionID, sub.Manager, manager)
@@ -426,8 +535,10 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		if state.RequiresKey() {
 			// Construct a hash set of OVNs as the key
 			key := map[scdmodels.OVN]bool{}
-			for _, ovn := range params.GetKey() {
-				key[scdmodels.OVN(ovn)] = true
+			if params.Key != nil {
+				for _, ovn := range *params.Key {
+					key[scdmodels.OVN(ovn)] = true
+				}
 			}
 
 			// Identify OperationalIntents missing from the key
@@ -438,7 +549,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			}
 			for _, relevantOp := range relevantOps {
 				if _, ok := key[relevantOp.OVN]; !ok {
-					if relevantOp.Manager != manager {
+					if relevantOp.Manager != dssmodels.Manager(manager) {
 						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
 					missingOps = append(missingOps, relevantOp)
@@ -454,7 +565,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 				}
 				for _, relevantConstraint := range constraints {
 					if _, ok := key[relevantConstraint.OVN]; !ok {
-						if relevantConstraint.Manager != manager {
+						if relevantConstraint.Manager != dssmodels.Manager(manager) {
 							relevantConstraint.OVN = scdmodels.NoOvnPhrase
 						}
 						missingConstraints = append(missingConstraints, relevantConstraint)
@@ -465,18 +576,31 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			// If the client is missing some OVNs, provide the pointers to the
 			// information they need
 			if len(missingOps) > 0 || len(missingConstraints) > 0 {
-				p, err := scderr.MissingOVNsErrorResponse(missingOps, missingConstraints)
-				if err != nil {
-					return stacktrace.Propagate(err, "Failed to construct missing OVNs error message")
+				msg := "Current OVNs not provided for one or more OperationalIntents or Constraints"
+				responseConflict = &restapi.AirspaceConflictResponse{Message: &msg}
+
+				if len(missingOps) > 0 {
+					responseConflict.MissingOperationalIntents = new([]restapi.OperationalIntentReference)
+					for _, missingOp := range missingOps {
+						*responseConflict.MissingOperationalIntents = append(*responseConflict.MissingOperationalIntents, *missingOp.ToRest())
+					}
 				}
-				return stacktrace.Propagate(status.ErrorProto(p), "Missing OVNs")
+
+				if len(missingConstraints) > 0 {
+					responseConflict.MissingConstraints = new([]restapi.ConstraintReference)
+					for _, missingConstraint := range missingConstraints {
+						*responseConflict.MissingConstraints = append(*responseConflict.MissingConstraints, *missingConstraint.ToRest())
+					}
+				}
+
+				return stacktrace.NewErrorWithCode(dsserr.MissingOVNs, "Missing OVNs: %v", msg)
 			}
 		}
 
 		// Construct the new OperationalIntent
 		op := &scdmodels.OperationalIntent{
 			ID:      id,
-			Manager: manager,
+			Manager: dssmodels.Manager(manager),
 			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     uExtent.StartTime,
@@ -485,7 +609,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
 			Cells:         cells,
 
-			USSBaseURL:     params.UssBaseUrl,
+			USSBaseURL:     string(params.UssBaseUrl),
 			SubscriptionID: sub.ID,
 			State:          state,
 		}
@@ -528,7 +652,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 		}
 
 		// Limit Subscription notifications to only those interested in OperationalIntents
-		var subs repos.Subscriptions
+		subs := repos.Subscriptions{}
 		for _, sub := range allsubs {
 			if sub.NotifyForOperationalIntents {
 				subs = append(subs, sub)
@@ -541,15 +665,9 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 			return err
 		}
 
-		// Convert upserted OperationalIntent to proto
-		p, err := op.ToProto()
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not convert OperationalIntent to proto")
-		}
-
 		// Return response to client
-		response = &scdpb.ChangeOperationalIntentReferenceResponse{
-			OperationalIntentReference: p,
+		responseOK = &restapi.ChangeOperationalIntentReferenceResponse{
+			OperationalIntentReference: *op.ToRest(),
 			Subscribers:                makeSubscribersToNotify(subs),
 		}
 
@@ -558,8 +676,8 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, entityid str
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+		return nil, responseConflict, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
 
-	return response, nil
+	return responseOK, responseConflict, nil
 }

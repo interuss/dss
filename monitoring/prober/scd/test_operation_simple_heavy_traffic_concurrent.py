@@ -92,7 +92,7 @@ def _make_op_request_differ_in_time(idx, time_gap):
 
 # Generate request with non-overlapping operations in volume4d.
 # 1/3 operations will be generated with different 2d areas, altitude ranges and time windows respectively
-# additional_time_gap is given to keep a time gap between `create` operational_content and `mutate` operational content 
+# additional_time_gap is given to keep a time gap between `create` operational_content and `mutate` operational content
 # requests, so these two types of requests do not overlap at any time.
 def _make_op_request(idx, additional_time_gap=0):
   if idx < GROUP_SIZE:
@@ -214,7 +214,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
     op_resp_map[op_id]['status_code'] = resp[0][0]
     op_resp_map[op_id]['content'] = resp[0][1]
   for op_id, resp in op_resp_map.items():
-    if resp['status_code'] != 200:
+    if resp['status_code'] != 201:
         try:
             owner_name, id_code = IDFactory.decode(op_id)
         except ValueError:
@@ -239,7 +239,7 @@ def test_create_ops_concurrent(ids, scd_api, scd_session_async):
                 print(json.dumps(op_req_map[missing_id]))
                 print('--- Response:')
                 print(json.dumps(op_resp_map[missing_id]))
-    assert resp['status_code'] == 200, resp['content']
+    assert resp['status_code'] == 201, resp['content']
     req = op_req_map[op_id]
     data = resp['content']
     op = data['operational_intent_reference']
@@ -297,7 +297,7 @@ def test_get_ops_by_search_concurrent(ids, scd_api, scd_session_async):
   loop = asyncio.get_event_loop()
   results = loop.run_until_complete(
     asyncio.gather(*[_query_operation_async(idx, scd_session_async, scd_api) for idx in range(len(OP_TYPES))]))
-  
+
   for idx, resp in zip(range(len(OP_TYPES)), results):
     op_resp_map[idx] = {}
     op_resp_map[idx]['status_code'] = resp[0]

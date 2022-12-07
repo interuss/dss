@@ -3,13 +3,12 @@ package models
 import (
 	"time"
 
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/stacktrace"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -43,37 +42,37 @@ type Subscription struct {
 	Cells                       s2.CellUnion
 }
 
-// ToProto converts the Subscription to its proto API format
-func (s *Subscription) ToProto(dependentOperationalIntents []dssmodels.ID) (*scdpb.Subscription, error) {
-	result := &scdpb.Subscription{
-		Id:                          s.ID.String(),
+// ToRest converts the Subscription to its SCD v1 REST model API format
+func (s *Subscription) ToRest(dependentOperationalIntents []dssmodels.ID) (*restapi.Subscription, error) {
+	result := &restapi.Subscription{
+		Id:                          restapi.SubscriptionID(s.ID.String()),
 		Version:                     s.Version.String(),
-		NotificationIndex:           int32(s.NotificationIndex),
-		UssBaseUrl:                  s.USSBaseURL,
-		NotifyForOperationalIntents: s.NotifyForOperationalIntents,
-		NotifyForConstraints:        s.NotifyForConstraints,
-		ImplicitSubscription:        s.ImplicitSubscription,
+		NotificationIndex:           restapi.SubscriptionNotificationIndex(s.NotificationIndex),
+		UssBaseUrl:                  restapi.SubscriptionUssBaseURL(s.USSBaseURL),
+		NotifyForOperationalIntents: &s.NotifyForOperationalIntents,
+		NotifyForConstraints:        &s.NotifyForConstraints,
+		ImplicitSubscription:        &s.ImplicitSubscription,
 	}
 
 	if s.StartTime != nil {
-		ts := tspb.New(*s.StartTime)
-		result.TimeStart = &scdpb.Time{
-			Value:  ts,
+		result.TimeStart = &restapi.Time{
+			Value:  s.StartTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
 	if s.EndTime != nil {
-		ts := tspb.New(*s.EndTime)
-		result.TimeEnd = &scdpb.Time{
-			Value:  ts,
+		result.TimeEnd = &restapi.Time{
+			Value:  s.EndTime.Format(time.RFC3339Nano),
 			Format: dssmodels.TimeFormatRFC3339,
 		}
 	}
 
+	intents := make([]restapi.EntityID, 0, len(dependentOperationalIntents))
 	for _, op := range dependentOperationalIntents {
-		result.DependentOperationalIntents = append(result.DependentOperationalIntents, op.String())
+		intents = append(intents, restapi.EntityID(op.String()))
 	}
+	result.DependentOperationalIntents = &intents
 
 	return result, nil
 }

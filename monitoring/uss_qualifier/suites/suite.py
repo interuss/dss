@@ -25,7 +25,11 @@ from monitoring.uss_qualifier.resources.resource import (
     ResourceType,
     make_child_resources,
 )
-from monitoring.uss_qualifier.scenarios.scenario import TestScenario
+from monitoring.uss_qualifier.scenarios.scenario import (
+    TestScenario,
+    ScenarioCannotContinueError,
+    TestRunCannotContinueError,
+)
 from monitoring.uss_qualifier.suites.definitions import (
     TestSuiteActionDeclaration,
     TestSuiteDefinition,
@@ -91,7 +95,10 @@ class TestSuiteAction(object):
         print(f'Running "{scenario.documentation.name}" scenario...')
         scenario.on_failed_check = _print_failed_check
         try:
-            scenario.run()
+            try:
+                scenario.run()
+            except (ScenarioCannotContinueError, TestRunCannotContinueError):
+                pass
             scenario.go_to_cleanup()
             scenario.cleanup()
         except KeyboardInterrupt:
@@ -123,6 +130,8 @@ class TestSuiteAction(object):
             if action_report is None:
                 break
             report.actions.append(action_report)
+            if action_report.has_critical_problem():
+                break
         return report
 
 
@@ -173,6 +182,9 @@ class TestSuite(object):
         for a, action in enumerate(self.actions):
             action_report = action.run()
             report.actions.append(action_report)
+            if action_report.has_critical_problem():
+                success = False
+                break
             if not action_report.successful():
                 success = False
                 if action.declaration.on_failure == ReactionToFailure.Abort:
