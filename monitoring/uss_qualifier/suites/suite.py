@@ -28,6 +28,7 @@ from monitoring.uss_qualifier.resources.resource import (
 from monitoring.uss_qualifier.scenarios.scenario import (
     TestScenario,
     ScenarioCannotContinueError,
+    TestRunCannotContinueError,
 )
 from monitoring.uss_qualifier.suites.definitions import (
     TestSuiteActionDeclaration,
@@ -96,7 +97,7 @@ class TestSuiteAction(object):
         try:
             try:
                 scenario.run()
-            except ScenarioCannotContinueError:
+            except (ScenarioCannotContinueError, TestRunCannotContinueError):
                 pass
             scenario.go_to_cleanup()
             scenario.cleanup()
@@ -129,6 +130,8 @@ class TestSuiteAction(object):
             if action_report is None:
                 break
             report.actions.append(action_report)
+            if action_report.has_critical_problem():
+                break
         return report
 
 
@@ -179,6 +182,9 @@ class TestSuite(object):
         for a, action in enumerate(self.actions):
             action_report = action.run()
             report.actions.append(action_report)
+            if action_report.has_critical_problem():
+                success = False
+                break
             if not action_report.successful():
                 success = False
                 if action.declaration.on_failure == ReactionToFailure.Abort:
