@@ -6,9 +6,9 @@ and responses in the SCD flow using IATF certificates provided by FAA.
 This test suite helps to test the message signing by extending [suites.astm.utm.f3548_21](../../../astm/utm/f3548_21.yaml)
 with scenarios that trigger reporting of message signing in the interactions with mock_uss.
 
-## Test Harness Setup
+## Test Setup
 
-The test setup includes running the following components on your local machine, as also shown in the [diagram](./InterUss%20Test%20Harness%20With%20Message%20Signing.png)
+The test setup includes running the following components on your local machine, as also shown in the [diagram](./InterUss_Test_Harness_With_Message_Signing.png)
 
 1. Uss Qualifier - This is the test driver that injects the operations for the SCD flow tests in USSes.
 2. Dummy Auth - This is a dummy auth server that provides tokens for uss-to-uss and uss-to-dss communication. Runs as a dockerized container at port 8085.
@@ -57,7 +57,7 @@ The report file name is - report.json
 2. Message signing test report is generated under [mock_uss/report]
 The report file name is - report_mock_uss_scdsc_messagesigning.json.
 
-There will be 3 runs of tests, with the above two reports for each run.
+There will be 3 test scenarios, with the above two reports for each run.
 
 ### Positive tests -
 A valid set of private/public keys will be provided under [keys folder]
