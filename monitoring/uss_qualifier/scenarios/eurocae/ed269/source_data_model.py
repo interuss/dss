@@ -34,8 +34,10 @@ class SourceDataModelValidation(TestScenario):
         self.begin_test_case("ED-269 data model compliance")
         self.begin_test_step("Valid source")
 
-        data=None
-        with self.check("Valid JSON", [self.source_document.specification.url]) as check:
+        data = None
+        with self.check(
+            "Valid JSON", [self.source_document.specification.url]
+        ) as check:
             try:
                 data = json.loads(self.source_document.raw_document)
             except json.decoder.JSONDecodeError as e:
