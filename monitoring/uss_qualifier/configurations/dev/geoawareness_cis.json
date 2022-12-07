@@ -1,0 +1,18 @@
+{
+  "resources": {
+    "resource_declarations": {
+      "source_document": {
+        "resource_type": "resources.eurocae.ed269.source_document.SourceDocument",
+        "specification": {
+          "url": "file://./test_data/che/geoawareness/cis_source_sample.json"
+        }
+      }
+    }
+  },
+  "test_suite": {
+    "suite_type": "suites.uspace.geo_awareness_cis",
+    "resources": {
+      "source_document": "source_document"
+    }
+  }
+}

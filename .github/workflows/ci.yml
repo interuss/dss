@@ -58,8 +58,14 @@ jobs:
       run: make build-dss
     - name: Build monitoring image
       run: make build-monitoring
-    - name: End-to-end test
-      run: make test-e2e
+    - name: Tear down any pre-existing local DSS instance
+      run: make down-locally
+    - name: Start local DSS instance
+      run: make start-locally
+    - name: Probe local DSS instance
+      run: make probe-locally
+    - name: Bring down local DSS instance
+      run: make down-locally
 
   monitoring-tests:
     name: monitoring tests

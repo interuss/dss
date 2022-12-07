@@ -2,7 +2,7 @@
 
 This directory contains integration tests that can be run against a live DSS
 instance.  These integration tests are also run as part of
-[docker_e2e.sh](../../test/docker_e2e.sh) which is a self-contained system
+[`make test-e2e`](../../Makefile) which is a self-contained system
 integration test suite.
 
 ## Authorization
@@ -27,19 +27,19 @@ the tests that depend on that authorization will be skipped.
 Example: `--rid-auth "UsernamePassword(https://example.com/token, username=uss1,
 password=uss1, client_id=uss1)"`
 
-## Running pytest via Docker
+## Running prober via Docker
 This approach takes slightly longer to execute due to building the prober image,
 but it requires no setup and generally obtains more reproducible results than
 running locally.  From the root of this repo:
 
 First, build the monitoring image:
 
-(from [`monitoring`](../) working directory)
+(from the repo root)
 ```shell script
-docker image build . -t interuss/monitoring
+monitoring/build.sh
 ```
 
-...then run it:
+...then run prober:
 
 ```shell script
 docker run --rm interuss/monitoring \
@@ -51,7 +51,7 @@ docker run --rm interuss/monitoring \
     [--scd-auth2 <SPEC>]
 ```
 
-## Running pytest locally
+## Running prober locally
 This approach will save the time of building the prober Docker container, but
 requires more setup and may not be fully-reproducible due to system differences
 in Python, etc.
@@ -75,19 +75,25 @@ pytest \
     -vv .
 ```
 
+## Running prober on a local DSS deployment
+
+A local DSS ecosystem can be deployed with `make start-locally` from the repo
+root.  Then, prober can be run (from the repo root) with
+`monitoring/prober/run_locally.sh`
+
 ## Specifying specific tests
 
 ### All the tests in a folder
 
-E.g.: `test/docker_e2e.sh scd/`
+E.g.: `monitoring/prober/run_locally.sh scd/`
 
 ### All the tests in a file
 
-`test/docker_e2e.sh scd/test_constraint_simple.py`
+`monitoring/prober/run_locally.sh scd/test_constraint_simple.py`
 
 ### A specific test
 
-`test/docker_e2e.sh scd/test_constraint_simple.py::test_ensure_clean_workspace`
+`monitoring/prober/run_locally.sh scd/test_constraint_simple.py::test_ensure_clean_workspace`
 
 ## Writing prober tests
 This project strives to make prober tests as easy as possible to create in order
