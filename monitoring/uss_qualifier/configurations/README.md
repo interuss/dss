@@ -2,7 +2,7 @@
 
 ## Usage
 
-To execute a test run with uss_qualifier, a test configuration must be provided.  This configuration consists of the test suite to run, along with definitions for all resources needed by that test suite.  See [`TestConfiguration`](configuration.py) for the exact schema.
+To execute a test run with uss_qualifier, a uss_qualifier configuration must be provided.  This configuration consists of the test suite to run, along with definitions for all resources needed by that test suite, plus information about artifacts that should be generated.  See [`USSQualifierConfiguration`](configuration.py) for the exact schema.
 
 ### Specifying
 
@@ -14,7 +14,7 @@ When referring to a configuration, three methods may be used; see [`FileReferenc
 
 ### Building
 
-A valid configuration file must provide a single instance of the [`TestConfiguration` schema](configuration.py) in the format chosen (JSON or YAML), as indicated by the file extension (.json or .yaml).
+A valid configuration file must provide a single instance of the [`USSQualifierConfiguration` schema](configuration.py) in the format chosen (JSON or YAML), as indicated by the file extension (.json or .yaml).
 
 #### Personalization
 
@@ -75,5 +75,5 @@ More details may be found in [`fileio.py`](../fileio.py).
 3. One resource can be used by many different test scenarios.
 4. One test scenario may use multiple resources.
 5. One class of resources is resources that describe the systems under test and how to interact with them; e.g., "Display Providers under test".
-    * This means that a complete test configuration can't be tracked in the InterUSS repository because it wouldn't make sense to list, e.g., Display Provider observation endpoint URLs in the SUSI qual-partners environment.
+    * This means that most complete test configurations can't be tracked in the InterUSS repository because it wouldn't make sense to list, e.g., Display Provider observation endpoint URLs in the SUSI qual-partners environment.
     * Partial test configurations, including RID telemetry to inject, operational intents to inject, etc, can be tracked in the InterUSS repository, but they could not be used without specifying the missing resources describing systems under test.

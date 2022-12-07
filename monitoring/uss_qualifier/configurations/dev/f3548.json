@@ -1,16 +1,38 @@
 {
-  "resources": {
-    "resource_declarations": {
-      "$ref": "resources.yaml#/f3548"
-    }
-  },
-  "test_suite": {
-    "suite_type": "suites.astm.utm.f3548_21",
-    "resources": {
-      "flight_planners": "flight_planners",
-      "conflicting_flights": "conflicting_flights",
-      "priority_preemption_flights": "priority_preemption_flights",
-      "dss": "dss"
+  "v1": {
+    "test_run": {
+      "resources": {
+        "resource_declarations": {
+          "$ref": "resources.yaml#/f3548"
+        }
+      },
+      "action": {
+        "test_suite": {
+          "suite_type": "suites.astm.utm.f3548_21",
+          "resources": {
+            "flight_planners": "flight_planners",
+            "conflicting_flights": "conflicting_flights",
+            "priority_preemption_flights": "priority_preemption_flights",
+            "dss": "dss"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "tested_roles": {
+        "report_path": "tested_requirements.html",
+        "roles": [
+          {
+            "name": "Strategic Coordination role",
+            "requirement_set": "astm.f3548.v21.scd",
+            "participants": [
+              "uss1",
+              "uss2"
+            ]
+          }
+        ]
+      },
+      "$ref": "artifacts.yaml#/relative"
     }
   }
 }

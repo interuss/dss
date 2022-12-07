@@ -7,14 +7,16 @@ import sys
 
 from implicitdict import ImplicitDict
 from monitoring.monitorlib.versioning import get_code_version
-from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
+from monitoring.uss_qualifier.configurations.configuration import (
+    TestConfiguration,
+    USSQualifierConfiguration,
+    ArtifactsConfiguration,
+)
 from monitoring.uss_qualifier.reports.documents import generate_tested_requirements
 from monitoring.uss_qualifier.reports.graphs import make_graph
 from monitoring.uss_qualifier.reports.report import TestRunReport
 from monitoring.uss_qualifier.resources.resource import create_resources
-from monitoring.uss_qualifier.suites.suite import (
-    TestSuite,
-)
+from monitoring.uss_qualifier.suites.suite import TestSuiteAction
 
 
 def parseArgs() -> argparse.Namespace:
@@ -27,67 +29,67 @@ def parseArgs() -> argparse.Namespace:
 
     parser.add_argument(
         "--report",
-        help="File name of the report to write (if --config provided) or read (if --config not provided)",
-    )
-
-    parser.add_argument(
-        "--dot",
-        help="File name to create for a GraphViz dot text file summarizing the test run",
-    )
-
-    parser.add_argument(
-        "--tested_requirements",
-        help="File name to create for a tested requirements HTML summary",
-    )
-    parser.add_argument(
-        "--role_requirements",
-        action="append",
-        help="Specification of a role to include in the tested_requirements summary for the specified participants, in the form of <PARTICIPANT_ID>[,<PARTICIPANT_ID>,...]=<REQUIREMENT_SET_ID>",
+        default=None,
+        help="(Overrides setting in artifacts configuration) File name of the report to write (if test configuration provided) or read (if test configuration not provided)",
     )
 
     return parser.parse_args()
 
 
-def uss_test_executor(config: str):
+def execute_test_run(config: TestConfiguration):
     codebase_version = get_code_version()
-    test_config = TestConfiguration.from_string(config)
-    resources = create_resources(test_config.resources.resource_declarations)
-    suite = TestSuite(test_config.test_suite, resources)
-    report = suite.run()
+    resources = create_resources(config.resources.resource_declarations)
+    action = TestSuiteAction(config.action, resources)
+    report = action.run()
     if report.successful:
         print("Final result: SUCCESS")
     else:
         print("Final result: FAILURE")
 
     return TestRunReport(
-        codebase_version=codebase_version, configuration=test_config, report=report
+        codebase_version=codebase_version, configuration=config, report=report
     )
 
 
 def main() -> int:
     args = parseArgs()
 
-    if args.config is not None:
-        report = uss_test_executor(args.config)
-        if args.report is not None:
-            print(f"Writing report to {args.report}")
-            with open(args.report, "w") as f:
+    config = USSQualifierConfiguration.from_string(args.config).v1
+    if args.report:
+        if not config.artifacts:
+            config.artifacts = ArtifactsConfiguration(report_path=args.report)
+        else:
+            config.artifacts.report_path = args.report
+
+    if config.test_run:
+        report = execute_test_run(config.test_run)
+        if config.artifacts and config.artifacts.report_path:
+            print(f"Writing report to {config.artifacts.report_path}")
+            with open(config.artifacts.report_path, "w") as f:
                 json.dump(report, f, indent=2)
-    elif args.report is not None:
-        with open(args.report, "r") as f:
+    elif config.artifacts and config.artifacts.report_path:
+        with open(config.artifacts.report_path, "r") as f:
             report = ImplicitDict.parse(json.load(f), TestRunReport)
     else:
-        raise ValueError("No input provided; --config or --report must be specified")
+        raise ValueError(
+            "No input provided; test_run or artifacts.report_path must be specified in configuration"
+        )
 
-    if args.dot is not None:
-        print(f"Writing GraphViz dot source to {args.dot}")
-        with open(args.dot, "w") as f:
-            f.write(make_graph(report).source)
+    if config.artifacts:
+        if config.artifacts.graph:
+            print(f"Writing GraphViz dot source to {config.artifacts.graph.gv_path}")
+            with open(config.artifacts.graph.gv_path, "w") as f:
+                f.write(make_graph(report).source)
 
-    if args.tested_requirements is not None:
-        print(f"Writing tested requirements summary to {args.tested_requirements}")
-        with open(args.tested_requirements, "w") as f:
-            f.write(generate_tested_requirements(report, args.role_requirements))
+        if config.artifacts.tested_roles:
+            path = config.artifacts.tested_roles.report_path
+            print(f"Writing tested roles summary to {path}")
+            with open(path, "w") as f:
+                f.write(
+                    generate_tested_requirements(
+                        report, config.artifacts.tested_roles.roles
+                    )
+                )
 
     return os.EX_OK
 

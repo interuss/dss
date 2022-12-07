@@ -3,10 +3,8 @@ from typing import List, Dict, Union
 from implicitdict import ImplicitDict
 
 from monitoring.monitorlib.inspection import (
-    get_module_object_by_name,
     import_submodules,
 )
-from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.reports.report import (
     TestRunReport,
@@ -29,6 +27,7 @@ from monitoring.uss_qualifier.scenarios.documentation.definitions import (
 from monitoring.uss_qualifier.scenarios.documentation.parsing import (
     get_documentation_by_name,
 )
+from monitoring.uss_qualifier.suites.definitions import ActionType
 
 JSONPath = str
 
@@ -181,9 +180,11 @@ def _evaluate_requirements_in_suite(
 
 
 def evaluate_requirements(report: TestRunReport) -> List[TestedRequirement]:
+    if report.configuration.action.get_action_type() != ActionType.TestSuite:
+        raise NotImplementedError()
     import_submodules(scenarios_module)
     reqs = {}
-    _evaluate_requirements_in_suite(report.report, "$.report", reqs)
+    _evaluate_requirements_in_suite(report.report.test_suite, "$.report", reqs)
     sorted_ids = list(reqs.keys())
     sorted_ids.sort()
     return [reqs[k] for k in sorted_ids]

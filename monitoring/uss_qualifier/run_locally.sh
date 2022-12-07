@@ -48,7 +48,6 @@ fi
 # shellcheck disable=SC2086
 docker run ${docker_args} --name uss_qualifier \
   --rm \
-  -e QUALIFIER_OPTIONS="${QUALIFIER_OPTIONS}" \
   -e PYTHONBUFFERED=1 \
   -e AUTH_SPEC=${AUTH_SPEC} \
   -v "${REPORT_FILE}:/app/monitoring/uss_qualifier/report.json" \
@@ -58,9 +57,4 @@ docker run ${docker_args} --name uss_qualifier \
   -w /app/monitoring/uss_qualifier \
   interuss/monitoring \
   python main.py $QUALIFIER_OPTIONS \
-  --report report.json \
-  --tested_requirements tested_requirements.html \
-  --role_requirements uss1,uss2=astm.f3548.v21.scd \
-  --role_requirements uss1=astm.f3411.v19.service_provider \
-  --role_requirements uss2=astm.f3411.v19.display_provider \
-  --dot report.gv
+  --report report.json
