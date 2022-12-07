@@ -34,20 +34,29 @@ class SourceDataModelValidation(TestScenario):
         self.begin_test_case("ED-269 data model compliance")
         self.begin_test_step("Valid source")
 
-        with self.check("Valid JSON", [self.source_document.specification.url]):
-            data = json.loads(self.source_document.raw_document)
-
-        with self.check(
-            "Valid schema and values", [self.source_document.specification.url]
-        ) as check:
+        data=None
+        with self.check("Valid JSON", [self.source_document.specification.url]) as check:
             try:
-                ImplicitDict.parse(data, ED269SchemaFile)
-            except ValueError as e:
+                data = json.loads(self.source_document.raw_document)
+            except json.decoder.JSONDecodeError as e:
                 check.record_failed(
-                    summary="Invalid format error",
-                    severity=Severity.Critical,
+                    summary="Unable to deserialize the document as JSON",
+                    severity=Severity.High,
                     details=str(e),
                 )
+
+        if data:
+            with self.check(
+                "Valid schema and values", [self.source_document.specification.url]
+            ) as check:
+                try:
+                    ImplicitDict.parse(data, ED269SchemaFile)
+                except ValueError as e:
+                    check.record_failed(
+                        summary="Invalid format error",
+                        severity=Severity.High,
+                        details=str(e),
+                    )
 
         self.end_test_step()
         self.end_test_case()
