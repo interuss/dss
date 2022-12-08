@@ -36,7 +36,7 @@ The property to set is `resources.resource_declarations.flight_planners.specific
    ./run_locally_msgsigning.sh
     ```
 4. Prepare your USS to run with
-   1. dummy-oauth for getting tokens. Depending on your setup - localhost(http://localhost:8085/token) or dockerized (http://host.docker.internal:8085/token). The server has a GET and POST endpoint for getting tokens.
+   1. dummy-oauth for getting tokens. Depending on your setup - localhost(http://localhost:8085/token) or dockerized (http://host.docker.internal:8085/token).
    2. DSS - Depending on your setup - localhost(http://localhost:8082/dss) or dockerized (http://host.docker.internal:8082/dss)
 5. Run the uss_qualifier interface for your USS.
 6. Run uss_qualifier tests using script [run_locally.sh](monitoring/uss_qualifier/run_locally.sh) with config
