@@ -1,21 +1,21 @@
-# UFT Message Signing tests for SCD using Uss_Qualifier
+# UFT Message Signing tests for SCD using uss_qualifier
 
 UTM Field Test (UFT) has a requirement for USSes to sign their message requests
 and responses in the SCD flow using IATF certificates provided by FAA.
 
-This test suite helps to test the message signing by extending [suites.astm.utm.f3548_21](../../../astm/utm/f3548_21.yaml)
+This test suite helps to test the message signing by extending [suites.astm.utm.f3548_21](monitoring/uss_qualifier/suites/astm/utm/f3548_21.yaml)
 with scenarios that trigger reporting of message signing in the interactions with mock_uss.
 
 ## Test Setup
 
 The test setup includes running the following components on your local machine, as also shown in the [diagram](./InterUss_Test_Harness_With_Message_Signing.png)
 
-1. Uss Qualifier - This is the test driver that injects the operations for the SCD flow tests in USSes.
+1. uss_qualifier - This is the test driver that injects the operations for the SCD flow tests in USSes.
 2. Auth - This auth server provides access tokens and the public key for token validation for USS-to-USS and USS-to-DSS communication. In a local deployment of the test infrastructure, this can be supplied by an instance of dummy auth running as a dockerized container exposing port 8085, as per build/dev/run_locally.sh.
 3. DSS - This is a local DSS running in dockerized container, and is available at port 8082.
 4. Mock USS - This is a mock implementation of a USS running as a dockerized container at port 8074.
 5. USS-under-Test - This is the USS that needs to be tested.
-6. Uss Qualifier Interface. USSes need to develop an interface for their USS
+6. uss_qualifier interface. USSes need to develop an interface for their USS
 to interface with the test harness. Uss_Qualifer will inject operations through this interface. The spec to
 implement is - [Strategic Coordination Test Data Injection](https://github.com/interuss/automated_testing_interfaces/blob/fa3a5f544161c408f50255630a23b670c74a67d1/scd/v1/scd.yaml)
 
@@ -25,27 +25,27 @@ Note - As different USSes have different implementations, it could happen that y
 
 ## Steps to run the test
 
-1. Set your UssQualifier Interface implementation url in the [configuration file ](../../../../configurations/dev/faa/uft/local_message_signing.yaml )to run the UFT message signing tests. If personal changes are needed, copy this yaml file to /../../../configurations/personal/message_signing.yaml, and edit this file instead.
+1. Set your uss_qualifier Interface implementation url in the [configuration file ](monitoring/uss_qualifier/configurations/dev/faa/uft/local_message_signing.yaml )to run the UFT message signing tests. If personal changes are needed, copy this yaml file to monitoring/uss_qualifier/configurations/personal/message_signing.yaml, and edit this file instead.
 The property to set is `resources.resource_declarations.flight_planners.specification.flight_planners.participant_id`
-2. Run DSS and dummy-oauth using the script [run_locally.sh](../../../../../../build/dev/run_locally.sh)
+2. Run DSS and dummy-oauth using the script [run_locally.sh](build/dev/run_locally.sh)
     ```bash
     ./run_locally.sh
     ```
-3. Run mock_uss using the script [run_locally_msgsigning.sh](../../../../../mock_uss/run_locally_msgsigning.sh)
+3. Run mock_uss using the script [run_locally_msgsigning.sh](monitoring/mock_uss/run_locally_msgsigning.sh)
     ```bash
    ./run_locally_msgsigning.sh
     ```
 4. Prepare your USS to run with
    1. dummy-oauth for getting tokens. Depending on your setup - localhost(http://localhost:8085/token) or dockerized (http://host.docker.internal:8085/token). The server has a GET and POST endpoint for getting tokens.
    2. DSS - Depending on your setup - localhost(http://localhost:8082/dss) or dockerized (http://host.docker.internal:8082/dss)
-5. Run Uss Qualifier Interface for your USS.
-6. Run USS Qualifier tests using script [run_locally.sh](../../../../../uss_qualifier/run_locally.sh) with config
+5. Run the uss_qualifier interface for your USS.
+6. Run uss_qualifier tests using script [run_locally.sh](monitoring/uss_qualifier/run_locally.sh) with config
     ```bash
    ./run_locally.sh configurations.dev.faa.uft.local_message_signing
    ```
 
 ## Results
-SCD tests report is generated under [uss_qualifier](../../../../../uss_qualifier).
+SCD tests report is generated under [uss_qualifier](monitoring/uss_qualifier).
 The message signing results will be in the report created for the overall run - report.json - under the `report.messagesigning` section. This section will have an object titled `findings`, with two sections. The first section, `interactions`, is a list of all the interactions associated with each test. An example of an `interaction` is an incoming request from the USS under test, or an outgoing request to the USS under test. The second section, `issues`, will hold any message signing issues generated by the analysis of incoming requests and received responses. Some examples of issues that could be discovered are listed and detailed below. The current specification used for http message signing can be found [here](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11).  
 
 1. Missing message signing headers - The first step of message signing analysis is to check for the existence of all of the required message signing headers. These headers are `content-digest`, `utm-message-signature`, `utm-message-signature-input`, and `x-utm-jws-header`. If any of these headers are missing in incoming requests to the mock_uss, or are missing in received responses from the USS under test, then that will generate an issue.
@@ -65,7 +65,7 @@ No issues indicate the USS-under-test message-signed all its requests and respon
 
 ### Negative tests -
 Replace the private/public keys with invalid key pair by setting the `USE_VALID_KEY_PAIR` in `run_locally_msgsigning.sh` to "false". This will set the keypair to be `mock_priv.pem`/`mock_pub.der`. Using this keypair will lead to invalid signatures, and the `mock_pub.der` will not pass SCVP validation.
-The USS-under-test will respond with 403 to all requests from mock_uss. The Uss Qualifier tests will not pass.
+The USS-under-test will respond with 403 to all requests from mock_uss. The uss_qualifier tests will not pass.
 The message signing section of the report would show `403` in interactions with mock_uss.
 
 
