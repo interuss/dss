@@ -8,7 +8,7 @@ DSS="http://host.docker.internal:8082"
 PUBLIC_KEY="/var/test-certs/auth2.pem"
 AUD=${MOCK_USS_TOKEN_AUDIENCE:-localhost,host.docker.internal}
 
-PORT=8074
+PORT=8077
 BASE_URL="http://${MOCK_USS_TOKEN_AUDIENCE:-host.docker.internal}:${PORT}"
 
 if [ "$CI" == "true" ]; then
