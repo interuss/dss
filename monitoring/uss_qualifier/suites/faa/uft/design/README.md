@@ -8,7 +8,7 @@ with scenarios that trigger reporting of message signing in the interactions wit
 
 ## Test Setup
 
-The test setup includes running the following components on your local machine, as also shown in the [diagram](./InterUss_Test_Harness_With_Message_Signing.png)
+The test setup includes running the following components, as also shown in the [diagram](./InterUss_Test_Harness_With_Message_Signing.png)
 
 1. uss_qualifier - This is the test driver that injects the operations for the SCD flow tests in USSes.
 2. Auth - This auth server provides access tokens and the public key for token validation for USS-to-USS and USS-to-DSS communication. In a local deployment of the test infrastructure, this can be supplied by an instance of dummy auth running as a dockerized container exposing port 8085, as per build/dev/run_locally.sh.
@@ -36,8 +36,8 @@ The property to set is `resources.resource_declarations.flight_planners.specific
    ./run_locally_msgsigning.sh
     ```
 4. Prepare your USS to run with
-   1. dummy-oauth for getting tokens. Depending on your setup - localhost(http://localhost:8085/token) or dockerized (http://host.docker.internal:8085/token).
-   2. DSS - Depending on your setup - localhost(http://localhost:8082/dss) or dockerized (http://host.docker.internal:8082/dss)
+   1. The auth server used by the UTM ecosystem under test (dummy auth at http://localhost:8085/token or http://host.docker.internal:8085/token in a local deployment of the test infrastructure).
+   2. A DSS instance supporting SCD in the UTM ecosystem under test (DSS at http://localhost:8082 or http://host.docker.internal:8085 in a local deployment of the test infrastructure).
 5. Run the uss_qualifier interface for your USS.
 6. Run uss_qualifier tests using script [run_locally.sh](monitoring/uss_qualifier/run_locally.sh) with config
     ```bash
@@ -58,7 +58,6 @@ A valid set of private/public keys are provided for message signing analysis und
 
 
 A USS should pass all the uss_qualifier tests in this suite.
-As well as the message_signing report should have no issues reported. A USS will provide both of these reports.
 The message_signing report includes interactions and issues between the mock_uss and the USS-under-test.
 No issues indicate the USS-under-test message-signed all its requests and responses.
 
