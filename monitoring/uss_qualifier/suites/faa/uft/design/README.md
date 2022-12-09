@@ -46,12 +46,7 @@ The property to set is `resources.resource_declarations.flight_planners.specific
 
 ## Results
 SCD tests report is generated under [uss_qualifier](monitoring/uss_qualifier).
-The message signing results will be in the report created for the overall run - report.json. Failed message signing checks will show up as `FailedChecks` within the `FinalizeMessageSigningReport` test scenario. The current specification used for http message signing checks can be found [here](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-11).  
-
-1. Missing message signing headers - The first step of message signing analysis is to check for the existence of all of the required message signing headers. These headers are `content-digest`, `utm-message-signature`, `utm-message-signature-input`, and `x-utm-jws-header`. If any of these headers are missing in incoming requests to the mock_uss, or are missing in received responses from the USS under test, then that will generate an issue.
-2. Invalid content digests - Once all message signing headers are accounted for, the sha-512 hash on either the request/response body (depending on what is being analyzed), is taken, and this value is compared to the one received in the `content-digest` header. If these values differ, this will generate an issue showing the difference in the values. 
-3. Invalid signature - After the content-digest check is performed, the `utm-message-signature` is analyzed to ensure that it is a valid signature. To do this check, the signature base is created, and the public key served in the `x5u` field within the `x-utm-jws-header` is retreived. Using the value in the `utm-message-signature` header field, the public key, and the recreated signature base, it is determined whether or not the signature is valid.
-
+The message signing results will be in the report created for the overall run - report.json. Failed message signing checks will show up as `FailedChecks` within the `FinalizeMessageSigningReport` test scenario.  
 
 ### Positive tests -
 A valid set of private/public keys are provided for message signing analysis under the [monitioring/monitorlib/messagesigning/keys] folder. The valid key pair, `mock_faa_priv.pem`/`mock_faa_pub.der`, is used by default. The public key is served under the mock_uss endpoint `/mock/scd/.well-known/uas-traffic-management/mock_pub.der`, and can be retreived by the USS under test in order for it to validate the mock_uss responses. This public key was provided by the FAA and will pass SCVP validation. To ensure that this valid keypair is used, make sure that the `USE_VALID_KEY_PAIR` in `run_locally_msgsigning.sh` is set to "true". 
