@@ -26,7 +26,6 @@ docker run ${docker_args} --name mock_uss_scdsc \
   -e MOCK_USS_TOKEN_AUDIENCE="${AUD}" \
   -e MOCK_USS_BASE_URL="${BASE_URL}" \
   -e MOCK_USS_SERVICES="scdsc,msgsigning" \
-  -e USE_VALID_KEY_PAIR="true" \
   -p ${PORT}:5000 \
   -v "${SCRIPT_DIR}/../../build/test-certs:/var/test-certs:ro" \
   "$@" \

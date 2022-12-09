@@ -49,17 +49,15 @@ SCD tests report is generated under [uss_qualifier](monitoring/uss_qualifier).
 The message signing results will be in the report created for the overall run - report.json. Failed message signing checks will show up as `FailedChecks` within the `FinalizeMessageSigningReport` test scenario.  
 
 ### Positive tests -
-A valid set of private/public keys are provided for message signing analysis under the [monitioring/monitorlib/messagesigning/keys] folder. The valid key pair, `mock_faa_priv.pem`/`mock_faa_pub.der`, is used by default. The public key is served under the mock_uss endpoint `/mock/scd/.well-known/uas-traffic-management/mock_pub.der`, and can be retreived by the USS under test in order for it to validate the mock_uss responses. This public key was provided by the FAA and will pass SCVP validation. To ensure that this valid keypair is used, make sure that the `USE_VALID_KEY_PAIR` in `run_locally_msgsigning.sh` is set to "true". 
+A set of private/public keys are provided for default use by mock_uss in message signing analysis under the [monitioring/mock_uss/messagesigning/keys] folder. This key pair, `mock_faa_priv.pem`/`mock_faa_pub.der`, is used by mock_uss by default. The public key is served under the mock_uss endpoint `/mock/msgsigning/.well-known/uas-traffic-management/pub.der`, and can be retrieved by the USS under test in order for it to validate the mock_uss responses. This public key was provided by the FAA and will pass SCVP validation for the UFT activity. 
 
 
-A USS should pass all the uss_qualifier tests in this suite.
-The message_signing report includes interactions and issues between the mock_uss and the USS-under-test.
-No issues indicate the USS-under-test message-signed all its requests and responses.
+A USS should pass all the uss_qualifier tests in this suite. No failed checks indicate the USS-under-test message-signed all its requests and responses.
 
 
 ### Negative tests -
-Replace the private/public keys with invalid key pair by setting the `USE_VALID_KEY_PAIR` in `run_locally_msgsigning.sh` to "false". This will set the keypair to be `mock_priv.pem`/`mock_pub.der`. Using this keypair will lead to invalid signatures, and the `mock_pub.der` will not pass SCVP validation.
-The USS-under-test will respond with 403 to all requests from mock_uss. The uss_qualifier tests will not pass.
+In the future, this test suite will be expanded to instruct mock_uss to replace the private/public keys with an invalid key pair by calling the appropriate endpoint. This will set the keypair to be `mock_priv.pem`/`mock_pub.der`. Using this keypair will lead to invalid signatures on mock_uss's interactions, and the `mock_pub.der` will not pass SCVP validation.
+The USS-under-test should respond with 403 to all requests from mock_uss. The Uss Qualifier tests will require this to happen and only pass if the correct behavior is demonstrated.
 The message signing section of the report would show `403` in interactions with mock_uss.
 
 
