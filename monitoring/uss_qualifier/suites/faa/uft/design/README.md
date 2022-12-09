@@ -12,12 +12,12 @@ The test setup includes running the following components, as also shown in the [
 
 1. uss_qualifier - This is the test driver that injects the operations for the SCD flow tests in USSes.
 2. Auth - This auth server provides access tokens and the public key for token validation for USS-to-USS and USS-to-DSS communication. In a local deployment of the test infrastructure, this can be supplied by an instance of dummy auth running as a dockerized container exposing port 8085, as per build/dev/run_locally.sh.
-3. DSS - This is a local DSS running in dockerized container, and is available at port 8082.
-4. Mock USS - This is a mock implementation of a USS running as a dockerized container at port 8074.
+3.  DSS - This is a DSS instance supporting SCD in the UTM environment defined by the auth server.  In a local deployment of the test infrastructure, this can be supplied by the local DSS instance running as a dockerized container exposing port 8082, as per build/dev/run_locally.sh.
+4. Mock USS - This is an instance of the InterUSS monitoring tool mock_uss with scd and messagesigning capabilities enabled.  In a local deployment of the test infrastructure, this can be supplied by a local instance of mock_uss running as a dockerized container exposing port 8077, as per monitoring/mock_uss/run_locally_msgsigning.sh.
 5. USS-under-Test - This is the USS that needs to be tested.
 6. uss_qualifier interface. USSes need to develop an interface for their USS
 to interface with the test harness. Uss_Qualifer will inject operations through this interface. The spec to
-implement is - [Strategic Coordination Test Data Injection](https://github.com/interuss/automated_testing_interfaces/blob/fa3a5f544161c408f50255630a23b670c74a67d1/scd/v1/scd.yaml)
+implement is - [Strategic Coordination Test Data Injection](../../../../../../interfaces/automated_testing/scd/v1/scd.yaml)
 
 The main idea behind the tests is that mock_uss will consume and validate all the requests and responses from USS-under-test.
 
