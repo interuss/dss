@@ -2,6 +2,9 @@
 
 MOCK_USS_CONTAINER="${1:?The mock_uss container name must be specified (e.g., wait_for_mock_uss.sh mock_uss_scdsc)}"
 
+n_delays=0
+max_delays=20
+
 # Check that container is running
 last_message=""
 while true; do
@@ -16,6 +19,12 @@ while true; do
     last_message="${new_message}"
   fi
   sleep 3
+  ((n_delays=n_delays+1))
+  if [ $n_delays -gt $max_delays ]; then
+    echo ""
+    echo "Mock USS container ${MOCK_USS_CONTAINER} did not start in a reasonable amount of time"
+    exit 1
+  fi
 done
 if [ -n "${last_message}" ]; then
   echo ""
@@ -35,6 +44,12 @@ while true; do
         last_message="${new_message}"
       fi
       sleep 3
+      ((n_delays=n_delays+1))
+      if [ $n_delays -gt $max_delays ]; then
+        echo ""
+        echo "Mock USS container ${MOCK_USS_CONTAINER} did not become healthy in a reasonable amount of time"
+        exit 1
+      fi
     fi
 done
 if [ -n "${last_message}" ]; then
