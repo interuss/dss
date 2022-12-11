@@ -13,6 +13,7 @@ class FlightRecord(ImplicitDict):
     op_intent_injection: scd_injection_api.OperationalIntentTestInjection
     flight_authorisation: scd_injection_api.FlightAuthorisationData
     op_intent_reference: scd.OperationalIntentReference
+    locked: bool = False
 
 
 class Database(ImplicitDict):

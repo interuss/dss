@@ -6,7 +6,6 @@ from monitoring.uss_qualifier.fileio import load_dict_with_references
 from monitoring.uss_qualifier.requirements.documentation import RequirementSetID
 from monitoring.uss_qualifier.resources.definitions import ResourceCollection
 from monitoring.uss_qualifier.suites.definitions import (
-    TestSuiteDeclaration,
     TestSuiteActionDeclaration,
 )
 

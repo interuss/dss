@@ -99,6 +99,25 @@ f3548:
       participant_id: uss1
       base_url: http://host.docker.internal:8082
 
+f3548_single_scenario:
+  $ref: '#/f3548'
+  uss1:
+    resource_type: resources.flight_planning.FlightPlannerResource
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      flight_planner:
+        participant_id: uss1
+        injection_base_url: http://host.docker.internal:8074/scdsc
+  uss2:
+    resource_type: resources.flight_planning.FlightPlannerResource
+    dependencies:
+      auth_adapter: utm_auth
+    specification:
+      flight_planner:
+        participant_id: uss2
+        injection_base_url: http://host.docker.internal:8074/scdsc
+
 common:
   utm_auth:
     resource_type: resources.communications.AuthAdapterResource

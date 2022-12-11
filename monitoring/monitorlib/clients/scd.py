@@ -41,15 +41,29 @@ def create_operational_intent_reference(
     id: str,
     req: scd.PutOperationalIntentReferenceParameters,
 ) -> scd.ChangeOperationalIntentReferenceResponse:
-    resp = utm_client.put(
-        "/dss/v1/operational_intent_references/{}".format(id),
-        json=req,
-        scope=scd.SCOPE_SC,
-    )
+    url = "/dss/v1/operational_intent_references/{}".format(id)
+    resp = utm_client.put(url, json=req, scope=scd.SCOPE_SC)
     if resp.status_code != 200 and resp.status_code != 201:
         raise OperationError(
-            "createOperationalIntentReference failed {}:\n{}".format(
-                resp.status_code, resp.content.decode("utf-8")
+            "createOperationalIntentReference failed {} to {}:\n{}".format(
+                resp.status_code, url, resp.content.decode("utf-8")
+            )
+        )
+    return ImplicitDict.parse(resp.json(), scd.ChangeOperationalIntentReferenceResponse)
+
+
+def update_operational_intent_reference(
+    utm_client: UTMClientSession,
+    id: str,
+    ovn: str,
+    req: scd.PutOperationalIntentReferenceParameters,
+) -> scd.ChangeOperationalIntentReferenceResponse:
+    url = "/dss/v1/operational_intent_references/{}/{}".format(id, ovn)
+    resp = utm_client.put(url, json=req, scope=scd.SCOPE_SC)
+    if resp.status_code != 200 and resp.status_code != 201:
+        raise OperationError(
+            "updateOperationalIntentReference failed {} to {}:\n{}".format(
+                resp.status_code, url, resp.content.decode("utf-8")
             )
         )
     return ImplicitDict.parse(resp.json(), scd.ChangeOperationalIntentReferenceResponse)

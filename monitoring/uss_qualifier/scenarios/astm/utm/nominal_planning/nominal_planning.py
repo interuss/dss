@@ -93,18 +93,17 @@ class NominalPlanning(TestScenario):
         ):
             return False
 
-        if not clear_area(
+        clear_area(
             self,
             "Area clearing",
             [self.first_flight, self.conflicting_flight],
             [self.uss1, self.uss2],
-        ):
-            return False
+        )
 
         return True
 
     def _plan_first_flight(self) -> bool:
-        resp = inject_successful_flight_intent(
+        resp, _ = inject_successful_flight_intent(
             self, "Inject flight intent", self.uss1, self.first_flight
         )
         if resp is None:

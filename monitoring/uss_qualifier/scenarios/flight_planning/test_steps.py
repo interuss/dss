@@ -26,14 +26,12 @@ def clear_area(
     test_step: str,
     flight_intents: List[InjectFlightRequest],
     flight_planners: List[FlightPlanner],
-) -> bool:
+) -> None:
     """Perform a test step to clear the area that will be used in the scenario.
 
     This function assumes:
     * `scenario` is ready to execute a test step
     * "Area cleared successfully" check declared for specified test step in `scenario`'s documentation
-
-    Returns: False if the scenario should stop, True otherwise.
     """
     scenario.begin_test_step(test_step)
 
@@ -53,7 +51,6 @@ def clear_area(
                     details=f"Status code {query.status_code}",
                     query_timestamps=[query.request.timestamp],
                 )
-                return False
             if not resp.outcome.success:
                 check.record_failed(
                     summary="Area could not be cleared",
@@ -61,10 +58,8 @@ def clear_area(
                     details=f'Participant indicated "{resp.outcome.message}"',
                     query_timestamps=[query.request.timestamp],
                 )
-                return False
 
     scenario.end_test_step()
-    return True
 
 
 OneOrMoreFlightPlanners = Union[FlightPlanner, List[FlightPlanner]]
@@ -97,9 +92,6 @@ def check_capabilities(
         this capabilities, a "Prerequisite capabilities" note will be added and
         the scenario will be indicated to stop, but no failed check will be
         created.
-
-    Returns:
-      False if the scenario should stop, True otherwise.
     """
     scenario.begin_test_step(test_step)
 
@@ -208,13 +200,15 @@ def inject_successful_flight_intent(
     test_step: str,
     flight_planner: FlightPlanner,
     flight_intent: InjectFlightRequest,
-) -> Optional[InjectFlightResponse]:
+) -> Tuple[Optional[InjectFlightResponse], Optional[str]]:
     """Inject a flight intent that should result in success.
 
     This function implements the test step described in
     inject_successful_flight_intent.md.
 
-    Returns: None if a check failed, otherwise the injection response.
+    Returns:
+      * None if a check failed, otherwise the injection response.
+      * None if a check failed, otherwise the ID of the injected flight
     """
     scenario.begin_test_step(test_step)
     resp, query, flight_id = flight_planner.request_flight(flight_intent)
@@ -229,7 +223,7 @@ def inject_successful_flight_intent(
                 details=f'{flight_planner.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
             )
-            return None
+            return None, None
         if resp.result == InjectFlightResult.Rejected:
             check.record_failed(
                 summary="Valid flight rejected",
@@ -237,10 +231,58 @@ def inject_successful_flight_intent(
                 details=f'{flight_planner.participant_id} indicated Rejected: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
             )
-            return None
+            return None, None
         if resp.result == InjectFlightResult.Failed:
             check.record_failed(
                 summary="Failed to create flight",
+                severity=Severity.High,
+                details=f'{flight_planner.participant_id} Failed to process the user flight intent: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None, None
+    scenario.end_test_step()
+    return resp, flight_id
+
+
+def activate_valid_flight_intent(
+    scenario: TestScenarioType,
+    test_step: str,
+    flight_planner: FlightPlanner,
+    flight_id: str,
+    flight_intent: InjectFlightRequest,
+) -> Optional[InjectFlightResponse]:
+    """Activate a flight intent that should result in success.
+
+    This function implements the test step described in
+    successfully_activate_flight.md.
+
+    Returns: None if a check failed, otherwise the injection response.
+    """
+    scenario.begin_test_step(test_step)
+    resp, query, flight_id = flight_planner.request_flight(flight_intent, flight_id)
+    scenario.record_query(query)
+    with scenario.check(
+        "Successful activation", [flight_planner.participant_id]
+    ) as check:
+        if resp.result == InjectFlightResult.ConflictWithFlight:
+            check.record_failed(
+                summary="Conflict-free flight not activated due to conflict",
+                severity=Severity.High,
+                details=f'{flight_planner.participant_id} indicated ConflictWithFlight: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None
+        if resp.result == InjectFlightResult.Rejected:
+            check.record_failed(
+                summary="Valid flight activation rejected",
+                severity=Severity.High,
+                details=f'{flight_planner.participant_id} indicated Rejected: "{resp.notes}"',
+                query_timestamps=[query.request.timestamp],
+            )
+            return None
+        if resp.result == InjectFlightResult.Failed:
+            check.record_failed(
+                summary="Failed to activate flight",
                 severity=Severity.High,
                 details=f'{flight_planner.participant_id} Failed to process the user flight intent: "{resp.notes}"',
                 query_timestamps=[query.request.timestamp],
