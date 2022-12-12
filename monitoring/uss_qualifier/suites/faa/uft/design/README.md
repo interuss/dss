@@ -25,7 +25,9 @@ Note - As different USSes have different implementations, it could happen that y
 
 ## Steps to run the test
 
-1. Set your uss_qualifier Interface implementation url in the [configuration file ](monitoring/uss_qualifier/configurations/dev/faa/uft/local_message_signing.yaml )to run the UFT message signing tests. If personal changes are needed, copy this yaml file to monitoring/uss_qualifier/configurations/personal/message_signing.yaml, and edit this file instead.
+1. Set your uss_qualifier Interface implementation url in the [configuration file ](../../../../configurations/dev/faa/uft/local_message_signing.yaml) to run 
+the UFT message signing tests. If personal changes are needed, copy this yaml
+file to a [personal configuration file ](../../../../configurations/personal/message_signing.yaml), and edit this file instead.
 The property to set is `resources.resource_declarations.flight_planners.specification.flight_planners.participant_id`
 2. Run DSS and dummy-oauth using the script [run_locally.sh](build/dev/run_locally.sh)
     ```bash
