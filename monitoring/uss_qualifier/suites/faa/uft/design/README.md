@@ -29,11 +29,11 @@ Note - As different USSes have different implementations, it could happen that y
 The property to set is `resources.resource_declarations.flight_planners.specification.flight_planners.participant_id`
 2. Run DSS and dummy-oauth using the script [run_locally.sh](build/dev/run_locally.sh)
     ```bash
-    ./run_locally.sh
+    build/dev/run_locally.sh
     ```
-3. Run mock_uss using the script [run_locally_msgsigning.sh](monitoring/mock_uss/run_locally_msgsigning.sh)
+3. Run mock_uss using the script [run_locally_msgsigning.sh]
     ```bash
-   ./run_locally_msgsigning.sh
+   monitoring/mock_uss/run_locally_msgsigning.sh
     ```
 4. Prepare your USS to run with
    1. The auth server used by the UTM ecosystem under test (dummy auth at http://localhost:8085/token or http://host.docker.internal:8085/token in a local deployment of the test infrastructure).
@@ -41,7 +41,7 @@ The property to set is `resources.resource_declarations.flight_planners.specific
 5. Run the uss_qualifier interface for your USS.
 6. Run uss_qualifier tests using script [run_locally.sh](monitoring/uss_qualifier/run_locally.sh) with config
     ```bash
-   ./run_locally.sh configurations.dev.faa.uft.local_message_signing
+   monitoring/uss_qualifier/run_locally.sh configurations.dev.faa.uft.local_message_signing
    ```
 
 ## Results
