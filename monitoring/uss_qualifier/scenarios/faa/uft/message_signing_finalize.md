@@ -25,6 +25,6 @@ The first step of message signing analysis is to check for the existence of all 
 
 The sha-512 hash on either the request/response body (depending on what is being analyzed), is taken, and this value is compared to the one received in the `content-digest` header. If these values differ, this will generate an issue showing the difference in the values. 
 
-#### Invalid signature
+#### Valid signature check
 
 The `utm-message-signature` is analyzed to ensure that it is a valid signature. To do this check, the signature base is created, and the public key served in the `x5u` field within the `x-utm-jws-header` is retreived. Using the value in the `utm-message-signature` header field, the public key, and the recreated signature base, it is determined whether or not the signature is valid.
