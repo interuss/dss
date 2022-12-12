@@ -17,9 +17,13 @@ with higher priority.
 
 FlightIntentsResource that provides at least 2 flight intents.  The first flight intent will be planned normally and then the second flight will be planned on top of the first flight.  Therefore, the second flight must intersect the first flight, and the second flight must have higher priority than the first flight.
 
-### flight_planners
+### uss1
 
-FlightPlannersResource that provides exactly 2 flight planners (USSs).  The first flight planner will successfully plan the first flight.  The second flight planner successfully plan the second, higher-priority flight over the first one.
+FlightPlannerResource that will successfully plan the first flight.
+
+### uss2
+
+FlightPlannerResouce that will successfully plan the second, higher-priority flight over the first one.
 
 ### dss
 
@@ -37,7 +41,7 @@ If either USS does not respond appropriately to the endpoint queried to determin
 
 #### Support BasicStrategicConflictDetection check
 
-This check will fail if the first flight planner does not support BasicStrategicConflictDetection per **astm.f3548.v21.GEN0310** as the USS does not support the InterUSS implementation of that requirement.  If the second flight planner does not support HighPriorityFlights, this scenario will end normally at this point.
+This check will fail if the first flight planner does not support BasicStrategicConflictDetection per **[astm.f3548.v21.GEN0310](../../../../requirements/astm/f3548/v21.md)** as the USS does not support the InterUSS implementation of that requirement.  If the second flight planner does not support HighPriorityFlights, this scenario will end normally at this point.
 
 ### Area clearing test step
 
@@ -45,7 +49,7 @@ Both USSs are requested to remove all flights from the area under test.
 
 #### Area cleared successfully check
 
-**interuss.automated_testing.flight_planning.ClearArea**
+**[interuss.automated_testing.flight_planning.ClearArea](../../../../requirements/interuss/automated_testing/flight_planning.md)**
 
 ## Plan first flight test case
 
@@ -77,10 +81,10 @@ In this step, the first USS fails to activate the flight it previously created.
 
 TODO: Complete this test case
 
-**astm.f3548.v21.SCD0015**
+**[astm.f3548.v21.SCD0015](../../../../requirements/astm/f3548/v21.md)**
 
 ## Cleanup
 
 ### Successful flight deletion check
 
-**interuss.automated_testing.flight_planning.DeleteFlightSuccess**
+**[interuss.automated_testing.flight_planning.DeleteFlightSuccess](../../../../requirements/interuss/automated_testing/flight_planning.md)**

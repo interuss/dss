@@ -83,7 +83,7 @@ class TestSuiteActionDeclaration(ImplicitDict):
     action_generator: Optional[ActionGeneratorDefinition]
     """If this field is populated, declaration of a generator that will produce 0 or more test suite actions"""
 
-    on_failure: ReactionToFailure
+    on_failure: ReactionToFailure = ReactionToFailure.Continue
     """What to do if this action fails"""
 
     def get_action_type(self) -> ActionType:

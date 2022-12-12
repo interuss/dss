@@ -1,3 +1,4 @@
+USER_GROUP := $(shell id -u):$(shell id -g)
 GOPATH := $(shell go env GOPATH 2> /dev/null)
 GOBIN := $(GOPATH)/bin
 
@@ -9,7 +10,6 @@ COMMIT := $(shell scripts/git/commit.sh)
 # (ie v0.0.1-g6a64c20, see RELEASE.md for more details).
 DSS_VERSION_TAG := $(shell scripts/git/version.sh dss)
 
-GENERATOR_TAG := generator:${DSS_VERSION_TAG}
 
 # Build and version information is baked into the executable itself.
 BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-%m-%d.%H:%M:%S') -X github.com/interuss/dss/pkg/build.commit=$(COMMIT) -X github.com/interuss/dss/pkg/build.host=$(shell hostname)
@@ -34,135 +34,61 @@ go.mod:
 
 .PHONY: format
 format:
-	clang-format -style=file -i pkg/api/v1/ridpbv1/rid.proto
-	clang-format -style=file -i pkg/api/v2/ridpbv2/rid.proto
-	clang-format -style=file -i pkg/api/v1/scdpb/scd.proto
-	clang-format -style=file -i pkg/api/v1/auxpb/aux_service.proto
-	cd monitoring/uss_qualifier && make format
-	cd monitoring/mock_uss && make format
-	cd monitoring/monitorlib && make format
+	cd monitoring && make format
 	gofmt -s -w .
 
 .PHONY: lint
-lint: go_lint shell_lint
-	cd monitoring/uss_qualifier && make lint
+lint: python-lint shell-lint go-lint
 
-.PHONY: go_lint
-go_lint:
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace -v -E gofmt,bodyclose,rowserrcheck,misspell,golint -D staticcheck,vet
-	docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.26.0 golangci-lint run --timeout 5m -v --disable-all --skip-dirs /dss/build/workspace -E staticcheck --skip-dirs '^cmds/http-gateway,^pkg/logging'
+.PHONY: check-hygiene
+check-hygiene: python-lint hygiene validate-uss-qualifier-docs shell-lint go-lint
 
-.PHONY: shell_lint
-shell_lint:
-	find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+.PHONY: python-lint
+python-lint:
+	cd monitoring && make python-lint
 
+.PHONY: hygiene
+hygiene:
+	test/repo_hygiene/repo_hygiene.sh
 
+.PHONY: validate-uss-qualifier-docs
+validate-uss-qualifier-docs:
+	cd monitoring/uss_qualifier && make validate-docs
 
-pkg/api/v1/ridpbv1/rid.pb.go: pkg/api/v1/ridpbv1/rid.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I/src \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
+.PHONY: shell-lint
+shell-lint:
+	echo "===== Checking DSS shell lint except monitoring =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | grep -v '^./monitoring' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+	cd monitoring && make shell-lint
 
-pkg/api/v1/ridpbv1/rid.pb.gw.go: pkg/api/v1/ridpbv1/rid.proto pkg/api/v1/ridpbv1/rid.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
+.PHONY: go-lint
+go-lint:
+	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.50.1 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace --skip-files '.*\.gen\.go' -v -E gofmt,bodyclose,rowserrcheck,misspell,golint,staticcheck,vet
 
-pkg/api/v1/ridpbv1/rid.proto: generator
-	[ -d $@ ] || mkdir -p pkg/api/v1/ridpbv1
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/rid/v1/remoteid/augmented.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package ridpbv1 > $@
-
-pkg/api/v2/ridpbv2/rid.pb.go: pkg/api/v2/ridpbv2/rid.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I/src \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v2/ridpbv2/rid.pb.gw.go: pkg/api/v2/ridpbv2/rid.proto pkg/api/v2/ridpbv2/rid.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v2/ridpbv2/rid.proto: interfaces/rid_v2_adjusted.yaml generator
-	[ -d $@ ] || mkdir -p pkg/api/v2/ridpbv2
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/rid_v2_adjusted.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package ridpbv2 > $@
-
-interfaces/rid_v2_adjusted.yaml: interfaces/rid/v2/remoteid/canonical.yaml
-	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/rid/v2/remoteid/canonical.yaml ./interfaces/rid_v2_adjusted.yaml --adjustment_profile rid --path_prefix /rid/v2
-
-pkg/api/v1/auxpb/aux_service.pb.go: pkg/api/v1/auxpb/aux_service.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v1/auxpb/aux_service.pb.gw.go: pkg/api/v1/auxpb/aux_service.proto pkg/api/v1/auxpb/aux_service.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-pkg/api/v1/scdpb/scd.pb.go: pkg/api/v1/scdpb/scd.proto generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--go_out=plugins=grpc:. $<
-
-pkg/api/v1/scdpb/scd.pb.gw.go: pkg/api/v1/scdpb/scd.proto pkg/api/v1/scdpb/scd.pb.go generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) protoc \
-		-I/usr/include \
-		-I. \
-		-I/go/src \
-		-I/go/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.14.3/third_party/googleapis \
-		--grpc-gateway_out=logtostderr=true,allow_delete_body=true:. $<
-
-interfaces/scd_adjusted.yaml: interfaces/astm-utm/Protocol/utm.yaml
-	./interfaces/adjuster/adjust_openapi_yaml.sh ./interfaces/astm-utm/Protocol/utm.yaml ./interfaces/scd_adjusted.yaml --adjustment_profile scd
-
-pkg/api/v1/scdpb/scd.proto: interfaces/scd_adjusted.yaml generator
-	docker run -v$(CURDIR):/src:delegated -w /src $(GENERATOR_TAG) openapi2proto \
-		-spec interfaces/scd_adjusted.yaml -annotate \
-		-tag dss \
-		-indent 2 \
-		-package scdpb > $@
-
-generator:
-	docker build --rm -t $(GENERATOR_TAG) build/generator
-
-.PHONY: protos
-protos: pkg/api/v1/auxpb/aux_service.pb.gw.go pkg/api/v1/ridpbv1/rid.pb.gw.go pkg/api/v1/scdpb/scd.pb.gw.go pkg/api/v2/ridpbv2/rid.pb.gw.go format
+# This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: hygiene-tests
+hygiene-tests: python-lint check-hygiene validate-uss-qualifier-docs shell-lint go-lint
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
-apis: example_apis dummy_oauth_api
+apis: example_apis dummy_oauth_api dss_apis
 
 openapi-to-go-server:
 	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
+
+dss_apis: openapi-to-go-server
+	docker container run -u "$(USER_GROUP)" -it \
+      	-v "$(CURDIR)/interfaces/aux_/aux_.yaml:/resources/auxv1.yaml" \
+      	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/scdv1.yaml" \
+      	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/ridv1.yaml" \
+        -v "$(CURDIR)/interfaces/rid/v2/remoteid/updated.yaml:/resources/ridv2.yaml" \
+	    -v "$(CURDIR)/:/resources/src" \
+			interuss/openapi-to-go-server \
+		  		--api_import github.com/interuss/dss/pkg/api \
+    	      	--api /resources/auxv1.yaml#dss \
+    	      	--api /resources/scdv1.yaml#dss \
+				--api /resources/ridv1.yaml#dss \
+              	--api /resources/ridv2.yaml#dss@ridv2/rid/v2 \
+    	      	--api_folder /resources/src/pkg/api
 
 example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
@@ -177,44 +103,88 @@ dummy_oauth_api: openapi-to-go-server
 			--api_folder /resources/output/api
 # ---
 
-.PHONY: install-staticcheck
-install-staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck
+.PHONY: check-dss
+check-dss: evaluate-tanka test-go-units test-go-units-crdb build-dss build-monitoring test-e2e
 
-.PHONY: staticcheck
-staticcheck: install-staticcheck
-	staticcheck -go 1.12 ./...
-
-.PHONY: test
-test:
+.PHONY: test-go-units
+test-go-units:
 	go test -ldflags "$(LDFLAGS)" -count=1 -v ./pkg/... ./cmds/...
 
-.PHONY: test-cockroach
-test-cockroach: cleanup-test-cockroach
-	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.7 start-single-node --insecure > /dev/null
+.PHONY: test-go-units-crdb
+test-go-units-crdb: cleanup-test-go-units-crdb
+	@docker run -d --name dss-crdb-for-testing -p 26257:26257 -p 8080:8080  cockroachdb/cockroach:v21.2.7 start-single-node --listen-addr=0.0.0.0 --insecure > /dev/null
+	@until [ -n "`docker logs dss-crdb-for-testing | grep 'nodeID'`" ]; do echo "Waiting for CRDB to be ready"; sleep 3; done;
 	go run ./cmds/db-manager/main.go --schemas_dir ./build/deploy/db_schemas/rid --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
-	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd --schemas_dir db-schemas/scd
-	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid --schemas_dir db-schemas/rid
+	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
+	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
-.PHONY: cleanup-test-cockroach
-cleanup-test-cockroach:
+.PHONY: cleanup-test-go-units-crdb
+cleanup-test-go-units-crdb:
 	@docker stop dss-crdb-for-testing > /dev/null 2>&1 || true
 	@docker rm dss-crdb-for-testing > /dev/null 2>&1 || true
 
-.PHONY: test-e2e
-test-e2e:
-	test/docker_e2e.sh
+.PHONY: build-dss
+build-dss:
+	build/dev/run_locally.sh build
 
-tag: VERSION = v$(MAJOR).$(MINOR).$(PATCH)
+.PHONY: build-monitoring
+build-monitoring:
+	cd monitoring && make build
+
+.PHONY: test-e2e
+test-e2e: down-locally build-dss build-monitoring start-locally probe-locally collect-local-logs down-locally
 
 tag:
-	scripts/tag.sh $(UPSTREAM_OWNER)/dss/$(VERSION)
+	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
 
+.PHONY: start-locally
 start-locally:
-	build/dev/run_locally.sh
+	build/dev/run_locally.sh up -d
+	build/dev/wait_for_local_dss.sh
 
+.PHONY: probe-locally
+probe-locally:
+	monitoring/prober/run_locally.sh
+
+.PHONY: start-uss-mocks
+start-uss-mocks:
+	monitoring/mock_uss/start_all_local_mocks.sh
+
+.PHONY: stop-uss-mocks
+stop-uss-mocks:
+	monitoring/mock_uss/stop_all_local_mocks.sh
+
+.PHONY: collect-local-logs
+collect-local-logs:
+	docker logs dss_sandbox_local-dss-core-service_1 2> core-service-for-testing.log
+
+.PHONY: stop-locally
 stop-locally:
 	build/dev/run_locally.sh stop
+
+.PHONY: down-locally
+down-locally:
+	build/dev/run_locally.sh down
+
+# This mirrors the dss-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: dss-tests
+dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss build-monitoring down-locally start-locally probe-locally collect-local-logs down-locally
+
+.PHONY: check-monitoring
+check-monitoring:
+	cd monitoring && make test
+
+.PHONY: evaluate-tanka
+evaluate-tanka:
+	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/minimum
+	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/schema_manager
+
+# This mirrors the monitoring-tests continuous integration workflow job (.github/workflows/ci.yml)
+.PHONY: monitoring-tests
+monitoring-tests: check-monitoring
+
+# This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
+.PHONY: presubmit
+presubmit: hygiene-tests dss-tests monitoring-tests

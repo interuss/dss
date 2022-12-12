@@ -116,7 +116,7 @@ class RIDObservationEvaluator(object):
                 check.record_failed(
                     summary="Observation failed",
                     details=f"When queried for an observation in {_rect_str(rect)}, {observer.participant_id} returned code {query.status_code}",
-                    severity=Severity.Critical,
+                    severity=Severity.Medium,
                     query_timestamps=[query.request.timestamp],
                 )
                 return
@@ -147,7 +147,7 @@ class RIDObservationEvaluator(object):
                     check.record_failed(
                         summary="Duplicate flights observed",
                         details=f'When queried for an observation in {_rect_str(rect)}, {observer.participant_id} found {len(matching_flights)} flights with flight ID "{flight_id}" that was injected into {expected_flight.uss_participant_id}',
-                        severity=Severity.Critical,
+                        severity=Severity.Medium,
                         query_timestamps=[
                             query.request.timestamp,
                             expected_flight.query_timestamp,
@@ -163,7 +163,7 @@ class RIDObservationEvaluator(object):
                         check.record_failed(
                             summary="Flight observed before it started",
                             details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} before that flight should have started at {t_min.isoformat()}",
-                            severity=Severity.High,
+                            severity=Severity.Medium,
                             query_timestamps=[
                                 query.request.timestamp,
                                 expected_flight.query_timestamp,
@@ -189,7 +189,7 @@ class RIDObservationEvaluator(object):
                         check.record_failed(
                             summary="Flight still observed long after it ended",
                             details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was observed by {observer.participant_id} at {t_response.isoformat()} after it ended at {t_max.isoformat()}",
-                            severity=Severity.High,
+                            severity=Severity.Medium,
                             query_timestamps=[
                                 query.request.timestamp,
                                 expected_flight.query_timestamp,
@@ -213,7 +213,7 @@ class RIDObservationEvaluator(object):
                         check.record_failed(
                             summary="Expected flight not observed",
                             details=f"Flight {flight_id} injected into {expected_flight.uss_participant_id} was not listed in the observation by {observer.participant_id} at {t_response.isoformat()} even though it should have been active from {t_min.isoformat()} to {t_max.isoformat()}",
-                            severity=Severity.High,
+                            severity=Severity.Medium,
                             query_timestamps=[
                                 query.request.timestamp,
                                 expected_flight.query_timestamp,

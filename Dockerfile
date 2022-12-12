@@ -1,8 +1,8 @@
 # This Dockerfile builds the InterUSS `dss` image which contains the binary
-# executables for the core-service, http-gateway and the db-manager. It also
+# executables for the core-service and the db-manager. It also
 # contains a light weight tool that provides debugging capability. To run a
 # container for this image, the desired binary must be specified (either
-# /usr/bin/core-service, /usr/bin/http-gateway or /usr/bin/db-manager).
+# /usr/bin/core-service or /usr/bin/db-manager).
 
 FROM golang:1.17-alpine AS build
 RUN apk add build-base
@@ -33,8 +33,10 @@ RUN make interuss
 
 FROM alpine:latest
 RUN apk update && apk add ca-certificates
-COPY --from=build /go/bin/http-gateway /usr/bin
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin
 COPY --from=build /go/bin/dlv /usr/bin
+COPY build/jwt-public-certs /jwt-public-certs
+COPY build/test-certs /test-certs
+COPY build/deploy/db_schemas /db-schemas
 HEALTHCHECK CMD cat service.ready || exit 1

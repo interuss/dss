@@ -3,7 +3,7 @@
 This folder contains `auth2.key` and `auth2.pem` files as private and public keys access tokens that are used for validating local/development DSS instances.
 
 
-[cockroach-certs](/cockroch-certs/) is the directory that contains ssl certificates for the CockroachDB cluster test environment.
+[cockroach-certs](cockroach-certs/) is the directory that contains ssl certificates for the CockroachDB cluster test environment.
 
 
 New set of access tokens can be generated using [gen-cert.go](gen-cert.go) by running following script. 

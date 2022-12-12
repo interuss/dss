@@ -16,9 +16,9 @@ creation when all fields are valid.
 
 FlightIntentsResource that provides at least two flight intents.  The last flight intent is expected to be valid and should be planned successfully.  All preceding flight intents must have some problem with the flight authorisation data such that they should be rejected.
 
-### flight_planners
+### flight_planner
 
-FlightPlannersResource that provides exactly one flight planner (USSP) which should be tested.
+FlightPlannerResource that provides the flight planner (USSP) which should be tested.
 
 ## Setup test case
 
@@ -70,4 +70,4 @@ All flight intent data provided is correct and valid and free of conflict in spa
 
 ### Successful flight deletion check
 
-Per **[scd.yaml::DeleteFlightSuccess](../../../../../interfaces/automated-testing/scd/scd.yaml)**, the deletion attempt of the previously-created flight should succeed for every flight planner under test.
+**[interuss.automated_testing.flight_planning.DeleteFlightSuccess](../../../requirements/interuss/automated_testing/flight_planning.md)**

@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	DefaultTimeout = 50 * time.Millisecond
+	DefaultTimeout = 500 * time.Millisecond
 }
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {

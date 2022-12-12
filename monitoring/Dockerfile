@@ -16,10 +16,6 @@ RUN mkdir -p /app/monitoring/monitorlib
 COPY monitorlib/requirements.txt /app/monitoring/monitorlib/requirements.txt
 RUN pip install -r /app/monitoring/monitorlib/requirements.txt
 
-RUN mkdir -p /app/monitoring/interoperability
-COPY interoperability/requirements.txt /app/monitoring/interoperability/requirements.txt
-RUN pip install -r /app/monitoring/interoperability/requirements.txt
-
 RUN mkdir -p /app/monitoring/loadtest
 COPY loadtest/requirements.txt /app/monitoring/loadtest/requirements.txt
 RUN pip install -r /app/monitoring/loadtest/requirements.txt

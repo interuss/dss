@@ -11,6 +11,7 @@ def main() -> int:
     inspection.import_submodules(scenarios)
     test_scenarios = find_test_scenarios(scenarios)
     validation.validate(list(test_scenarios))
+    print("Test documentation is valid.")
     return os.EX_OK
 
 

@@ -12,14 +12,12 @@ sandbox environment consisting of:
   * A single CockroachDB node running in insecure mode via docker, communicating
     on port 26257 internally and exposing a web admin console on [port
     8080](http://localhost:8080) externally
-  * [Core Service](../../cmds/core-service) listening by default on port 8081
-    internally, configured to
+  * [Core Service](../../cmds/core-service) listening on port 8082 externally,
+    configured to
     * Connect to a CockroachDB node (implicitly port 26257)
     * Validate access tokens with [the auth2.pem public
       key](../test-certs/auth2.pem)
     * Expect access tokens to specify an `aud` of `localhost`
-  * [HTTPS gateway](../../cmds/http-gateway) listening on port 8082 externally
-    and directing requests translated into gRPC to port 8081 internally
 * A [Dummy OAuth server](../../cmds/dummy-oauth) exposing an endpoint at
   http://localhost:8085/token externally to generate dummy JWT access tokens
   that validate against [the auth2.pem public key](../test-certs/auth2.pem)
@@ -38,7 +36,7 @@ When this system is active (log messages stop being generated), the following
 endpoints will be available:
 
 * Dummy OAuth Server: http://localhost:8085/token
-* DSS HTTP Gateway Server: http://localhost:8082/healthy
+* DSS Core Service: http://localhost:8082/healthy
 * CockroachDB web UI: http://localhost:8080
 
 In a different window, run [`./check_dss.sh`](check_dss.sh) to run a
@@ -132,10 +130,7 @@ target version parameter to `migrate_local_db.sh`.
 
 ### Prober
 
-* `probe_local_instance.sh` runs the end-to-end [prober](../../monitoring/prober)
-integration test, similar to [docker_e2e.sh](../../test/docker_e2e.sh), but using
-the DSS instance already deployed locally instead of also deploying a local
-instance as docker_e2e.sh does
+* `monitoring/prober/run_locally.sh` runs the [prober](../../monitoring/prober) integration tests using the DSS instance already deployed locally via [`run_locally.sh`](run_locally.sh)
 
 ### RID
 

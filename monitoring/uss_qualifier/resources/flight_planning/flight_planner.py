@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, Tuple, List, Optional
+from typing import Tuple, List
 from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
@@ -9,7 +9,6 @@ from monitoring.monitorlib.clients.scd_automated_testing import (
     clear_area,
     create_flight,
     delete_flight,
-    QueryError,
     get_version,
     get_capabilities,
 )
@@ -23,9 +22,6 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     Capability,
     ClearAreaResponse,
     ClearAreaRequest,
-)
-from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
-    FlightInjectionAttempt,
 )
 
 

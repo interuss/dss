@@ -10,6 +10,7 @@ from implicitdict import StringBasedDateTime
 
 from monitoring import uss_qualifier as uss_qualifier_module
 from monitoring.monitorlib import fetch, inspection
+from monitoring.monitorlib.inspection import fullname
 from monitoring.uss_qualifier import scenarios as scenarios_module
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.reports.report import (
@@ -23,14 +24,24 @@ from monitoring.uss_qualifier.reports.report import (
     PassedCheck,
 )
 from monitoring.uss_qualifier.scenarios.definitions import TestScenarioDeclaration
-from monitoring.uss_qualifier.scenarios.documentation import (
-    get_documentation,
+from monitoring.uss_qualifier.scenarios.documentation.definitions import (
     TestScenarioDocumentation,
     TestCaseDocumentation,
     TestStepDocumentation,
     TestCheckDocumentation,
 )
 from monitoring.uss_qualifier.resources.definitions import ResourceTypeName, ResourceID
+from monitoring.uss_qualifier.scenarios.documentation.parsing import get_documentation
+
+
+class ScenarioCannotContinueError(Exception):
+    def __init__(self, msg):
+        super(ScenarioCannotContinueError, self).__init__(msg)
+
+
+class TestRunCannotContinueError(Exception):
+    def __init__(self, msg):
+        super(TestRunCannotContinueError, self).__init__(msg)
 
 
 class ScenarioPhase(str, Enum):
@@ -106,6 +117,10 @@ class PendingCheck(object):
         self._step_report.failed_checks.append(failed_check)
         if self._on_failed_check is not None:
             self._on_failed_check(failed_check)
+        if severity == Severity.High:
+            raise ScenarioCannotContinueError(f"{severity}-severity issue: {summary}")
+        if severity == Severity.Critical:
+            raise TestRunCannotContinueError(f"{severity}-severity issue: {summary}")
 
     def record_passed(
         self,
@@ -172,7 +187,7 @@ class TestScenario(ABC):
             if arg_name not in resource_pool:
                 available_pool = ", ".join(resource_pool)
                 raise ValueError(
-                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {self.scenario_type} test scenario (resource pool: {available_pool})'
+                    f'Resource to populate test scenario argument "{arg_name}" was not found in the resource pool when trying to create {declaration.scenario_type} test scenario (resource pool: {available_pool})'
                 )
             constructor_args[arg_name] = resource_pool[arg_name]
 
@@ -415,7 +430,7 @@ TestScenarioType = TypeVar("TestScenarioType", bound=TestScenario)
 
 def find_test_scenarios(
     module, already_checked: Optional[Set[str]] = None
-) -> Set[TestScenarioType]:
+) -> List[TestScenarioType]:
     if already_checked is None:
         already_checked = set()
     already_checked.add(module.__name__)
@@ -434,4 +449,6 @@ def find_test_scenarios(
             if issubclass(member, TestScenario):
                 if member not in test_scenarios:
                     test_scenarios.add(member)
-    return test_scenarios
+    result = list(test_scenarios)
+    result.sort(key=lambda s: fullname(s))
+    return result

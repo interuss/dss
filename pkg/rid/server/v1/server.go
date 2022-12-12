@@ -1,33 +1,19 @@
 package v1
 
 import (
+	"context"
 	"time"
 
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
 
-	"github.com/interuss/dss/pkg/auth"
 	"github.com/interuss/dss/pkg/rid/application"
 )
 
-var (
-	// Scopes bundles up auth scopes for the remote-id server.
-	Scopes = struct {
-		ISA struct {
-			Write auth.Scope
-			Read  auth.Scope
-		}
-	}{
-		ISA: struct {
-			Write auth.Scope
-			Read  auth.Scope
-		}{
-			Write: "dss.write.identification_service_areas",
-			Read:  "dss.read.identification_service_areas",
-		},
-	}
-)
-
-// Server implements ridpb.DiscoveryAndSynchronizationService.
+// Server implements ridv1.Implementation.
 type Server struct {
 	App        application.App
 	Timeout    time.Duration
@@ -36,18 +22,13 @@ type Server struct {
 	Cron       *cron.Cron
 }
 
-// AuthScopes returns a map of endpoint to required Oauth scope.
-func (s *Server) AuthScopes() map[auth.Operation]auth.KeyClaimedScopesValidator {
-	return map[auth.Operation]auth.KeyClaimedScopesValidator{
-		"/ridpbv1.DiscoveryAndSynchronizationService/CreateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
-		"/ridpbv1.DiscoveryAndSynchronizationService/DeleteIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
-		"/ridpbv1.DiscoveryAndSynchronizationService/GetIdentificationServiceArea":     auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/SearchIdentificationServiceAreas": auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/UpdateIdentificationServiceArea":  auth.RequireAllScopes(Scopes.ISA.Write),
-		"/ridpbv1.DiscoveryAndSynchronizationService/CreateSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/DeleteSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/GetSubscription":                  auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/SearchSubscriptions":              auth.RequireAllScopes(Scopes.ISA.Read),
-		"/ridpbv1.DiscoveryAndSynchronizationService/UpdateSubscription":               auth.RequireAllScopes(Scopes.ISA.Read),
+func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
 	}
 }

@@ -1,16 +1,26 @@
-.PHONY: test
-test: validate_documentation lint
-	./scripts/test_docker_fully_mocked.sh
+.PHONY: lint
+lint: validate-docs python-lint shell-lint
 
-.PHONY: validate_documentation
-validate_documentation:
+.PHONY: validate-docs
+validate-docs:
 	./scripts/validate_test_definitions.sh
 
-.PHONY: lint
-lint:
+.PHONY: python-lint
+python-lint:
 	docker run --rm -v $(CURDIR):/code -w /code pyfound/black:latest_release black --check . || (echo "Linter didn't succeed. You can use the following command to fix python linter issues: make format" && exit 1)
+
+.PHONY: shell-lint
+shell-lint:
 	find . -name '*.sh' | xargs docker run --rm -v $(CURDIR):/code -w /code koalaman/shellcheck
 
 .PHONY: format
-format:
+format: format-documentation
 	docker run --rm -v $(CURDIR):/code -w /code pyfound/black:latest_release black .
+
+.PHONY: format-documentation
+format-documentation:
+	./scripts/format_test_documentation.sh
+
+.PHONY: test
+test: lint
+	./scripts/test_docker_fully_mocked.sh

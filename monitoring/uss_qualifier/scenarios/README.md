@@ -6,7 +6,30 @@ A test scenario is a logical, self-contained scenario designed to test specific 
 
 ## Structure
 
-A test scenario is separated into of a list of test cases.  Each test case on the list is executed sequentially.  A test case is like an act in a play.
+A test scenario is separated into of a list of test cases, each of which are separated into a list of test steps, each of which have a set of checks that may be performed.  A test scenario is implemented as [`TestScenario`](scenario.py) subclass, and the context of current test case and test step is controlled by a state machine build into `TestScenario`, as is the performance of checks.
+
+### Test cases
+
+1. A test case is a single wholistic operation or action performed as part of a larger test scenario.
+    * Test cases are like acts in the "play" of the test scenario they are a part of.
+    * Test cases are typically the "gray headers” of the overview sequence diagrams.
+2. A given test case belongs to exactly one test scenario.
+3. A test case is composed of a list of test steps.
+    * Each test step on the list is executed sequentially.
+
+### Test steps
+
+1. A test step is a single task that must be performed in order to accomplish its associated test case.
+    * Test steps are like scenes in the "play/act" of the test scenario/test case they are a part of.
+2. A given test step belongs to exactly one test case.
+3. A test step may have a list of checks associated with it.
+
+### Checks
+
+1. A check is the lowest-level thing automated testing does – it is a single pass/fail evaluation of a single criterion for a requirement.
+2. A check evaluates information collected during the actions performed for a test step.
+3. A given check belongs to exactly one test step.
+4. Each check defines which requirement(s) are not met if the check fails.
 
 ## Creation
 
@@ -62,6 +85,8 @@ Each check a test step performs that may result in a finding/issue must be docum
 
 A check should document the requirement(s) violated if the check fails.  Requirements are identified by putting a strong emphasis/bold style around the requirement ID (example: `**astm.f3411.v19.NET0420**`).  The description of a check should generally explain why the relevant requirement would fail when that information is useful, but the requirement itself should generally not be re-iterated in this description.  If the check is self-evident from the requirement, the requirement can be noted without further explanation.
 
+Any requirements identified (e.g., `**astm.f3411.v19.NET0420**`) must be documented as well.  See [the requirements documentation](../requirements/README.md) for more information.
+
 ### Cleanup phase
 
 If a test scenario wants to perform a cleanup procedure follow any non-error termination of the rest of the scenario, it must:
@@ -70,3 +95,9 @@ If a test scenario wants to perform a cleanup procedure follow any non-error ter
 2) Include a main section in the documentation named "Cleanup" that is documented like a test step (including, e.g., test checks when appropriate).
 
 The `cleanup()` method may not be overridden unless the cleanup phase is documented for that test scenario.  If the cleanup phase is documented for the test scenario, the `cleanup()` method must be overridden.
+
+### Reserved stylings
+
+#### Strong emphasis
+
+The strong emphasis styling (`**example**`) may only be used to identify requirement IDs (see "Test checks" section).  Requirement IDs must also link to the document in which they are defined, but this can be performed automatically with `make format` (which transforms, e.g., `**example.req.ID**` into `**[example.req.ID](path/to/example/req.md)`).

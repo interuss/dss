@@ -1,19 +1,19 @@
 from datetime import datetime
 import traceback
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 
 from implicitdict import ImplicitDict, StringBasedDateTime
 
 from monitoring.monitorlib import fetch, inspection
 from monitoring.uss_qualifier.common_data_definitions import Severity
-from monitoring.uss_qualifier.configurations.configuration import TestConfiguration
+from monitoring.uss_qualifier.configurations.configuration import (
+    TestConfiguration,
+    ParticipantID,
+)
 from monitoring.uss_qualifier.fileio import FileReference
 
-ParticipantID = str
-"""String that refers to a participant being qualified by uss_qualifier"""
 
-
-RequirementID = str
+RequirementID = str  # TODO: Use uss_qualifier.requirements.documentation.RequirementID
 
 
 class FailedCheck(ImplicitDict):
@@ -81,6 +81,9 @@ class TestStepReport(ImplicitDict):
     end_time: Optional[StringBasedDateTime]
     """Time at which the test step completed or encountered an error"""
 
+    def has_critical_problem(self):
+        return any(fc.severity == Severity.Critical for fc in self.failed_checks)
+
 
 class TestCaseReport(ImplicitDict):
     name: str
@@ -103,6 +106,9 @@ class TestCaseReport(ImplicitDict):
         for step in self.steps:
             result += step.failed_checks
         return result
+
+    def has_critical_problem(self):
+        return any(s.has_critical_problem() for s in self.steps)
 
 
 class ErrorReport(ImplicitDict):
@@ -172,6 +178,11 @@ class TestScenarioReport(ImplicitDict):
             result += case.get_all_failed_checks()
         return result
 
+    def has_critical_problem(self) -> bool:
+        return any(c.has_critical_problem() for c in self.cases) or (
+            "cleanup" in self and self.cleanup and self.cleanup.has_critical_problem()
+        )
+
 
 class ActionGeneratorReport(ImplicitDict):
     generator_type: str
@@ -182,6 +193,9 @@ class ActionGeneratorReport(ImplicitDict):
 
     def successful(self) -> bool:
         return all(a.successful() for a in self.actions)
+
+    def has_critical_problem(self) -> bool:
+        return any(a.has_critical_problem() for a in self.actions)
 
 
 class TestSuiteActionReport(ImplicitDict):
@@ -194,7 +208,9 @@ class TestSuiteActionReport(ImplicitDict):
     action_generator: Optional[ActionGeneratorReport]
     """If this action was an action generator, this field will hold its report"""
 
-    def successful(self) -> bool:
+    def _get_applicable_report(
+        self,
+    ) -> Tuple["TestSuiteReport", "TestScenarioReport", "ActionGeneratorReport"]:
         test_suite = "test_suite" in self and self.test_suite is not None
         test_scenario = "test_scenario" in self and self.test_scenario is not None
         action_generator = (
@@ -210,12 +226,28 @@ class TestSuiteActionReport(ImplicitDict):
             raise ValueError(
                 "Exactly one of `test_suite`, `test_scenario`, or `action_generator` must be populated"
             )
+        return test_suite, test_scenario, action_generator
+
+    def successful(self) -> bool:
+        test_suite, test_scenario, action_generator = self._get_applicable_report()
         if test_suite:
             return self.test_suite.successful
         if test_scenario:
             return self.test_scenario.successful
         if action_generator:
             return self.action_generator.successful()
+
+        # This line should not be possible to reach
+        raise RuntimeError("Case selection logic failed for TestSuiteActionReport")
+
+    def has_critical_problem(self) -> bool:
+        test_suite, test_scenario, action_generator = self._get_applicable_report()
+        if test_scenario:
+            return self.test_scenario.has_critical_problem()
+        if test_suite:
+            return self.test_suite.has_critical_problem()
+        if action_generator:
+            return self.action_generator.has_critical_problem()
 
         # This line should not be possible to reach
         raise RuntimeError("Case selection logic failed for TestSuiteActionReport")
@@ -243,6 +275,9 @@ class TestSuiteReport(ImplicitDict):
     successful: bool = False
     """True iff test suite completed normally with no failed checks"""
 
+    def has_critical_problem(self) -> bool:
+        return any(a.has_critical_problem() for a in self.actions)
+
 
 class TestRunReport(ImplicitDict):
     codebase_version: str
@@ -251,5 +286,5 @@ class TestRunReport(ImplicitDict):
     configuration: TestConfiguration
     """Configuration used to run uss_qualifier"""
 
-    report: TestSuiteReport
-    """Report produced by configured test suite"""
+    report: TestSuiteActionReport
+    """Report produced by configured test action"""

@@ -8,4 +8,4 @@ This is a diagnostic scenario to simply record the set of provided flight planne
 
 ### flight_planners
 
-A [`FlightPlannersResource`](../../../resources/flight_planning/flight_planners.py) containing the flight planners to record.
+A [`FlightPlannersResource`](../../resources/flight_planning/flight_planners.py) containing the flight planners to record.

@@ -13,23 +13,16 @@ else
 fi
 cd "${BASEDIR}/../../.." || exit 1
 
-containers=(mock_uss_ridsp mock_uss_riddp mock_uss_scdsc dss_sandbox_local-dss-http-gateway_1)
-
 echo "Ensure the environment is clean"
 echo "============="
-build/dev/run_locally.sh down
-for container_name in "${containers[@]}"; do
-  docker container kill "$container_name" || echo "No pre-existing $container_name"
-done
+make down-locally
+make stop-uss-mocks
 
 function cleanup() {
   echo "Clean up"
   echo "============="
-  for container_name in "${containers[@]}"; do
-    docker container kill "$container_name"
-  done
-
-  build/dev/run_locally.sh down
+  make stop-uss-mocks
+  make down-locally
 }
 
 function on_exit() {
@@ -46,28 +39,18 @@ trap on_sigint SIGINT
 
 echo "Start mock system"
 echo "============="
-build/dev/run_locally.sh up -d
-monitoring/mock_uss/run_locally_ridsp.sh -d
-monitoring/mock_uss/run_locally_riddp.sh -d
-monitoring/mock_uss/run_locally_scdsc.sh -d
-
-echo "Wait for system to be healthy"
-echo "============="
-for container_name in "${containers[@]}"; do
-    retry=0
-    max_retry=6
-    until [ "$(docker inspect -f \{\{.State.Health.Status\}\} "${container_name}")" == "healthy" ]; do
-        if [ "$retry" -gt "$max_retry" ]; then
-            echo "$container_name logs:"
-            docker logs "$container_name"
-            echo "$container_name didn't properly start. Exit." && exit 1
-        fi
-        echo "Waiting for $container_name to become healthy..."
-        sleep 10
-        retry=$((retry+1))
-    done
-done
+make start-locally
+make start-uss-mocks
 
 echo "Run the standard local tests."
 echo "============="
 monitoring/uss_qualifier/run_locally.sh
+
+# Ensure all tests passed
+successful=$(python build/dev/extract_json_field.py report.test_suite.successful < monitoring/uss_qualifier/report.json)
+if echo "${successful}" | grep -iqF true; then
+  echo "All uss_qualifier tests passed."
+else
+  echo "Could not establish that all uss_qualifier tests passed."
+  exit 1
+fi

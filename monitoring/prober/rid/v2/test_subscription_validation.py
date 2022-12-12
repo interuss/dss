@@ -17,7 +17,7 @@ from . import common
 
 SUB_TYPE = register_resource_type(350, 'Subscription')
 MULTI_SUB_TYPES = [register_resource_type(351 + i, 'Subscription limit Subscription {}'.format(i)) for i in range(11)]
-BASE_URL = 'http://example.com/rid/v2'
+BASE_URL = 'https://example.com/rid/v2'
 
 
 def test_ensure_clean_workspace(ids, session_ridv2):
