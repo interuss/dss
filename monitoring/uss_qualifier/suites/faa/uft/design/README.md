@@ -16,7 +16,7 @@ The test setup includes running the following components, as also shown in the [
 4. Mock USS - This is an instance of the InterUSS monitoring tool mock_uss with scd and messagesigning capabilities enabled.  In a local deployment of the test infrastructure, this can be supplied by a local instance of mock_uss running as a dockerized container exposing port 8077, as per monitoring/mock_uss/run_locally_msgsigning.sh.
 5. USS-under-Test - This is the USS that needs to be tested.
 6. uss_qualifier interface. USSes need to develop an interface for their USS
-to interface with the test harness. Uss_Qualifer will inject operations through this interface. The spec to
+to interface with the test harness. uss_qualifier will inject operations through this interface. The spec to
 implement is - [Strategic Coordination Test Data Injection](../../../../../../interfaces/automated_testing/scd/v1/scd.yaml)
 
 The main idea behind the tests is that mock_uss will consume and validate all the requests and responses from USS-under-test.
@@ -57,7 +57,7 @@ A USS should pass all the uss_qualifier tests in this suite. No failed checks in
 
 ### Negative tests -
 In the future, this test suite will be expanded to instruct mock_uss to replace the private/public keys with an invalid key pair by calling the appropriate endpoint. This will set the keypair to be `mock_priv.pem`/`mock_pub.der`. Using this keypair will lead to invalid signatures on mock_uss's interactions, and the `mock_pub.der` will not pass SCVP validation.
-The USS-under-test should respond with 403 to all requests from mock_uss. The Uss Qualifier tests will require this to happen and only pass if the correct behavior is demonstrated.
+The USS-under-test should respond with 403 to all requests from mock_uss. The uss_qualifier tests will require this to happen and only pass if the correct behavior is demonstrated.
 The message signing section of the report would show `403` in interactions with mock_uss.
 
 
