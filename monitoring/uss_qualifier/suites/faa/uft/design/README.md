@@ -3,7 +3,7 @@
 UTM Field Test (UFT) has a requirement for USSes to sign their message requests
 and responses in the SCD flow using IATF certificates provided by FAA.
 
-This test suite helps to test the message signing by extending [suites.astm.utm.f3548_21](monitoring/uss_qualifier/suites/astm/utm/f3548_21.yaml)
+This test suite helps to test the message signing by extending [suites.astm.utm.f3548_21](../../../astm/utm/f3548_21.yaml)
 with scenarios that trigger reporting of message signing in the interactions with mock_uss.
 
 ## Test Setup
@@ -49,8 +49,15 @@ SCD tests report is generated under [uss_qualifier](monitoring/uss_qualifier).
 The message signing results will be in the report created for the overall run - report.json. Failed message signing checks will show up as `FailedChecks` within the `FinalizeMessageSigningReport` test scenario.  
 
 ### Positive tests -
-A set of private/public keys are provided for default use by mock_uss in message signing analysis under the [monitioring/mock_uss/messagesigning/keys] folder. This key pair, `mock_faa_priv.pem`/`mock_faa_pub.der`, is used by mock_uss by default. The public key is served under the mock_uss endpoint `/mock/msgsigning/.well-known/uas-traffic-management/pub.der`, and can be retrieved by the USS under test in order for it to validate the mock_uss responses. This public key was provided by the FAA and will pass SCVP validation for the UFT activity. 
-
+A set of private/public keys are provided for use by mock_uss in message
+signing analysis under the [build/test-certs/message-signing] folder. 
+This key pair, mock_faa_priv.pem/mock_faa_pub.der, is used by mock_uss 
+(when requested from an instance with the capability enabled) to sign its responses, and by `AuthAdapter` to sign requests of outgoing messages. 
+When the message signing mock_uss capability is enabled, the public key is served under the mock_uss endpoint
+ /mock/msgsigning/.well-known/uas-traffic-management/pub.der, 
+ and can be retrieved by the USS under test in order for it to validate the 
+ mock_uss responses, per UFT message signing requirements. This public key was provided by the FAA 
+ and will pass SCVP validation for the UFT activity.
 
 A USS should pass all the uss_qualifier tests in this suite. No failed checks indicate the USS-under-test message-signed all its requests and responses.
 
