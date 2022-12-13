@@ -8,6 +8,8 @@ from monitoring.monitorlib.messagesigning.config import Config
 from loguru import logger
 from os import environ
 
+SERVICES = environ.get('MOCK_USS_SERVICES', '')
+
 @webapp.route("/mock/scd/uss/v1/operational_intents/<entityid>", methods=["GET"])
 @requires_scope([scd.SCOPE_SC])
 def get_operational_intent_details(entityid: str):
@@ -67,15 +69,14 @@ def make_uss_report():
 
     return flask.jsonify({"message": "Not yet implemented"}), 500
 
+if 'msgsigning' in SERVICES:
+    @webapp.route("/mock/msgsigning/.well-known/uas-traffic-management/pub.der", methods=["GET"])
+    def get_public_key():
+        public_key_file_location = Config.PUBLIC_KEY_PATH
 
-@webapp.route("/mock/msgsigning/.well-known/uas-traffic-management/pub.der", methods=["GET"])
-def get_public_key():
-    """Implements notifyOperationalIntentDetailsChanged in ASTM SCD API."""
-    public_key_file_location = Config.PUBLIC_KEY_PATH
+        logger.info("Retreiving public key file from {}".format(public_key_file_location))
 
-    logger.info("Retreiving public key file from {}".format(public_key_file_location))
-
-    return flask.send_file(public_key_file_location)
+        return flask.send_file(public_key_file_location)
 
     # Parse the request
     # TODO: Implement
