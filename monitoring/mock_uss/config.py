@@ -40,3 +40,6 @@ class Config(object):
     DSS_URL = os.environ.get(ENV_KEY_DSS, None)
     BEHAVIOR_LOCALITY = Locality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, "CHE"))
     CODE_VERSION = os.environ.get(KEY_CODE_VERSION, "Unknown")
+    CERT_PATH = '/var/test-certs'
+    PRIVATE_KEY_PATH = "{}/messagesigning/mock_faa_priv.pem".format(CERT_PATH)
+    PUBLIC_KEY_PATH = "{}/messagesigning/mock_faa_pub.der".format(CERT_PATH)

@@ -4,7 +4,7 @@ from monitoring.monitorlib import scd
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc.database import db
-from monitoring.monitorlib.messagesigning.config import Config
+from monitoring.mock_uss.config import Config
 from loguru import logger
 from os import environ
 
