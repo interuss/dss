@@ -29,7 +29,7 @@ Note - As different USSes have different implementations, it could happen that y
 the UFT message signing tests. If personal changes are needed, copy this yaml
 file to a personal configuration file in the [personal configuration folder](../../../../configurations/personal), and edit this file instead.
 The property to set is `resources.resource_declarations.flight_planners.specification.flight_planners.participant_id`
-2. Run DSS and dummy-oauth using the script [run_locally.sh](build/dev/run_locally.sh)
+2. Run DSS and dummy-oauth using the script [run_locally.sh](../../../../../../build/dev/run_locally.sh)
     ```bash
     build/dev/run_locally.sh
     ```
@@ -41,13 +41,13 @@ The property to set is `resources.resource_declarations.flight_planners.specific
    1. The auth server used by the UTM ecosystem under test (dummy auth at http://localhost:8085/token or http://host.docker.internal:8085/token in a local deployment of the test infrastructure).
    2. A DSS instance supporting SCD in the UTM ecosystem under test (DSS at http://localhost:8082 or http://host.docker.internal:8085 in a local deployment of the test infrastructure).
 5. Run the uss_qualifier interface for your USS.
-6. Run uss_qualifier tests using script [run_locally.sh](monitoring/uss_qualifier/run_locally.sh) with config
+6. Run uss_qualifier tests using script [run_locally.sh](../../../../../../monitoring/uss_qualifier/run_locally.sh) with config
     ```bash
    monitoring/uss_qualifier/run_locally.sh configurations.dev.faa.uft.local_message_signing
    ```
 
 ## Results
-SCD tests report is generated under [uss_qualifier](monitoring/uss_qualifier).
+SCD tests report is generated under [uss_qualifier](../../../../../../monitoring/uss_qualifier).
 The message signing results will be in the report created for the overall run - report.json. Failed message signing checks will show up as `FailedChecks` within the `FinalizeMessageSigningReport` test scenario.  
 
 ### Positive tests -
