@@ -81,14 +81,14 @@ def test_create_isa(ids, session_ridv1):
 def test_get_isa_without_token(ids, no_auth_session_ridv1):
   resp = no_auth_session_ridv1.get('{}/{}'.format(ISA_PATH, ids(ISA_TYPE)))
   assert resp.status_code == 401, resp.content
-  assert resp.json()['message'] == 'Missing access token'
+  assert 'Missing access token' in resp.json()['message']
 
 
 def test_get_isa_with_fake_token(ids, no_auth_session_ridv1):
   no_auth_session_ridv1.headers['Authorization'] = 'Bearer fake_token'
   resp = no_auth_session_ridv1.get('{}/{}'.format(ISA_PATH, ids(ISA_TYPE)))
   assert resp.status_code == 401, resp.content
-  assert resp.json()['message'] == 'token contains an invalid number of segments'
+  assert 'token contains an invalid number of segments' in resp.json()['message']
 
 
 def test_delete(ids, session_ridv1):

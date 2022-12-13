@@ -31,14 +31,9 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 - The way to set up access to the DSS in prober is to create special requests.Sessions which automatically perform their own authorization and have their own implicit USS identity. These sessions are created for dependency injection in [conftest.py](monitoring/prober/conftest.py).
 - When we need requests to appear as if they are coming from two different USSs, we need to use two different Sessions. We can see that happening with `scd_session` and `scd_session2`.  The tests themselves are just functions prefixed with `test_` which is the standard way `pytest` manages test infrastructure.
 
-#### Interoperability Test
-
-- Another monitoring tool with a different binary from prober is the [interoperability](monitoring/interoperability/README.md) test suite. For the moment, ignore [clients.py](monitoring/interoperability/clients.py); that file is obsolete, unused, and should be removed. This tool doesn't use pytest, but instead is just a standard Python script.
-- The main() method is in [interop.py](monitoring/interoperability/interop.py) and then the logic is in [interop_test_suite.py](monitoring/interoperability/interop.py). The `monitorlib` utilities for authorization and infrastructure provide the UTMClientSessions to easily communicate with the DSS instances without worrying about any of the specifics.
-
 #### Load test
 
-- A third monitoring tool with a different binary is the [loadtest](monitoring/loadtest/README.md)
+- Another monitoring tool with a different binary is the [loadtest](monitoring/loadtest/README.md)
 - This tool uses [Locust](https://locust.io) (a load testing tool/library) to send a bunch of requests to a DSS instance on an ongoing basis.  Again, you'll see that most of the complicated parts of interacting with the DSS instance are reused from `monitorlib`.
 
 #### Tracer
@@ -48,8 +43,6 @@ When building new monitoring tools, we recommend using Docker containers as a wa
 - [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) creates Subscriptions in the DSS for various object types (ISAs, Operations, Constraints) and then listens for incoming push notifications from other USSs when there are changes to any of those monitored object types.  tracer_subscribe also exposes a small web interface to make its logs easily accessible (the ones from both tracer_subscribe and tracer_poll, if they are both running at the same time).
 - [tracer_subscribe](monitoring/tracer/tracer_subscribe.py) also has the capability to make a single, one-off RID poll involving querying the DSS for ISAs, and then calling out to each applicable USS's /flights endpoint (and /flights/{id}/details, when appropriate) to get the current information.
 
-#### Remote ID Qualifier
+#### USS Qualifier
 
-- The [rid_qualifier](monitoring/uss_qualifier/rid/README.md) is a test suite for testing / qualifying remote-ID performance and qualification, this is useful for testing out USS compliance with RemoteID standard.
-- The RemoteID qualifier develops flight tracks for a geographical bounding and a payload object based on these tracks.
-- The test suite then performs various queries based on the bounding boxes to test output data from the USS.
+The [uss_qualifier](monitoring/uss_qualifier/README.md) is a tool for testing / qualifying USS compliance with requirements including ASTM NetRID, flight planning, and more.

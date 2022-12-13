@@ -15,4 +15,6 @@ echo '## NOTE: Prerequisite to run this command is:                          ##'
 echo '## Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh) ##'
 echo '#########################################################################'
 
-monitoring/build.sh || exit 1
+if [ -z "${DO_NOT_BUILD_MONITORING}" ]; then
+  monitoring/build.sh || exit 1
+fi

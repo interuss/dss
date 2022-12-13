@@ -1,0 +1,9 @@
+name: U-Space Common Information Service
+resources:
+  source_document: resources.eurocae.ed269.source_document.SourceDocument
+actions:
+  - test_scenario:
+      scenario_type: scenarios.eurocae.ed269.source_data_model.SourceDataModelValidation
+      resources:
+        source_document: source_document
+    on_failure: Abort

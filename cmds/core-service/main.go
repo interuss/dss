@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -15,51 +15,46 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
-	"github.com/interuss/dss/pkg/api/v1/auxpb"
-	"github.com/interuss/dss/pkg/api/v1/ridpbv1"
-	"github.com/interuss/dss/pkg/api/v1/scdpb"
-	"github.com/interuss/dss/pkg/api/v2/ridpbv2"
+	"github.com/interuss/dss/pkg/api"
+	apiauxv1 "github.com/interuss/dss/pkg/api/auxv1"
+	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
+	apiridv2 "github.com/interuss/dss/pkg/api/ridv2"
+	apiscdv1 "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
-	uss_errors "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
-	application "github.com/interuss/dss/pkg/rid/application"
+	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
-	"github.com/interuss/dss/pkg/validations"
 	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
-
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 var (
-	address              = flag.String("addr", ":8081", "address")
-	pkFile               = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
-	jwksEndpoint         = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
-	jwksKeyIDs           = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
-	keyRefreshTimeout    = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
-	timeout              = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
-	reflectAPI           = flag.Bool("reflect_api", false, "Whether to reflect the API.")
+	address    = flag.String("addr", ":8080", "Local address that the service binds to and listens on for incoming connections")
+	enableSCD  = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+	enableHTTP = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
+	timeout    = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
+	locality   = flag.String("locality", "", "self-identification string used as CRDB table writer column")
+
 	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests         = flag.Bool("dump_requests", false, "Log request and response protos")
+	dumpRequests         = flag.Bool("dump_requests", false, "Log HTTP request and response")
 	profServiceName      = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	enableSCD            = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
-	enableHTTP           = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
-	locality             = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 	garbageCollectorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
 
-	jwtAudiences = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
+	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
+	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
+	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
+	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
+	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
 const (
@@ -107,7 +102,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
 	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
@@ -208,10 +203,11 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}, nil
 }
 
-// RunGRPCServer starts the example gRPC service.
-// "network" and "address" are passed to net.Listen.
-func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, locality string) error {
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+// RunHTTPServer starts the DSS HTTP server.
+func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality string) error {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(zap.String("address", address))
+	logger.Info("build", zap.Any("description", build.Describe()))
+	logger.Info("config", zap.Bool("scd", *enableSCD))
 
 	if len(*jwtAudiences) == 0 {
 		// TODO: Make this flag required once all parties can set audiences
@@ -220,41 +216,17 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	}
 
 	var (
-		ridServerV1 *rid_v1.Server
-		ridServerV2 *rid_v2.Server
-		scdServer   *scd.Server
-		auxServer   = &aux.Server{}
+		err         error
+		ridV1Server *rid_v1.Server
+		ridV2Server *rid_v2.Server
+		scdV1Server *scd.Server
+		auxV1Server = &aux.Server{}
 	)
 
 	// Initialize remote ID
-	serverV1, serverV2, err := createRIDServer(ctx, locality, logger)
+	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
-	}
-	ridServerV1 = serverV1
-	ridServerV2 = serverV2
-
-	scopesValidators := auth.MergeOperationsAndScopesValidators(
-		ridServerV1.AuthScopes(), ridServerV2.AuthScopes(),
-	)
-	scopesValidators = auth.MergeOperationsAndScopesValidators(
-		scopesValidators, auxServer.AuthScopes(),
-	)
-
-	// Initialize strategic conflict detection
-
-	if *enableSCD {
-		server, err := createSCDServer(ctx, logger)
-		if err != nil {
-			ridServerV1.Cron.Stop()
-			ridServerV2.Cron.Stop()
-			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
-		}
-		scdServer = server
-
-		scopesValidators = auth.MergeOperationsAndScopesValidators(
-			scopesValidators, scdServer.AuthScopes(),
-		)
 	}
 
 	// Initialize access token validation
@@ -270,7 +242,6 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 		ctx, auth.Configuration{
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
-			ScopesValidators:  scopesValidators,
 			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
@@ -278,43 +249,44 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
-	// Set up server functionality
-	interceptors := []grpc.UnaryServerInterceptor{
-		uss_errors.Interceptor(logger),
-		logging.Interceptor(logger),
-		authorizer.AuthInterceptor,
-		validations.ValidationInterceptor,
-	}
-	if *dumpRequests {
-		interceptors = append(interceptors, logging.DumpRequestResponseInterceptor(logger))
-	}
+	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
+	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
+	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&auxV1Router, &ridV1Router, &ridV2Router}}
 
-	s := grpc.NewServer(grpc_middleware.WithUnaryServerChain(interceptors...))
-	if err != nil {
-		return stacktrace.Propagate(err, "Error creating new gRPC server")
-	}
-	if *reflectAPI {
-		reflection.Register(s)
-	}
-
-	logger.Info("build", zap.Any("description", build.Describe()))
-
-	ridpbv1.RegisterDiscoveryAndSynchronizationServiceServer(s, ridServerV1)
-	ridpbv2.RegisterStandardRemoteIDAPIInterfacesServiceServer(s, ridServerV2)
-	auxpb.RegisterDSSAuxServiceServer(s, auxServer)
+	// Initialize strategic conflict detection
 	if *enableSCD {
-		logger.Info("config", zap.Any("scd", "enabled"))
-		scdpb.RegisterUTMAPIUSSDSSAndUSSUSSServiceServer(s, scdServer)
-	} else {
-		logger.Info("config", zap.Any("scd", "disabled"))
+		scdV1Server, err = createSCDServer(ctx, logger)
+		if err != nil {
+			ridV1Server.Cron.Stop()
+			ridV2Server.Cron.Stop()
+			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
+		}
+
+		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
+		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
-	signals := make(chan os.Signal)
+	handler := logging.HTTPMiddleware(logger, *dumpRequests,
+		healthyEndpointMiddleware(logger,
+			&multiRouter,
+		))
+
+	httpServer := &http.Server{
+		Addr:    address,
+		Handler: handler,
+	}
+
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)
 
 	go func() {
-		defer s.GracefulStop()
+		defer func() {
+			if err := httpServer.Shutdown(context.Background()); err != nil {
+				logger.Warn("failed to shut down http server", zap.Error(err))
+			}
+		}()
 
 		for {
 			select {
@@ -327,12 +299,6 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 			}
 		}
 	}()
-	l, err := net.Listen("tcp", address)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error attempting to listen at %s", address)
-	}
-	// l does not need to be closed manually. Instead, the grpc Server instance owning
-	// l will close it on a graceful stop.
 
 	// Indicate ready for container health checks
 	readyFile, err := os.Create("service.ready")
@@ -341,7 +307,21 @@ func RunGRPCServer(ctx context.Context, ctxCanceler func(), address string, loca
 	}
 	readyFile.Close()
 
-	return s.Serve(l)
+	logger.Info("Starting DSS HTTP server")
+	return httpServer.ListenAndServe()
+}
+
+// healthyEndpointMiddleware intercepts a request and responds with an "ok" message at the endpoint "/healthy".
+func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/healthy" {
+			if _, err := w.Write([]byte("ok")); err != nil {
+				logger.Error("Error writing to /healthy")
+			}
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
 }
 
 type RIDGarbageCollectorJob struct {
@@ -362,7 +342,6 @@ func (gcj RIDGarbageCollectorJob) Run() {
 
 func main() {
 	flag.Parse()
-
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
 		panic(fmt.Sprintf("Failed to configure logging: %s", err.Error()))
 	}
@@ -374,9 +353,7 @@ func main() {
 	defer cancel()
 
 	if *profServiceName != "" {
-		if err := profiler.Start(profiler.Config{
-			Service: *profServiceName,
-		}); err != nil {
+		if err := profiler.Start(profiler.Config{Service: *profServiceName}); err != nil {
 			logger.Panic("Failed to start the profiler ", zap.Error(err))
 		}
 	}
@@ -386,19 +363,23 @@ func main() {
 		1 * time.Minute, 5 * time.Minute}
 	backoff := 0
 	for {
-		if err := RunGRPCServer(ctx, cancel, *address, *locality); err != nil {
+		if err := RunHTTPServer(ctx, cancel, *address, *locality); err != nil {
 			if stacktrace.GetCode(err) == codeRetryable {
-				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %ds to retry...", backoffs[backoff]/1000000000), zap.Error(err))
+				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %.fs to retry...", backoffs[backoff].Seconds()), zap.Error(err))
 				time.Sleep(backoffs[backoff])
 				if backoff < len(backoffs)-1 {
 					backoff++
 				}
 				continue
 			}
+
+			rootCause := stacktrace.RootCause(err)
+			if rootCause == nil || rootCause == context.Canceled || rootCause == http.ErrServerClosed {
+				logger.Info("Shutting down gracefully")
+				break
+			}
 			logger.Panic("Failed to execute service", zap.Error(err))
 		}
 		break
 	}
-
-	logger.Info("Shutting down gracefully")
 }

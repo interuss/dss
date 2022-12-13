@@ -4,7 +4,13 @@ resources:
   service_providers: resources.netrid.NetRIDServiceProviders
   observers: resources.netrid.NetRIDObserversResource
   evaluation_configuration: resources.netrid.EvaluationConfigurationResource
+  dss_instances: resources.astm.f3411.DSSInstancesResource
 actions:
+  - test_scenario:
+      scenario_type: scenarios.astm.netrid.v19.DSSInteroperability
+      resources:
+        dss_instances: dss_instances
+    on_failure: Continue
   - test_scenario:
       scenario_type: scenarios.astm.netrid.NominalBehavior
       resources:

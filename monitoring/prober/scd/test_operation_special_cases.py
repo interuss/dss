@@ -38,7 +38,7 @@ def test_op_request_1(ids, scd_api, scd_session):
   with open('./scd/resources/op_request_1.json', 'r') as f:
     req = json.load(f)
   resp = scd_session.put('/operational_intent_references/{}'.format(ids(OP1_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
   data = resp.json()
   assert 'operational_intent_reference'  in data, data
   assert 'ovn' in resp.json()['operational_intent_reference'], data

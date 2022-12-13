@@ -1,4 +1,5 @@
 from .flight_planners import (
+    FlightPlannerResource,
     FlightPlannersResource,
     FlightPlannerCombinationSelectorResource,
 )

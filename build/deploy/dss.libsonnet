@@ -1,7 +1,6 @@
 local cockroachAuxiliary = import 'cockroachdb-auxiliary.libsonnet';
 local cockroachdb = import 'cockroachdb.libsonnet';
 local backend = import 'core-service.libsonnet';
-local gateway = import 'http-gateway.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
@@ -46,7 +45,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 
     sset: cockroachdb.StatefulSet(metadata),
     auxiliary: cockroachAuxiliary.all(metadata),
-    gateway: gateway.all(metadata),
     backend: backend.all(metadata),
     prometheus: prometheus.all(metadata),
     grafana: grafana.all(metadata),

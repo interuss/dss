@@ -7,114 +7,154 @@ import (
 )
 
 var (
-	QueryOperationalIntentReferencesSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	QueryOperationalIntentReferencesSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	GetOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	GetOperationalIntentReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	CreateOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.strategic_coordination", "utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	CreateOperationalIntentReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination", "utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	UpdateOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.strategic_coordination", "utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	UpdateOperationalIntentReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination", "utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	DeleteOperationalIntentReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	DeleteOperationalIntentReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	QueryConstraintReferencesSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
-			{RequiredScopes: []string{"utm.constraint_processing"}},
+	QueryConstraintReferencesSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
+		},
+		{
+			"Authority": {"utm.constraint_processing"},
 		},
 	}
-	GetConstraintReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
-			{RequiredScopes: []string{"utm.constraint_processing"}},
+	GetConstraintReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
+		},
+		{
+			"Authority": {"utm.constraint_processing"},
 		},
 	}
-	CreateConstraintReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
+	CreateConstraintReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
 		},
 	}
-	UpdateConstraintReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
+	UpdateConstraintReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
 		},
 	}
-	DeleteConstraintReferenceSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
+	DeleteConstraintReferenceSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
 		},
 	}
-	QuerySubscriptionsSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
+	QuerySubscriptionsSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
 		},
 	}
-	GetSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
+	GetSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
 		},
 	}
-	CreateSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
+	CreateSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
 		},
 	}
-	UpdateSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
+	UpdateSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
 		},
 	}
-	DeleteSubscriptionSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
+	DeleteSubscriptionSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
 		},
 	}
-	MakeDssReportSecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.constraint_management"}},
-			{RequiredScopes: []string{"utm.constraint_processing"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
-			{RequiredScopes: []string{"utm.availability_arbitration"}},
+	MakeDssReportSecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.constraint_management"},
+		},
+		{
+			"Authority": {"utm.constraint_processing"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
+		},
+		{
+			"Authority": {"utm.availability_arbitration"},
 		},
 	}
-	GetUssAvailabilitySecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.availability_arbitration"}},
-			{RequiredScopes: []string{"utm.strategic_coordination"}},
-			{RequiredScopes: []string{"utm.conformance_monitoring_sa"}},
+	GetUssAvailabilitySecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.availability_arbitration"},
+		},
+		{
+			"Authority": {"utm.strategic_coordination"},
+		},
+		{
+			"Authority": {"utm.conformance_monitoring_sa"},
 		},
 	}
-	SetUssAvailabilitySecurity = map[string]api.SecurityScheme{
-		"Authority": []api.AuthorizationOption{
-			{RequiredScopes: []string{"utm.availability_arbitration"}},
+	SetUssAvailabilitySecurity = []api.AuthorizationOption{
+		{
+			"Authority": {"utm.availability_arbitration"},
 		},
 	}
 )
@@ -778,12 +818,7 @@ type SetUssAvailabilityResponseSet struct {
 type Implementation interface {
 	// Query all operational intent references in the specified area/volume/time from the DSS.
 	// ---
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryOperationalIntentReferences(ctx context.Context, req *QueryOperationalIntentReferencesRequest) QueryOperationalIntentReferencesResponseSet
 
 	// Retrieve the specified operational intent reference from the DSS.
@@ -800,12 +835,7 @@ type Implementation interface {
 
 	// Query all constraint references in the specified area/volume from the DSS.
 	// ---
-	// Note that this endpoint does not produce any mutations in the DSS
-	// despite using the HTTP POST verb.  The HTTP GET verb is traditionally
-	// used for operations like this one, but requiring or using a request body
-	// for HTTP GET requests is non-standard and not supported by some
-	// architectures.  POST is used here instead of GET to ensure robust
-	// support for the use of a request body.
+	// Note that this endpoint does not produce any mutations in the DSS despite using the HTTP POST verb.  The HTTP GET verb is traditionally used for operations like this one, but requiring or using a request body for HTTP GET requests is non-standard and not supported by some architectures.  POST is used here instead of GET to ensure robust support for the use of a request body.
 	QueryConstraintReferences(ctx context.Context, req *QueryConstraintReferencesRequest) QueryConstraintReferencesResponseSet
 
 	// Retrieve the specified constraint reference from the DSS.
@@ -822,18 +852,9 @@ type Implementation interface {
 
 	// Query all subscriptions in the specified area/volume from the DSS.
 	// ---
-	// Query subscriptions intersecting an area of interest.  Subscription
-	// notifications are only triggered by (and contain full information of) changes to,
-	// creation of, or deletion of, Entities referenced by or stored in the DSS;
-	// they do not involve any data transfer (such as remote ID telemetry updates) apart
-	// from Entity information.
-	//
-	// Note that this parameter is a JSON object (in the 'request-body'). Note that either
-	// or both of the 'altitude' and 'time' values may be omitted from this parameter.
-	//
-	// Only subscriptions belonging to the caller are returned.  This endpoint would be
-	// used if a USS lost track of subscriptions they had created and/or wanted to resolve
-	// an error indicating that they had too many existing subscriptions in an area.
+	// Query subscriptions intersecting an area of interest.  Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
+	// Note that this parameter is a JSON object (in the 'request-body'). Note that either or both of the 'altitude' and 'time' values may be omitted from this parameter.
+	// Only subscriptions belonging to the caller are returned.  This endpoint would be used if a USS lost track of subscriptions they had created and/or wanted to resolve an error indicating that they had too many existing subscriptions in an area.
 	QuerySubscriptions(ctx context.Context, req *QuerySubscriptionsRequest) QuerySubscriptionsResponseSet
 
 	// Retrieve the specified subscription from the DSS.
@@ -844,16 +865,13 @@ type Implementation interface {
 	// Create the specified subscription in the DSS.
 	// ---
 	// Create a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
 	CreateSubscription(ctx context.Context, req *CreateSubscriptionRequest) CreateSubscriptionResponseSet
 
 	// Update the specified subscription in the DSS.
 	// ---
 	// Update a subscription.
-	//
 	// Subscription notifications are only triggered by (and contain full information of) changes to, creation of, or deletion of, Entities referenced by or stored in the DSS; they do not involve any data transfer (such as remote ID telemetry updates) apart from Entity information.
-	//
 	// The standard requires each operational intent to have a subscription that cover the 4D volume of the operational intent.  If a USS attempts to update a subscription upon which an operational intent depends, and this update would cause the operational intent to lose subscription coverage, the update will be rejected by the DSS as a bad request.
 	UpdateSubscription(ctx context.Context, req *UpdateSubscriptionRequest) UpdateSubscriptionResponseSet
 

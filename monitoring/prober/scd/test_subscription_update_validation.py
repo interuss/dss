@@ -66,7 +66,7 @@ def test_create_op(ids, scd_api, scd_session):
   entity_name = 'operational_intent_reference'
   req = _make_op_req()
   resp = scd_session.put('/{}s/{}'.format(entity_name, ids(OP_TYPE)), json=req)
-  assert resp.status_code == 200, resp.content
+  assert resp.status_code == 201, resp.content
 
   data = resp.json()
   op = data[entity_name]

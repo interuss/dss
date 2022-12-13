@@ -17,9 +17,13 @@ with higher priority.
 
 FlightIntentsResource that provides at least 2 flight intents.  The first flight intent will be planned normally and then the second flight will be planned on top of the first flight.  Therefore, the second flight must intersect the first flight, and the second flight must have higher priority than the first flight.
 
-### flight_planners
+### uss1
 
-FlightPlannersResource that provides exactly 2 flight planners (USSs).  The first flight planner will successfully plan the first flight.  The second flight planner successfully plan the second, higher-priority flight over the first one.
+FlightPlannerResource that will successfully plan the first flight.
+
+### uss2
+
+FlightPlannerResouce that will successfully plan the second, higher-priority flight over the first one.
 
 ### dss
 
@@ -69,7 +73,11 @@ The first flight intent should be successfully planned by the first flight plann
 
 In this step, the second USS successfully executes a user intent to activate the priority flight.
 
-TODO: Complete this test case
+### [Activate priority flight test step](../../../flight_planning/successfully_activate_flight.md)
+
+The high-priority flight intent should be successfully activated by the first flight planner.
+
+### [Validate flight sharing test step](../validate_shared_operational_intent.md)
 
 ## Attempt to activate first flight test case
 

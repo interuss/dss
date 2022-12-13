@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/rsa"
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -86,7 +86,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 
 type PermissiveAuthorizer struct{}
 
-func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, schemes *map[string]api.SecurityScheme) api.AuthorizationResult {
+func (*PermissiveAuthorizer) Authorize(w http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 	return api.AuthorizationResult{}
 }
 
@@ -94,7 +94,7 @@ func main() {
 	flag.Parse()
 
 	// Read private key
-	bytes, err := ioutil.ReadFile(*keyFile)
+	bytes, err := os.ReadFile(*keyFile)
 	if err != nil {
 		log.Panic(err)
 	}

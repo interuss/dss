@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, Tuple, List, Optional
+from typing import Tuple, List, Optional, Set
 from urllib.parse import urlparse
 
 from implicitdict import ImplicitDict
@@ -7,9 +7,8 @@ from implicitdict import ImplicitDict
 from monitoring.monitorlib import infrastructure, fetch
 from monitoring.monitorlib.clients.scd_automated_testing import (
     clear_area,
-    create_flight,
+    put_flight,
     delete_flight,
-    QueryError,
     get_version,
     get_capabilities,
 )
@@ -23,9 +22,6 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     Capability,
     ClearAreaResponse,
     ClearAreaRequest,
-)
-from monitoring.uss_qualifier.resources.flight_planning.automated_test import (
-    FlightInjectionAttempt,
 )
 
 
@@ -67,7 +63,7 @@ class FlightPlanner:
         )
 
         # Flights injected by this target.
-        self.created_flight_ids: List[str] = []
+        self.created_flight_ids: Set[str] = set()
 
     def __repr__(self):
         return "FlightPlanner({}, {})".format(
@@ -83,13 +79,15 @@ class FlightPlanner:
         return self.config.participant_id
 
     def request_flight(
-        self, request: InjectFlightRequest
+        self,
+        request: InjectFlightRequest,
+        flight_id: Optional[str] = None,
     ) -> Tuple[InjectFlightResponse, fetch.Query, str]:
-        flight_id, resp, query = create_flight(
-            self.client, self.config.injection_base_url, request
+        flight_id, resp, query = put_flight(
+            self.client, self.config.injection_base_url, request, flight_id
         )
         if resp.result == InjectFlightResult.Planned:
-            self.created_flight_ids.append(flight_id)
+            self.created_flight_ids.add(flight_id)
 
         return resp, query, flight_id
 
