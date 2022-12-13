@@ -1,5 +1,8 @@
 from monitoring.monitorlib.rid_automated_testing import injection_api
 from implicitdict import ImplicitDict
+from uas_standards.interuss.automated_testing.flight_planning.v1.api import \
+    InjectFlightRequest, ClearAreaRequest
+
 
 # Each request descriptor in this file is expected to implement a static
 # request_type_name() method which indicates the type of request corresponding
@@ -40,3 +43,41 @@ class RIDInjectionDeleteTestRequest(ImplicitDict):
 
     test_id: str
     version: str
+
+
+# --- SCD injection (interfaces/automated_testing/scd/v1/scd.yaml) ---
+class SCDInjectionStatusRequest(ImplicitDict):
+    @staticmethod
+    def request_type_name() -> str:
+        return 'scd.getStatus'
+
+
+class SCDInjectionCapabilitiesRequest(ImplicitDict):
+    @staticmethod
+    def request_type_name() -> str:
+        return 'scd.getCapabilities'
+
+
+class SCDInjectionPutFlightRequest(ImplicitDict):
+    @staticmethod
+    def request_type_name() -> str:
+        return 'scd.putFlight'
+
+    flight_id: str
+    request_body: InjectFlightRequest
+
+
+class SCDInjectionDeleteFlightRequest(ImplicitDict):
+    @staticmethod
+    def request_type_name() -> str:
+        return 'scd.deleteFlight'
+
+    flight_id: str
+
+
+class SCDInjectionClearAreaRequest(ImplicitDict):
+    @staticmethod
+    def request_type_name() -> str:
+        return 'scd.createClearAreaRequest'
+
+    request_body: ClearAreaRequest
