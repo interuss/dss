@@ -73,7 +73,11 @@ The first flight intent should be successfully planned by the first flight plann
 
 In this step, the second USS successfully executes a user intent to activate the priority flight.
 
-TODO: Complete this test case
+### [Activate priority flight test step](../../../flight_planning/successfully_activate_flight.md)
+
+The high-priority flight intent should be successfully activated by the first flight planner.
+
+### [Validate flight sharing test step](../validate_shared_operational_intent.md)
 
 ## Attempt to activate first flight test case
 

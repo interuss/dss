@@ -61,6 +61,7 @@ def validate_shared_operational_intent(
     op_intent_ref = matching_op_intent_refs[0]
 
     op_intent, query = scenario.dss.get_full_op_intent(op_intent_ref)
+    scenario.record_query(query)
     with scenario.check(
         "Operational intent details retrievable", [scenario.uss1.participant_id]
     ) as check:

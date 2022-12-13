@@ -18,6 +18,7 @@ cd "${BASEDIR}" || exit 1
 cp health_check.sh /app
 
 # Start mock_uss server on port 5000
+export PYTHONUNBUFFERED=TRUE
 gunicorn \
     --preload \
     --workers=4 \

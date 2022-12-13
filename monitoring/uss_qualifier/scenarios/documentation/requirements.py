@@ -180,11 +180,9 @@ def _evaluate_requirements_in_suite(
 
 
 def evaluate_requirements(report: TestRunReport) -> List[TestedRequirement]:
-    if report.configuration.action.get_action_type() != ActionType.TestSuite:
-        raise NotImplementedError()
     import_submodules(scenarios_module)
     reqs = {}
-    _evaluate_requirements_in_suite(report.report.test_suite, "$.report", reqs)
+    _evaluate_requirements_in_action(report.report, "$.report", reqs)
     sorted_ids = list(reqs.keys())
     sorted_ids.sort()
     return [reqs[k] for k in sorted_ids]

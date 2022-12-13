@@ -1,3 +1,5 @@
+from typing import Optional
+
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
     Capability,
@@ -23,12 +25,15 @@ from monitoring.uss_qualifier.scenarios.flight_planning.test_steps import (
     check_capabilities,
     inject_successful_flight_intent,
     cleanup_flights,
+    activate_valid_flight_intent,
 )
 
 
 class NominalPlanningPriority(TestScenario):
     first_flight: InjectFlightRequest
+    first_flight_id: Optional[str]
     priority_flight: InjectFlightRequest
+    priority_flight_id: Optional[str]
     uss1: FlightPlanner
     uss2: FlightPlanner
     dss: DSSInstance
@@ -50,6 +55,14 @@ class NominalPlanningPriority(TestScenario):
                 f"`{self.me()}` TestScenario requires at least 2 flight_intents; found {len(flight_intents)}"
             )
         self.first_flight, self.priority_flight = flight_intents
+        if (
+            self.priority_flight.operational_intent.priority
+            <= self.first_flight.operational_intent.priority
+        ):
+            raise ValueError(
+                f"`{self.me()}` TestScenario requires the second flight_intent to be higher priority than the first flight_intent; instead found priorities {self.first_flight.operational_intent.priority} then {self.priority_flight.operational_intent.priority}"
+            )
+        self.first_flight_id, self.priority_flight_id = None, None
 
         self.dss = dss.dss
 
@@ -71,18 +84,15 @@ class NominalPlanningPriority(TestScenario):
         self.end_test_case()
 
         self.begin_test_case("Plan first flight")
-        if not self._plan_first_flight():
-            return
+        self._plan_first_flight()
         self.end_test_case()
 
         self.begin_test_case("Plan priority flight")
-        if not self._plan_priority_flight():
-            return
+        self._plan_priority_flight()
         self.end_test_case()
 
         self.begin_test_case("Activate priority flight")
-        if not self._activate_priority_flight():
-            return
+        self._activate_priority_flight()
         self.end_test_case()
 
         self.end_test_scenario()
@@ -98,47 +108,62 @@ class NominalPlanningPriority(TestScenario):
         ):
             return False
 
-        if not clear_area(
+        clear_area(
             self,
             "Area clearing",
             [self.first_flight, self.priority_flight],
             [self.uss1, self.uss2],
-        ):
-            return False
+        )
 
         return True
 
-    def _plan_first_flight(self) -> bool:
-        resp = inject_successful_flight_intent(
+    def _plan_first_flight(self):
+        resp, flight_id = inject_successful_flight_intent(
             self, "Inject flight intent", self.uss1, self.first_flight
         )
         if resp is None:
-            return False
+            raise RuntimeError(
+                "Flight intent not injected successfully, but a High Severity issue didn't stop scenario execution"
+            )
+        self.first_flight_id = flight_id
         op_intent_id = resp.operational_intent_id
 
         validate_shared_operational_intent(
             self, "Validate flight sharing", self.first_flight, op_intent_id
         )
 
-        return True
-
-    def _plan_priority_flight(self) -> bool:
-        resp = inject_successful_flight_intent(
+    def _plan_priority_flight(self):
+        resp, flight_id = inject_successful_flight_intent(
             self, "Inject flight intent", self.uss2, self.priority_flight
         )
         if resp is None:
-            return False
+            raise RuntimeError(
+                "Flight intent not injected successfully, but a High Severity issue didn't stop scenario execution"
+            )
+        self.priority_flight_id = flight_id
         op_intent_id = resp.operational_intent_id
 
         validate_shared_operational_intent(
             self, "Validate flight sharing", self.priority_flight, op_intent_id
         )
 
-        return True
+    def _activate_priority_flight(self):
+        resp = activate_valid_flight_intent(
+            self,
+            "Activate priority flight",
+            self.uss2,
+            self.priority_flight_id,
+            self.priority_flight,
+        )
+        if resp is None:
+            raise RuntimeError(
+                "Flight intent not activated successfully, but a High Severity issue didn't stop scenario execution"
+            )
+        op_intent_id = resp.operational_intent_id
 
-    def _activate_priority_flight(self) -> bool:
-
-        return True
+        validate_shared_operational_intent(
+            self, "Validate flight sharing", self.priority_flight, op_intent_id
+        )
 
     def cleanup(self):
         self.begin_cleanup()

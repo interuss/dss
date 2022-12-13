@@ -8,7 +8,7 @@ This step verifies that a created flight is shared properly per ASTM F3548-21 by
 
 ## Operational intent shared correctly check
 
-If a reference to the operational intent for the flight is not found in the DSS, this check will fail per **astm.f3548.v21.USS0005** and **astm.f3548.v21.OPIN0030**.
+If a reference to the operational intent for the flight is not found in the DSS, this check will fail per **astm.f3548.v21.USS0005**.
 
 ## Operational intent details retrievable check
 

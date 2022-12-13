@@ -29,10 +29,14 @@ class QueryError(OperationError):
         self.query = query
 
 
-def create_flight(
-    utm_client: UTMClientSession, uss_base_url: str, flight_request: InjectFlightRequest
+def put_flight(
+    utm_client: UTMClientSession,
+    uss_base_url: str,
+    flight_request: InjectFlightRequest,
+    flight_id: Optional[str] = None,
 ) -> Tuple[str, InjectFlightResponse, fetch.Query]:
-    flight_id = str(uuid.uuid4())
+    if not flight_id:
+        flight_id = str(uuid.uuid4())
     url = "{}/v1/flights/{}".format(uss_base_url, flight_id)
 
     initiated_at = datetime.utcnow()

@@ -91,13 +91,12 @@ class Validation(TestScenario):
         ):
             return False
 
-        if not clear_area(
+        clear_area(
             self,
             "Area clearing",
             self.flight_intents,
             [self.ussp],
-        ):
-            return False
+        )
 
         return True
 
@@ -134,7 +133,7 @@ class Validation(TestScenario):
         return True
 
     def _plan_valid_flight(self) -> bool:
-        resp = inject_successful_flight_intent(
+        resp, _ = inject_successful_flight_intent(
             self, "Inject valid flight intent", self.ussp, self.flight_intents[-1]
         )
         if resp is None:
