@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from typing import List, Tuple
 import uuid
@@ -28,6 +28,9 @@ from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc import database
 from monitoring.mock_uss.scdsc.database import db
 from monitoring.monitorlib.uspace import problems_with_flight_authorisation
+
+
+DEADLOCK_TIMEOUT = timedelta(seconds=60)
 
 
 def query_operational_intents(
@@ -115,12 +118,13 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             )
 
     # Check if this is an existing flight being modified
+    deadline = datetime.utcnow() + DEADLOCK_TIMEOUT
     while True:
         with db as tx:
             if flight_id in tx.flights:
                 # This is an existing flight being modified
                 existing_flight = tx.flights[flight_id]
-                if not existing_flight.locked:
+                if existing_flight and not existing_flight.locked:
                     print(
                         f"[inject_flight:{flight_id}] Existing flight locked for update"
                     )
@@ -128,11 +132,17 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
                     break
             else:
                 print(f"[inject_flight:{flight_id}] Request is for a new flight")
+                tx.flights[flight_id] = None
                 existing_flight = None
                 break
         # We found an existing flight but it was locked; wait for it to become
         # available
         time.sleep(0.5)
+
+        if datetime.utcnow() > deadline:
+            raise RuntimeError(
+                f"Deadlock in inject_flight while attempting to gain access to flight {flight_id}"
+            )
 
     try:
         # Check for operational intents in the DSS
@@ -266,10 +276,19 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             )
         )
     finally:
-        if existing_flight:
-            print(f"[inject_flight] Releasing lock on flight_id {flight_id}")
-            with db as tx:
+        with db as tx:
+            if tx.flights[flight_id]:
+                # FlightRecord was a true existing flight
+                print(
+                    f"[inject_flight] Releasing placeholder for flight_id {flight_id}"
+                )
                 tx.flights[flight_id].locked = False
+            else:
+                # FlightRecord was just a placeholder for a new flight
+                print(
+                    f"[inject_flight] Releasing lock on existing flight_id {flight_id}"
+                )
+                del tx.flights[flight_id]
 
 
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["DELETE"])
@@ -277,8 +296,26 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 def delete_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight deletion in SCD automated testing injection API."""
 
-    with db as tx:
-        flight = tx.flights.pop(flight_id, None)
+    deadline = datetime.utcnow() + DEADLOCK_TIMEOUT
+    while True:
+        with db as tx:
+            if flight_id in tx.flights:
+                flight = tx.flights[flight_id]
+                if flight and not flight.locked:
+                    # FlightRecord was a true existing flight not being mutated anywhere else
+                    del tx.flights[flight_id]
+                    break
+            else:
+                # No FlightRecord found
+                flight = None
+                break
+        # There is a race condition with another handler to create or modify the requested flight; wait for that to resolve
+        time.sleep(0.5)
+
+        if datetime.utcnow() > deadline:
+            raise RuntimeError(
+                f"Deadlock in delete_flight while attempting to gain access to flight {flight_id}"
+            )
 
     if flight is None:
         return (
@@ -380,19 +417,34 @@ def clear_area() -> Tuple[str, int]:
             dss_deletion_results[op_intent_ref.id] = str(e)
 
     # Delete corresponding flight injections and cached operational intents
-    with db as tx:
-        flights_to_delete = []
-        for flight_id, record in tx.flights.items():
-            if record.op_intent_reference.id in deleted:
-                flights_to_delete.append(flight_id)
-        for flight_id in flights_to_delete:
-            del tx.flights[flight_id]
+    deadline = datetime.utcnow() + DEADLOCK_TIMEOUT
+    while True:
+        pending_flights = set()
+        with db as tx:
+            flights_to_delete = []
+            for flight_id, record in tx.flights.items():
+                if record is None or record.locked:
+                    pending_flights.add(flight_id)
+                    continue
+                if record.op_intent_reference.id in deleted:
+                    flights_to_delete.append(flight_id)
+            for flight_id in flights_to_delete:
+                del tx.flights[flight_id]
 
-        cache_deletions = []
-        for op_intent_id in deleted:
-            if op_intent_id in tx.cached_operations:
-                del tx.cached_operations[op_intent_id]
-                cache_deletions.append(op_intent_id)
+            cache_deletions = []
+            for op_intent_id in deleted:
+                if op_intent_id in tx.cached_operations:
+                    del tx.cached_operations[op_intent_id]
+                    cache_deletions.append(op_intent_id)
+
+        if not pending_flights:
+            break
+        time.sleep(0.5)
+
+        if datetime.utcnow() > deadline:
+            raise RuntimeError(
+                f"Deadlock in clear_area while attempting to gain access to flight(s) {', '.join(pending_flights)}"
+            )
 
     msg = yaml.dump(
         {

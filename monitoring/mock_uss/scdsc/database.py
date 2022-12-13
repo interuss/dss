@@ -19,7 +19,7 @@ class FlightRecord(ImplicitDict):
 class Database(ImplicitDict):
     """Simple in-memory pseudo-database tracking the state of the mock system"""
 
-    flights: Dict[str, FlightRecord] = {}
+    flights: Dict[str, Optional[FlightRecord]] = {}
     cached_operations: Dict[str, scd.OperationalIntent] = {}
 
 
