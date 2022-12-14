@@ -24,7 +24,7 @@
 						}
 					],
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "http://localhost:8085/token?grant_type=client_credentials&scope=rid.display_provider&intended_audience=localhost&issuer=localhost",
@@ -74,7 +74,7 @@
 						}
 					],
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "http://localhost:8085/token?grant_type=client_credentials&scope=rid.inject_test_data&intended_audience=localhost&issuer=localhost",
@@ -94,6 +94,56 @@
 								{
 									"key": "scope",
 									"value": "rid.inject_test_data"
+								},
+								{
+									"key": "intended_audience",
+									"value": "localhost"
+								},
+								{
+									"key": "issuer",
+									"value": "localhost"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get SCD injection token from dummy OAuth",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"scd_inject_access_token\", data.access_token);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8085/token?grant_type=client_credentials&scope=utm.inject_test_data&intended_audience=localhost&issuer=localhost",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "scope",
+									"value": "utm.inject_test_data"
 								},
 								{
 									"key": "intended_audience",
@@ -256,6 +306,186 @@
 								"tests",
 								"702255ac-22b5-4be9-ba10-c68411724280",
 								"asdf"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SCD Injection",
+			"item": [
+				{
+					"name": "Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{scd_inject_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8075/scd/v1/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8075",
+							"path": [
+								"scd",
+								"v1",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Capabilities",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{scd_inject_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8075/scd/v1/capabilities",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8075",
+							"path": [
+								"scd",
+								"v1",
+								"capabilities"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flights",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{scd_inject_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"operational_intent\": {\n        \"state\": \"Accepted\",\n        \"priority\": 0,\n        \"volumes\": [],\n        \"off_nominal_volumes\": []\n    },\n    \"flight_authorisation\": {\n        \"uas_serial_number\": \"\",\n        \"operation_mode\": \"Undeclared\",\n        \"uas_class\": \"Other\",\n        \"identification_technologies\": [],\n        \"operator_id\": \"\",\n        \"operation_category\": \"Unknown\",\n        \"connectivity_methods\": [],\n        \"endurance_minutes\": 0,\n        \"emergency_procedure_url\": \"\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8075/scd/v1/flights/c320b2ee-d944-418b-baad-dcdfb61ef0d6",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8075",
+							"path": [
+								"scd",
+								"v1",
+								"flights",
+								"c320b2ee-d944-418b-baad-dcdfb61ef0d6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flights",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{scd_inject_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8075/scd/v1/flights/c320b2ee-d944-418b-baad-dcdfb61ef0d6",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8075",
+							"path": [
+								"scd",
+								"v1",
+								"flights",
+								"c320b2ee-d944-418b-baad-dcdfb61ef0d6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clear area",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{scd_inject_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"request_id\": \"f49191cb-202d-4555-8bb3-4da25b1b17f7\",\n    \"extent\": {\n        \"volume\": {}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8075/scd/v1/clear_area_requests",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8075",
+							"path": [
+								"scd",
+								"v1",
+								"clear_area_requests"
 							]
 						}
 					},
@@ -502,6 +732,261 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\"return_code\":200,\"response\":{\"injected_flights\":[]}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8075/handler/queries/{{handler_request_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8075",
+									"path": [
+										"handler",
+										"queries",
+										"{{handler_request_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "SCD Injection",
+					"item": [
+						{
+							"name": "Status response",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"return_code\":200,\"response\":{\"status\":\"Ready\"}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8075/handler/queries/{{handler_request_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8075",
+									"path": [
+										"handler",
+										"queries",
+										"{{handler_request_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Capabilities response",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"return_code\":200,\"response\":{\"capabilities\":[\"FlightAuthorisationValidation\",\"BasicStrategicConflictDetection\",\"HighPriorityFlights\"]}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8075/handler/queries/{{handler_request_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8075",
+									"path": [
+										"handler",
+										"queries",
+										"{{handler_request_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "(PUT) Flights response",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"return_code\":200,\"response\":{\"response_example_not_complete\": true}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8075/handler/queries/{{handler_request_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8075",
+									"path": [
+										"handler",
+										"queries",
+										"{{handler_request_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "(DELETE) Flights response",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"return_code\":200,\"response\":{\"response_example_not_complete\": true}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8075/handler/queries/{{handler_request_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8075",
+									"path": [
+										"handler",
+										"queries",
+										"{{handler_request_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Clear area response",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "local_client",
+											"type": "string"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"return_code\":200,\"response\":{\"outcome\":{\"timestamp\":\"2022-12-12T00:00.00Z\",\"success\":true}}}",
 									"options": {
 										"raw": {
 											"language": "json"

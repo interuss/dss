@@ -17,7 +17,7 @@ _logger.setLevel(logging.DEBUG)
 
 @webapp.route('/ridsp/injection/tests/<test_id>', methods=['PUT'])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
-def create_test(test_id: str) -> Tuple[str, int]:
+def rid_injection_create_test(test_id: str) -> Tuple[str, int]:
     """Implements test creation in RID automated testing injection API."""
     try:
         json = flask.request.json
@@ -33,6 +33,6 @@ def create_test(test_id: str) -> Tuple[str, int]:
 
 @webapp.route('/ridsp/injection/tests/<test_id>/<version>', methods=['DELETE'])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
-def delete_test(test_id: str, version: str) -> Tuple[str, int]:
+def rid_injection_delete_test(test_id: str, version: str) -> Tuple[str, int]:
     """Implements test deletion in RID automated testing injection API."""
     return handling.fulfill_query(RIDInjectionDeleteTestRequest(test_id=test_id, version=version), _logger)

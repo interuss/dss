@@ -30,6 +30,7 @@ docker run ${docker_args} --name atproxy \
   -e ATPROXY_CLIENT_BASIC_AUTH="${CLIENT_BASIC_AUTH}" \
   -e ATPROXY_PUBLIC_KEY="${PUBLIC_KEY}" \
   -e ATPROXY_TOKEN_AUDIENCE="${AUD}" \
+  -e PYTHONUNBUFFERED=TRUE \
   -p ${PORT}:5000 \
   -v "$(pwd)/build/test-certs:/var/test-certs:ro" \
   "$@" \
