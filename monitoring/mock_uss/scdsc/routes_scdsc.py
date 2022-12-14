@@ -4,11 +4,6 @@ from monitoring.monitorlib import scd
 from monitoring.mock_uss import webapp
 from monitoring.mock_uss.auth import requires_scope
 from monitoring.mock_uss.scdsc.database import db
-from monitoring.mock_uss.config import Config
-from loguru import logger
-from os import environ
-
-SERVICES = environ.get("MOCK_USS_SERVICES", "")
 
 
 @webapp.route("/mock/scd/uss/v1/operational_intents/<entityid>", methods=["GET"])
