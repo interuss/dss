@@ -57,3 +57,4 @@ def verify_password(username, password):
 from . import routes_handler
 from . import routes_rid_observation
 from . import routes_rid_injection
+from . import routes_scd
