@@ -1,4 +1,5 @@
 flask==1.1.2
 gunicorn==20.0.4
 pyopenssl
+loguru==0.6.0
 -r ../monitorlib/requirements.txt
