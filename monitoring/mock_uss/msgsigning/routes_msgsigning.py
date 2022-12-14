@@ -19,7 +19,7 @@ def get_public_key():
     return flask.send_file(public_key_file_location)
 
 
-@webapp.route("/mock/msgsigning/set-keypair", methods=["POST"])
+@webapp.route("/mock/msgsigning/keypair", methods=["PUT"])
 def set_keypair():
     # TODO: Update keypair to use via a received JSON object -> {"public_key": "/path", "private_key": "/path"}
     return flask.jsonify({"message": "Not yet implemented"}), 501
