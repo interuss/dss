@@ -1,6 +1,7 @@
 import flask
 
 from monitoring.mock_uss import webapp, config
+from monitoring.mock_uss.msgsigning.database import db
 from loguru import logger
 import os
 
@@ -10,9 +11,9 @@ import os
 )
 def get_public_key():
     public_key_file_location = os.path.join(
-        webapp.config.get(config.KEY_CERT_BASE_PATH), "messagesigning/mock_faa_pub.der"
+        webapp.config.get(config.KEY_CERT_BASE_PATH), db.value.public_key_name
     )
 
-    logger.info("Retreiving public key file from {}".format(public_key_file_location))
+    logger.info("Retrieving public key file from {}".format(public_key_file_location))
 
     return flask.send_file(public_key_file_location)

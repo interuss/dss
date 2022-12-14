@@ -10,7 +10,8 @@ from implicitdict import ImplicitDict
 class Database(ImplicitDict):
     """Simple in-memory pseudo-database tracking whether or not to use a valid key pair for message signing activities."""
 
-    use_valid_keypair: bool = True
+    public_key_name: str = "messagesigning/mock_faa_pub.der"
+    private_key_name: str = "messagesigning/mock_faa_priv.pem"
 
 
 db = SynchronizedValue(

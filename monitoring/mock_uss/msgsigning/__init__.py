@@ -1,6 +1,6 @@
 from monitoring.mock_uss import config, SERVICE_MESSAGESIGNING
 
-if config.Config.CERT_BASE_PATH is None:
+if not config.Config.CERT_BASE_PATH:
     raise ValueError(
-        f"CERT_BASE_PATH is required for the {SERVICE_MESSAGESIGNING} service"
+        f"Environment variable {config.ENV_KEY_CERT_BASE_PATH} may not be blank for the {SERVICE_MESSAGESIGNING} service"
     )
