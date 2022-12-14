@@ -8,6 +8,7 @@ import urllib.parse
 from monitoring.mock_uss.msgsigning.database import db
 from monitoring.messagesigning.hasher import get_content_digest
 
+
 def get_x_utm_jws_header():
     return '"alg"="{}", "typ"="{}", "kid"="{}", "x5u"="{}"'.format(
         "RS256",
