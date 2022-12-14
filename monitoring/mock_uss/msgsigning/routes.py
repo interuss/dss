@@ -1,7 +1,7 @@
 from monitoring.mock_uss import webapp
 
 
-@webapp.route("/msgsigning/status")
+@webapp.route("/mock/msgsigning/status")
 def msgsigning_status():
     return "Mock Message Signing Service Provider ok"
 

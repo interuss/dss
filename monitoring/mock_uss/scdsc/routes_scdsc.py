@@ -71,20 +71,6 @@ def make_uss_report():
     return flask.jsonify({"message": "Not yet implemented"}), 500
 
 
-if "msgsigning" in SERVICES:
-
-    @webapp.route(
-        "/mock/msgsigning/.well-known/uas-traffic-management/pub.der", methods=["GET"]
-    )
-    def get_public_key():
-        public_key_file_location = Config.PUBLIC_KEY_PATH
-
-        logger.info(
-            "Retreiving public key file from {}".format(public_key_file_location)
-        )
-
-        return flask.send_file(public_key_file_location)
-
     # Parse the request
     # TODO: Implement
 
