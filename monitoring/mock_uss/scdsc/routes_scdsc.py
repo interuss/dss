@@ -70,7 +70,6 @@ def make_uss_report():
 
     return flask.jsonify({"message": "Not yet implemented"}), 500
 
-
     # Parse the request
     # TODO: Implement
 

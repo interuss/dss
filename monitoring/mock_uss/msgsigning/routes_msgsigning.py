@@ -4,6 +4,7 @@ from monitoring.mock_uss import webapp, config
 from loguru import logger
 import os
 
+
 @webapp.route(
     "/mock/msgsigning/.well-known/uas-traffic-management/pub.der", methods=["GET"]
 )
