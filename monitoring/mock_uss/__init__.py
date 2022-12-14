@@ -6,6 +6,7 @@ SERVICE_GEOAWARENESS = "geoawareness"
 SERVICE_RIDSP = "ridsp"
 SERVICE_RIDDP = "riddp"
 SERVICE_SCDSC = "scdsc"
+SERVICE_MESSAGESIGNING = "msgsigning"
 
 webapp = flask.Flask(__name__)
 enabled_services = set()
@@ -41,3 +42,8 @@ if SERVICE_SCDSC in webapp.config[config.KEY_SERVICES]:
     enabled_services.add(SERVICE_SCDSC)
     from monitoring.mock_uss import scdsc
     from monitoring.mock_uss.scdsc import routes as scdsc_routes
+
+if SERVICE_MESSAGESIGNING in webapp.config[config.KEY_SERVICES]:
+    enabled_services.add(SERVICE_MESSAGESIGNING)
+    from monitoring.mock_uss import msgsigning
+    from monitoring.mock_uss.msgsigning import routes as msgsigning_routes
