@@ -255,7 +255,7 @@ class TestScenario(ABC):
         self._expect_phase(ScenarioPhase.ReadyForTestCase)
         available_cases = {c.name: c for c in self.documentation.cases}
         if name not in available_cases:
-            case_list = ", ".join(available_cases)
+            case_list = ", ".join(f'"{c}"' for c in available_cases)
             raise RuntimeError(
                 f'Test scenario `{self.me()}` was instructed to begin_test_case "{name}", but that test case is not declared in documentation; declared cases are: {case_list}'
             )
@@ -277,7 +277,7 @@ class TestScenario(ABC):
         self._expect_phase(ScenarioPhase.ReadyForTestStep)
         available_steps = {c.name: c for c in self._current_case.steps}
         if name not in available_steps:
-            step_list = ", ".join(available_steps)
+            step_list = ", ".join(f'"{s}"' for s in available_steps)
             raise RuntimeError(
                 f'Test scenario `{self.me()}` was instructed to begin_test_step "{name}" during test case "{self._current_case.name}", but that test step is not declared in documentation; declared steps are: {step_list}'
             )
@@ -304,7 +304,7 @@ class TestScenario(ABC):
     def _get_check(self, name: str) -> TestCheckDocumentation:
         available_checks = {c.name: c for c in self._current_step.checks}
         if name not in available_checks:
-            check_list = ", ".join(available_checks)
+            check_list = ", ".join(f'"{c}"' for c in available_checks)
             raise RuntimeError(
                 f'Test scenario `{self.me()}` was instructed to record outcome for check "{name}" during test step "{self._current_step.name}" during test case "{self._current_case.name}", but that check is not declared in documentation; declared checks are: {check_list}'
             )
