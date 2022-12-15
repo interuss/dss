@@ -339,8 +339,8 @@ class DSSInteroperability(TestScenario):
                 )
 
             updated_data = put_resp.json()
-
-            if updated_data["service_area"]["time_end"] != isa_update.extents.time_end:
+            t_updated = StringBasedDateTime(updated_data["service_area"]["time_end"])
+            if t_updated.datetime != isa_update.extents.time_end.datetime:
                 check.record_failed(
                     f"Unsuccessful Update; end time not changed as requested",
                     Severity.High,
