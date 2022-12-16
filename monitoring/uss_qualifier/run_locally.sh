@@ -25,7 +25,7 @@ monitoring/build.sh || exit 1
 CONFIG_NAME="${1:-configurations.dev.local_test}"
 CONFIG_FLAG="--config ${CONFIG_NAME}"
 
-AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier)'
+AUTH_SPEC='DummyOAuth(http://host.docker.internal:8085/token,uss_qualifier, message_signing=UFT(signing_key_path= "/var/test-certs/messagesigning/mock_faa_priv.pem", cert_url = "http://host.docker.internal:8077/mock/msgsigning/.well-known/uas-traffic-management/pub.der"))'
 
 QUALIFIER_OPTIONS="$CONFIG_FLAG"
 

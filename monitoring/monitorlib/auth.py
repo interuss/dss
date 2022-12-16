@@ -80,8 +80,8 @@ class NoAuth(AuthAdapter):
 class DummyOAuth(AuthAdapter):
     """Auth adapter that gets JWTs that uses the Dummy OAuth Server"""
 
-    def __init__(self, token_endpoint: str, sub: str):
-        super().__init__()
+    def __init__(self, token_endpoint: str, sub: str, message_signing = None):
+        super().__init__(message_signing)
 
         self._oauth_token_endpoint = token_endpoint
         self._sub = sub
