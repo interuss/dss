@@ -339,12 +339,15 @@ class DSSInteroperability(TestScenario):
                 )
 
             updated_data = put_resp.json()
-
-            if updated_data["service_area"]["time_end"] != isa_update.extents.time_end:
+            t_updated = StringBasedDateTime(
+                updated_data["service_area"]["time_end"]
+            ).datetime.timestamp()
+            dt = abs(t_updated - isa_update.extents.time_end.datetime.timestamp())
+            if dt > 0.001:
                 check.record_failed(
                     f"Unsuccessful Update; end time not changed as requested",
                     Severity.High,
-                    f"Expected: '{isa_update.extents.time_end}', received: '{updated_data['service_area']['time_end']}'",
+                    f"Expected: '{isa_update.extents.time_end.datetime}', received: '{t_updated.datetime}'",
                 )
 
         # TODO: Implement "ISA modification triggers subscription notification requests check"
