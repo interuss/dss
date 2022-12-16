@@ -5,23 +5,22 @@ from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from loguru import logger
 import urllib.parse
-from monitoring.mock_uss.msgsigning.database import db
-from monitoring.messagesigning.hasher import get_content_digest
+from monitoring.monitorlib.messagesigning.hasher import get_content_digest
 
 
-def get_x_utm_jws_header():
+def get_x_utm_jws_header(cert_url):
     return '"alg"="{}", "typ"="{}", "kid"="{}", "x5u"="{}"'.format(
         "RS256",
         "JOSE",
         get_key_id(),
-        "http://host.docker.internal:8077/mock/msgsigning/.well-known/uas-traffic-management/pub.der",
+        cert_url,
     )
 
 
-def get_signed_headers(object_to_sign):
+def get_signed_headers(object_to_sign, private_key_path,  cert_url):
     signed_type = str(type(object_to_sign))
     is_signing_request = "PreparedRequest" in signed_type
-    sig, sig_input = get_signature(object_to_sign, signed_type)
+    sig, sig_input = get_signature(object_to_sign, signed_type, private_key_path)
     content_digest = (
         get_content_digest(object_to_sign.body)
         if is_signing_request
@@ -30,7 +29,7 @@ def get_signed_headers(object_to_sign):
     signed_headers = {
         "x-utm-message-signature-input": "utm-message-signature={}".format(sig_input),
         "x-utm-message-signature": "utm-message-signature=:{}:".format(sig),
-        "x-utm-jws-header": get_x_utm_jws_header(),
+        "x-utm-jws-header": get_x_utm_jws_header(cert_url),
         "content-digest": "sha-512=:{}:".format(content_digest),
     }
     return signed_headers
@@ -46,12 +45,12 @@ def get_signature_input(sig_base):
     return sig_param_str[start_sig_input_ind:end_sig_input_str]
 
 
-def get_signature(object_to_sign, signed_type):
+def get_signature(object_to_sign, signed_type, private_key_path):
     sig_base = get_signature_base(object_to_sign, signed_type)
     sig_base_bytes = bytes(sig_base, "utf-8")
     sig_input = get_signature_input(sig_base)
     hash = SHA256.new(sig_base_bytes)
-    with open(db.value.private_key_name, "rb") as priv_key_file:
+    with open(private_key_path, "rb") as priv_key_file:
         private_key = RSA.import_key(priv_key_file.read())
     return (
         base64.b64encode(pkcs1_15.new(private_key).sign(hash)).decode("utf-8"),

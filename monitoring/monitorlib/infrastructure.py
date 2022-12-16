@@ -4,6 +4,7 @@ import functools
 from typing import Dict, List, Optional
 import urllib.parse
 from aiohttp import ClientSession
+from monitoring.monitorlib.messagesigning import message_signer as signer
 
 import jwt
 import requests
@@ -20,12 +21,18 @@ EPOCH = datetime.datetime.utcfromtimestamp(0)
 TOKEN_REFRESH_MARGIN = datetime.timedelta(seconds=15)
 CLIENT_TIMEOUT = 60  # seconds
 
+class UFT(object):
+    
+    def __init__(self, signing_key_path= "/var/test-certs/messagesigning/mock_faa_priv.pem", cert_url = "http://host.docker.internal:8077/mock/msgsigning/.well-known/uas-traffic-management/pub.der"):
+        self.signing_key_path = signing_key_path
+        self.cert_url = cert_url
 
 class AuthAdapter(object):
     """Base class for an adapter that add JWTs to requests."""
 
-    def __init__(self):
+    def __init__(self, message_signing = None):
         self._tokens = {}
+        self.message_signing = message_signing
 
     def issue_token(self, intended_audience: str, scopes: List[str]) -> str:
         """Subclasses must return a bearer token for the given audience."""
@@ -53,6 +60,9 @@ class AuthAdapter(object):
     def add_headers(self, request: requests.PreparedRequest, scopes: List[str]):
         for k, v in self.get_headers(request.url, scopes).items():
             request.headers[k] = v
+        if self.message_signing:
+            signed_headers = signer.get_signed_headers(request,self.message_signing.signing_key_path, self.message_signing.cert_url)
+            request.headers.update(signed_headers)
 
     def get_sub(self) -> Optional[str]:
         """Retrieve `sub` claim from one of the existing tokens"""
