@@ -12,7 +12,7 @@ def get_x_utm_jws_header(cert_url):
     return '"alg"="{}", "typ"="{}", "kid"="{}", "x5u"="{}"'.format(
         "RS256",
         "JOSE",
-        get_key_id(),
+        _get_key_id(),
         cert_url,
     )
 
@@ -58,11 +58,11 @@ def get_signature(object_to_sign, signed_type, private_key_path):
     )
 
 
-def get_key_id():
+def _get_key_id():
     return "mock_uss_priv_key"
 
 
-def get_signature_base(object_to_sign, signed_type):
+def get_signature_base(object_to_sign, signed_type, cert_url):
     is_signing_requests = "PreparedRequest" in signed_type
     covered_components = (
         [
@@ -93,7 +93,7 @@ def get_signature_base(object_to_sign, signed_type):
             "authorization": headers.get("authorization", ""),
             "content-type": headers.get("content-type", ""),
             "content-digest": "sha-512=:{}:".format(content_digest),
-            "x-utm-jws-header": get_x_utm_jws_header(),
+            "x-utm-jws-header": get_x_utm_jws_header(cert_url),
         }
     else:
         base_value_map = {
@@ -104,7 +104,7 @@ def get_signature_base(object_to_sign, signed_type):
         }
     curr_time = str(int(time.time()))
     signature_param_str = '"{}": ({});{}'.format(
-        "@signature-params", wrap_components_in_quotes(covered_components), curr_time
+        "@signature-params", _wrap_components_in_quotes(covered_components), curr_time
     )
     sig_base = ""
     for component in covered_components:
@@ -113,5 +113,5 @@ def get_signature_base(object_to_sign, signed_type):
     return sig_base
 
 
-def wrap_components_in_quotes(components):
+def _wrap_components_in_quotes(components):
     return " ".join(list(map(lambda comp: '"{}"'.format(comp), components)))
