@@ -21,16 +21,21 @@ EPOCH = datetime.datetime.utcfromtimestamp(0)
 TOKEN_REFRESH_MARGIN = datetime.timedelta(seconds=15)
 CLIENT_TIMEOUT = 60  # seconds
 
+
 class UFT(object):
-    
-    def __init__(self, signing_key_path= "/var/test-certs/messagesigning/mock_faa_priv.pem", cert_url = "http://host.docker.internal:8077/mock/msgsigning/.well-known/uas-traffic-management/pub.der"):
+    def __init__(
+        self,
+        signing_key_path="/var/test-certs/messagesigning/mock_faa_priv.pem",
+        cert_url="http://host.docker.internal:8077/mock/msgsigning/.well-known/uas-traffic-management/pub.der",
+    ):
         self.signing_key_path = signing_key_path
         self.cert_url = cert_url
+
 
 class AuthAdapter(object):
     """Base class for an adapter that add JWTs to requests."""
 
-    def __init__(self, message_signing = None):
+    def __init__(self, message_signing=None):
         self._tokens = {}
         self.message_signing = message_signing
 
@@ -61,7 +66,11 @@ class AuthAdapter(object):
         for k, v in self.get_headers(request.url, scopes).items():
             request.headers[k] = v
         if self.message_signing:
-            signed_headers = signer.get_signed_headers(request,self.message_signing.signing_key_path, self.message_signing.cert_url)
+            signed_headers = signer.get_signed_headers(
+                request,
+                self.message_signing.signing_key_path,
+                self.message_signing.cert_url,
+            )
             request.headers.update(signed_headers)
 
     def get_sub(self) -> Optional[str]:

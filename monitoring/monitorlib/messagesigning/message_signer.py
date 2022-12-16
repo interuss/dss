@@ -17,7 +17,7 @@ def get_x_utm_jws_header(cert_url):
     )
 
 
-def get_signed_headers(object_to_sign, private_key_path,  cert_url):
+def get_signed_headers(object_to_sign, private_key_path, cert_url):
     signed_type = str(type(object_to_sign))
     is_signing_request = "PreparedRequest" in signed_type
     sig, sig_input = get_signature(object_to_sign, signed_type, private_key_path)
