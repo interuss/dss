@@ -5,7 +5,8 @@ import flask
 
 from uas_standards.interuss.automated_testing.flight_planning.v1.api import \
     InjectFlightRequest, ClearAreaRequest
-from . import webapp, handling
+from . import handling
+from .app import webapp
 from .oauth import requires_scope
 from .requests import SCDInjectionStatusRequest, \
     SCDInjectionCapabilitiesRequest, SCDInjectionPutFlightRequest, \
@@ -45,7 +46,6 @@ def scd_injection_put_flight(flight_id: str) -> Tuple[str, int]:
     except ValueError as e:
         msg = 'Upsert flight {} unable to parse JSON: {}'.format(flight_id, e)
         return msg, 400
-
     return handling.fulfill_query(SCDInjectionPutFlightRequest(flight_id=flight_id, request_body=req_body), _logger)
 
 

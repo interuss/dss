@@ -4,46 +4,15 @@ import time
 from typing import Tuple
 
 import flask
-from typing import List, Optional
 
 from implicitdict import ImplicitDict
-from . import webapp, basic_auth
+from .app import webapp, basic_auth
 from .database import db, Query, QueryState
-
+from .handling import ListQueriesResponse, PendingRequest, PutQueryRequest
 
 logging.basicConfig()
 _logger = logging.getLogger('atproxy.handler')
 _logger.setLevel(logging.DEBUG)
-
-
-class PendingRequest(ImplicitDict):
-    """A pending query the handler client is expected to handle."""
-
-    id: str
-    """ID of the query; used to PUT /handler/queries/<id> the result."""
-
-    type: str
-    """Type of query -- matches a request_type_name() in requests.py."""
-
-    request: dict
-    """All relevant information about the request in the *Request descriptor from requests.py matching `type`."""
-
-
-class ListQueriesResponse(ImplicitDict):
-    """Response body schema for GET /handler/queries."""
-
-    requests: List[PendingRequest]
-    """All of the queries available for the handler client to handle."""
-
-
-class PutQueryRequest(ImplicitDict):
-    """Request body schema for PUT /handler/queries/<id>."""
-
-    response: Optional[dict] = None
-    """JSON body of the response, or None for no JSON body."""
-
-    return_code: int
-    """HTTP return code."""
 
 
 @webapp.route('/handler/queries', methods=['GET'])
