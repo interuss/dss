@@ -208,9 +208,7 @@ class TestSuiteActionReport(ImplicitDict):
     action_generator: Optional[ActionGeneratorReport]
     """If this action was an action generator, this field will hold its report"""
 
-    def _get_applicable_report(
-        self,
-    ) -> Tuple["TestSuiteReport", "TestScenarioReport", "ActionGeneratorReport"]:
+    def _get_applicable_report(self) -> Tuple[bool, bool, bool]:
         test_suite = "test_suite" in self and self.test_suite is not None
         test_scenario = "test_scenario" in self and self.test_scenario is not None
         action_generator = (

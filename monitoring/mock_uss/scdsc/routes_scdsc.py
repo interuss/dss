@@ -8,7 +8,7 @@ from monitoring.mock_uss.scdsc.database import db
 
 @webapp.route("/mock/scd/uss/v1/operational_intents/<entityid>", methods=["GET"])
 @requires_scope([scd.SCOPE_SC])
-def get_operational_intent_details(entityid: str):
+def scdsc_get_operational_intent_details(entityid: str):
     """Implements getOperationalIntentDetails in ASTM SCD API."""
 
     # Look up entityid in database
@@ -48,7 +48,7 @@ def get_operational_intent_details(entityid: str):
 
 @webapp.route("/mock/scd/uss/v1/operational_intents", methods=["POST"])
 @requires_scope([scd.SCOPE_SC])
-def notify_operational_intent_details_changed():
+def scdsc_notify_operational_intent_details_changed():
     """Implements notifyOperationalIntentDetailsChanged in ASTM SCD API."""
 
     # Do nothing because this USS is unsophisticated and polls the DSS for every
@@ -60,7 +60,7 @@ def notify_operational_intent_details_changed():
 @requires_scope(
     [scd.SCOPE_SC, scd.SCOPE_CP, scd.SCOPE_CM, scd.SCOPE_CM_SA, scd.SCOPE_AA]
 )
-def make_uss_report():
+def scdsc_make_uss_report():
     """Implements makeUssReport in ASTM SCD API."""
 
     return flask.jsonify({"message": "Not yet implemented"}), 500

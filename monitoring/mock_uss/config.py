@@ -1,4 +1,3 @@
-from enum import Enum
 import os
 
 from monitoring.monitorlib import auth_validation

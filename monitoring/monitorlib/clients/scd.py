@@ -116,8 +116,8 @@ def notify_operational_intent_details_changed(
     )
     if resp.status_code != 204 and resp.status_code != 200:
         raise OperationError(
-            "notifyOperationalIntentDetailsChanged failed {}:\n{}".format(
-                resp.status_code, resp.content.decode("utf-8")
+            "notifyOperationalIntentDetailsChanged failed {} to {}:\n{}".format(
+                resp.status_code, resp.request.url, resp.content.decode("utf-8")
             )
         )
 

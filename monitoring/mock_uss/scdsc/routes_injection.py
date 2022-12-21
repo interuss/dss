@@ -74,27 +74,41 @@ def query_operational_intents(
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
 def scdsc_injection_status() -> Tuple[str, int]:
     """Implements USS status in SCD automated testing injection API."""
-    return flask.jsonify({"status": "Ready", "version": versioning.get_code_version()})
+    json, code = injection_status()
+    return flask.jsonify(json), code
+
+
+def injection_status() -> Tuple[dict, int]:
+    return (
+        {"status": "Ready", "version": versioning.get_code_version()},
+        200,
+    )
 
 
 @webapp.route("/scdsc/v1/capabilities", methods=["GET"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
-def scd_capabilities() -> Tuple[str, int]:
+def scdsc_scd_capabilities() -> Tuple[str, int]:
     """Implements USS capabilities in SCD automated testing injection API."""
-    return flask.jsonify(
+    json, code = scd_capabilities()
+    return flask.jsonify(json), code
+
+
+def scd_capabilities() -> Tuple[dict, int]:
+    return (
         CapabilitiesResponse(
             capabilities=[
                 Capability.BasicStrategicConflictDetection,
                 Capability.FlightAuthorisationValidation,
                 Capability.HighPriorityFlights,
             ]
-        )
+        ),
+        200,
     )
 
 
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["PUT"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
-def inject_flight(flight_id: str) -> Tuple[str, int]:
+def scdsc_inject_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight injection in SCD automated testing injection API."""
     print(f"[inject_flight:{flight_id}] Starting handler")
     try:
@@ -105,16 +119,21 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
     except ValueError as e:
         msg = "Create flight {} unable to parse JSON: {}".format(flight_id, e)
         return msg, 400
+    json, code = inject_flight(flight_id, req_body)
+    return flask.jsonify(json), code
 
+
+def inject_flight(flight_id: str, req_body: InjectFlightRequest) -> Tuple[dict, int]:
     if webapp.config[config.KEY_BEHAVIOR_LOCALITY].is_uspace_applicable:
         # Validate flight authorisation
         print(f"[inject_flight:{flight_id}] Validating flight authorisation")
         problems = problems_with_flight_authorisation(req_body.flight_authorisation)
         if problems:
-            return flask.jsonify(
+            return (
                 InjectFlightResponse(
                     result=InjectFlightResult.Rejected, notes=", ".join(problems)
-                )
+                ),
+                200,
             )
 
     # Check if this is an existing flight being modified
@@ -172,9 +191,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
         ) as e:
             notes = "Error querying operational intents: {}".format(e)
             return (
-                flask.jsonify(
-                    InjectFlightResponse(result=InjectFlightResult.Failed, notes=notes)
-                ),
+                InjectFlightResponse(result=InjectFlightResult.Failed, notes=notes),
                 200,
             )
 
@@ -200,10 +217,8 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             if scd.vol4s_intersect(v1, v2a) or scd.vol4s_intersect(v1, v2b):
                 notes = f"Requested flight (priority {req_body.operational_intent.priority}) intersected {op_intent.reference.manager}'s operational intent {op_intent.reference.id} (priority {op_intent.details.priority})"
                 return (
-                    flask.jsonify(
-                        InjectFlightResponse(
-                            result=InjectFlightResult.ConflictWithFlight, notes=notes
-                        )
+                    InjectFlightResponse(
+                        result=InjectFlightResult.ConflictWithFlight, notes=notes
                     ),
                     200,
                 )
@@ -241,9 +256,7 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             notes = "Error creating operational intent: {}".format(e)
             print(f"[inject_flight:{flight_id}] {notes}")
             return (
-                flask.jsonify(
-                    InjectFlightResponse(result=InjectFlightResult.Failed, notes=notes)
-                ),
+                InjectFlightResponse(result=InjectFlightResult.Failed, notes=notes),
                 200,
             )
         print(
@@ -270,10 +283,11 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
             tx.flights[flight_id] = record
 
         print(f"[inject_flight:{flight_id}] Complete.")
-        return flask.jsonify(
+        return (
             InjectFlightResponse(
                 result=InjectFlightResult.Planned, operational_intent_id=id
-            )
+            ),
+            200,
         )
     finally:
         with db as tx:
@@ -293,9 +307,13 @@ def inject_flight(flight_id: str) -> Tuple[str, int]:
 
 @webapp.route("/scdsc/v1/flights/<flight_id>", methods=["DELETE"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
-def delete_flight(flight_id: str) -> Tuple[str, int]:
+def scdsc_delete_flight(flight_id: str) -> Tuple[str, int]:
     """Implements flight deletion in SCD automated testing injection API."""
+    json, code = delete_flight(flight_id)
+    return flask.jsonify(json), code
 
+
+def delete_flight(flight_id) -> Tuple[dict, int]:
     deadline = datetime.utcnow() + DEADLOCK_TIMEOUT
     while True:
         with db as tx:
@@ -319,11 +337,9 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
 
     if flight is None:
         return (
-            flask.jsonify(
-                DeleteFlightResponse(
-                    result=DeleteFlightResult.Failed,
-                    notes="Flight {} does not exist".format(flight_id),
-                )
+            DeleteFlightResponse(
+                result=DeleteFlightResult.Failed,
+                notes="Flight {} does not exist".format(flight_id),
             ),
             200,
         )
@@ -343,9 +359,7 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
     ) as e:
         notes = "Error deleting operational intent: {}".format(e)
         return (
-            flask.jsonify(
-                DeleteFlightResponse(result=DeleteFlightResult.Failed, notes=notes)
-            ),
+            DeleteFlightResponse(result=DeleteFlightResult.Failed, notes=notes),
             200,
         )
     scd_client.notify_subscribers(
@@ -355,12 +369,12 @@ def delete_flight(flight_id: str) -> Tuple[str, int]:
         result.subscribers,
     )
 
-    return flask.jsonify(DeleteFlightResponse(result=DeleteFlightResult.Closed))
+    return DeleteFlightResponse(result=DeleteFlightResult.Closed), 200
 
 
 @webapp.route("/scdsc/v1/clear_area_requests", methods=["POST"])
 @requires_scope([SCOPE_SCD_QUALIFIER_INJECT])
-def clear_area() -> Tuple[str, int]:
+def scdsc_clear_area() -> Tuple[str, int]:
     try:
         json = flask.request.json
         if json is None:
@@ -369,7 +383,11 @@ def clear_area() -> Tuple[str, int]:
     except ValueError as e:
         msg = "Unable to parse ClearAreaRequest JSON request: {}".format(e)
         return msg, 400
+    json, code = clear_area(req)
+    return flask.jsonify(json), code
 
+
+def clear_area(req: ClearAreaRequest) -> Tuple[dict, int]:
     # Find operational intents in the DSS
     start_time = scd.start_of([req.extent])
     end_time = scd.end_of([req.extent])
@@ -390,15 +408,13 @@ def clear_area() -> Tuple[str, int]:
     ) as e:
         msg = "Error querying operational intents: {}".format(e)
         return (
-            flask.jsonify(
-                ClearAreaResponse(
-                    outcome=ClearAreaOutcome(
-                        success=False,
-                        message=msg,
-                        timestamp=StringBasedDateTime(datetime.utcnow()),
-                    ),
-                    request=req,
-                )
+            ClearAreaResponse(
+                outcome=ClearAreaOutcome(
+                    success=False,
+                    message=msg,
+                    timestamp=StringBasedDateTime(datetime.utcnow()),
+                ),
+                request=req,
             ),
             200,
         )
@@ -454,15 +470,13 @@ def clear_area() -> Tuple[str, int]:
         }
     )
     return (
-        flask.jsonify(
-            ClearAreaResponse(
-                outcome=ClearAreaOutcome(
-                    success=True,
-                    message=msg,
-                    timestamp=StringBasedDateTime(datetime.utcnow()),
-                ),
-                request=req,
-            )
+        ClearAreaResponse(
+            outcome=ClearAreaOutcome(
+                success=True,
+                message=msg,
+                timestamp=StringBasedDateTime(datetime.utcnow()),
+            ),
+            request=req,
         ),
         200,
     )
