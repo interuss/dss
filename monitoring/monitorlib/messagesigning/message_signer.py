@@ -9,7 +9,7 @@ from monitoring.monitorlib.messagesigning.hasher import get_content_digest
 
 
 def get_x_utm_jws_header(cert_url):
-    return '"alg"="{}", "typ"="{}", "kid"="{}", "x5u"="{}"'.format(
+    return 'alg="{}", typ="{}", kid="{}", x5u="{}"'.format(
         "RS256",
         "JOSE",
         _get_key_id(),
