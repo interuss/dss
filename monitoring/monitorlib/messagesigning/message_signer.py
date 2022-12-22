@@ -6,7 +6,7 @@ from Crypto.Hash import SHA256
 from loguru import logger
 import urllib.parse
 from monitoring.monitorlib.messagesigning.hasher import get_content_digest
-
+from monitoring.monitorlib.messagesigning.uft import get_x_utm_jws_header
 
 def get_signed_headers(object_to_sign, private_key_path, cert_url):
     signed_type = str(type(object_to_sign))
