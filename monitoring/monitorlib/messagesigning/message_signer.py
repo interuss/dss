@@ -11,7 +11,7 @@ from monitoring.monitorlib.messagesigning.uft import get_x_utm_jws_header
 def get_signed_headers(object_to_sign, private_key_path, cert_url):
     signed_type = str(type(object_to_sign))
     is_signing_request = "PreparedRequest" in signed_type
-    sig, sig_input = get_signature(object_to_sign, signed_type, private_key_path)
+    sig, sig_input = _get_signature(object_to_sign, signed_type, private_key_path)
     content_digest = (
         get_content_digest(object_to_sign.body)
         if is_signing_request
@@ -26,7 +26,7 @@ def get_signed_headers(object_to_sign, private_key_path, cert_url):
     return signed_headers
 
 
-def get_signature_input(sig_base):
+def _get_signature_input(sig_base):
     sig_base_comps = sig_base.split("\n")
     sig_param_str = [
         item for item in sig_base_comps if "@signature-params" in item
@@ -36,10 +36,10 @@ def get_signature_input(sig_base):
     return sig_param_str[start_sig_input_ind:end_sig_input_str]
 
 
-def get_signature(object_to_sign, signed_type, private_key_path):
-    sig_base = get_signature_base(object_to_sign, signed_type)
+def _get_signature(object_to_sign, signed_type, private_key_path):
+    sig_base = _get_signature_base(object_to_sign, signed_type)
     sig_base_bytes = bytes(sig_base, "utf-8")
-    sig_input = get_signature_input(sig_base)
+    sig_input = _get_signature_input(sig_base)
     hash = SHA256.new(sig_base_bytes)
     with open(private_key_path, "rb") as priv_key_file:
         private_key = RSA.import_key(priv_key_file.read())
@@ -49,7 +49,7 @@ def get_signature(object_to_sign, signed_type, private_key_path):
     )
 
 
-def get_signature_base(object_to_sign, signed_type, cert_url):
+def _get_signature_base(object_to_sign, signed_type, cert_url):
     is_signing_requests = "PreparedRequest" in signed_type
     covered_components = (
         [
