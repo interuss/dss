@@ -50,7 +50,7 @@ def test_get_signature_base_with_prepped_request(prepared_request):
     )
 
     # Strip timestamp, we just want to check sig base equality.
-    token_ind = sig_base.index(';')
+    token_ind = sig_base.index(";")
     sig_base = sig_base[0:token_ind]
-    
+
     assert exptected_sig_base == sig_base

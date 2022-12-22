@@ -8,15 +8,6 @@ import urllib.parse
 from monitoring.monitorlib.messagesigning.hasher import get_content_digest
 
 
-def get_x_utm_jws_header(cert_url):
-    return 'alg="{}", typ="{}", kid="{}", x5u="{}"'.format(
-        "RS256",
-        "JOSE",
-        _get_key_id(),
-        cert_url,
-    )
-
-
 def get_signed_headers(object_to_sign, private_key_path, cert_url):
     signed_type = str(type(object_to_sign))
     is_signing_request = "PreparedRequest" in signed_type
@@ -56,10 +47,6 @@ def get_signature(object_to_sign, signed_type, private_key_path):
         base64.b64encode(pkcs1_15.new(private_key).sign(hash)).decode("utf-8"),
         sig_input,
     )
-
-
-def _get_key_id():
-    return "mock_uss_priv_key"
 
 
 def get_signature_base(object_to_sign, signed_type, cert_url):
