@@ -103,7 +103,7 @@ def get_signature_base(object_to_sign, signed_type, cert_url):
             "x-utm-jws-header": get_x_utm_jws_header(),
         }
     curr_time = str(int(time.time()))
-    signature_param_str = '"{}": ({});{}'.format(
+    signature_param_str = '"{}": ({});created={}'.format(
         "@signature-params", _wrap_components_in_quotes(covered_components), curr_time
     )
     sig_base = ""
