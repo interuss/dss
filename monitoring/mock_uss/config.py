@@ -40,6 +40,8 @@ class Config(object):
         svc.strip().lower() for svc in os.environ.get(ENV_KEY_SERVICES, "").split(",")
     )
     DSS_URL = os.environ.get(ENV_KEY_DSS, None)
-    BEHAVIOR_LOCALITY = Locality(os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, "CHE"))
+    BEHAVIOR_LOCALITY = Locality.from_locale(
+        os.environ.get(ENV_KEY_BEHAVIOR_LOCALITY, "CHE")
+    )
     CODE_VERSION = os.environ.get(KEY_CODE_VERSION, "Unknown")
     CERT_BASE_PATH = os.environ.get(ENV_KEY_CERT_BASE_PATH, "/var/test-certs")
