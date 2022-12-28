@@ -64,7 +64,7 @@ def _make_flight_observation(
 
 @webapp.route("/riddp/observation/display_data", methods=["GET"])
 @requires_scope([rid.SCOPE_READ])
-def display_data() -> Tuple[str, int]:
+def riddp_display_data() -> Tuple[str, int]:
     """Implements retrieval of current display data per automated testing API."""
 
     if "view" not in flask.request.args:
@@ -155,7 +155,7 @@ def display_data() -> Tuple[str, int]:
 
 @webapp.route("/riddp/observation/display_data/<flight_id>", methods=["GET"])
 @requires_scope([rid.SCOPE_READ])
-def flight_details(flight_id: str) -> Tuple[str, int]:
+def riddp_flight_details(flight_id: str) -> Tuple[str, int]:
     """Implements get flight details endpoint per automated testing API."""
 
     tx = db.value

@@ -326,18 +326,24 @@ def meter_altitude_bounds_of(vol4s: List[Volume4D]) -> Tuple[float, float]:
         for vol4 in vol4s
         if "altitude_upper" in vol4.volume
     )
-    if not all(
-        vol4.volume.altitude_lower.units == "M"
+    units = [
+        vol4.volume.altitude_lower.units
         for vol4 in vol4s
-        if "altitude_lower" in vol4.volume
-    ):
-        raise ValueError("altitude_lower units must always be M")
-    if not all(
-        vol4.volume.altitude_upper.units == "M"
+        if "altitude_lower" in vol4.volume and vol4.volume.altitude_lower.units != "M"
+    ]
+    if units:
+        raise ValueError(
+            f"altitude_lower units must always be M; found instead {', '.join(units)}"
+        )
+    units = [
+        vol4.volume.altitude_upper.units
         for vol4 in vol4s
-        if "altitude_upper" in vol4.volume
-    ):
-        raise ValueError("altitude_upper units must always be M")
+        if "altitude_upper" in vol4.volume and vol4.volume.altitude_upper.units != "M"
+    ]
+    if units:
+        raise ValueError(
+            f"altitude_upper units must always be M; found instead {', '.join(units)}"
+        )
     return alt_lo, alt_hi
 
 
