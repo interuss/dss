@@ -9,7 +9,7 @@ from .database import db
 
 
 @webapp.route("/riddp/behavior", methods=["PUT"])
-def set_dp_behavior() -> Tuple[str, int]:
+def riddp_set_dp_behavior() -> Tuple[str, int]:
     """Set the behavior of the mock Display Provider."""
     try:
         json = flask.request.json
@@ -27,6 +27,6 @@ def set_dp_behavior() -> Tuple[str, int]:
 
 
 @webapp.route("/riddp/behavior", methods=["GET"])
-def get_dp_behavior() -> Tuple[str, int]:
+def riddp_get_dp_behavior() -> Tuple[str, int]:
     """Get the behavior of the mock Display Provider."""
     return flask.jsonify(db.value.behavior)

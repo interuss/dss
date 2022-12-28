@@ -52,7 +52,7 @@ def _get_report(
 
 @webapp.route("/mock/ridsp/v1/uss/identification_service_areas/<id>", methods=["POST"])
 @requires_scope([rid.SCOPE_WRITE])
-def notify_isa(id: str):
+def ridsp_notify_isa(id: str):
     return (
         flask.jsonify(
             {"message": "mock_ridsp never solicits subscription notifications"}
@@ -63,7 +63,7 @@ def notify_isa(id: str):
 
 @webapp.route("/mock/ridsp/v1/uss/flights", methods=["GET"])
 @requires_scope([rid.SCOPE_READ])
-def flights():
+def ridsp_flights():
     if "view" not in flask.request.args:
         return (
             flask.jsonify(
@@ -115,7 +115,7 @@ def flights():
 
 @webapp.route("/mock/ridsp/v1/uss/flights/<id>/details", methods=["GET"])
 @requires_scope([rid.SCOPE_READ])
-def flight_details(id: str):
+def ridsp_flight_details(id: str):
     now = arrow.utcnow().datetime
     tx = db.value
     for test_id, record in tx.tests.items():

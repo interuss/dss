@@ -23,7 +23,7 @@ RECENT_POSITIONS_BUFFER = datetime.timedelta(seconds=60.2)
 
 @webapp.route("/ridsp/injection/tests/<test_id>", methods=["PUT"])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
-def create_test(test_id: str) -> Tuple[str, int]:
+def ridsp_create_test(test_id: str) -> Tuple[str, int]:
     """Implements test creation in RID automated testing injection API."""
 
     try:
@@ -69,7 +69,7 @@ def create_test(test_id: str) -> Tuple[str, int]:
 
 @webapp.route("/ridsp/injection/tests/<test_id>", methods=["DELETE"])
 @requires_scope([injection_api.SCOPE_RID_QUALIFIER_INJECT])
-def delete_test(test_id: str) -> Tuple[str, int]:
+def ridsp_delete_test(test_id: str) -> Tuple[str, int]:
     """Implements test deletion in RID automated testing injection API."""
 
     record = db.value.tests.get(test_id, None)

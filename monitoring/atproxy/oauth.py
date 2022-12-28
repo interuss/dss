@@ -1,5 +1,6 @@
 from monitoring.monitorlib import auth_validation
-from . import config, webapp
+from . import config
+from .app import webapp
 
 
 requires_scope = auth_validation.requires_scope_decorator(

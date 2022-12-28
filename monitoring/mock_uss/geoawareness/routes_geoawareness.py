@@ -25,7 +25,7 @@ from monitoring.monitorlib.geoawareness_automated_testing.api import (
     methods=["GET"],
 )
 @requires_scope([SCOPE_GEOAWARENESS_TEST])
-def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+def geoawareness_get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     return get_geozone_source(geozone_source_id)
 
 
@@ -34,7 +34,7 @@ def get_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     methods=["PUT"],
 )
 @requires_scope([SCOPE_GEOAWARENESS_TEST])
-def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+def geoawareness_put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     try:
         json = flask.request.json
         if json is None:
@@ -56,13 +56,13 @@ def put_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     methods=["DELETE"],
 )
 @requires_scope([SCOPE_GEOAWARENESS_TEST])
-def delete_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
+def geoawareness_delete_geozone_sources(geozone_source_id: str) -> Tuple[str, int]:
     return delete_geozone_source(geozone_source_id)
 
 
 @webapp.route("/geoawareness/check", methods=["POST"])
 @requires_scope([SCOPE_GEOAWARENESS_TEST])
-def check():
+def geoawareness_check():
     try:
         json = flask.request.json
         if json is None:

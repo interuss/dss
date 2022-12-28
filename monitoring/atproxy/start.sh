@@ -23,4 +23,4 @@ gunicorn \
     --workers=4 \
     --timeout 60 \
     --bind=0.0.0.0:5000 \
-    monitoring.atproxy:webapp
+    monitoring.atproxy.app:webapp

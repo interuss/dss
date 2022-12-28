@@ -41,7 +41,7 @@ def execute_test_run(config: TestConfiguration):
     resources = create_resources(config.resources.resource_declarations)
     action = TestSuiteAction(config.action, resources)
     report = action.run()
-    if report.successful:
+    if report.successful():
         print("Final result: SUCCESS")
     else:
         print("Final result: FAILURE")
