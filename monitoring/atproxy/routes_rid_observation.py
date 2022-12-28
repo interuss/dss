@@ -4,7 +4,8 @@ from typing import Tuple
 import flask
 
 from monitoring.monitorlib import rid_v2
-from . import webapp, handling
+from . import handling
+from .app import webapp
 from .oauth import requires_scope
 from .requests import RIDObservationGetDisplayDataRequest, RIDObservationGetDetailsRequest
 

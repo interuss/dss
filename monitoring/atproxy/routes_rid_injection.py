@@ -3,7 +3,8 @@ from typing import Tuple
 
 import flask
 
-from . import webapp, handling
+from . import handling
+from .app import webapp
 from .oauth import requires_scope
 from .requests import RIDInjectionCreateTestRequest, RIDInjectionDeleteTestRequest
 from monitoring.monitorlib.rid_automated_testing import injection_api

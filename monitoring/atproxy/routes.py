@@ -6,7 +6,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash
 
 from monitoring.monitorlib import auth_validation, versioning
-from . import webapp, basic_auth, users
+from .app import webapp, basic_auth, users
 
 
 logging.basicConfig()

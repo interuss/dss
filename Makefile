@@ -150,11 +150,13 @@ probe-locally:
 
 .PHONY: start-uss-mocks
 start-uss-mocks:
+	monitoring/atproxy/run_locally.sh -d
 	monitoring/mock_uss/start_all_local_mocks.sh
 
 .PHONY: stop-uss-mocks
 stop-uss-mocks:
 	monitoring/mock_uss/stop_all_local_mocks.sh
+	docker container rm -f atproxy
 
 .PHONY: collect-local-logs
 collect-local-logs:

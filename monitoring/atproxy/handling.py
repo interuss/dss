@@ -1,13 +1,43 @@
 from datetime import datetime, timedelta
 import logging
 import time
-from typing import Tuple
+from typing import Tuple, List, Optional
 import uuid
 
 import flask
 
 from implicitdict import ImplicitDict
 from .database import db, Query, QueryState
+
+
+class PendingRequest(ImplicitDict):
+    """A pending query the handler client is expected to handle."""
+
+    id: str
+    """ID of the query; used to PUT /handler/queries/<id> the result."""
+
+    type: str
+    """Type of query -- matches a request_type_name() in requests.py."""
+
+    request: dict
+    """All relevant information about the request in the *Request descriptor from requests.py matching `type`."""
+
+
+class ListQueriesResponse(ImplicitDict):
+    """Response body schema for GET /handler/queries."""
+
+    requests: List[PendingRequest]
+    """All of the queries available for the handler client to handle."""
+
+
+class PutQueryRequest(ImplicitDict):
+    """Request body schema for PUT /handler/queries/<id>."""
+
+    response: Optional[dict] = None
+    """JSON body of the response, or None for no JSON body."""
+
+    return_code: int
+    """HTTP return code."""
 
 
 def fulfill_query(req: ImplicitDict, logger: logging.Logger) -> Tuple[str, int]:
