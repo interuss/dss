@@ -7,6 +7,7 @@ SERVICE_RIDSP = "ridsp"
 SERVICE_RIDDP = "riddp"
 SERVICE_SCDSC = "scdsc"
 SERVICE_MESSAGESIGNING = "msgsigning"
+SERVICE_ATPROXY_CLIENT = "atproxy_client"
 
 webapp = flask.Flask(__name__)
 enabled_services = set()
@@ -47,3 +48,10 @@ if SERVICE_MESSAGESIGNING in webapp.config[config.KEY_SERVICES]:
     enabled_services.add(SERVICE_MESSAGESIGNING)
     from monitoring.mock_uss import msgsigning
     from monitoring.mock_uss.msgsigning import routes as msgsigning_routes
+
+if SERVICE_ATPROXY_CLIENT in webapp.config[config.KEY_SERVICES]:
+    enabled_services.add(SERVICE_ATPROXY_CLIENT)
+    from monitoring.mock_uss import atproxy_client
+    from monitoring.mock_uss.atproxy_client import daemon
+
+    daemon.start()

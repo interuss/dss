@@ -36,10 +36,12 @@ v1:
             auth_adapter: utm_auth
           specification:
             flight_planners:
+            # uss1 is the mock_uss directly exposing scdsc functionality
             - participant_id: uss1
               injection_base_url: http://host.docker.internal:8074/scdsc
+            # uss2 uses atproxy, with requests being fulfilled by mock_uss with atproxy_client functionality enabled
             - participant_id: uss2
-              injection_base_url: http://host.docker.internal:8074/scdsc
+              injection_base_url: http://host.docker.internal:8075/scd
 
         # Details of conflicting flights (used in nominal planning scenario)
         conflicting_flights:

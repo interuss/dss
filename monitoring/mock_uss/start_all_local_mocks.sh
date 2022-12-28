@@ -17,6 +17,7 @@ export DO_NOT_BUILD_MONITORING=true
 monitoring/mock_uss/run_locally_ridsp.sh -d
 monitoring/mock_uss/run_locally_riddp.sh -d
 monitoring/mock_uss/run_locally_geoawareness.sh -d
+monitoring/mock_uss/run_locally_atproxy_client.sh -d
 monitoring/mock_uss/wait_for_mock_uss.sh mock_uss_scdsc
 monitoring/mock_uss/wait_for_mock_uss.sh mock_uss_ridsp
 monitoring/mock_uss/wait_for_mock_uss.sh mock_uss_riddp

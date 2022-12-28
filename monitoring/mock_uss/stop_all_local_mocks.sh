@@ -10,4 +10,4 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-docker container rm -f mock_uss_scdsc mock_uss_ridsp mock_uss_riddp mock_uss_geoawareness
+docker container rm -f mock_uss_scdsc mock_uss_ridsp mock_uss_riddp mock_uss_geoawareness mock_uss_atproxy_client

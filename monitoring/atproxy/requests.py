@@ -21,6 +21,9 @@ class RequestType(str, Enum):
     SCD_CreateClearAreaRequest = "scd.createClearAreaRequest"
 
 
+SCD_REQUESTS = {RequestType.SCD_GetStatus, RequestType.SCD_GetCapabilities, RequestType.SCD_PutFlight, RequestType.SCD_DeleteFlight, RequestType.SCD_CreateClearAreaRequest}
+
+
 # Each request descriptor in this file is expected to implement a static
 # request_type_name() method which indicates the type of request corresponding
 # with the descriptor.  Handler clients will use this type name to determine
