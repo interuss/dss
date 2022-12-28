@@ -124,7 +124,9 @@ def scdsc_inject_flight(flight_id: str) -> Tuple[str, int]:
 
 
 def inject_flight(flight_id: str, req_body: InjectFlightRequest) -> Tuple[dict, int]:
-    if webapp.config[config.KEY_BEHAVIOR_LOCALITY].is_uspace_applicable:
+    locality = webapp.config[config.KEY_BEHAVIOR_LOCALITY]
+
+    if locality.is_uspace_applicable():
         # Validate flight authorisation
         print(f"[inject_flight:{flight_id}] Validating flight authorisation")
         problems = problems_with_flight_authorisation(req_body.flight_authorisation)
@@ -205,12 +207,18 @@ def inject_flight(flight_id: str, req_body: InjectFlightRequest) -> Tuple[dict, 
                 existing_flight
                 and existing_flight.op_intent_reference.id == op_intent.reference.id
             ):
+                # Don't consider intersections with a past version of this flight
                 continue
             if req_body.operational_intent.priority > op_intent.details.priority:
+                # Don't consider intersections with lower-priority operational intents
                 continue
-            if webapp.config[
-                config.KEY_BEHAVIOR_LOCALITY
-            ].allow_same_priority_intersections:
+            if (
+                req_body.operational_intent.priority == op_intent.details.priority
+                and locality.allows_same_priority_intersections(
+                    req_body.operational_intent.priority
+                )
+            ):
+                # Don't consider intersections with same-priority operational intents if they're allowed
                 continue
             v2a = op_intent.details.volumes
             v2b = op_intent.details.off_nominal_volumes

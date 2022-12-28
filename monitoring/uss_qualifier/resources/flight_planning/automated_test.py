@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from monitoring.monitorlib.locality import Locality
+from monitoring.monitorlib.locality import LocalityCode
 from implicitdict import (
     ImplicitDict,
     StringBasedTimeDelta,
@@ -124,7 +124,7 @@ class AutomatedTestContext(ImplicitDict):
     test_name: str
     """Name of test"""
 
-    locale: Locality
+    locale: LocalityCode
     """Locale of test"""
 
     targets_combination: Dict[str, str]
