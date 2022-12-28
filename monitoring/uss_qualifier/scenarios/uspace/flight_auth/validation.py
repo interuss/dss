@@ -13,6 +13,7 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 )
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
+    QueryError,
 )
 from monitoring.uss_qualifier.resources.flight_planning.flight_planners import (
     FlightPlannerResource,
@@ -104,9 +105,19 @@ class Validation(TestScenario):
         self.begin_test_step("Inject invalid flight intents")
 
         for flight_intent in self.flight_intents[0:-1]:
-            resp, query, flight_id = self.ussp.request_flight(flight_intent)
-            self.record_query(query)
             with self.check("Incorrectly planned", [self.ussp.participant_id]) as check:
+                try:
+                    resp, query, flight_id = self.ussp.request_flight(flight_intent)
+                except QueryError as e:
+                    for q in e.queries:
+                        self.record_query(q)
+                    check.record_failed(
+                        summary=f"Error from {self.ussp.participant_id} when attempting to inject invalid flight",
+                        severity=Severity.High,
+                        details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                        query_timestamps=[q.request.timestamp for q in e.queries],
+                    )
+                self.record_query(query)
                 if resp.result == InjectFlightResult.Planned:
                     problems = ", ".join(
                         problems_with_flight_authorisation(

@@ -2,7 +2,6 @@ import traceback
 from datetime import datetime
 from typing import List, Dict, Union, Optional, Tuple, Iterable
 
-from monitoring.monitorlib.clients.scd_automated_testing import QueryError
 from monitoring.monitorlib.scd import bounding_vol4
 from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
     InjectFlightRequest,
@@ -14,11 +13,9 @@ from monitoring.monitorlib.scd_automated_testing.scd_injection_api import (
 from monitoring.uss_qualifier.common_data_definitions import Severity
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
+    QueryError,
 )
 from monitoring.uss_qualifier.scenarios.scenario import TestScenarioType
-from monitoring.uss_qualifier.scenarios.astm.utm.evaluation import (
-    validate_op_intent_details,
-)
 
 
 def clear_area(
@@ -41,16 +38,19 @@ def clear_area(
         volumes += flight_intent.operational_intent.off_nominal_volumes
     extent = bounding_vol4(volumes)
     for uss in flight_planners:
-        resp, query = uss.clear_area(extent)
-        scenario.record_query(query)
         with scenario.check("Area cleared successfully", [uss.participant_id]) as check:
-            if query.status_code != 200:
+            try:
+                resp, query = uss.clear_area(extent)
+            except QueryError as e:
+                for q in e.queries:
+                    scenario.record_query(q)
                 check.record_failed(
-                    summary="Error occurred attempting to clear area",
+                    summary=f"Error from {uss.participant_id} when attempting to clear area",
                     severity=Severity.High,
-                    details=f"Status code {query.status_code}",
-                    query_timestamps=[query.request.timestamp],
+                    details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                    query_timestamps=[q.request.timestamp for q in e.queries],
                 )
+            scenario.record_query(query)
             if not resp.outcome.success:
                 check.record_failed(
                     summary="Area could not be cleared",
@@ -122,13 +122,13 @@ def check_capabilities(
             uss_info = flight_planner.get_target_information()
             check.record_passed()
         except QueryError as e:
-            stacktrace = "".join(
-                traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-            )
+            for q in e.queries:
+                scenario.record_query(q)
             check.record_failed(
                 summary=f"Failed to query {flight_planner.participant_id} for information",
                 severity=Severity.Medium,
-                details=stacktrace,
+                details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                query_timestamps=[q.request.timestamp for q in e.queries],
             )
             continue
         scenario.record_query(uss_info.version_query)
@@ -211,11 +211,21 @@ def inject_successful_flight_intent(
       * None if a check failed, otherwise the ID of the injected flight
     """
     scenario.begin_test_step(test_step)
-    resp, query, flight_id = flight_planner.request_flight(flight_intent)
-    scenario.record_query(query)
     with scenario.check(
         "Successful planning", [flight_planner.participant_id]
     ) as check:
+        try:
+            resp, query, flight_id = flight_planner.request_flight(flight_intent)
+        except QueryError as e:
+            for q in e.queries:
+                scenario.record_query(q)
+            check.record_failed(
+                summary=f"Error from {flight_planner.participant_id} when attempting to successfully inject flight",
+                severity=Severity.High,
+                details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                query_timestamps=[q.request.timestamp for q in e.queries],
+            )
+        scenario.record_query(query)
         if resp.result == InjectFlightResult.ConflictWithFlight:
             check.record_failed(
                 summary="Conflict-free flight not created due to conflict",
@@ -259,11 +269,23 @@ def activate_valid_flight_intent(
     Returns: None if a check failed, otherwise the injection response.
     """
     scenario.begin_test_step(test_step)
-    resp, query, flight_id = flight_planner.request_flight(flight_intent, flight_id)
-    scenario.record_query(query)
     with scenario.check(
         "Successful activation", [flight_planner.participant_id]
     ) as check:
+        try:
+            resp, query, flight_id = flight_planner.request_flight(
+                flight_intent, flight_id
+            )
+        except QueryError as e:
+            for q in e.queries:
+                scenario.record_query(q)
+            check.record_failed(
+                summary=f"Error from {flight_planner.participant_id} when attempting to activate flight {flight_id}",
+                severity=Severity.High,
+                details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                query_timestamps=[q.request.timestamp for q in e.queries],
+            )
+        scenario.record_query(query)
         if resp.result == InjectFlightResult.ConflictWithFlight:
             check.record_failed(
                 summary="Conflict-free flight not activated due to conflict",
@@ -293,7 +315,7 @@ def activate_valid_flight_intent(
 
 
 def cleanup_flights(
-    self: TestScenarioType, flight_planners: Iterable[FlightPlanner]
+    scenario: TestScenarioType, flight_planners: Iterable[FlightPlanner]
 ) -> None:
     """Remove flights during a cleanup test step.
 
@@ -305,11 +327,23 @@ def cleanup_flights(
         removed = []
         to_remove = flight_planner.created_flight_ids.copy()
         for flight_id in to_remove:
-            resp, query = flight_planner.cleanup_flight(flight_id)
-            self.record_query(query)
-            with self.check(
+            with scenario.check(
                 "Successful flight deletion", [flight_planner.participant_id]
             ) as check:
+                try:
+                    resp, query = flight_planner.cleanup_flight(flight_id)
+                    scenario.record_query(query)
+                except QueryError as e:
+                    for q in e.queries:
+                        scenario.record_query(q)
+                    check.record_failed(
+                        summary=f"Failed to clean up flight {flight_id} from {flight_planner.participant_id}",
+                        severity=Severity.Medium,
+                        details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                        query_timestamps=[q.request.timestamp for q in e.queries],
+                    )
+                    continue
+
                 if resp.result == DeleteFlightResult.Closed:
                     removed.append(flight_id)
                 else:

@@ -11,6 +11,7 @@ from monitoring.uss_qualifier.resources.flight_planning import (
 )
 from monitoring.uss_qualifier.resources.flight_planning.flight_planner import (
     FlightPlanner,
+    QueryError,
 )
 from monitoring.uss_qualifier.resources.flight_planning.flight_planners import (
     FlightPlannerResource,
@@ -119,9 +120,21 @@ class NominalPlanning(TestScenario):
     def _attempt_second_flight(self) -> bool:
         self.begin_test_step("Inject flight intent")
 
-        resp, query, flight_id = self.uss2.request_flight(self.conflicting_flight)
-        self.record_query(query)
         with self.check("Incorrectly planned", [self.uss2.participant_id]) as check:
+            try:
+                resp, query, flight_id = self.uss2.request_flight(
+                    self.conflicting_flight
+                )
+            except QueryError as e:
+                for q in e.queries:
+                    self.record_query(q)
+                check.record_failed(
+                    summary=f"Error from {self.uss2.participant_id} when attempting second flight",
+                    severity=Severity.High,
+                    details=f"{str(e)}\n\nStack trace:\n{e.stacktrace}",
+                    query_timestamps=[q.request.timestamp for q in e.queries],
+                )
+            self.record_query(query)
             if resp.result == InjectFlightResult.Planned:
                 check.record_failed(
                     summary="Flight created even though there was a conflict",
