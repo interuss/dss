@@ -10,4 +10,4 @@ See `examples/` for configuration examples.
 
 ## Configuration
 
-See [variables.tf](./variables.tf) to configure the dss services.
+See [variables.tf](variables.tf) to configure the dss services.

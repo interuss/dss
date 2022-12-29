@@ -2,10 +2,7 @@
 
 This folder contains deployment examples for various environments:
 - Cloud Provider:
-  - *-google: Google Cloud Engine
-- Deployment size:
-  - mini-*: Low resources for development
-  - prod-*: Production grade resources
+  - terraform-google-dss: Google Cloud Engine deployment
 
 ## Infrastructure
 

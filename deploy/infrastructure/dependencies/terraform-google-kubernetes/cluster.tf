@@ -1,8 +1,8 @@
 # Resources related to the kubernetes cluster
 
 resource "google_container_cluster" "kubernetes_cluster" {
-  name     = var.google_cluster_context.name
-  location = var.google_cluster_context.zone
+  name     = var.cluster_name
+  location = var.google_zone
 
   remove_default_node_pool = true
   initial_node_count       = 1
@@ -15,12 +15,12 @@ resource "google_container_cluster" "kubernetes_cluster" {
 
 resource "google_container_node_pool" "dss_pool" {
   name       = "dss-pool"
-  location   = var.google_cluster_context.zone
+  location   = var.google_zone
   cluster    = google_container_cluster.kubernetes_cluster.name
-  node_count = var.dss_configuration.crdb_node_count
+  node_count = var.node_count
 
   node_config {
-    machine_type = var.google_cluster_context.machine_type
+    machine_type = var.google_machine_type
 
     # TODO: Use non-default service account with IAM roles
     oauth_scopes = [
@@ -35,21 +35,21 @@ resource "google_container_node_pool" "dss_pool" {
 
 # Static IP addresses for the gateway
 resource "google_compute_global_address" "ip_gateway" {
-  name       = format("%s-ip-gateway", var.google_cluster_context.name)
+  name       = format("%s-ip-gateway", var.cluster_name)
   ip_version = "IPV4"
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = var.dss_configuration.app_hostname
+  description = var.app_hostname
 }
 
 # Static IP addresses for CRDB instances
 resource "google_compute_address" "ip_crdb" {
-  count  = var.dss_configuration.crdb_node_count
-  name   = format("%s-ip-crdb%v", var.google_cluster_context.name, count.index)
-  region = var.google_cluster_context.region
+  count  = var.node_count
+  name   = format("%s-ip-crdb%v", var.cluster_name, count.index)
+  region = local.region
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.%s", count.index, var.dss_configuration.crdb_hostname_suffix)
+  description = format("%s.%s", count.index, var.crdb_hostname_suffix)
 }
 
 locals {
