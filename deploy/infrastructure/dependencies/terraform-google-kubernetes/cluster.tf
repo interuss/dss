@@ -21,6 +21,7 @@ resource "google_container_node_pool" "dss_pool" {
 
   node_config {
     machine_type = var.google_machine_type
+    disk_size_gb = 15 # Kubernetes PVC will create distinct disks.
 
     # TODO: Use non-default service account with IAM roles
     oauth_scopes = [

@@ -1,5 +1,5 @@
 locals {
-  workspace_location = abspath("${path.module}/../../../build/workspace/${var.kubernetes_context_name}")
+  workspace_location = abspath("${path.module}/../../../../build/workspace/${var.kubernetes_context_name}")
 }
 
 resource "local_file" "tanka_config_main" {

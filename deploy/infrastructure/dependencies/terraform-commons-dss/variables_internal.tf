@@ -21,7 +21,6 @@ variable "kubernetes_api_endpoint" {
 }
 
 # Hostnames and DNS
-
 variable "crdb_internal_addresses" {
   type        = list(string)
   description = "Internal hostnames of crdb nodes for certificate generation"
@@ -32,8 +31,10 @@ variable "crdb_internal_nodes" {
     dns = string
     ip  = string
   }))
+  description = "List of the IP addresses and related dns for the Cockroach DB nodes"
 }
 
 variable "ip_gateway" {
   type = string
+  description = "IP of the gateway used by the DSS service"
 }

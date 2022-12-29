@@ -1,7 +1,9 @@
-# terraform-google-cluster
+# terraform-google-kubernetes
 
-This folder contains a terraform module to deploy the infrastructure required to run the DSS on Kubernetes in Google Cloud Engine.
-It includes resources common to all cloud providers by using `[terraform-commons-dss](../terraform-commons-dss)`.
+To deploy a complete DSS to Google Cloud Engine, see [terraform-google-dss](../modules/terraform-google-dss).
 
-See `examples/` for configuration examples. 
+This folder only contains the terraform module which deploys the kubernetes cluster required to run the DSS on Kubernetes in Google Cloud Engine.
 
+## Configuration
+
+See [variables.tf](variables.tf).
