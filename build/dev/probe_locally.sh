@@ -25,7 +25,7 @@ for container_name in "${localhost_containers[@]}"; do
     echo '## Prerequisite to run this command is:                                ##'
     echo '## Local DSS instance + Dummy OAuth server (/build/dev/run_locally.sh) ##'
     echo '#########################################################################'
-		echo "Error: $container_name not running. Execute 'build/dev/run_locally.sh up' before running monitoring/prober/run_locally.sh";
+		echo "Error: $container_name not running. Execute 'build/dev/run_locally.sh up' before running build/dev/probe_locally.sh";
 		exit 1;
 	fi
 done
@@ -40,7 +40,7 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--network dss_sandbox_default \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
-	interuss/monitoring \
+	interuss/monitoring:v0.1.0 \
 	pytest \
 	"${1:-.}" \
 	-rsx \
