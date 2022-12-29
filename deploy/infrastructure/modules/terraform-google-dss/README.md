@@ -9,7 +9,7 @@ the tanka files to deploy a DSS instance.
 Download & install the following tools to your workstation:
 
 1. Install [terraform](https://developer.hashicorp.com/terraform/downloads).
-2. Install tools from [Prerequisites](../../../build/README.md)
+2. Install tools from [Prerequisites](../../../../build/README.md)
 3. Install provider specific tools:
     1. [Google Cloud Engine](./README.md#google-cloud-engine)
     
