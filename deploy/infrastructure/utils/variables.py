@@ -44,7 +44,7 @@ COMMONS_DSS_VARIABLES = [
 PROJECT_VARIABLES = {
     "../modules/terraform-google-dss": list(
         dict.fromkeys(GOOGLE_KUBERNETES_VARIABLES + COMMONS_DSS_VARIABLES)
-    ), # Preserves the items order.
+    ),  # Preserves the items order.
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
 }
