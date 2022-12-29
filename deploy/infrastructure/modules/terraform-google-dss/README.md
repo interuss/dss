@@ -46,7 +46,7 @@ See [DNS](DNS.md) for details.
 
 ## Deployment of the DSS services
 
-During the successful run, the terraform job has created a new [workspace](../../../build/workspace/)
+During the successful run, the terraform job has created a new [workspace](../../../../build/workspace/)
 for the new cluster.
 
 It contains scripts to operate the cluster and setup the services.
