@@ -7,9 +7,9 @@ This page describes the options and steps required to setup DNS for a DSS deploy
 If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
 it with the rest of the infrastructure.
 
-- **For Google Cloud Engine**, the terraform module provides the `dns_managed_zone_name` in `google_cluster_context`. If the variable
-  is set with a zone name which can be listed by running `gcloud dns managed-zones list`, entries will be
-  automatically created.
+- **For Google Cloud Engine**, configure the zone in your google account and set the `google_dns_managed_zone_name`
+  variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be
+  automatically created by terraform.
 
 ## Manual setup 
 

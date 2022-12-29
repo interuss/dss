@@ -38,11 +38,8 @@ Download & install the following tools to your workstation:
 5. Initialize terraform: `terraform init`.
 6. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 7. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-
-#### Note on DNS
-
-DNS entries can be either managed manually or handled by terraform depending on the cloud provider.
-See [DNS](DNS.md) for details.
+8. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or 
+handled by terraform depending on the cloud provider. See [DNS](DNS.md) for details.
 
 ## Deployment of the DSS services
 
