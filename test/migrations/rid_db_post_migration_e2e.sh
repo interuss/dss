@@ -77,15 +77,12 @@ docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
 
 sleep 1
 echo " -------------- PYTEST -------------- "
-echo "Building monitoring (Integration Test) image"
-docker build -q --rm -f monitoring/Dockerfile monitoring -t interuss/monitoring
-
 echo "Finally Begin Testing"
 docker run --link dummy-oauth-for-testing:oauth \
 	--link core-service-for-testing:core-service \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
-	interuss/monitoring \
+	interuss/monitoring:v0.1.0 \
 	pytest \
 	"${1:-.}" \
 	-rsx \

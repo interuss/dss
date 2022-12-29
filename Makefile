@@ -34,31 +34,25 @@ go.mod:
 
 .PHONY: format
 format:
-	cd monitoring && make format
 	gofmt -s -w .
 
 .PHONY: lint
 lint: python-lint shell-lint go-lint
 
 .PHONY: check-hygiene
-check-hygiene: python-lint hygiene validate-uss-qualifier-docs shell-lint go-lint
+check-hygiene: python-lint hygiene shell-lint go-lint
 
 .PHONY: python-lint
 python-lint:
-	cd monitoring && make python-lint
+	echo "TODO: apply python-lint to interfaces/openapi-to-go-server"
 
 .PHONY: hygiene
 hygiene:
 	test/repo_hygiene/repo_hygiene.sh
 
-.PHONY: validate-uss-qualifier-docs
-validate-uss-qualifier-docs:
-	cd monitoring/uss_qualifier && make validate-docs
-
 .PHONY: shell-lint
 shell-lint:
-	echo "===== Checking DSS shell lint except monitoring =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | grep -v '^./monitoring' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
-	cd monitoring && make shell-lint
+	echo "===== Checking DSS shell lint =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 
 .PHONY: go-lint
 go-lint:
@@ -66,7 +60,7 @@ go-lint:
 
 # This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: hygiene-tests
-hygiene-tests: python-lint check-hygiene validate-uss-qualifier-docs shell-lint go-lint
+hygiene-tests: check-hygiene
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
@@ -104,7 +98,7 @@ dummy_oauth_api: openapi-to-go-server
 # ---
 
 .PHONY: check-dss
-check-dss: evaluate-tanka test-go-units test-go-units-crdb build-dss build-monitoring test-e2e
+check-dss: evaluate-tanka test-go-units test-go-units-crdb build-dss test-e2e
 
 .PHONY: test-go-units
 test-go-units:
@@ -129,12 +123,8 @@ cleanup-test-go-units-crdb:
 build-dss:
 	build/dev/run_locally.sh build
 
-.PHONY: build-monitoring
-build-monitoring:
-	cd monitoring && make build
-
 .PHONY: test-e2e
-test-e2e: down-locally build-dss build-monitoring start-locally probe-locally collect-local-logs down-locally
+test-e2e: down-locally build-dss start-locally probe-locally collect-local-logs down-locally
 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
@@ -146,17 +136,7 @@ start-locally:
 
 .PHONY: probe-locally
 probe-locally:
-	monitoring/prober/run_locally.sh
-
-.PHONY: start-uss-mocks
-start-uss-mocks:
-	monitoring/atproxy/run_locally.sh -d
-	monitoring/mock_uss/start_all_local_mocks.sh
-
-.PHONY: stop-uss-mocks
-stop-uss-mocks:
-	monitoring/mock_uss/stop_all_local_mocks.sh
-	docker container rm -f atproxy
+	build/dev/probe_locally.sh
 
 .PHONY: collect-local-logs
 collect-local-logs:
@@ -172,21 +152,13 @@ down-locally:
 
 # This mirrors the dss-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: dss-tests
-dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss build-monitoring down-locally start-locally probe-locally collect-local-logs down-locally
-
-.PHONY: check-monitoring
-check-monitoring:
-	cd monitoring && make test
+dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss down-locally start-locally probe-locally collect-local-logs down-locally
 
 .PHONY: evaluate-tanka
 evaluate-tanka:
 	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/minimum
 	docker container run -v $(CURDIR)/build/jsonnetfile.json:/build/jsonnetfile.json -v $(CURDIR)/build/deploy:/build/deploy grafana/tanka show --dangerous-allow-redirect /build/deploy/examples/schema_manager
 
-# This mirrors the monitoring-tests continuous integration workflow job (.github/workflows/ci.yml)
-.PHONY: monitoring-tests
-monitoring-tests: check-monitoring
-
 # This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
 .PHONY: presubmit
-presubmit: hygiene-tests dss-tests monitoring-tests
+presubmit: hygiene-tests dss-tests

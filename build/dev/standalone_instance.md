@@ -130,7 +130,7 @@ target version parameter to `migrate_local_db.sh`.
 
 ### Prober
 
-* `monitoring/prober/run_locally.sh` runs the [prober](../../monitoring/prober) integration tests using the DSS instance already deployed locally via [`run_locally.sh`](run_locally.sh)
+* [`monitoring/prober/run_locally.sh`](https://github.com/interuss/monitoring/blob/main/monitoring/prober/run_locally.sh) runs the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) integration tests using the DSS instance already deployed locally via [`run_locally.sh`](run_locally.sh)
 
 ### RID
 
