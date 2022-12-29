@@ -23,7 +23,6 @@ module "terraform-commons-dss" {
   crdb_locality                  = var.crdb_locality
   kubernetes_api_endpoint        = module.terraform-google-kubernetes.kubernetes_api_endpoint
   crdb_internal_nodes            = module.terraform-google-kubernetes.crdb_nodes
-  crdb_internal_addresses        = module.terraform-google-kubernetes.internal_node_addresses
   ip_gateway                     = module.terraform-google-kubernetes.ip_gateway
   kubernetes_cloud_provider_name = module.terraform-google-kubernetes.kubernetes_cloud_provider_name
   kubernetes_context_name        = module.terraform-google-kubernetes.kubernetes_context_name

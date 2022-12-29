@@ -53,8 +53,8 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to `/build/workspace/${CLUSTER_CONTEXT}`.
 2. Run `./get_credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. Generate the certificates `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
-4. Deploy the certificates `./apply-certs.sh`.
+3. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
+4. Deploy the certificates using `./apply-certs.sh`.
 5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 6. Wait for services to initialize:
     - On Google Cloud, the highest-latency operation is provisioning of the HTTPS certificate which generally takes 10-45 minutes. To track this progress:

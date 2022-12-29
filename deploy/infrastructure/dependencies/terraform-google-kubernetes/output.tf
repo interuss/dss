@@ -25,10 +25,6 @@ output "kubernetes_context_name" {
   value = local.kubectl_cluster_context_name
 }
 
-output "internal_node_addresses" {
-  value = google_compute_address.ip_crdb[*].description
-}
-
 output "ip_gateway" {
   value = google_compute_global_address.ip_gateway.name
 }

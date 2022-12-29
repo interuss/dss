@@ -21,11 +21,6 @@ variable "kubernetes_api_endpoint" {
 }
 
 # Hostnames and DNS
-variable "crdb_internal_addresses" {
-  type        = list(string)
-  description = "Internal hostnames of crdb nodes for certificate generation"
-}
-
 variable "crdb_internal_nodes" {
   type = list(object({
     dns = string

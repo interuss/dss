@@ -3,7 +3,7 @@ locals {
 }
 
 resource "local_file" "tanka_config_main" {
-  content = templatefile("${path.module}/templates/main.jsonnet.tmp", {
+  content  = templatefile("${path.module}/templates/main.jsonnet.tmp", {
     root_path                  = path.module
     VAR_NAMESPACE              = var.kubernetes_namespace
     VAR_CLUSTER_CONTEXT        = var.kubernetes_context_name
@@ -27,7 +27,7 @@ resource "local_file" "tanka_config_main" {
 }
 
 resource "local_file" "tanka_config_spec" {
-  content = templatefile("${path.module}/templates/spec.json.tmp", {
+  content  = templatefile("${path.module}/templates/spec.json.tmp", {
     root_path       = path.module
     namespace       = var.kubernetes_namespace
     cluster_context = var.kubernetes_context_name
@@ -37,16 +37,17 @@ resource "local_file" "tanka_config_spec" {
 }
 
 resource "local_file" "make_certs" {
-  content = templatefile("${path.module}/templates/make-certs.sh.tmp", {
+  content  = templatefile("${path.module}/templates/make-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
-    node_address    = join(" ", var.crdb_internal_addresses)
+    node_address    = join(" ", var.crdb_internal_nodes[*].dns)
+    joining_pool    = length(var.crdb_external_nodes) > 0
   })
   filename = "${local.workspace_location}/make-certs.sh"
 }
 
 resource "local_file" "apply_certs" {
-  content = templatefile("${path.module}/templates/apply-certs.sh.tmp", {
+  content  = templatefile("${path.module}/templates/apply-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
   })
@@ -54,7 +55,7 @@ resource "local_file" "apply_certs" {
 }
 
 resource "local_file" "get_credentials" {
-  content = templatefile("${path.module}/templates/get-credentials.sh.tmp", {
+  content  = templatefile("${path.module}/templates/get-credentials.sh.tmp", {
     get_credentials_cmd = var.kubernetes_get_credentials_cmd
   })
   filename = "${local.workspace_location}/get-credentials.sh"
