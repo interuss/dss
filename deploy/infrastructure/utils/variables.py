@@ -54,7 +54,7 @@ def is_example_project(path: str) -> bool:
     """
     Return if the path corresponds to a project which requires example files.
     """
-    return path.endswith("-dss")
+    return '/modules/' in path
 
 
 def load_tf_definitions() -> Dict[str, str]:

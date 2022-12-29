@@ -29,7 +29,7 @@ Download & install the following tools to your workstation:
 
 1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-google-dss-dev`.
 2. Copy main.tf, output.tf and variables.tf to the new folder. (Note that the modules can be added to existing projects)
-3. Copy `terraform.example.tfvars`, rename to `terraform.tfvars` and set the variables according to your environment.
+3. Copy `terraform.dev.example.tfvars` or `terraform.example.tfvars`, rename to `terraform.tfvars` and set the variables according to your environment.
 4. Check that your new directory contains the following files:
    - main.tf
    - output.tf
