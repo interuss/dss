@@ -45,7 +45,7 @@ cluster_name = ""
 
 # Variable: google_machine_type
 # Type: string
-# GCP machine type used for the Kubernetes node pool. Example: n2-standard-4 for production, e2-micro for development
+# GCP machine type used for the Kubernetes node pool. Example: n2-standard-4 for production, e2-medium for development
 google_machine_type = ""
 
 # Variable: image
