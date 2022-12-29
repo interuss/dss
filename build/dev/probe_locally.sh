@@ -57,4 +57,8 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
         echo "Dumping core-service logs"
         docker logs "$CORE_SERVICE_CONTAINER"
     fi
+    echo "Prober did not succeed."
+    exit 1
+else
+    echo "Prober succeeded."
 fi
