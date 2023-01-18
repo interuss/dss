@@ -25,8 +25,6 @@ jobs:
       run: make python-lint
     - name: Automated hygiene verification
       run: make check-hygiene
-    - name: uss_qualifier documentation validation
-      run: make validate-uss-qualifier-docs
     - name: Shell lint
       run: make shell-lint
     - name: Go lint
@@ -56,8 +54,6 @@ jobs:
       run: make test-go-units-crdb
     - name: Build dss image
       run: make build-dss
-    - name: Build monitoring image
-      run: make build-monitoring
     - name: Tear down any pre-existing local DSS instance
       run: make down-locally
     - name: Start local DSS instance
@@ -66,32 +62,3 @@ jobs:
       run: make probe-locally
     - name: Bring down local DSS instance
       run: make down-locally
-
-  monitoring-tests:
-    name: monitoring tests
-    runs-on: ubuntu-latest
-    steps:
-    - name: Job information
-      run: |
-        echo "Job information"
-        echo "Trigger: ${{ github.event_name }}"
-        echo "Host: ${{ runner.os }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
-        docker images
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: monitorlib tests
-      run: |
-        cd monitoring/monitorlib
-        make test
-    - name: mock_uss tests
-      run: |
-        cd monitoring/mock_uss
-        make test
-    - name: uss_qualifier tests
-      run: |
-        cd monitoring/uss_qualifier
-        make test

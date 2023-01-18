@@ -8,8 +8,6 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Automated hygiene verification (`make hygiene`)
 
-### uss_qualifier documentation validation (`make validate-uss-qualifier-docs`)
-
 ### Shell lint (`make shell-lint`)
 
 ### Go lint (`make go-lint`)
@@ -24,8 +22,6 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Build `dss` image (`make build-dss`)
 
-### Build `monitoring` image (`make build-monitoring`)
-
 ### Tear down any pre-existing local DSS instance (`make down-locally`)
 
 ### Start local DSS instance (`make start-locally`)
@@ -33,20 +29,3 @@ Before a pull request can be merged into the master branch, it must pass all aut
 ### Probe local DSS instance (`make probe-locally`)
 
 ### Bring down local DSS instance (`make down-locally`)
-
-## `monitoring` tests (`make check-monitoring`)
-
-### monitorlib tests (`make test` in monitoring/monitorlib)
-
-### mock_uss tests (`make test` in monitoring/mock_uss)
-
-Steps:
-
-* Bring up geoawareness mock_uss
-* Run geoawareness pytest
-
-### uss_qualifier tests (`make test` in monitoring/uss_qualifier)
-
-Steps:
-
-* test_docker_fully_mocked.sh

@@ -1,2 +1,0 @@
-locust==1.2.2
--r ../monitorlib/requirements.txt

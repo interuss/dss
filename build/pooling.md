@@ -150,8 +150,8 @@ The USS owning the first DSS instance should follow
 [the deployment instructions](README.md).  They are not joining any existing
 cluster, and specifically `VAR_SHOULD_INIT` should be set `true` to initialize
 the CRDB cluster.  Upon deployment completion, the
-[prober test](../monitoring/prober/README.md) should be run against the DSS
-instance to verify functionality.
+[prober test](https://github.com/interuss/monitoring/blob/main/monitoring/prober/README.md)
+should be run against the DSS instance to verify functionality.
 
 ### Joining an existing pool with new instance
 A USS wishing to join an existing pool (of perhaps just one instance following
@@ -172,7 +172,7 @@ Once all participants in the existing pool have confirmed that the new ca.crt
 has been adopted by all of their nodes, the joining USS brings their system
 online with `tk apply`.  The pool should then be re-verified for functionality
 by running the prober test on each DSS instance, and the
-[interoperability test scenario](../monitoring/uss_qualifier/scenarios/astm/netrid/v19/dss_interoperability.md)
+[interoperability test scenario](https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/scenarios/astm/netrid/v19/dss_interoperability.md)
 on the full pool (including the newly-added instance).
 
 Finally, the joining USS should provide its node addresses to all other 

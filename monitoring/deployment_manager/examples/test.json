@@ -1,8 +1,0 @@
-{
-  "cluster": {
-    "name": "minikube"
-  },
-  "test": {
-    "v1": {}
-  }
-}

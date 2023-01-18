@@ -35,8 +35,8 @@ To run a specific test in the [prober](../monitoring/prober) test suite,
 simply add its name as the first argument to the script to run prober locally
 (this is the same script `make probe-locally` uses).  For example:
 ```shell script
-./monitoring/prober/run_locally.sh scd/test_constraint_simple.py
-./monitoring/prober/run_locally.sh scd/test_constraint_simple.py::test_ensure_clean_workspace
+./build/dev/probe_locally.sh scd/test_constraint_simple.py
+./build/dev/probe_locally.sh scd/test_constraint_simple.py::test_ensure_clean_workspace
 ```
 
 ### Examining Core Service logs

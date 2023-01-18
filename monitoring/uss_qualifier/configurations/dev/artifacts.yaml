@@ -1,6 +1,0 @@
-# These are configuration parameters for artifacts in a USSQualifierConfiguration
-# to be produced in the uss_qualifier folder.
-relative:
-  report_path: report.json
-  graph:
-    gv_path: report.gv
