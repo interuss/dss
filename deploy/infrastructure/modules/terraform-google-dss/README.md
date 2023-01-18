@@ -24,6 +24,7 @@ Download & install the following tools to your workstation:
     2. If you want to manage DNS entries with terraform: `dns.googleapis.com`
 4. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`
 5. Run `gcloud auth application-default login` to generate credentials to call Google Cloud Platform APIs.
+    1. If the result of performing the authorization indicates 404 in the browser, check whether a local dummy-oauth instance is running (using port 8085).  Stop the dummy-oauth instance if it is running.
 
 ### Deployment of the Kubernetes cluster
 
