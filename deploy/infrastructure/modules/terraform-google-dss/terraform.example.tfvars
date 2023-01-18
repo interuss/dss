@@ -34,7 +34,7 @@ crdb_hostname_suffix = ""
 
 # Variable: cluster_name
 # Type: string
-# Name of the kubernetes cluster
+# Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted; e.g., dss-che-1)
 cluster_name = ""
 
 # Variable: node_count
