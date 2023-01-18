@@ -40,8 +40,7 @@ cluster_name = ""
 # Variable: node_count
 # Type: number
 # Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes. Always 3.
-# Default: 3
-#node_count = 3
+node_count = 3
 
 # Variable: google_machine_type
 # Type: string
@@ -54,8 +53,7 @@ google_machine_type = ""
 #   the last thing it does when run with DOCKER_URL set. It should look something like
 #   gcr.io/your-project-id/dss:2020-07-01-46cae72cf if you built the image yourself as
 #   documented in /build/README.md, or docker.io/interuss/dss.
-# Default: docker.io/interuss/dss:v0.6.0
-#image = "docker.io/interuss/dss:v0.6.0"
+image = "docker.io/interuss/dss:v0.6.0"
 
 # Variable: authorization
 # Type: object({'public_key_pem_path': '${optional(string)}', 'jwks': "${optional(object({'endpoint': '${string}', 'key_id': '${string}'}))}"})
@@ -124,6 +122,7 @@ crdb_locality = ""
 # Variable: crdb_external_nodes
 # Type: list(string)
 # Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.
+# Example: ["0.db.dss.example.com", "1.db.dss.example.com", "2.db.dss.example.com"]
 # Default: []
 #crdb_external_nodes = []
 
