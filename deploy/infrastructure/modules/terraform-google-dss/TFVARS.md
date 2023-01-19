@@ -101,7 +101,9 @@ the last thing it does when run with DOCKER_URL set. It should look something li
 gcr.io/your-project-id/dss:2020-07-01-46cae72cf if you built the image yourself as
 documented in /build/README.md, or docker.io/interuss/dss.
 
-Example: `docker.io/interuss/dss:v0.6.0`
+`latest` can be used to use the latest official interuss docker image.
+
+Example: `latest` or `docker.io/interuss/dss:v0.6.0`
 
 
 ### authorization
@@ -216,6 +218,8 @@ Example: ["0.db.dss.example.com", "1.db.dss.example.com", "2.db.dss.example.com"
 ### kubernetes_namespace
 
 *Type: `string`*
+
+**Default: "default"**
 
 Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
 

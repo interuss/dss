@@ -10,14 +10,16 @@ variable "image" {
   gcr.io/your-project-id/dss:2020-07-01-46cae72cf if you built the image yourself as
   documented in /build/README.md, or docker.io/interuss/dss.
 
-  Example: `docker.io/interuss/dss:v0.6.0`
+  `latest` can be used to use the latest official interuss docker image.
+
+  Example: `latest` or `docker.io/interuss/dss:v0.6.0`
   EOT
 }
 
 variable "authorization" {
-  type        = object({
+  type = object({
     public_key_pem_path = optional(string)
-    jwks                = optional(object({
+    jwks = optional(object({
       endpoint = string
       key_id   = string
     }))
@@ -85,7 +87,7 @@ variable "should_init" {
 }
 
 variable "desired_rid_db_version" {
-  type = string
+  type        = string
   description = <<EOT
     Desired RID DB schema version.
     Use `latest` to use the latest schema version.
@@ -97,7 +99,7 @@ variable "desired_rid_db_version" {
 }
 
 variable "desired_scd_db_version" {
-  type = string
+  type        = string
   description = <<EOT
     Desired SCD DB schema version.
     Use `latest` to use the latest schema version.
@@ -136,6 +138,8 @@ variable "kubernetes_namespace" {
     Example: `default`
   EOT
 
+  default = "default"
+
   # TODO: Adapt current deployment scripts in /build/deploy to support default is supported for the moment.
   validation {
     condition     = var.kubernetes_namespace == "default"
@@ -144,7 +148,7 @@ variable "kubernetes_namespace" {
 }
 
 variable "app_hostname" {
-  type = string
+  type        = string
   description = <<-EOT
   Fully-qualified domain name of your HTTPS Gateway ingress endpoint.
 
@@ -153,7 +157,7 @@ variable "app_hostname" {
 }
 
 variable "crdb_hostname_suffix" {
-  type = string
+  type        = string
   description = <<-EOT
   The domain name suffix shared by all of your CockroachDB nodes.
   For instance, if your CRDB nodes were addressable at 0.db.example.com,

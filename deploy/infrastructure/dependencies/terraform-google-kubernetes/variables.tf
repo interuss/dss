@@ -3,12 +3,12 @@
 # Please do not modify manually.
 
 variable "google_project_name" {
-  type = string
+  type        = string
   description = "Name of the GCP project hosting the future cluster"
 }
 
 variable "google_zone" {
-  type = string
+  type        = string
   description = <<-EOT
     GCP zone hosting the kubernetes cluster
     List of available zones: https://cloud.google.com/compute/docs/regions-zones#available
@@ -18,7 +18,7 @@ variable "google_zone" {
 }
 
 variable "google_dns_managed_zone_name" {
-  type = string
+  type        = string
   description = <<-EOT
     GCP DNS zone name to automatically manage DNS entries.
 
@@ -38,7 +38,7 @@ variable "google_kubernetes_storage_class" {
 }
 
 variable "app_hostname" {
-  type = string
+  type        = string
   description = <<-EOT
   Fully-qualified domain name of your HTTPS Gateway ingress endpoint.
 
@@ -47,7 +47,7 @@ variable "app_hostname" {
 }
 
 variable "crdb_hostname_suffix" {
-  type = string
+  type        = string
   description = <<-EOT
   The domain name suffix shared by all of your CockroachDB nodes.
   For instance, if your CRDB nodes were addressable at 0.db.example.com,
@@ -58,7 +58,7 @@ variable "crdb_hostname_suffix" {
 }
 
 variable "cluster_name" {
-  type = string
+  type        = string
   description = <<-EOT
     Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
 
@@ -82,7 +82,7 @@ variable "node_count" {
 }
 
 variable "google_machine_type" {
-  type = string
+  type        = string
   description = "GCP machine type used for the Kubernetes node pool. Example: n2-standard-4 for production, e2-medium for development"
 }
 

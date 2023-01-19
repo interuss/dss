@@ -6,6 +6,8 @@ variable "kubernetes_namespace" {
     Example: `default`
   EOT
 
+  default = "default"
+
   # TODO: Adapt current deployment scripts in /build/deploy to support default is supported for the moment.
   validation {
     condition     = var.kubernetes_namespace == "default"
