@@ -9,3 +9,7 @@ output "gateway_address" {
 output "generated_files_location" {
   value = module.terraform-commons-dss.generated_files_location
 }
+
+output "cluster_context" {
+  value = module.terraform-google-kubernetes.kubernetes_context_name
+}

@@ -49,7 +49,7 @@ for the new cluster.
 
 It contains scripts to operate the cluster and setup the services.
 
-1. Go to `/build/workspace/${CLUSTER_CONTEXT}`.
+1. Go to `/build/workspace/${cluster_context}`. Run `terraform output` to find `cluster_context` value. 
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
 3. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
 4. Deploy the certificates using `./apply-certs.sh`.
