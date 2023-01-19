@@ -17,6 +17,7 @@ google_machine_type             = "e2-medium"
 google_kubernetes_storage_class = "standard"
 
 # DSS configuration
+image = "latest"
 authorization = {
   public_key_pem_path = "/public-certs/us-demo.pem"
 }
