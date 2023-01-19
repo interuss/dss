@@ -20,7 +20,7 @@ google_kubernetes_storage_class = "standard"
 # DSS configuration
 image = "latest"
 authorization = {
-  public_key_pem_path = "/public-certs/us-demo.pem"
+  public_key_pem_path = "/jwt-public-certs/us-demo.pem"
 }
 should_init   = true
 crdb_locality = "interuss_dss-dev-w6a"
