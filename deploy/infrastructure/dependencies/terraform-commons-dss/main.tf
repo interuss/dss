@@ -19,8 +19,8 @@ resource "local_file" "tanka_config_main" {
     VAR_PUBLIC_KEY_PEM_PATH    = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""
     VAR_JWKS_ENDPOINT          = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
     VAR_JWKS_KEY_ID            = var.authorization.jwks != null ? var.authorization.jwks.key_id : ""
-    VAR_DESIRED_RID_DB_VERSION = var.desired_rid_db_version
-    VAR_DESIRED_SCD_DB_VERSION = var.desired_scd_db_version
+    VAR_DESIRED_RID_DB_VERSION = local.rid_db_schema
+    VAR_DESIRED_SCD_DB_VERSION = local.scd_db_schema
     VAR_SHOULD_INIT            = var.should_init
   })
   filename = "${local.workspace_location}/main.jsonnet"

@@ -15,7 +15,7 @@ module "terraform-google-kubernetes" {
 module "terraform-commons-dss" {
   # See variables.tf for variables description.
   kubernetes_namespace           = var.kubernetes_namespace
-  kubernetes_storage_class       = var.kubernetes_storage_class
+  kubernetes_storage_class       = var.google_kubernetes_storage_class
   app_hostname                   = var.app_hostname
   crdb_hostname_suffix           = var.crdb_hostname_suffix
   should_init                    = var.should_init

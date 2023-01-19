@@ -1,5 +1,11 @@
 variable "desired_scd_db_version" {
   type = string
-  description = "Desired SCD DB schema version"
-  default     = "3.1.0"
+  description = <<EOT
+    Desired SCD DB schema version.
+    Use `latest` to use the latest schema version.
+
+    Example: `3.1.0`
+  EOT
+
+  default = "latest"
 }

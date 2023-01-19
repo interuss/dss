@@ -33,3 +33,14 @@ variable "ip_gateway" {
   type = string
   description = "IP of the gateway used by the DSS service"
 }
+
+variable "kubernetes_storage_class" {
+  type        = string
+  description = <<-EOT
+  Kubernetes Storage Class to use for CockroachDB and Prometheus volumes. You can
+  check your cluster's possible values with `kubectl get storageclass`.
+  This value is provided by the cloud provider specific variable `*_kubernetes_storage_class`.
+
+  Example: value of `var.google_kubernetes_storage_class`
+  EOT
+}
