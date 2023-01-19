@@ -1,5 +1,5 @@
 variable "desired_rid_db_version" {
-  type = string
+  type        = string
   description = <<EOT
     Desired RID DB schema version.
     Use `latest` to use the latest schema version.

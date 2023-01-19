@@ -1,5 +1,5 @@
 variable "google_zone" {
-  type = string
+  type        = string
   description = <<-EOT
     GCP zone hosting the kubernetes cluster
     List of available zones: https://cloud.google.com/compute/docs/regions-zones#available

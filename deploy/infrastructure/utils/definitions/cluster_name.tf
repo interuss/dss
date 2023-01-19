@@ -1,5 +1,5 @@
 variable "cluster_name" {
-  type = string
+  type        = string
   description = <<-EOT
     Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
 

@@ -1,5 +1,5 @@
 variable "app_hostname" {
-  type = string
+  type        = string
   description = <<-EOT
   Fully-qualified domain name of your HTTPS Gateway ingress endpoint.
 

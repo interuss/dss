@@ -1,7 +1,7 @@
 variable "authorization" {
-  type        = object({
+  type = object({
     public_key_pem_path = optional(string)
-    jwks                = optional(object({
+    jwks = optional(object({
       endpoint = string
       key_id   = string
     }))
