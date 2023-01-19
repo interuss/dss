@@ -178,7 +178,7 @@ def get_tfvars_md_content(
 
     if has_internal_vars:
         content += f"## Internal variables\n\n"
-        content += f"This module uses dedicated variables, see [{INTERNAL_VARIABLES_FILENAME}](./{INTERNAL_VARIABLES_FILENAME}) for details"
+        content += f"This module requires additional variables, see [{INTERNAL_VARIABLES_FILENAME}](./{INTERNAL_VARIABLES_FILENAME}) for details"
 
     return content
 

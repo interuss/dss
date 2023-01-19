@@ -1,9 +1,10 @@
 # This file is an example, please adapt it to your configuration.
-# See terraform.example.tfvars for full set of variables and related descriptions.
+# See TFVARS.md for full set of variables and related descriptions.
 
 # Google account
 google_project_name = "interuss-deploy-example"
 google_zone         = "europe-west6-a"
+
 
 # DNS
 google_dns_managed_zone_name = "interuss-example-com"

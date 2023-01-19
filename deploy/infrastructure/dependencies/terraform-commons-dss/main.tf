@@ -14,7 +14,7 @@ resource "local_file" "tanka_config_main" {
     VAR_INGRESS_NAME           = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES    = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
     VAR_STORAGE_CLASS          = var.kubernetes_storage_class
-    VAR_DOCKER_IMAGE_NAME      = var.image
+    VAR_DOCKER_IMAGE_NAME      = local.image
     VAR_APP_HOSTNAME           = var.app_hostname
     VAR_PUBLIC_KEY_PEM_PATH    = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""
     VAR_JWKS_ENDPOINT          = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
