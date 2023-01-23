@@ -46,11 +46,12 @@ handled by terraform depending on the cloud provider. See [DNS](DNS.md) for deta
 ## Deployment of the DSS services
 
 During the successful run, the terraform job has created a new [workspace](../../../../build/workspace/)
-for the new cluster.
+for the new cluster. The new workspace name corresponds to the cluster context. The cluster context
+can be retrieved by running `terraform output` in your infrastructure folder (ie /deploy/infrastructure/personal/terraform-google-dss-dev).
 
 It contains scripts to operate the cluster and setup the services.
 
-1. Go to `/build/workspace/${cluster_context}`. Run `terraform output` to find `cluster_context` value. 
+1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
 3. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
 4. Deploy the certificates using `./apply-certs.sh`.
