@@ -30,16 +30,17 @@ Download & install the following tools to your workstation:
 
 1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-google-dss-dev`.
 2. Copy main.tf, output.tf and variables.tf to the new folder. (Note that the modules can be added to existing projects)
-3. Copy `terraform.dev.example.tfvars` rename to `terraform.tfvars` and set the variables according to your environment. See [TFVARS.md](TFVARS.md) for variables descriptions.
+3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`
 4. Check that your new directory contains the following files:
    - main.tf
    - output.tf
    - terraform.tfvars
    - variables.tf
-5. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
-6. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
-7. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-8. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or 
+5. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.md](TFVARS.md) for variables descriptions.
+6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
+7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
+8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
+9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or 
 handled by terraform depending on the cloud provider. See [DNS](DNS.md) for details.
 
 ## Deployment of the DSS services
