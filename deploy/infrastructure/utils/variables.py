@@ -18,20 +18,7 @@ GENERATED_COMMENT = """
 """
 
 # Variables per project
-# terraform-google-kubernetes
-GOOGLE_KUBERNETES_VARIABLES = [
-    "google_project_name",
-    "google_zone",
-    "google_dns_managed_zone_name",
-    "google_kubernetes_storage_class",
-    "app_hostname",
-    "crdb_hostname_suffix",
-    "cluster_name",
-    "node_count",
-    "google_machine_type",
-]
-
-# terraform-commons-dss
+# dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = [
     "image",
     "authorization",
@@ -46,9 +33,27 @@ COMMONS_DSS_VARIABLES = [
     "crdb_hostname_suffix",
 ]
 
+# dependencies/terraform-google-kubernetes
+GOOGLE_KUBERNETES_VARIABLES = [
+    "google_project_name",
+    "google_zone",
+    "google_dns_managed_zone_name",
+    "app_hostname",
+    "crdb_hostname_suffix",
+    "cluster_name",
+    "node_count",
+    "google_machine_type",
+]
+
+# modules/terraform-google-dss
+GOOGLE_MODULE_VARIABLES =  GOOGLE_KUBERNETES_VARIABLES + [
+    "google_kubernetes_storage_class",
+] + COMMONS_DSS_VARIABLES
+
+
 PROJECT_VARIABLES = {
     "../modules/terraform-google-dss": list(
-        dict.fromkeys(GOOGLE_KUBERNETES_VARIABLES + COMMONS_DSS_VARIABLES)
+        dict.fromkeys(GOOGLE_MODULE_VARIABLES)
     ),  # Preserves the items order.
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,

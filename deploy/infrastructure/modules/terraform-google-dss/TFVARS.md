@@ -35,17 +35,6 @@ GCP DNS zone name to automatically manage DNS entries.
 Leave it empty to manage it manually.
 
 
-### google_kubernetes_storage_class
-
-*Type: `string`*
-
-GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
-See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
-available options.
-
-Example: `standard`
-
-
 ### app_hostname
 
 *Type: `string`*
@@ -89,7 +78,19 @@ Example: `3`
 
 *Type: `string`*
 
-GCP machine type used for the Kubernetes node pool. Example: n2-standard-4 for production, e2-medium for development
+GCP machine type used for the Kubernetes node pool.
+Example: `n2-standard-4` for production, `e2-medium` for development
+
+
+### google_kubernetes_storage_class
+
+*Type: `string`*
+
+GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
+See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
+available options.
+
+Example: `standard`
 
 
 ### image
