@@ -50,11 +50,21 @@ GOOGLE_MODULE_VARIABLES =  GOOGLE_KUBERNETES_VARIABLES + [
     "google_kubernetes_storage_class",
 ] + COMMONS_DSS_VARIABLES
 
+# dependencies/terraform-aws-kubernetes
+AWS_KUBERNETES_VARIABLES = [
+    "aws_region",
+    "aws_instance_type",
+    "app_hostname",
+    "crdb_hostname_suffix",
+    "cluster_name",
+    "node_count",
+]
 
 PROJECT_VARIABLES = {
     "../modules/terraform-google-dss": list(
         dict.fromkeys(GOOGLE_MODULE_VARIABLES)
     ),  # Preserves the items order.
+    "../dependencies/terraform-aws-kubernetes": AWS_KUBERNETES_VARIABLES,
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
 }
