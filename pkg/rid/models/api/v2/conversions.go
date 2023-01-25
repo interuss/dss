@@ -34,8 +34,8 @@ func FromAltitude(alt *restapi.Altitude) (*float32, error) {
 	if alt == nil {
 		return nil, nil
 	}
-	if alt.Reference != "WGS84" {
-		return nil, stacktrace.NewError("Invalid altitude reference '%v'; expected 'WGS84'", alt.Reference)
+	if alt.Reference != "W84" {
+		return nil, stacktrace.NewError("Invalid altitude reference '%v'; expected 'W84'", alt.Reference)
 	}
 	if alt.Units != "M" {
 		return nil, stacktrace.NewError("Invalid units '%v'; expected 'M'", alt.Units)
