@@ -1,3 +1,4 @@
+
 resource "aws_iam_role" "dss-cluster" {
   name = "dss-cluster"
 
@@ -37,6 +38,15 @@ resource "aws_iam_role" "dss-cluster-node-group" {
     }]
     Version = "2012-10-17"
   })
+}
+
+resource aws_iam_policy "AWSLoadBalancerControllerPolicy" {
+  policy = file("AWSLoadBalancerControllerPolicy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {
+  policy_arn = aws_iam_policy.AWSLoadBalancerControllerPolicy.arn
+  role       = aws_iam_role.dss-cluster-node-group.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {

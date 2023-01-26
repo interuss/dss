@@ -30,12 +30,12 @@ resource "aws_eks_node_group" "eks_node_group" {
   disk_size = 100
   node_group_name_prefix = aws_eks_cluster.kubernetes_cluster.name
   instance_types = [
-    "t3.medium"
+    var.aws_instance_type
   ]
 
   scaling_config {
-    desired_size = 1
-    max_size     = 2
+    desired_size = 2
+    max_size     = 3
     min_size     = 1
   }
 
