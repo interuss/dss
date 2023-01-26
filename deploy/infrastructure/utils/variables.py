@@ -54,6 +54,7 @@ GOOGLE_MODULE_VARIABLES =  GOOGLE_KUBERNETES_VARIABLES + [
 AWS_KUBERNETES_VARIABLES = [
     "aws_region",
     "aws_instance_type",
+    "aws_route53_zone_id",
     "app_hostname",
     "crdb_hostname_suffix",
     "cluster_name",
