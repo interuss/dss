@@ -1,7 +1,8 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
+local cloud_providers = import 'cloud_providers.libsonnet';
 
-local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
+local googleIngress(metadata) = base.Ingress(metadata, 'https-ingress') {
   metadata+: {
     annotations: {
       'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
@@ -21,8 +22,8 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
 };
 
 {
-  ManagedCertIngress(metadata): {
-    ingress: ingress(metadata) {
+  GoogleManagedCertIngress(metadata): {
+    ingress: googleIngress(metadata) {
       metadata+: {
         annotations+: {
           'networking.gke.io/managed-certificates': 'https-certificate',
@@ -36,24 +37,21 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
         ],
       },
     },
-  },
-
-  PresharedCertIngress(metadata, certName): ingress(metadata) {
-    metadata+: {
-      annotations+: {
-        'ingress.gcp.kubernetes.io/pre-shared-cert': certName,
-      },
-    },
-  },
-
-  all(metadata): {
-    ingress: $.ManagedCertIngress(metadata),
     service: base.Service(metadata, 'core-service') {
       app:: 'core-service',
       port:: metadata.backend.port,
       type:: 'NodePort',
       enable_monitoring:: false,
     },
+  },
+
+
+  CloudNetwork(metadata): {
+    google: if metadata.cloud_provider.name == "google" then $.GoogleManagedCertIngress(metadata)
+  },
+
+  all(metadata): {
+    network: $.CloudNetwork(metadata),
 
     deployment: base.Deployment(metadata, 'core-service') {
       apiVersion: 'apps/v1',

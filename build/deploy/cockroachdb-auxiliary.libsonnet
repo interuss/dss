@@ -1,7 +1,7 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
-local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
+local googleCockroachLB(metadata, name, ip) = base.Service(metadata, name) {
   port:: metadata.cockroach.grpc_port,
   app:: 'cockroachdb',
   spec+: {
@@ -9,6 +9,9 @@ local cockroachLB(metadata, name, ip) = base.Service(metadata, name) {
     loadBalancerIP: ip,
   },
 };
+
+local cockroachLB(metadata, name, ip) =
+    if metadata.cloud_provider.name == "google" then googleCockroachLB(metadata, name, ip);
 
 {
   all(metadata): {

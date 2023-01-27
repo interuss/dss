@@ -15,6 +15,7 @@
     grpc_port: 26257,
     http_port: 8080,
     image: 'cockroachdb/cockroach:v21.2.7',
+    // Note that for AWS, this array should contain the elastic ip allocation ids. TODO: Rename this variable.
     nodeIPs: error 'must supply the per-node ip addresses as an array',
     JoinExisting: [],
     storageClass: 'standard',
@@ -56,4 +57,7 @@
     custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
+  cloudProvider: {
+    name: 'google',
+  }
 }
