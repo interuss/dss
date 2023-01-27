@@ -48,14 +48,23 @@ output "app_hostname_cert_arn" {
   value = aws_acm_certificate.app_hostname.arn
 }
 
-# Public Elastic IPs (1 per subnet)
+# Public Elastic IP for the gateway (1 per subnet)
+# At the moment, worker nodes will be deployed in the same subnet, so only one elastic ip is required.
 resource aws_eip "gateway" {
   vpc = true
-  count = length(aws_subnet.dss)
+  count = 1
 }
 
-output "eip-gateway" {
-  value = aws_eip.gateway[*].allocation_id
+# Public Elastic IPs for the crdb instances
+resource aws_eip "ip_crdb" {
+  count  = var.node_count
+  vpc = true
+
+  tags = {
+    Name = format("%s-ip-crdb%v", var.cluster_name, count.index)
+    # Preserve mapping between ips and hostnames
+    ExpectedDNS = format("%s.%s", count.index, var.crdb_hostname_suffix)
+  }
 }
 
 # Application DNS

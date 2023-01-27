@@ -25,7 +25,7 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
 
 resource "aws_eks_node_group" "eks_node_group" {
   cluster_name = aws_eks_cluster.kubernetes_cluster.name
-  subnet_ids = aws_subnet.dss[*].id
+  subnet_ids = [aws_subnet.dss[0].id] # Limit nodes to one subnet
   node_role_arn = aws_iam_role.dss-cluster-node-group.arn
   disk_size = 100
   node_group_name_prefix = aws_eks_cluster.kubernetes_cluster.name
@@ -34,12 +34,16 @@ resource "aws_eks_node_group" "eks_node_group" {
   ]
 
   scaling_config {
-    desired_size = 2
-    max_size     = 3
-    min_size     = 1
+    desired_size = var.node_count
+    max_size     = var.node_count
+    min_size     = var.node_count
   }
 
   remote_access {
     ec2_ssh_key = "test-1"
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }

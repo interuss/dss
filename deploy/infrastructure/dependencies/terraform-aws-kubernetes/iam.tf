@@ -41,7 +41,7 @@ resource "aws_iam_role" "dss-cluster-node-group" {
 }
 
 resource aws_iam_policy "AWSLoadBalancerControllerPolicy" {
-  policy = file("AWSLoadBalancerControllerPolicy.json")
+  policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
 }
 
 resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {

@@ -49,7 +49,6 @@ metadata:
 spec:
   selector:
     app: test-app
-  externalTrafficPolicy: Local
   ports:
     - port: 443
       targetPort: 80
