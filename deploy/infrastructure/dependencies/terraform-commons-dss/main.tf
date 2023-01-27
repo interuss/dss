@@ -1,5 +1,7 @@
 locals {
-  workspace_location = abspath("${path.module}/../../../../build/workspace/${var.kubernetes_context_name}")
+  workspace_folder   = replace(replace(var.kubernetes_context_name, "/", "_"), ":", "_")
+  # Replace ':' and '/' characters from folder name by underscores. Those characters are used by AWS for contexts.
+  workspace_location = abspath("${path.module}/../../../../build/workspace/${local.workspace_folder}")
 }
 
 resource "local_file" "tanka_config_main" {
@@ -22,6 +24,7 @@ resource "local_file" "tanka_config_main" {
     VAR_DESIRED_RID_DB_VERSION = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION = local.scd_db_schema
     VAR_SHOULD_INIT            = var.should_init
+    VAR_CLOUD_PROVIDER         = var.kubernetes_cloud_provider_name
   })
   filename = "${local.workspace_location}/main.jsonnet"
 }

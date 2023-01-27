@@ -38,6 +38,9 @@ local metadata = metadataBase {
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',
   },
+  cloudProvider+: {
+    name: '${VAR_CLOUD_PROVIDER}'
+  }
 };
 
 dss.all(metadata)
