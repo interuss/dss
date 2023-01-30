@@ -27,10 +27,6 @@ resource "aws_acm_certificate" "app_hostname" {
   }
 }
 
-data "aws_route53_zone" "managed_zone" {
-  zone_id = var.aws_route53_zone_id
-}
-
 resource "aws_acm_certificate_validation" "app_hostname_cert" {
   count                   = 1
   certificate_arn         = aws_acm_certificate.app_hostname.arn
