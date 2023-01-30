@@ -1,4 +1,5 @@
 {
+  cloud_provider: 'google', // Either google or aws
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
   enable_istio: false,
@@ -33,7 +34,7 @@
     jwksKeyIds: [],
     hostname: error 'must specify hostname',
     dumpRequests: false,
-    certName: if $.cloudProvider == "aws" then error 'must specify  certName for AWS cloud provider', # Only used by AWS
+    certName: if $.cloud_provider == "aws" then error 'must specify  certName for AWS cloud provider', # Only used by AWS
   },
   alert: {
     enable: false,
@@ -57,6 +58,5 @@
     custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
-  subnet: if $.cloudProvider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
-  cloudProvider: 'google', // Either google or aws
+  subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
 }

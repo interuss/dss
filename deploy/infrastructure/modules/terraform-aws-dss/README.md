@@ -21,19 +21,11 @@ Download & install the following tools to your workstation:
    1. We recommend to create an AWS_PROFILE using for instance `aws configure --profile aws-interuss-dss`
       Before running `terraform` commands, run once in your shell: `export AWS_PROFILE=aws-interuss-dss`
       Other methods are described here: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
-4. (optional) Create a SSH keypair to connect to your worker nodes using SSH.
-   1. Connect to the [AWS console](https://console.aws.amazon.com).
-   2. Go to the EC2 page.
-   3. Click on the Key Pairs section.
-   4. Make sure you are working in the correct region.
-   5. Add or import your SSH key: https://console.aws.amazon.com/ec2/home#KeyPairs:
-
-# TODO
-
+   
 
 ### Deployment of the Kubernetes cluster
 
-1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-google-dss-dev`.
+1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-aws-dss-dev`.
 2. Copy main.tf, output.tf and variables.tf to the new folder. (Note that the modules can be added to existing projects)
 3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`
 4. Check that your new directory contains the following files:
@@ -42,17 +34,19 @@ Download & install the following tools to your workstation:
    - terraform.tfvars
    - variables.tf
 5. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.md](TFVARS.md) for variables descriptions.
-6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
+6. In the new directory (ie /deploy/infrastructure/personal/terraform-aws-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or 
-handled by terraform depending on the cloud provider. See [DNS](DNS.md) for details.
+9. Configure the DNS resolution to the public ip addresses and for SSL certificate validation. 
+DNS entries can be either managed manually or handled by terraform depending on the cloud provider. 
+See [DNS](DNS.md) for details.
+
 
 ## Deployment of the DSS services
 
 During the successful run, the terraform job has created a new [workspace](../../../../build/workspace/)
-for the new cluster. The new workspace name corresponds to the cluster context. The cluster context
-can be retrieved by running `terraform output` in your infrastructure folder (ie /deploy/infrastructure/personal/terraform-google-dss-dev).
+for the cluster. The new workspace name corresponds to the cluster context. The cluster context
+can be retrieved by running `terraform output` in your infrastructure  folder (ie /deploy/infrastructure/personal/terraform-aws-dss-dev).
 
 It contains scripts to operate the cluster and setup the services.
 
@@ -62,17 +56,16 @@ It contains scripts to operate the cluster and setup the services.
 4. Deploy the certificates using `./apply-certs.sh`.
 5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 6. Wait for services to initialize:
-    - On Google Cloud, the highest-latency operation is provisioning of the HTTPS certificate which generally takes 10-45 minutes. To track this progress:
-        - Go to the "Services & Ingress" left-side tab from the Kubernetes Engine page.
-        - Click on the https-ingress item (filter by just the cluster of interest if you have multiple clusters in your project).
-        - Under the "Ingress" section for Details, click on the link corresponding with "Load balancer".
-        - Under Frontend for Details, the Certificate column for HTTPS protocol will have an icon next to it which will change to a green checkmark when provisioning is complete.
-        - Click on the certificate link to see provisioning progress.
-        - If everything indicates OK and you still receive a cipher mismatch error message when attempting to visit /healthy, wait an additional 5 minutes before attempting to troubleshoot further.
+    - On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:
+        - On the [EKS page](https://eu-west-1.console.aws.amazon.com/eks/home), the status of the kubernetes cluster should be `Active`.
+        - On the [EC2 page](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:), the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state `Active`.
 7. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
+
 
 ## Clean up
 
-To delete all resources, run `terraform destroy`. Note that this operation can't be reverted and all data will be lost.
-
-For Google Cloud Engine, make sure to manually clean up the persistent storage: https://console.cloud.google.com/compute/disks 
+1. Note that the following operations can't be reverted and all data will be lost.
+2. To delete all resources, run `tk destroy .` in the workspace folder.
+3. Make sure that all [load balancers](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:) and [target groups](https://eu-west-1.console.aws.amazon.com/ec2/home#TargetGroups:) have been deleted from the AWS region before next step.  
+4. `terraform destroy` in your infrastructure folder.
+5. On the [EBS page](https://eu-west-1.console.aws.amazon.com/ec2/home#Volumes:), make sure to manually clean up the persistent storage. Note that the correct AWS region shall be selected.   
