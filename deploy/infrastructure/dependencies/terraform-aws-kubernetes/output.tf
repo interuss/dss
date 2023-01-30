@@ -50,10 +50,6 @@ output "gateway_address" {
   }
 }
 
-output "tls_certificate_dns_record" {
-  value = aws_route53_record.app_hostname_cert_validation[*].fqdn
-}
-
 output "workload_subnet" {
   value = data.aws_subnet.main_subnet.id
 }

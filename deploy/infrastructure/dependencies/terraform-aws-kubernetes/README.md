@@ -1,6 +1,6 @@
 # terraform-aws-kubernetes
 
-To deploy a complete DSS to AWS Elatic Kubernetes Service, see [terraform-aws-dss](../../modules/terraform-aws-dss).
+To deploy a complete DSS to AWS Elastic Kubernetes Service, see [terraform-aws-dss](../../modules/terraform-aws-dss).
 
 This folder only contains the terraform module which deploys the kubernetes cluster required to run the DSS on
 Kubernetes in AWS.
@@ -21,7 +21,7 @@ region. The following table summarizes current responsibilities for resource cre
 | Elastic IPs                                 | Terraform                                           |
 | Network Load balancer                       | Kubernetes controller: aws-load-balancer-controller |
 | Target groups                               | Kubernetes controller: aws-load-balancer-controller |
-| Storage Volumes (Elastic Block Storage)     | EKS add-on provisioned by                           |
+| Storage Volumes (Elastic Block Storage)     | EKS add-on provisioned by terraform                 |
 | SSL Certificates (AWS Certificates Manager) | Terraform                                           |
 | DNS                                         | Terraform (or manual)                               |
 
@@ -120,5 +120,7 @@ reachability within the deployed cluster. To apply the resources, follow the nex
 
 ## Clean up
 
-Delete all services in kubernetes. Make sure all load balancers and target groups have been removed. terraform destroy
+1. Delete all services in kubernetes by running `kubectl delete -f test-app.yml`. 
+2. Make sure all load balancers and target groups have been removed. 
+3. Run `terraform destroy`
 

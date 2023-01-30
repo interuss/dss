@@ -232,7 +232,7 @@ local util = import 'util.libsonnet';
     assert std.length(self.containers) > 0 : 'must have at least one container',
   },
 
-  // Generic Cloud provider specific resources
+  // Reusable cloud provider specific resources
   AWSLoadBalancer(metadata, name, ipNames, subnet): $.Service(metadata, name) {
     type:: 'LoadBalancer',
     metadata+: {

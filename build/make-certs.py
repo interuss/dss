@@ -25,6 +25,7 @@ class CockroachCluster(object):
 
     @property
     def directory(self):
+        # Replace characters breaking folder names
         def remove_special_chars(s: str):
             for c in [":", "/"]:
                 s = s.replace(c, "_")

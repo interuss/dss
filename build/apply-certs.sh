@@ -25,6 +25,7 @@ CONTEXT="$1"
 DIR="$(pwd)"
 NAMESPACE="$2"
 
+# Replace characters breaking folder names
 WORKSPACE=$(echo "${CONTEXT}" | tr ':/' '_')
 CLIENTS_CERTS_DIR="$DIR/workspace/$WORKSPACE/client_certs_dir"
 NODE_CERTS_DIR="$DIR/workspace/$WORKSPACE/node_certs_dir"

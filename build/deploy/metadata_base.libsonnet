@@ -34,7 +34,7 @@
     jwksKeyIds: [],
     hostname: error 'must specify hostname',
     dumpRequests: false,
-    certName: if $.cloud_provider == "aws" then error 'must specify  certName for AWS cloud provider', # Only used by AWS
+    certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
   },
   alert: {
     enable: false,

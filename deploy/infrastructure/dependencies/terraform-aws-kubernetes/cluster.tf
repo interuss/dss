@@ -2,7 +2,6 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
   name     = var.cluster_name
   role_arn = aws_iam_role.dss-cluster.arn
 
-
   vpc_config {
     subnet_ids             = aws_subnet.dss[*].id
     endpoint_public_access = true
@@ -19,8 +18,6 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
   ]
 
   version = "1.24"
-
-  #  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
 
 resource "aws_eks_node_group" "eks_node_group" {

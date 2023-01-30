@@ -3,17 +3,21 @@
 This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS) 
 and generates the tanka files to deploy a DSS instance.
 
+
 ## Getting started
 
 ### Prerequisites
+
 Download & install the following tools to your workstation:
 
 1. Install [terraform](https://developer.hashicorp.com/terraform/downloads).
 2. Install tools from [Prerequisites](../../../../build/README.md)
 3. Install provider specific tools:
     1. [Amazon Web Services](./README.md#amazon-web-services)
+
     
 #### Amazon Web Services
+
 1. Install and initialize [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions).
     1. Confirm successful installation with `aws --version`.
 2. If you don't have an account, sign-up: https://aws.amazon.com/free/
