@@ -61,7 +61,15 @@ AWS_KUBERNETES_VARIABLES = [
     "node_count",
 ]
 
+# modules/terraform-aws-dss
+AWS_MODULE_VARIABLES = AWS_KUBERNETES_VARIABLES + [
+    "aws_kubernetes_storage_class"
+] + COMMONS_DSS_VARIABLES
+
 PROJECT_VARIABLES = {
+    "../modules/terraform-aws-dss": list(
+        dict.fromkeys(AWS_MODULE_VARIABLES)
+    ),  # Preserves the items order.
     "../modules/terraform-google-dss": list(
         dict.fromkeys(GOOGLE_MODULE_VARIABLES)
     ),  # Preserves the items order.

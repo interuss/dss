@@ -25,7 +25,11 @@ class CockroachCluster(object):
 
     @property
     def directory(self):
-        return os.path.join('workspace', self._cluster_context)
+        def remove_special_chars(s: str):
+            for c in [":", "/"]:
+                s = s.replace(c, "_")
+            return s
+        return os.path.join('workspace', remove_special_chars(self._cluster_context))
 
     @property
     def ca_certs_file(self):
