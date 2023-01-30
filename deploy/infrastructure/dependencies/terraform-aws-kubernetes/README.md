@@ -111,7 +111,6 @@ metadata:
 spec:
   selector:
     app: example-app
-  externalTrafficPolicy: Local
   ports:
     - port: 443
       targetPort: 80

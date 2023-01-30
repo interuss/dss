@@ -1,3 +1,10 @@
+data aws_caller_identity "current" {}
+
+locals {
+  aws_account_id          = data.aws_caller_identity.current.account_id
+  aws_cluster_id          = aws_eks_cluster.kubernetes_cluster.id
+  aws_cluster_oidc_issuer = aws_eks_cluster.kubernetes_cluster.identity[0].oidc[0].issuer
+}
 
 resource "aws_iam_role" "dss-cluster" {
   name = "dss-cluster"
@@ -18,7 +25,6 @@ resource "aws_iam_role" "dss-cluster" {
 POLICY
 }
 
-
 # Policy used by internal kubernetes services to access AWS resources.
 resource "aws_iam_role_policy_attachment" "dss-cluster-service" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
@@ -29,14 +35,16 @@ resource "aws_iam_role" "dss-cluster-node-group" {
   name = "dss-cluster-node-group"
 
   assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
       }
-    }]
-    Version = "2012-10-17"
+    ]
+    Version   = "2012-10-17"
   })
 }
 
@@ -63,4 +71,33 @@ resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
 resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.dss-cluster-node-group.name
+}
+
+## EBS
+resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
+  name = "${var.cluster_name}-AmazonEKS_EBS_CSI_DriverRole"
+
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Federated" : format("arn:aws:iam::${local.aws_account_id}:%s", replace(local.aws_cluster_oidc_issuer, "https://", "oidc-provider/")),
+        },
+        "Action" : "sts:AssumeRoleWithWebIdentity",
+        "Condition" : {
+          "StringEquals" : {
+            format("%s:aud", replace(local.aws_cluster_oidc_issuer, "https://", "")): "sts.amazonaws.com",
+            format("%s:sub", replace(local.aws_cluster_oidc_issuer, "https://", "")): "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKS_EBS_CSI_DriverRole" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.AmazonEKS_EBS_CSI_DriverRole.name
 }
