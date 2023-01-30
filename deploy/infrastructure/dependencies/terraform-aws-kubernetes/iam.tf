@@ -32,7 +32,7 @@ resource "aws_iam_role_policy_attachment" "dss-cluster-service" {
 }
 
 resource "aws_iam_role" "dss-cluster-node-group" {
-  name = "dss-cluster-node-group"
+  name = "${var.cluster_name}-cluster-node-group"
 
   assume_role_policy = jsonencode({
     Statement = [
@@ -49,6 +49,9 @@ resource "aws_iam_role" "dss-cluster-node-group" {
 }
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
+  name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
+  # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
+  # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
   policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
 }
 
