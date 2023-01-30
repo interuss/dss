@@ -3,7 +3,7 @@ resource "aws_vpc" "dss" {
   cidr_block = "10.0.0.0/16"
 
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 
   tags = {
     Name = "${var.cluster_name}-vpc"
@@ -17,7 +17,7 @@ resource "aws_internet_gateway" "dss" {
   }
 }
 
-data aws_route_table "vpc_main" {
+data "aws_route_table" "vpc_main" {
   vpc_id = aws_vpc.dss.id
 
   filter {
@@ -35,36 +35,36 @@ data "aws_availability_zones" "available" {
 resource "aws_subnet" "dss" {
   count = 2
 
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-  cidr_block        = cidrsubnet(aws_vpc.dss.cidr_block, 8, count.index)
-  vpc_id            = aws_vpc.dss.id
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  cidr_block              = cidrsubnet(aws_vpc.dss.cidr_block, 8, count.index)
+  vpc_id                  = aws_vpc.dss.id
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.cluster_name}-subnet-${count.index}"
-    "kubernetes.io/role/elb"              = 1
+    Name                                        = "${var.cluster_name}-subnet-${count.index}"
+    "kubernetes.io/role/elb"                    = 1
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
 # This is the subnet where Kubernetes workload will be running.
-data aws_subnet "main_subnet" {
+data "aws_subnet" "main_subnet" {
   id = aws_subnet.dss[0].id
 }
 
-resource aws_route "internet_gateway" {
-  route_table_id = data.aws_route_table.vpc_main.id
-  gateway_id = aws_internet_gateway.dss.id
+resource "aws_route" "internet_gateway" {
+  route_table_id         = data.aws_route_table.vpc_main.id
+  gateway_id             = aws_internet_gateway.dss.id
   destination_cidr_block = "0.0.0.0/0"
 }
 
-resource aws_route_table_association "subnet" {
+resource "aws_route_table_association" "subnet" {
   count          = 2
   route_table_id = data.aws_route_table.vpc_main.id
   subnet_id      = aws_subnet.dss[count.index].id
 }
 
-resource aws_security_group "eks-controlplane" {
+resource "aws_security_group" "eks-controlplane" {
   description = "Cluster communication with worker nodes"
-  vpc_id = aws_vpc.dss.id
+  vpc_id      = aws_vpc.dss.id
 }

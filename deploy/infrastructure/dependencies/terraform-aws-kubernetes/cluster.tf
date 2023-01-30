@@ -4,7 +4,7 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
 
 
   vpc_config {
-    subnet_ids = aws_subnet.dss[*].id
+    subnet_ids             = aws_subnet.dss[*].id
     endpoint_public_access = true
     public_access_cidrs = [
       "0.0.0.0/0"
@@ -20,14 +20,14 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
 
   version = "1.24"
 
-#  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  #  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
 
 resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name = aws_eks_cluster.kubernetes_cluster.name
-  subnet_ids = [data.aws_subnet.main_subnet.id] # Limit nodes to one subnet
-  node_role_arn = aws_iam_role.dss-cluster-node-group.arn
-  disk_size = 100
+  cluster_name           = aws_eks_cluster.kubernetes_cluster.name
+  subnet_ids             = [data.aws_subnet.main_subnet.id] # Limit nodes to one subnet
+  node_role_arn          = aws_iam_role.dss-cluster-node-group.arn
+  disk_size              = 100
   node_group_name_prefix = aws_eks_cluster.kubernetes_cluster.name
   instance_types = [
     var.aws_instance_type

@@ -1,4 +1,4 @@
-data aws_caller_identity "current" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   aws_account_id          = data.aws_caller_identity.current.account_id
@@ -37,18 +37,18 @@ resource "aws_iam_role" "dss-cluster-node-group" {
   assume_role_policy = jsonencode({
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "ec2.amazonaws.com"
         }
       }
     ]
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
   })
 }
 
-resource aws_iam_policy "AWSLoadBalancerControllerPolicy" {
+resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
   policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
 }
 
@@ -88,8 +88,8 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
         "Action" : "sts:AssumeRoleWithWebIdentity",
         "Condition" : {
           "StringEquals" : {
-            format("%s:aud", replace(local.aws_cluster_oidc_issuer, "https://", "")): "sts.amazonaws.com",
-            format("%s:sub", replace(local.aws_cluster_oidc_issuer, "https://", "")): "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+            format("%s:aud", replace(local.aws_cluster_oidc_issuer, "https://", "")) : "sts.amazonaws.com",
+            format("%s:sub", replace(local.aws_cluster_oidc_issuer, "https://", "")) : "system:serviceaccount:kube-system:ebs-csi-controller-sa"
           }
         }
       }

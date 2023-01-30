@@ -46,9 +46,13 @@ GOOGLE_KUBERNETES_VARIABLES = [
 ]
 
 # modules/terraform-google-dss
-GOOGLE_MODULE_VARIABLES =  GOOGLE_KUBERNETES_VARIABLES + [
-    "google_kubernetes_storage_class",
-] + COMMONS_DSS_VARIABLES
+GOOGLE_MODULE_VARIABLES = (
+    GOOGLE_KUBERNETES_VARIABLES
+    + [
+        "google_kubernetes_storage_class",
+    ]
+    + COMMONS_DSS_VARIABLES
+)
 
 # dependencies/terraform-aws-kubernetes
 AWS_KUBERNETES_VARIABLES = [
@@ -62,9 +66,9 @@ AWS_KUBERNETES_VARIABLES = [
 ]
 
 # modules/terraform-aws-dss
-AWS_MODULE_VARIABLES = AWS_KUBERNETES_VARIABLES + [
-    "aws_kubernetes_storage_class"
-] + COMMONS_DSS_VARIABLES
+AWS_MODULE_VARIABLES = (
+    AWS_KUBERNETES_VARIABLES + ["aws_kubernetes_storage_class"] + COMMONS_DSS_VARIABLES
+)
 
 PROJECT_VARIABLES = {
     "../modules/terraform-aws-dss": list(
@@ -83,7 +87,7 @@ def is_example_project(path: str) -> bool:
     """
     Return if the path corresponds to a project which requires example files.
     """
-    return '/modules/' in path
+    return "/modules/" in path
 
 
 def load_tf_definitions() -> Dict[str, str]:

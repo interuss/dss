@@ -19,11 +19,11 @@ output "ip_gateway" {
 }
 
 output "crdb_nodes" {
-  value      = [
-  for i in aws_eip.ip_crdb : {
-    ip  = i.allocation_id
-    dns = i.tags.ExpectedDNS
-  }
+  value = [
+    for i in aws_eip.ip_crdb : {
+      ip  = i.allocation_id
+      dns = i.tags.ExpectedDNS
+    }
   ]
   depends_on = [
     aws_eip.ip_crdb
@@ -46,7 +46,7 @@ output "gateway_address" {
         records : [
           c.resource_record_value
         ]
-      }]
+    }]
   }
 }
 

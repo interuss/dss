@@ -12,7 +12,7 @@ resource "aws_route53_record" "app_hostname_cert_validation" {
 }
 
 # Application DNS
-resource aws_route53_record "app_hostname" {
+resource "aws_route53_record" "app_hostname" {
   count = var.aws_route53_zone_id == "" ? 0 : length(aws_eip.gateway)
 
   zone_id = var.aws_route53_zone_id
@@ -23,8 +23,8 @@ resource aws_route53_record "app_hostname" {
 }
 
 # Crdb nodes DNS
-resource aws_route53_record "crdb_hostname" {
-  for_each = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_crdb[*]: i.tags.ExpectedDNS => i.public_ip }
+resource "aws_route53_record" "crdb_hostname" {
+  for_each = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_crdb[*] : i.tags.ExpectedDNS => i.public_ip }
 
   zone_id = var.aws_route53_zone_id
   name    = each.key

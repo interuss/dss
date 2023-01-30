@@ -1,9 +1,9 @@
 
 # Load Balancer Kubernetes Controller
-resource helm_release "aws-load-balancer-controller" {
+resource "helm_release" "aws-load-balancer-controller" {
   repository = "https://aws.github.io/eks-charts"
-  chart = "aws-load-balancer-controller"
-  name = "aws-load-balancer-controller"
+  chart      = "aws-load-balancer-controller"
+  name       = "aws-load-balancer-controller"
 
   namespace = "kube-system"
 
@@ -18,7 +18,7 @@ resource helm_release "aws-load-balancer-controller" {
 }
 
 # SSL Certificate
-resource aws_acm_certificate "app_hostname" {
+resource "aws_acm_certificate" "app_hostname" {
   domain_name       = var.app_hostname
   validation_method = "DNS"
 
@@ -28,7 +28,7 @@ resource aws_acm_certificate "app_hostname" {
 }
 
 resource "aws_acm_certificate_validation" "app_hostname_cert" {
-  count = var.aws_route53_zone_id == "" ? 0 : 1
+  count                   = var.aws_route53_zone_id == "" ? 0 : 1
   certificate_arn         = aws_acm_certificate.app_hostname.arn
   validation_record_fqdns = aws_route53_record.app_hostname_cert_validation[*].fqdn
 }
@@ -39,8 +39,8 @@ output "app_hostname_cert_arn" {
 
 # Public Elastic IP for the gateway (1 per subnet)
 # At the moment, worker nodes will be deployed in the same subnet, so only one elastic ip is required.
-resource aws_eip "gateway" {
-  vpc = true
+resource "aws_eip" "gateway" {
+  vpc   = true
   count = 1
 
   tags = {
@@ -51,9 +51,9 @@ resource aws_eip "gateway" {
 }
 
 # Public Elastic IPs for the crdb instances
-resource aws_eip "ip_crdb" {
-  count  = var.node_count
-  vpc = true
+resource "aws_eip" "ip_crdb" {
+  count = var.node_count
+  vpc   = true
 
   tags = {
     Name = format("%s-ip-crdb%v", var.cluster_name, count.index)
