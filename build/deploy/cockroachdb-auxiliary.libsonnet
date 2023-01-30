@@ -10,8 +10,14 @@ local googleCockroachLB(metadata, name, ip) = base.Service(metadata, name) {
   },
 };
 
+local awsCockroachLB(metadata, name, ip) = base.AWSLoadBalancer(metadata, name, [ip]) {
+  port:: metadata.cockroach.grpc_port,
+  app:: 'cockroachdb',
+};
+
 local cockroachLB(metadata, name, ip) =
-    if metadata.cloud_provider.name == "google" then googleCockroachLB(metadata, name, ip);
+    if metadata.cloud_provider.name == "google" then googleCockroachLB(metadata, name, ip)
+    else if metadata.cloud_provider.name == "aws" then awsCockroachLB(metadata, name, ip);
 
 {
   all(metadata): {

@@ -2,35 +2,41 @@ local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 local cloud_providers = import 'cloud_providers.libsonnet';
 
-local googleIngress(metadata) = base.Ingress(metadata, 'https-ingress') {
-  metadata+: {
-    annotations: {
-      'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
-      'kubernetes.io/ingress.allow-http': 'false',
-    },
-  },
-  spec: {
-    defaultBackend: {
-      service: {
-        name: 'core-service',
-        port: {
-          number: metadata.backend.port,
-        }
-      }
-    },
-  },
+local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.backend.certName) {
+  app:: 'core-service',
+  spec+: {
+    ports: [{
+      port: 443,
+      targetPort: metadata.backend.port,
+      protocol: "TCP",
+      name: "http",
+    }]
+  }
 };
 
 {
   GoogleManagedCertIngress(metadata): {
-    ingress: googleIngress(metadata) {
+    local certName = 'https-certificate',
+    ingress: base.Ingress(metadata, 'https-ingress') {
       metadata+: {
         annotations+: {
-          'networking.gke.io/managed-certificates': 'https-certificate',
+          'networking.gke.io/managed-certificates': certName,
+          'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
+          'kubernetes.io/ingress.allow-http': 'false',
+        },
+      },
+      spec: {
+        defaultBackend: {
+          service: {
+            name: 'core-service',
+            port: {
+              number: metadata.backend.port,
+            }
+          }
         },
       },
     },
-    managedCert: base.ManagedCert(metadata, 'https-certificate') {
+    managedCert: base.ManagedCert(metadata, certName) {
       spec: {
         domains: [
           metadata.backend.hostname,
@@ -45,9 +51,9 @@ local googleIngress(metadata) = base.Ingress(metadata, 'https-ingress') {
     },
   },
 
-
   CloudNetwork(metadata): {
-    google: if metadata.cloud_provider.name == "google" then $.GoogleManagedCertIngress(metadata)
+    google: if metadata.cloud_provider.name == "google" then $.GoogleManagedCertIngress(metadata),
+    aws_loadbalancer: if metadata.cloud_provider.name == "aws" then awsLoadBalancer(metadata)
   },
 
   all(metadata): {
