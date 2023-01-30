@@ -120,7 +120,7 @@ of this .pem file here as /public-certs/YOUR-KEY-NAME.pem replacing YOUR-KEY-NAM
 if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should built
 in the docker image or mounted manually.
 Example:
-```json
+```
 Example 1 (dummy auth):
 {
 public_key_pem_path = "/test-certs/auth2.pem"
@@ -139,7 +139,7 @@ Example: https://auth.example.com/.well-known/jwks.json
 - key_id:
 If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
 Example:
-```json
+```
 {
 jwks = {
 endpoint = "https://auth.example.com/.well-known/jwks.json"
