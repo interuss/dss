@@ -1,7 +1,7 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
-local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.backend.certName, metadata.subnet) {
+local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.subnet, metadata.backend.certName) {
   app:: 'core-service',
   spec+: {
     ports: [{
@@ -58,8 +58,18 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
     },
   },
 
+  GoogleService(metadata): base.Service(metadata, 'core-service') {
+    app:: 'core-service',
+    port:: metadata.backend.port,
+    type:: 'NodePort',
+    enable_monitoring:: false,
+  },
+
   CloudNetwork(metadata): {
-    google: if metadata.cloud_provider == "google" then $.GoogleManagedCertIngress(metadata),
+    google: if metadata.cloud_provider == "google" then {
+      ingress: $.GoogleManagedCertIngress(metadata),
+      service: $.GoogleService(metadata),
+    },
     aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata)
   },
 
