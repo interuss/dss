@@ -27,10 +27,14 @@ resource "aws_acm_certificate" "app_hostname" {
   }
 }
 
+data "aws_route53_zone" "managed_zone" {
+  zone_id = var.aws_route53_zone_id
+}
+
 resource "aws_acm_certificate_validation" "app_hostname_cert" {
-  count                   = var.aws_route53_zone_id == "" ? 0 : 1
+  count                   = 1
   certificate_arn         = aws_acm_certificate.app_hostname.arn
-  validation_record_fqdns = aws_route53_record.app_hostname_cert_validation[*].fqdn
+  validation_record_fqdns = [for name in aws_acm_certificate.app_hostname.domain_validation_options.*.resource_record_name: trimsuffix(name, ".")]
 }
 
 output "app_hostname_cert_arn" {
