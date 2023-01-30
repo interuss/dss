@@ -27,6 +27,7 @@ module "terraform-commons-dss" {
   kubernetes_cloud_provider_name = module.terraform-aws-kubernetes.kubernetes_cloud_provider_name
   kubernetes_context_name        = module.terraform-aws-kubernetes.kubernetes_context_name
   kubernetes_get_credentials_cmd = module.terraform-aws-kubernetes.kubernetes_get_credentials_cmd
+  workload_subnet                = module.terraform-aws-kubernetes.workload_subnet
 
   source = "../../dependencies/terraform-commons-dss"
 }

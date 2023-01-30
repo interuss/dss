@@ -51,8 +51,8 @@ variable "gateway_cert_name" {
   default = ""
 }
 
-variable "subnet" {
+variable "workload_subnet" {
   type = string
-  description = "Only required for AWS cloud provider. Subnet where the kubernetes worker nodes is deployed. For AWS, provide the name or the id of the subnet"
+  description = "Only required for AWS cloud provider. Subnet where the kubernetes worker nodes is deployed. For AWS, provide the name or the id of the workload_subnet"
   default = ""
 }

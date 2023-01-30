@@ -47,6 +47,11 @@ resource "aws_subnet" "dss" {
   }
 }
 
+# This is the subnet where Kubernetes workload will be running.
+data aws_subnet "main_subnet" {
+  id = aws_subnet.dss[0].id
+}
+
 resource aws_route "internet_gateway" {
   route_table_id = data.aws_route_table.vpc_main.id
   gateway_id = aws_internet_gateway.dss.id

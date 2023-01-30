@@ -29,3 +29,7 @@ output "crdb_nodes" {
     aws_eip.ip_crdb
   ]
 }
+
+output "workload_subnet" {
+  value = data.aws_subnet.main_subnet.id
+}

@@ -1,7 +1,7 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
-local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.backend.certName) {
+local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.backend.certName, metadata.subnet) {
   app:: 'core-service',
   spec+: {
     ports: [{
@@ -34,7 +34,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
   },
 
   GoogleManagedCertIngress(metadata): {
-    ingress: ingress(metadata) {
+    ingress: $.GoogleIngress(metadata) {
       metadata+: {
         annotations+: {
           'networking.gke.io/managed-certificates': 'https-certificate',
@@ -50,7 +50,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
     },
   },
 
-  GooglePresharedCertIngress(metadata, certName): ingress(metadata) {
+  GooglePresharedCertIngress(metadata, certName): $.GoogleIngress(metadata) {
     metadata+: {
       annotations+: {
         'ingress.gcp.kubernetes.io/pre-shared-cert': certName,
@@ -59,8 +59,8 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
   },
 
   CloudNetwork(metadata): {
-    google: if metadata.cloud_provider.name == "google" then $.GoogleManagedCertIngress(metadata),
-    aws_loadbalancer: if metadata.cloud_provider.name == "aws" then awsLoadBalancer(metadata)
+    google: if metadata.cloud_provider == "google" then $.GoogleManagedCertIngress(metadata),
+    aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata)
   },
 
   all(metadata): {
