@@ -25,6 +25,8 @@ resource "local_file" "tanka_config_main" {
     VAR_DESIRED_SCD_DB_VERSION = local.scd_db_schema
     VAR_SHOULD_INIT            = var.should_init
     VAR_CLOUD_PROVIDER         = var.kubernetes_cloud_provider_name
+    VAR_CERT_NAME              = var.gateway_cert_name
+    VAR_SUBNET                 = var.subnet
   })
   filename = "${local.workspace_location}/main.jsonnet"
 }

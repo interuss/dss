@@ -7,7 +7,6 @@ module "terraform-google-kubernetes" {
   crdb_hostname_suffix            = var.crdb_hostname_suffix
   google_dns_managed_zone_name    = var.google_dns_managed_zone_name
   google_machine_type             = var.google_machine_type
-  google_kubernetes_storage_class = var.google_kubernetes_storage_class
   node_count                      = var.node_count
 
   source = "../../dependencies/terraform-google-kubernetes"

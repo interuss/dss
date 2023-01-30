@@ -1,6 +1,5 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
-local cloud_providers = import 'cloud_providers.libsonnet';
 
 local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.backend.certName) {
   app:: 'core-service',
@@ -15,39 +14,47 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
 };
 
 {
+  GoogleIngress(metadata): base.Ingress(metadata, 'https-ingress') {
+    metadata+: {
+      annotations: {
+        'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
+        'kubernetes.io/ingress.allow-http': 'false',
+      },
+    },
+    spec: {
+      defaultBackend: {
+        service: {
+          name: 'core-service',
+          port: {
+            number: metadata.backend.port,
+          }
+        }
+      },
+    },
+  },
+
   GoogleManagedCertIngress(metadata): {
-    local certName = 'https-certificate',
-    ingress: base.Ingress(metadata, 'https-ingress') {
+    ingress: ingress(metadata) {
       metadata+: {
         annotations+: {
-          'networking.gke.io/managed-certificates': certName,
-          'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
-          'kubernetes.io/ingress.allow-http': 'false',
-        },
-      },
-      spec: {
-        defaultBackend: {
-          service: {
-            name: 'core-service',
-            port: {
-              number: metadata.backend.port,
-            }
-          }
+          'networking.gke.io/managed-certificates': 'https-certificate',
         },
       },
     },
-    managedCert: base.ManagedCert(metadata, certName) {
+    managedCert: base.ManagedCert(metadata, 'https-certificate') {
       spec: {
         domains: [
           metadata.backend.hostname,
         ],
       },
     },
-    service: base.Service(metadata, 'core-service') {
-      app:: 'core-service',
-      port:: metadata.backend.port,
-      type:: 'NodePort',
-      enable_monitoring:: false,
+  },
+
+  GooglePresharedCertIngress(metadata, certName): ingress(metadata) {
+    metadata+: {
+      annotations+: {
+        'ingress.gcp.kubernetes.io/pre-shared-cert': certName,
+      },
     },
   },
 

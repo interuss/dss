@@ -23,6 +23,9 @@ local metadata = metadataBase {
   },
   backend+: {
     ipName: '${VAR_INGRESS_NAME}',
+    %{if VAR_CLOUD_PROVIDER == "aws"}
+    certName: '${VAR_CERT_NAME}',
+    %{endif}
     image: '${VAR_DOCKER_IMAGE_NAME}',
     pubKeys: ['${VAR_PUBLIC_KEY_PEM_PATH}'],
     jwksEndpoint: '${VAR_JWKS_ENDPOINT}',
@@ -38,9 +41,10 @@ local metadata = metadataBase {
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',
   },
-  cloudProvider+: {
-    name: '${VAR_CLOUD_PROVIDER}'
-  }
+  cloud_provider: '${VAR_CLOUD_PROVIDER}',
+  %{if VAR_CLOUD_PROVIDER == "aws"}
+  subnet: '${VAR_SUBNET}',
+  %{endif}
 };
 
 dss.all(metadata)
