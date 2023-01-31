@@ -4,8 +4,10 @@
 # AWS account
 aws_region = "eu-west-1"
 
-# DNS
+# DNS Management
 aws_route53_zone_id  = "Z01551234567890123456"
+
+# Hostnames
 app_hostname         = "dss.interuss.example.com"
 crdb_hostname_suffix = "db.interuss.example.com"
 
