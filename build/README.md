@@ -88,7 +88,7 @@ endpoint.
 
 1. Ensure you are logged into your docker registry service.
 
-    - For Google Cloud,
+    -   For Google Cloud,
         [these](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
         are the recommended instructions (`gcloud auth configure-docker`).
         Ensure that
