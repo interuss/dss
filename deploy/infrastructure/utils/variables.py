@@ -29,8 +29,14 @@ COMMONS_DSS_VARIABLES = [
     "crdb_locality",
     "crdb_external_nodes",
     "kubernetes_namespace",
+]
+
+# dependencies/terraform-*-kubernetes
+COMMON_KUBERNETES_VARIABLES = [
+    "cluster_name",
     "app_hostname",
     "crdb_hostname_suffix",
+    "node_count",
 ]
 
 # dependencies/terraform-google-kubernetes
@@ -38,12 +44,8 @@ GOOGLE_KUBERNETES_VARIABLES = [
     "google_project_name",
     "google_zone",
     "google_dns_managed_zone_name",
-    "app_hostname",
-    "crdb_hostname_suffix",
-    "cluster_name",
-    "node_count",
     "google_machine_type",
-]
+] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-google-dss
 GOOGLE_MODULE_VARIABLES = (
@@ -59,11 +61,7 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_region",
     "aws_instance_type",
     "aws_route53_zone_id",
-    "app_hostname",
-    "crdb_hostname_suffix",
-    "cluster_name",
-    "node_count",
-]
+] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-aws-dss
 AWS_MODULE_VARIABLES = (

@@ -26,6 +26,23 @@ variable "google_dns_managed_zone_name" {
   EOT
 }
 
+variable "google_machine_type" {
+  type        = string
+  description = <<-EOT
+    GCP machine type used for the Kubernetes node pool.
+    Example: `n2-standard-4` for production, `e2-medium` for development
+  EOT
+}
+
+variable "cluster_name" {
+  type        = string
+  description = <<-EOT
+    Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+    Example: `dss-che-1`
+  EOT
+}
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
@@ -46,15 +63,6 @@ variable "crdb_hostname_suffix" {
   EOT
 }
 
-variable "cluster_name" {
-  type        = string
-  description = <<-EOT
-    Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
-
-    Example: `dss-che-1`
-  EOT
-}
-
 variable "node_count" {
   type        = number
   description = <<-EOT
@@ -68,13 +76,5 @@ variable "node_count" {
     condition     = var.node_count == 3
     error_message = "Node count should be 3. Only configuration supported at the moment"
   }
-}
-
-variable "google_machine_type" {
-  type        = string
-  description = <<-EOT
-    GCP machine type used for the Kubernetes node pool.
-    Example: `n2-standard-4` for production, `e2-medium` for development
-  EOT
 }
 

@@ -35,6 +35,23 @@ GCP DNS zone name to automatically manage DNS entries.
 Leave it empty to manage it manually.
 
 
+### google_machine_type
+
+*Type: `string`*
+
+GCP machine type used for the Kubernetes node pool.
+Example: `n2-standard-4` for production, `e2-medium` for development
+
+
+### cluster_name
+
+*Type: `string`*
+
+Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+Example: `dss-che-1`
+
+
 ### app_hostname
 
 *Type: `string`*
@@ -55,15 +72,6 @@ For instance, if your CRDB nodes were addressable at 0.db.example.com,
 Example: db.example.com
 
 
-### cluster_name
-
-*Type: `string`*
-
-Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
-
-Example: `dss-che-1`
-
-
 ### node_count
 
 *Type: `number`*
@@ -72,14 +80,6 @@ Number of Kubernetes nodes which should correspond to the desired CockroachDB no
 **Always 3.**
 
 Example: `3`
-
-
-### google_machine_type
-
-*Type: `string`*
-
-GCP machine type used for the Kubernetes node pool.
-Example: `n2-standard-4` for production, `e2-medium` for development
 
 
 ### google_kubernetes_storage_class
@@ -97,12 +97,13 @@ Example: `standard`
 
 *Type: `string`*
 
-Full name of the docker image built in the section above. build.sh prints this name as
-the last thing it does when run with DOCKER_URL set. It should look something like
-gcr.io/your-project-id/dss:2020-07-01-46cae72cf if you built the image yourself as
-documented in /build/README.md, or docker.io/interuss/dss.
+URL of the DSS docker image.
+
 
 `latest` can be used to use the latest official interuss docker image.
+Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags
+See [/build/README.md](../../../../build/README.md#docker-images) Docker images section to learn
+how to build and publish your own image.
 
 Example: `latest` or `docker.io/interuss/dss:v0.6.0`
 
@@ -119,17 +120,19 @@ If providing a .pem file directly as the public key to validate incoming access 
 of this .pem file here as /public-certs/YOUR-KEY-NAME.pem replacing YOUR-KEY-NAME as appropriate. For instance,
 if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should built
 in the docker image or mounted manually.
-Example:
-```
+
 Example 1 (dummy auth):
+'''
 {
 public_key_pem_path = "/test-certs/auth2.pem"
 }
+'''
 Example 2:
+'''
 {
 public_key_pem_path = "/jwt-public-certs/us-demo.pem"
 }
-```
+'''
 
 - jwks
 If providing a .pem file directly as the public key to validate incoming access tokens, do not provide this parameter.
@@ -139,14 +142,14 @@ Example: https://auth.example.com/.well-known/jwks.json
 - key_id:
 If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
 Example:
-```
+'''
 {
 jwks = {
 endpoint = "https://auth.example.com/.well-known/jwks.json"
 key_id = "9C6DF78B-77A7-4E89-8990-E654841A7826"
 }
 }
-```
+'''
 
 
 ### enable_scd

@@ -81,13 +81,22 @@ endpoint.
         like `gcr.io/your-project-id` (do not include the image name;
         it will be appended by the build script)
 
+    -   For Amazon Web Services, `DOCKER_URL` should be set similarly to as described
+        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html),
+        like `${aws_account_id}.dkr.ecr.${region}.amazonaws.com/` (do not include the image name;
+        it will be appended by the build script)
+
 1. Ensure you are logged into your docker registry service.
 
-    -   For Google Cloud,
+    - For Google Cloud,
         [these](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
         are the recommended instructions (`gcloud auth configure-docker`).
         Ensure that
         [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control).
+
+    -   For Amazon Web Services, create a private repository by following the instructions
+        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html), then login
+        as described [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
 
 1. Use the [`build.sh` script](./build.sh) in this directory to build and push
    an image tagged with the current date and git commit hash.

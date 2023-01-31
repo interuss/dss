@@ -26,6 +26,23 @@ variable "google_dns_managed_zone_name" {
   EOT
 }
 
+variable "google_machine_type" {
+  type        = string
+  description = <<-EOT
+    GCP machine type used for the Kubernetes node pool.
+    Example: `n2-standard-4` for production, `e2-medium` for development
+  EOT
+}
+
+variable "cluster_name" {
+  type        = string
+  description = <<-EOT
+    Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+    Example: `dss-che-1`
+  EOT
+}
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
@@ -46,15 +63,6 @@ variable "crdb_hostname_suffix" {
   EOT
 }
 
-variable "cluster_name" {
-  type        = string
-  description = <<-EOT
-    Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
-
-    Example: `dss-che-1`
-  EOT
-}
-
 variable "node_count" {
   type        = number
   description = <<-EOT
@@ -68,14 +76,6 @@ variable "node_count" {
     condition     = var.node_count == 3
     error_message = "Node count should be 3. Only configuration supported at the moment"
   }
-}
-
-variable "google_machine_type" {
-  type        = string
-  description = <<-EOT
-    GCP machine type used for the Kubernetes node pool.
-    Example: `n2-standard-4` for production, `e2-medium` for development
-  EOT
 }
 
 variable "google_kubernetes_storage_class" {
@@ -92,12 +92,13 @@ variable "google_kubernetes_storage_class" {
 variable "image" {
   type        = string
   description = <<EOT
-  Full name of the docker image built in the section above. build.sh prints this name as
-  the last thing it does when run with DOCKER_URL set. It should look something like
-  gcr.io/your-project-id/dss:2020-07-01-46cae72cf if you built the image yourself as
-  documented in /build/README.md, or docker.io/interuss/dss.
+  URL of the DSS docker image.
+
 
   `latest` can be used to use the latest official interuss docker image.
+  Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags
+  See [/build/README.md](../../../../build/README.md#docker-images) Docker images section to learn
+  how to build and publish your own image.
 
   Example: `latest` or `docker.io/interuss/dss:v0.6.0`
   EOT
@@ -120,17 +121,19 @@ variable "authorization" {
       of this .pem file here as /public-certs/YOUR-KEY-NAME.pem replacing YOUR-KEY-NAME as appropriate. For instance,
       if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should built
       in the docker image or mounted manually.
-      Example:
-      ```
+
       Example 1 (dummy auth):
+      '''
       {
         public_key_pem_path = "/test-certs/auth2.pem"
       }
+      '''
       Example 2:
+      '''
       {
         public_key_pem_path = "/jwt-public-certs/us-demo.pem"
       }
-      ```
+      '''
 
     - jwks
         If providing a .pem file directly as the public key to validate incoming access tokens, do not provide this parameter.
@@ -140,14 +143,14 @@ variable "authorization" {
         - key_id:
           If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
       Example:
-      ```
+      '''
       {
         jwks = {
           endpoint = "https://auth.example.com/.well-known/jwks.json"
           key_id = "9C6DF78B-77A7-4E89-8990-E654841A7826"
         }
       }
-      ```
+      '''
   EOT
 
   validation {

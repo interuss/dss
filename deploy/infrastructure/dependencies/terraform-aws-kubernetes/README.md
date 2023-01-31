@@ -118,9 +118,14 @@ reachability within the deployed cluster. To apply the resources, follow the nex
    Monitor the progress here until the state becomes `Active`: https://console.aws.amazon.com/ec2/home#LoadBalancers:
 4. Connect to the app_hostname and contemplate the nginx default welcome page.
 
+### Clean
+
+Delete the resources: `kubectl delete -f test-app.yml`.
+
+
 ## Clean up
 
-1. Delete all services in kubernetes by running `kubectl delete -f test-app.yml`. 
-2. Make sure all load balancers and target groups have been removed. 
-3. Run `terraform destroy`
+1. Delete all created resources from the cluster (eg. clean up test as described in the previous section.)
+2. Make sure all load balancers and target groups have been removed.
+3. Run `terraform destroy`.
 
