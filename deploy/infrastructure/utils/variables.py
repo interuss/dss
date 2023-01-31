@@ -18,8 +18,14 @@ GENERATED_COMMENT = """
 """
 
 # Variables per project
+# For all */terraform-*
+GLOBAL_VARIABLES = [
+    "app_hostname",
+    "crdb_hostname_suffix"
+]
+
 # dependencies/terraform-commons-dss
-COMMONS_DSS_VARIABLES = [
+COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "image",
     "authorization",
     "enable_scd",
@@ -32,10 +38,8 @@ COMMONS_DSS_VARIABLES = [
 ]
 
 # dependencies/terraform-*-kubernetes
-COMMON_KUBERNETES_VARIABLES = [
+COMMON_KUBERNETES_VARIABLES = GLOBAL_VARIABLES + [
     "cluster_name",
-    "app_hostname",
-    "crdb_hostname_suffix",
     "node_count",
 ]
 

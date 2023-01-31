@@ -43,15 +43,6 @@ GCP machine type used for the Kubernetes node pool.
 Example: `n2-standard-4` for production, `e2-medium` for development
 
 
-### cluster_name
-
-*Type: `string`*
-
-Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
-
-Example: `dss-che-1`
-
-
 ### app_hostname
 
 *Type: `string`*
@@ -70,6 +61,15 @@ For instance, if your CRDB nodes were addressable at 0.db.example.com,
 1.db.example.com and 2.db.example.com, then the value would be db.example.com.
 
 Example: db.example.com
+
+
+### cluster_name
+
+*Type: `string`*
+
+Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+Example: `dss-che-1`
 
 
 ### node_count
