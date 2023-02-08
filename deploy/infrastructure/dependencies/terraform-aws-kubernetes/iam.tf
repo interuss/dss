@@ -7,7 +7,7 @@ locals {
 }
 
 resource "aws_iam_role" "dss-cluster" {
-  name = "dss-cluster"
+  name = "${var.cluster_name}-dss-cluster"
 
   assume_role_policy = <<POLICY
 {
