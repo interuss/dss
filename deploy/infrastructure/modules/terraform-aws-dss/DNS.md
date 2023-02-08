@@ -9,6 +9,9 @@ it with the rest of the infrastructure.
 
 - **For Elastic Kubernetes Service (AWS)**, create the zone in your aws account and set the `aws_route53_zone_id`
   variable with the zone id. Entries will be automatically created by terraform.
+  Note that the domain or the sub-domain managed by the zone must be properly delegated by the parent domain.
+  See instructions for [subdomains delegation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html#UpdateDNSParentDomain)
+
 
 ## Manual setup 
 

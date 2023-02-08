@@ -41,8 +41,7 @@ Download & install the following tools to your workstation:
 6. In the new directory (ie /deploy/infrastructure/personal/terraform-aws-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. If `aws_route53_zone_id` was not provided, configure the DNS resolution to the public ip addresses and for SSL certificate validation.  
-See [DNS](DNS.md) for detailed instructions for AWS Zone ID setup (DNS managed with terraform) or manual configuration. 
+9. Configure the DNS resolution according to these instructions: [Setup DNS](DNS.md)
 
 
 ## Deployment of the DSS services
