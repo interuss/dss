@@ -1,5 +1,5 @@
 # This file is an example, please adapt it to your configuration.
-# See TFVARS.md for full set of variables and related descriptions.
+# See TFVARS.md for the full set of variables and related descriptions.
 
 # AWS account
 aws_region = "eu-west-1"
