@@ -4,6 +4,8 @@
 # directory.  If run without a DOCKER_URL environment variable, it will just
 # build images named interuss-local/*.  If DOCKER_URL is present, it will both
 # build the versioned dss image and push it to the DOCKER_URL remote.
+# If DOCKER_URL is set, DOCKER_UPDATE_LATEST can be optionally set to `true` in order
+# to publish the latest tag along the version.
 
 set -eo pipefail
 
@@ -17,6 +19,7 @@ fi
 cd "${BASEDIR}"
 
 VERSION=$(./scripts/git/version.sh dss)
+LATEST_TAG="latest"
 
 if [[ -z "${DOCKER_URL}" ]]; then
   echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."
@@ -34,6 +37,19 @@ else
   docker image push "${DOCKER_URL}/dss:${VERSION}"
 
   echo "Built and pushed docker image ${DOCKER_URL}/dss:${VERSION}"
+
+  if [[ "${DOCKER_UPDATE_LATEST}" == "true" ]]; then
+
+    echo "Tagging docker image ${DOCKER_URL}/dss:${LATEST_TAG}..."
+    docker tag "${DOCKER_URL}/dss:${VERSION}" "${DOCKER_URL}/dss:${LATEST_TAG}"
+
+    echo "Pushing docker image ${DOCKER_URL}/dss:${LATEST_TAG}..."
+
+    docker image push "${DOCKER_URL}/dss:${LATEST_TAG}"
+
+    echo "Built and pushed docker image ${DOCKER_URL}/dss:${LATEST_TAG}"
+
+  fi
 
   echo "VAR_DOCKER_IMAGE_NAME: ${DOCKER_URL}/dss:${VERSION}"
 fi

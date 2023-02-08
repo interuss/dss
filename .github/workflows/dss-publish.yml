@@ -45,5 +45,6 @@ jobs:
       - name: Build and push image
         env:
           DOCKER_URL: ${{ secrets.DOCKER_URL }}
+          DOCKER_UPDATE_LATEST: true
         run: |
           build/build.sh
