@@ -56,4 +56,5 @@
     custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
+  image_pull_secret: null,
 }
