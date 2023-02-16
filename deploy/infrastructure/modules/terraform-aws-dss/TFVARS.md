@@ -7,40 +7,37 @@
 
 The following sections describe the variables of this terraform module.
 
-## terraform-google-dss
+## terraform-aws-dss
 
-### google_project_name
-
-*Type: `string`*
-
-Name of the GCP project hosting the future cluster
-
-
-### google_zone
+### aws_region
 
 *Type: `string`*
 
-GCP zone hosting the kubernetes cluster
-List of available zones: https://cloud.google.com/compute/docs/regions-zones#available
+AWS region
+List of available regions: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-regions
+Currently, the terraform module uses the two first availability zones of the region.
 
-Example: `europe-west6-a`
-
-
-### google_dns_managed_zone_name
-
-*Type: `string`*
-
-GCP DNS zone name to automatically manage DNS entries.
-
-Leave it empty to manage it manually.
+Example: `eu-west-1`
 
 
-### google_machine_type
+### aws_instance_type
 
 *Type: `string`*
 
-GCP machine type used for the Kubernetes node pool.
-Example: `n2-standard-4` for production, `e2-medium` for development
+AWS EC2 instance type used for the Kubernetes node pool.
+
+Example: `m6g.xlarge` for production and `t3.medium` for development
+
+
+### aws_route53_zone_id
+
+*Type: `string`*
+
+AWS Route 53 Zone ID
+This module can automatically create DNS records in a Route 53 Zone.
+Leave empty to disable record creation.
+
+Example: `Z0123456789ABCDEFGHIJ`
 
 
 ### app_hostname
@@ -82,15 +79,15 @@ Number of Kubernetes nodes which should correspond to the desired CockroachDB no
 Example: `3`
 
 
-### google_kubernetes_storage_class
+### aws_kubernetes_storage_class
 
 *Type: `string`*
 
-GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
-See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
+AWS Elastic Kubernetes Service Storage Class to use for CockroachDB and Prometheus persistent volumes.
+See https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html for more details and
 available options.
 
-Example: `standard`
+Example: `gp2`
 
 
 ### image

@@ -24,10 +24,13 @@ set -x
 CONTEXT="$1"
 DIR="$(pwd)"
 NAMESPACE="$2"
-CLIENTS_CERTS_DIR="$DIR/workspace/$CONTEXT/client_certs_dir"
-NODE_CERTS_DIR="$DIR/workspace/$CONTEXT/node_certs_dir"
-CA_KEY_DIR="$DIR/workspace/$CONTEXT/ca_key_dir"
-CA_CRT_DIR="$DIR/workspace/$CONTEXT/ca_certs_dir"
+
+# Replace characters breaking folder names
+WORKSPACE=$(echo "${CONTEXT}" | tr ':/' '_')
+CLIENTS_CERTS_DIR="$DIR/workspace/$WORKSPACE/client_certs_dir"
+NODE_CERTS_DIR="$DIR/workspace/$WORKSPACE/node_certs_dir"
+CA_KEY_DIR="$DIR/workspace/$WORKSPACE/ca_key_dir"
+CA_CRT_DIR="$DIR/workspace/$WORKSPACE/ca_certs_dir"
 JWT_PUBLIC_CERTS_DIR="$DIR/jwt-public-certs"
 UPLOAD_CA_KEY=true
 

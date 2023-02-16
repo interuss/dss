@@ -1,28 +1,40 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
-local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
-  metadata+: {
-    annotations: {
-      'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
-      'kubernetes.io/ingress.allow-http': 'false',
-    },
-  },
-  spec: {
-    defaultBackend: {
-      service: {
-        name: 'core-service',
-        port: {
-          number: metadata.backend.port,
-        }
-      }
-    },
-  },
+local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.subnet, metadata.backend.certName) {
+  app:: 'core-service',
+  spec+: {
+    ports: [{
+      port: 443,
+      targetPort: metadata.backend.port,
+      protocol: "TCP",
+      name: "http",
+    }]
+  }
 };
 
 {
-  ManagedCertIngress(metadata): {
-    ingress: ingress(metadata) {
+  GoogleIngress(metadata): base.Ingress(metadata, 'https-ingress') {
+    metadata+: {
+      annotations: {
+        'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
+        'kubernetes.io/ingress.allow-http': 'false',
+      },
+    },
+    spec: {
+      defaultBackend: {
+        service: {
+          name: 'core-service',
+          port: {
+            number: metadata.backend.port,
+          }
+        }
+      },
+    },
+  },
+
+  GoogleManagedCertIngress(metadata): {
+    ingress: $.GoogleIngress(metadata) {
       metadata+: {
         annotations+: {
           'networking.gke.io/managed-certificates': 'https-certificate',
@@ -38,7 +50,7 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
     },
   },
 
-  PresharedCertIngress(metadata, certName): ingress(metadata) {
+  GooglePresharedCertIngress(metadata, certName): $.GoogleIngress(metadata) {
     metadata+: {
       annotations+: {
         'ingress.gcp.kubernetes.io/pre-shared-cert': certName,
@@ -46,14 +58,23 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
     },
   },
 
-  all(metadata): {
-    ingress: $.ManagedCertIngress(metadata),
-    service: base.Service(metadata, 'core-service') {
-      app:: 'core-service',
-      port:: metadata.backend.port,
-      type:: 'NodePort',
-      enable_monitoring:: false,
+  GoogleService(metadata): base.Service(metadata, 'core-service') {
+    app:: 'core-service',
+    port:: metadata.backend.port,
+    type:: 'NodePort',
+    enable_monitoring:: false,
+  },
+
+  CloudNetwork(metadata): {
+    google: if metadata.cloud_provider == "google" then {
+      ingress: $.GoogleManagedCertIngress(metadata),
+      service: $.GoogleService(metadata),
     },
+    aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata)
+  },
+
+  all(metadata): {
+    network: $.CloudNetwork(metadata),
 
     deployment: base.Deployment(metadata, 'core-service') {
       apiVersion: 'apps/v1',
