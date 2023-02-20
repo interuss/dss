@@ -100,7 +100,6 @@ local ingress(metadata) = base.Ingress(metadata, 'https-ingress') {
                 },
               },
             },
-            imagePullSecrets: if metadata.image_pull_secret != null then [{name: metadata.image_pull_secret}] else [],
           },
         },
       },
