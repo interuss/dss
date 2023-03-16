@@ -346,7 +346,7 @@ a PR to that effect would be greatly appreciated.
             --docker-password=DOCKER_PASSWORD \
             --docker-email=DOCKER_EMAIL
 
-        Then, uncomment in main.jsonnet the `image_pull_secrets` line by removing the `//`
+        Then, uncomment in main.jsonnet the `image_pull_secret` line by removing the `//`
         and replace `VAR_DOCKER_IMAGE_PULL_SECRET` with the secret name (for instance: `private-registry-credentials`).
         For docker hub private repository, use `docker.io` as `DOCKER_REGISTRY_SERVER` and an
         [access token](https://hub.docker.com/settings/security) as `DOCKER_PASSWORD`.
