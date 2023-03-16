@@ -13,15 +13,17 @@ variable "authorization" {
       If providing the access token public key via JWKS, do not provide this parameter.
       If providing a .pem file directly as the public key to validate incoming access tokens, specify the name
       of this .pem file here as /public-certs/YOUR-KEY-NAME.pem replacing YOUR-KEY-NAME as appropriate. For instance,
-      if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should built
+      if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should be built
       in the docker image or mounted manually.
-      Example:
-      ```json
+
       Example 1 (dummy auth):
+      ```
       {
         public_key_pem_path = "/test-certs/auth2.pem"
       }
+      ```
       Example 2:
+      ```
       {
         public_key_pem_path = "/jwt-public-certs/us-demo.pem"
       }
@@ -35,7 +37,7 @@ variable "authorization" {
         - key_id:
           If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
       Example:
-      ```json
+      ```
       {
         jwks = {
           endpoint = "https://auth.example.com/.well-known/jwks.json"

@@ -1,4 +1,5 @@
 {
+  cloud_provider: 'google', // Either google or aws
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
   enable_istio: false,
@@ -15,7 +16,7 @@
     grpc_port: 26257,
     http_port: 8080,
     image: 'cockroachdb/cockroach:v21.2.7',
-    nodeIPs: error 'must supply the per-node ip addresses as an array',
+    nodeIPs: error 'must supply the per-node ip addresses as an array', // For AWS, this array should contain the allocation id of the elastic ips.
     JoinExisting: [],
     storageClass: 'standard',
   },
@@ -24,7 +25,7 @@
     roleBinding: false,
   },
   backend: {
-    ipName: error 'must supply ip name',
+    ipName: error 'must supply ip name', // For AWS, use the elastic ip allocation id.
     port: 8080,
     image: error 'must specify image',
     prof_grpc_name: '',
@@ -33,6 +34,7 @@
     jwksKeyIds: [],
     hostname: error 'must specify hostname',
     dumpRequests: false,
+    certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
   },
   alert: {
     enable: false,
@@ -57,4 +59,5 @@
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
   image_pull_secret: '',
+  subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
 }

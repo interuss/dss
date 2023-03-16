@@ -18,21 +18,14 @@ GENERATED_COMMENT = """
 """
 
 # Variables per project
-# terraform-google-kubernetes
-GOOGLE_KUBERNETES_VARIABLES = [
-    "google_project_name",
-    "google_zone",
-    "google_dns_managed_zone_name",
-    "google_kubernetes_storage_class",
+# For all */terraform-*
+GLOBAL_VARIABLES = [
     "app_hostname",
-    "crdb_hostname_suffix",
-    "cluster_name",
-    "node_count",
-    "google_machine_type",
+    "crdb_hostname_suffix"
 ]
 
-# terraform-commons-dss
-COMMONS_DSS_VARIABLES = [
+# dependencies/terraform-commons-dss
+COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "image",
     "image_pull_secret",
     "authorization",
@@ -43,14 +36,51 @@ COMMONS_DSS_VARIABLES = [
     "crdb_locality",
     "crdb_external_nodes",
     "kubernetes_namespace",
-    "app_hostname",
-    "crdb_hostname_suffix",
 ]
 
+# dependencies/terraform-*-kubernetes
+COMMON_KUBERNETES_VARIABLES = GLOBAL_VARIABLES + [
+    "cluster_name",
+    "node_count",
+]
+
+# dependencies/terraform-google-kubernetes
+GOOGLE_KUBERNETES_VARIABLES = [
+    "google_project_name",
+    "google_zone",
+    "google_dns_managed_zone_name",
+    "google_machine_type",
+] + COMMON_KUBERNETES_VARIABLES
+
+# modules/terraform-google-dss
+GOOGLE_MODULE_VARIABLES = (
+    GOOGLE_KUBERNETES_VARIABLES
+    + [
+        "google_kubernetes_storage_class",
+    ]
+    + COMMONS_DSS_VARIABLES
+)
+
+# dependencies/terraform-aws-kubernetes
+AWS_KUBERNETES_VARIABLES = [
+    "aws_region",
+    "aws_instance_type",
+    "aws_route53_zone_id",
+] + COMMON_KUBERNETES_VARIABLES
+
+# modules/terraform-aws-dss
+AWS_MODULE_VARIABLES = (
+    AWS_KUBERNETES_VARIABLES + ["aws_kubernetes_storage_class"] + COMMONS_DSS_VARIABLES
+)
+
 PROJECT_VARIABLES = {
-    "../modules/terraform-google-dss": list(
-        dict.fromkeys(GOOGLE_KUBERNETES_VARIABLES + COMMONS_DSS_VARIABLES)
+    "../modules/terraform-aws-dss": list(
+        dict.fromkeys(AWS_MODULE_VARIABLES)
     ),  # Preserves the items order.
+    "../modules/terraform-google-dss": list(
+        dict.fromkeys(GOOGLE_MODULE_VARIABLES)
+    ),  # Preserves the items order.
+    "../dependencies/terraform-aws-kubernetes": AWS_KUBERNETES_VARIABLES,
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
 }
@@ -60,7 +90,7 @@ def is_example_project(path: str) -> bool:
     """
     Return if the path corresponds to a project which requires example files.
     """
-    return '/modules/' in path
+    return "/modules/" in path
 
 
 def load_tf_definitions() -> Dict[str, str]:
