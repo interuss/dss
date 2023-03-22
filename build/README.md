@@ -335,10 +335,12 @@ a PR to that effect would be greatly appreciated.
         without `build.sh`.
 
         -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
-
+            
     1.  `VAR_DOCKER_IMAGE_PULL_SECRET`: Secret name of the credentials to access
-        the image registry. If the image specified in `VAR_DOCKER_IMAGE_NAME` requires
-        authentication, you can use the following command to store the credentials as secrets:
+        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require 
+        authentication to be pulled, then do not populate this instance and do not uncomment 
+        the line containing it. You can use the following command to store the credentials 
+        as kubernetes secret:
 
         > kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
             --docker-server=DOCKER_REGISTRY_SERVER \
@@ -346,8 +348,6 @@ a PR to that effect would be greatly appreciated.
             --docker-password=DOCKER_PASSWORD \
             --docker-email=DOCKER_EMAIL
 
-        Then, uncomment in main.jsonnet the `image_pull_secret` line by removing the `//`
-        and replace `VAR_DOCKER_IMAGE_PULL_SECRET` with the secret name (for instance: `private-registry-credentials`).
         For docker hub private repository, use `docker.io` as `DOCKER_REGISTRY_SERVER` and an
         [access token](https://hub.docker.com/settings/security) as `DOCKER_PASSWORD`.
 
