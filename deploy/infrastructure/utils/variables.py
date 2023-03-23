@@ -27,6 +27,7 @@ GLOBAL_VARIABLES = [
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "image",
+    "image_pull_secret",
     "authorization",
     "enable_scd",
     "should_init",

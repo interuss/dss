@@ -35,6 +35,7 @@ local metadata = metadataBase {
   prometheus+: {
     storageClass: 'VAR_STORAGE_CLASS',
   },
+//  image_pull_secret: 'VAR_DOCKER_IMAGE_PULL_SECRET'
 };
 
 dss.all(metadata)

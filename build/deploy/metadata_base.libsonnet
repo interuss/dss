@@ -58,5 +58,6 @@
     custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
+  image_pull_secret: '',
   subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
 }

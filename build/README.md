@@ -103,6 +103,10 @@ endpoint.
 
 1. Note the VAR_* value printed at the end of the script.
 
+### Access to private repository
+
+See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication.
+
 ## Deploying a DSS instance via Kubernetes
 
 This section discusses deploying a Kubernetes service, although you can deploy
@@ -331,6 +335,21 @@ a PR to that effect would be greatly appreciated.
         without `build.sh`.
 
         -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
+            
+    1.  `VAR_DOCKER_IMAGE_PULL_SECRET`: Secret name of the credentials to access
+        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require 
+        authentication to be pulled, then do not populate this instance and do not uncomment 
+        the line containing it. You can use the following command to store the credentials 
+        as kubernetes secret:
+
+        > kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
+            --docker-server=DOCKER_REGISTRY_SERVER \
+            --docker-username=DOCKER_USER \
+            --docker-password=DOCKER_PASSWORD \
+            --docker-email=DOCKER_EMAIL
+
+        For docker hub private repository, use `docker.io` as `DOCKER_REGISTRY_SERVER` and an
+        [access token](https://hub.docker.com/settings/security) as `DOCKER_PASSWORD`.
 
     1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your Core Service
         ingress endpoint.  For example, `dss.example.com`.

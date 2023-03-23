@@ -41,6 +41,7 @@ local metadata = metadataBase {
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',
   },
+  image_pull_secret: '${VAR_DOCKER_IMAGE_PULL_SECRET}',
   cloud_provider: '${VAR_CLOUD_PROVIDER}',
   %{if VAR_CLOUD_PROVIDER == "aws"}
   subnet: '${VAR_SUBNET}',
