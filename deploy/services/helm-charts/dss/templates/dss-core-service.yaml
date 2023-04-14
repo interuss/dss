@@ -1,0 +1,82 @@
+{{- $dss := .Values.dss -}}
+{{- $cockroachImage := (include "cockroachImage" .) -}}
+{{- $cockroachHost :=  (include "cockroachHost" .) -}}
+{{- $waitForCockroachDB := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $cockroachHost)) -}}
+{{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "cockroachImage" $cockroachImage "cockroachHost" $cockroachHost) -}}
+{{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "cockroachImage" $cockroachImage "cockroachHost" $cockroachHost) -}}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: {{.Release.Name}}-core-service
+  name: core-service
+  namespace: default
+spec:
+  minReadySeconds: 30
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{.Release.Name}}-core-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{.Release.Name}}-core-service
+    spec:
+      initContainers:
+        {{- $waitForCockroachDB | nindent 8 }}
+        {{- $waitForRIDSchema | nindent 8 }}
+        {{- $waitForSCDSchema | nindent 8 }}
+      containers:
+        - args:
+            - --accepted_jwt_audiences={{$dss.conf.hostname}}
+            - --addr=:8080
+            - --cockroach_host={{$cockroachHost}}
+            - --cockroach_port=26257
+            - --cockroach_ssl_dir=/cockroach/cockroach-certs
+            - --cockroach_ssl_mode=verify-full
+            - --cockroach_user=root
+            - --dump_requests=true
+            - --enable_scd=true
+            - --garbage_collector_spec=@every 30m
+            - --gcp_prof_service_name=
+            {{- if $dss.conf.jwksEndpoint }}
+            - --jwks_endpoint={{ $dss.jwksEndpoint }}
+            {{- end }}
+            {{- if $dss.conf.jwksKeyIds }}
+            - --jwks_key_ids={{ $dss.jwksKeyIds | join "," }}
+            {{- end }}
+            - --locality={{ .Values.cockroachdb.conf.locality }}
+            {{- if $dss.conf.pubKeys}}
+            - --public_key_files={{ $dss.conf.pubKeys | join "," }}
+            {{- end }}
+          command:
+            - core-service
+          image: {{ $dss.image }}
+          imagePullPolicy: Always
+          name: core-service
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthy
+              port: 8080
+          stdin: false
+          tty: false
+          volumeMounts:
+            {{- include "ca-certs:volumeMount" . | nindent 12 }}
+            {{- include "client-certs:volumeMount" . | nindent 12 }}
+            {{- include "public-certs:volumeMount" . | nindent 12 }}
+      imagePullSecrets: []
+      terminationGracePeriodSeconds: 30
+      volumes:
+        {{- include "ca-certs:volume" . | nindent 8 }}
+        {{- include "client-certs:volume" . | nindent 8 }}
+        {{- include "public-certs:volume" . | nindent 8 }}

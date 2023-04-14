@@ -1,0 +1,111 @@
+{{- $cloudProvider := $.Values.global.cloudProvider}}
+
+# Node Gateways
+{{- range $i, $lb := .Values.loadBalancers.cockroachdbNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
+      (dict
+        "name" (printf "%s-%s" "cockroach-db-external-node" ( $i | toString) )
+        "ip" $lb.ip
+        "subnet" $lb.subnet
+        "cloudProvider" $cloudProvider
+      ) | nindent 4
+    }}
+  labels:
+    app: cockroachdb
+    name: cockroach-db-external-node-{{$i}}
+  name: cockroach-db-external-node-{{$i}}
+  namespace: default
+spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
+  ports:
+    - name: cockroach-db-external-node-{{$i}}
+      port: 26257
+      targetPort: 26257
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: {{$.Release.Name}}-cockroachdb-{{$i}}
+  type: LoadBalancer
+{{- end }}
+
+# DSS HTTPS Gateway
+{{- with $.Values.loadBalancers.dssGateway }}
+{{ if eq $cloudProvider "aws" }}
+{{/*
+AWS application load balancer Ingress do not support elastic ip assignment yet. Therefore, the
+ingress is replaced by a network load balancer (Kubernetes Service of type Load Balancer)
+*/}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    {{- include (printf "%s-lb-dss-gateway-annotations" $cloudProvider)
+      (merge .
+        (dict
+          "name" "dss-gateway-external"
+          "cloudProvider" $cloudProvider
+        )
+      ) | nindent 4
+    }}
+  labels:
+    app: core-service
+    name: {{$.Release.Name}}-dss-gateway
+  name: {{$.Release.Name}}-dss-gateway
+  namespace: default
+spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) . | nindent 2 }}
+  ports:
+    - name: http
+      port: 443
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: core-service
+  type: LoadBalancer
+{{- else -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{$.Release.Name}}-core-service
+    name: {{$.Release.Name}}-core-service
+  name: {{$.Release.Name}}-core-service
+spec:
+  ports:
+    - name: core-service
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: {{$.Release.Name}}-core-service
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+    kubernetes.io/ingress.global-static-ip-name: dss-dev-w1a-ip-gateway
+    networking.gke.io/managed-certificates: https-certificate
+  labels:
+    name: {{$.Release.Name}}-core-service-https-ingress
+  name: {{$.Release.Name}}-core-service-https-ingress
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{$.Release.Name}}-core-service
+                port:
+                  number: 8080
+{{- end }}
+{{- end }}
