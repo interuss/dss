@@ -1,7 +1,3 @@
-
-{{/* Annotations */}}
-
-{{/* AWS */}}
 {{- define "aws-lb-default-annotations" -}}
 service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
@@ -15,19 +11,16 @@ service.beta.kubernetes.io/aws-load-balancer-type: external
 {{- include "aws-lb-default-annotations" . }}
 {{- end -}}
 
-{{- define "aws-lb-dss-gateway-annotations" -}}
+{{- define "aws-lb-spec" -}}
+loadBalancerClass: service.k8s.aws/nlb
+{{- end -}}
+
+{{- define "aws-ingress-dss-gateway-annotations" -}}
 {{- include "aws-lb-default-annotations" . }}
 service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{.certName}}
 service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
 {{- end -}}
 
-{{/* Google */}}
-
-{{/* Spec */}}
-{{- define "aws-lb-spec" -}}
+{{- define "aws-ingress-spec" -}}
 loadBalancerClass: service.k8s.aws/nlb
-{{- end -}}
-
-{{- define "google-lb-spec" -}}
-loadBalancerIP: {{.ip}}
 {{- end -}}

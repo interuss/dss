@@ -138,7 +138,16 @@ def main():
         '*.cockroachdb',
         '*.cockroachdb.%s' % cr.namespace,
         'cockroachdb.%s' % cr.namespace,
-        '*.cockroachdb.%s.svc.cluster.local' % cr.namespace
+        '*.cockroachdb.%s.svc.cluster.local' % cr.namespace,
+        # New helm generated address
+        # Individual nodes
+        '*.dss-cockroachdb',
+        '*.dss-cockroachdb.%s' % cr.namespace,
+        '*.dss-cockroachdb.%s.svc.cluster.local' % cr.namespace,
+        # Internal load balancer
+        'dss-cockroachdb-public',
+        'dss-cockroachdb-public.%s' % cr.namespace,
+        'dss-cockroachdb-public.%s.svc.cluster.local' % cr.namespace,
     ])
 
     subprocess.check_call([

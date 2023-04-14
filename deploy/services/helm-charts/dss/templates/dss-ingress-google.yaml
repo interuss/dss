@@ -1,0 +1,60 @@
+{{- $cloudProvider := $.Values.global.cloudProvider}}
+{{- $dssHostname := $.Values.dss.conf.hostname }}
+{{- if eq $cloudProvider "google" }}
+# DSS HTTPS Gateway
+{{- with $.Values.loadBalancers.dssGateway }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{$.Release.Name}}-core-service
+    name: {{$.Release.Name}}-core-service
+  name: {{$.Release.Name}}-core-service
+spec:
+  ports:
+    - name: core-service
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: {{$.Release.Name}}-core-service
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    {{- include (printf "%s-ingress-dss-gateway-annotations" $cloudProvider)
+      (dict
+        "certName" (printf "%s-core-service-https-certificate" $.Release.Name)
+        "ip" .ip
+      ) | nindent 4
+    }}
+  labels:
+    name: {{$.Release.Name}}-core-service-https-ingress
+  name: {{$.Release.Name}}-core-service-https-ingress
+spec:
+  {{- include (printf "%s-ingress-spec" $cloudProvider) . | nindent 2 }}
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{$.Release.Name}}-core-service
+                port:
+                  number: 8080
+---
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  labels:
+    name: {{$.Release.Name}}-core-service-https-certificate
+  name: {{$.Release.Name}}-core-service-https-certificate
+spec:
+  domains:
+    - {{$dssHostname}}
+
+{{- end }}
+{{- end }}
