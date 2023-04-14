@@ -6,6 +6,5 @@ version: 0.1.0
 appVersion: "snapshot"
 dependencies:
   - name: cockroachdb
-
-    repository: file://../../../../../helm-charts/build/artifacts/cockroachdb-10.0.7.tgz #https://charts.cockroachdb.com/
+    repository: https://charts.cockroachdb.com/
     version: 10.0.7
