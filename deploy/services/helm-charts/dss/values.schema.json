@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "properties": {
+    "cockroachdb": {
+      "description": "Cockroach DB related configuration",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        },
+        "fullnameOverride": {
+          "description": "Name of the internal statefulset",
+          "type": "string"
+        },
+        "conf": {
+          "type": "object",
+          "properties": {
+            "cluster-name": {
+              "description": "Name of CockroachDB cluster",
+              "type": "string"
+            },
+            "join": {
+              "description": "List of already-existing CockroachDB instances. If empty, the chart will automatically discover the internal nodes. If set to join a DSS Region and other DSS instance, please add the addresses of the statefulset's pod as well.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "locality": {
+              "description": "Locality attribute for this deployment. Example: zone=example",
+              "type": "string"
+            }
+          },
+          "required": [
+            "cluster-name",
+            "locality"
+          ]
+        },
+        "statefulset": {
+          "type": "object",
+          "properties": {
+            "args": {
+              "type": "array",
+              "description": "Additional argument passed to the statefulset pod command. In the context of the dss deployment it requires the following arguments:\n `--locality-advertise-addr=zone=example@$(hostname -f)`\n`--advertise-addr=${HOSTNAME##*-}.db.example.com`",
+              "items": {
+                "type": "string"
+              },
+              "additionalItems": true
+            }
+          },
+          "required": [
+            "args"
+          ]
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "persistentVolume": {
+              "properties": {
+                "storageClass": {
+                  "description": "Storage class depending on your cloud provider.",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "image",
+        "fullnameOverride",
+        "conf",
+        "statefulset"
+      ]
+    },
+    "loadBalancers": {
+      "description": "Load balancers configuration",
+      "type": "object",
+      "properties": {
+        "cockroachdbNodes": {
+          "type": "array",
+          "items": {
+            "properties": {
+              "ip": {
+                "description": "Public ip or cloud resource name.",
+                "type": "string"
+              },
+              "subnet": {
+                "description": "Optional: Subnet of the public ip for AWS only",
+                "type": "string"
+              }
+            },
+            "required": [
+              "ip"
+            ]
+          }
+        },
+        "dssGateway": {
+          "type": "object",
+          "properties": {
+            "ip": {
+              "description": "Public ip or cloud resource name.",
+              "type": "string"
+            },
+            "subnet": {
+              "description": "Optional: Subnet of the public ip for AWS only",
+              "type": "string"
+            },
+            "certName": {
+              "description": "Optional: ARN of the certificate for AWS only",
+              "type": "string"
+            }
+          },
+          "required": [
+            "ip"
+          ]
+        }
+      }
+    },
+    "dss": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "conf": {
+          "type": "object",
+          "properties": {
+            "pubKeys": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "jwksEndpoint": {
+              "type": "string"
+            },
+            "jwksKeyIds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "enableScd": {
+              "type": "boolean"
+            },
+            "hostname": {
+              "type": "string",
+              "description": "Public hostname of the dss. Example: dss.example.com"
+            }
+          },
+          "required": ["hostname"]
+        }
+      },
+      "required": ["image", "conf"]
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "cloudProvider": {
+          "description": "Cloud provider identifier. `aws` or `google`",
+          "type": "string"
+        }
+      },
+      "required": ["cloudProvider"]
+    }
+  },
+  "required": [
+    "cockroachdb",
+    "loadBalancers",
+    "dss",
+    "global"
+  ],
+  "title": "Values",
+  "type": "object"
+}

@@ -1,0 +1,19 @@
+# Default configuration
+cockroachdb:
+  # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
+  image:
+    repository: cockroachdb/cockroach
+    tag: v21.2.7
+  tls:
+    certs:
+      provided: true
+      nodeSecret: cockroachdb.node
+      clientRootSecret: cockroachdb.client.root
+      tlsSecret: cockroachdb.tls
+      selfSigner:
+        enabled: false
+  ingress:
+    enabled: false
+
+dss:
+  image: docker.io/interuss/dss:v0.7.0
