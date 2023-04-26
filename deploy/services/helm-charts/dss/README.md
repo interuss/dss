@@ -10,7 +10,8 @@ Requirements and instructions to create a new Kubernetes cluster can be found [h
 ## Usage
 1. Edit `values.example.yaml`. See `values.schema.json` for schema definition. (Note that the key `cockroachdb` supports all values supported by the [`cockroachdb` Chart](https://github.com/cockroachdb/helm-charts/tree/master/cockroachdb#configuration))
 2. Validate the configuration: `helm lint -f values.example.yaml .`
-3. Set a RELEASE_NAME, example: `export RELEASE_NAME=dss`
+3. Set a RELEASE_NAME to `dss`: `export RELEASE_NAME=dss`
+It is temporarily the only release name possible.
 4. Set the kube client context of your , example: `export KUBE_CONTEXT=gke_interuss-deploy-example_europe-west6-a_dss-dev-w6`
 5. Run `helm dep update --kube-context=$KUBE_CONTEXT`
 6. Install the chart: `helm install --kube-context=$KUBE_CONTEXT -f values.example.yaml $RELEASE_NAME .`
