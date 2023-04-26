@@ -46,7 +46,7 @@ spec:
                 port:
                   number: 8080
 ---
-apiVersion: networking.gke.io/v1beta1
+apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
   labels:
