@@ -156,9 +156,6 @@ def main():
         '--ca-key', cr.ca_key_file]
         + node_addresses)
 
-    os.remove(os.path.join(cr.node_certs_dir, 'ca.crt'))
-    os.remove(os.path.join(cr.client_certs_dir, 'ca.crt'))
-
     print('Created new node certificate in {}'.format(cr.node_certs_dir))
 
 

@@ -44,15 +44,14 @@ kubectl delete secret cockroachdb.ca.crt --namespace "$NAMESPACE"  --context "$C
 kubectl delete secret cockroachdb.ca.key --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret dss.public.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 
-kubectl create secret generic cockroachdb.client.root --namespace default --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
-if [[ $NAMESPACE != "default" ]]; then
-  kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
-fi
-kubectl create secret generic cockroachdb.node --namespace "$NAMESPACE" --from-file "$NODE_CERTS_DIR"  --context "$CONTEXT"
+kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR" --context "$CONTEXT"
+kubectl create secret generic cockroachdb.node --namespace "$NAMESPACE" --from-file "$NODE_CERTS_DIR" --context "$CONTEXT"
 # The ca key is not needed for any typical operations, but might be required to sign new certificates.
 $UPLOAD_CA_KEY && kubectl create secret generic cockroachdb.ca.key --namespace "$NAMESPACE" --from-file "$CA_KEY_DIR"  --context "$CONTEXT"
 # The ca.crt is kept in it's own secret to more easily manage cert rotation and
-# adding other operators' certificates.
+# adding other operators' certificates. Note that, for the purpose of the migration to helm and
+# to comply with cockroach db standard configuration, ca.crt has been kept inside cockroach.* secrets.
+# This secret is kept for backward compatibility.
 kubectl create secret generic cockroachdb.ca.crt --namespace "$NAMESPACE" --from-file "$CA_CRT_DIR"  --context "$CONTEXT"
 kubectl create secret generic dss.public.certs --namespace "$NAMESPACE" --from-file "$JWT_PUBLIC_CERTS_DIR"  --context "$CONTEXT"
 

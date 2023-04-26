@@ -9,7 +9,6 @@ cockroachdb:
       provided: true
       nodeSecret: cockroachdb.node
       clientRootSecret: cockroachdb.client.root
-      tlsSecret: cockroachdb.tls
       selfSigner:
         enabled: false
   ingress:
