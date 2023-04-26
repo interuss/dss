@@ -41,4 +41,4 @@ dss:
     enableScd: true
 
 global:
-  cloudProvider: aws
+  cloudProvider: google
