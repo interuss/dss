@@ -44,7 +44,10 @@ kubectl delete secret cockroachdb.ca.crt --namespace "$NAMESPACE"  --context "$C
 kubectl delete secret cockroachdb.ca.key --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret dss.public.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 
-kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR" --context "$CONTEXT"
+kubectl create secret generic cockroachdb.client.root --namespace default --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
+if [[ $NAMESPACE != "default" ]]; then
+  kubectl create secret generic cockroachdb.client.root --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
+fi
 kubectl create secret generic cockroachdb.node --namespace "$NAMESPACE" --from-file "$NODE_CERTS_DIR" --context "$CONTEXT"
 # The ca key is not needed for any typical operations, but might be required to sign new certificates.
 $UPLOAD_CA_KEY && kubectl create secret generic cockroachdb.ca.key --namespace "$NAMESPACE" --from-file "$CA_KEY_DIR"  --context "$CONTEXT"
