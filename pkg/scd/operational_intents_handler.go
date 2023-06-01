@@ -467,7 +467,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 				}
 			}
 
-			sub, err = r.UpsertSubscription(ctx, &scdmodels.Subscription{
+			subToUpsert := scdmodels.Subscription{
 				ID:                          dssmodels.ID(uuid.New().String()),
 				Manager:                     dssmodels.Manager(manager),
 				StartTime:                   uExtent.StartTime,
@@ -478,13 +478,16 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 				USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
 				NotifyForOperationalIntents: true,
 				ImplicitSubscription:        true,
-			})
+			}
+			if params.NewSubscription.NotifyForConstraints != nil {
+				subToUpsert.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
+			}
+
+			sub, err = r.UpsertSubscription(ctx, &subToUpsert)
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to create implicit subscription")
 			}
-			if params.NewSubscription.NotifyForConstraints != nil {
-				sub.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
-			}
+
 		} else {
 			// Use existing Subscription
 			sub, err = r.GetSubscription(ctx, subscriptionID)
