@@ -243,20 +243,20 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 			return stacktrace.Propagate(err, "Could not convert Subscription to REST model")
 		}
 		result = &restapi.PutSubscriptionResponse{
-			Subscription:                *p,
-			OperationalIntentReferences: new([]restapi.OperationalIntentReference),
-			ConstraintReferences:        new([]restapi.ConstraintReference),
+			Subscription: *p,
 		}
 
 		if sub.NotifyForOperationalIntents {
 			// Attach Operations to response
+			opIntentRefs := make([]restapi.OperationalIntentReference, 0, len(relevantOperations))
 			for _, op := range relevantOperations {
 				if op.Manager != dssmodels.Manager(manager) {
 					op.OVN = scdmodels.NoOvnPhrase
 				}
 
-				*result.OperationalIntentReferences = append(*result.OperationalIntentReferences, *op.ToRest())
+				opIntentRefs = append(opIntentRefs, *op.ToRest())
 			}
+			result.OperationalIntentReferences = &opIntentRefs
 		}
 
 		if sub.NotifyForConstraints {
@@ -267,14 +267,17 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 			}
 
 			// Attach Constraints to response
+			constraintRefs := make([]restapi.ConstraintReference, 0, len(constraints))
 			for _, constraint := range constraints {
 				p := constraint.ToRest()
 				if constraint.Manager != dssmodels.Manager(manager) {
 					noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 					p.Ovn = &noOvnPhrase
 				}
-				*result.ConstraintReferences = append(*result.ConstraintReferences, *p)
+
+				constraintRefs = append(constraintRefs, *p)
 			}
+			result.ConstraintReferences = &constraintRefs
 		}
 
 		return nil
