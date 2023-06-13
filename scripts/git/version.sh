@@ -4,8 +4,9 @@
 # of the upstream repository (remote origin) matching the following convention:
 # owner/component/version. Examples of values:
 # - owner: interuss (automatically extracted from the remote origin url)
-# - component: rid, scd, aux, uss_qualifier
-# - version: v3.0.1[-hash][-dirty]
+# - component: dss, rid, scd, aux, uss_qualifier
+# - version: v3.0.1[-*][-hash][-dirty]
+#    - [-*] (example: -rc1) Prerelease Semver version is preserved if present in the tag.
 #    - [-hash] (example: -8a493ef8 ) is added when commits have been added to the latest version tagged.
 #    - [-dirty] (example: -dirty) when the workspace is not clean.
 # Only versions without [-hash] and without [-dirty] shall be released.
@@ -29,13 +30,16 @@ cd "$(dirname "$0")" || exit 1
 
 UPSTREAM_ORG=$(./upstream_owner.sh)
 
-# Look for the last tag of the component
-LAST_VERSION_TAG=$(git describe --abbrev=1 --tags --match="${UPSTREAM_ORG}/${COMPONENT}/*" 2> /dev/null)
-#echo "LAST_VERSION_TAG: $LAST_VERSION_TAG"
+# Look for the last tag of the component.
+LAST_VERSION_TAG_CLEAN=$(git describe --abbrev=0 --tags --match="${UPSTREAM_ORG}/${COMPONENT}/*" 2> /dev/null)
+# echo "LAST_VERSION_TAG_CLEAN: $LAST_VERSION_TAG_CLEAN"
+# Look for the last tag of the component with commit number and hash appended if the tag is not HEAD.
+LAST_VERSION_TAG_ABBREV=$(git describe --abbrev=1 --tags --match="${UPSTREAM_ORG}/${COMPONENT}/*" 2> /dev/null)
+# echo "LAST_VERSION_TAG_ABBREV: $LAST_VERSION_TAG_ABBREV"
 
 # Store in LAST_VERSION the version of the tag (ie v0.0.1)
-LAST_VERSION=${LAST_VERSION_TAG##*/}
-#echo "LAST_VERSION: $LAST_VERSION"
+LAST_VERSION=${LAST_VERSION_TAG_CLEAN##*/}
+# echo "LAST_VERSION: $LAST_VERSION"
 
 # Current commit
 COMMIT=$(git rev-parse --short HEAD)
@@ -44,9 +48,7 @@ COMMIT=$(git rev-parse --short HEAD)
 if [[ -z "$LAST_VERSION" ]]; then
   LAST_VERSION="v0.0.0-$COMMIT"
 # Check if there are some commits on top of the tag by checking if an abbrev part is present.
-elif [[ "$LAST_VERSION" == *"-"* ]]; then
-  # Remove abbrev part
-  LAST_VERSION=${LAST_VERSION%%-*}
+elif [[ "$LAST_VERSION_TAG_CLEAN" != "$LAST_VERSION_TAG_ABBREV" ]]; then
   # Append the commit hash
   LAST_VERSION=${LAST_VERSION}-${COMMIT}
 fi
