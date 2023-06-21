@@ -7,7 +7,7 @@ echo "DSS/crdb cluster setup  using HAProxy"
 RESULTFILE="$(pwd)/haproxy_cluster_setup"
 touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
-FLAGS="--network dss_sandbox_default cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb,roachc"
+FLAGS="--network dss_sandbox-default cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb,roachc"
 
 OS=$(uname)
 if [[ "$OS" == "Darwin" ]]; then
@@ -43,7 +43,7 @@ function cleanup() {
 	docker rm -f core-service-for-testing &> /dev/null || true
 
 	echo "Removing DSS network"
-	docker network rm dss_sandbox_default
+	docker network rm dss_sandbox-default
 }
 
 if [[ "$DC_COMMAND" == "down" ]]; then
@@ -85,7 +85,7 @@ echo "Stopping haproxy container"
 docker rm -f dss-crdb-cluster-for-testing &> /dev/null || true
 
 echo "Create DSS network"
-docker network create dss_sandbox_default
+docker network create dss_sandbox-default
 
 echo "Starting roacha with admin port on :8080"
 docker run -d --rm --name roacha \
@@ -118,7 +118,7 @@ docker exec -it roacha cat haproxy.cfg > "$(pwd)/haproxy.cfg"
 
 echo "Start the HAProxy container by mounting the cfg file."
 docker run -d --name dss-crdb-cluster-for-testing	\
-	--network dss_sandbox_default	\
+	--network dss_sandbox-default	\
 	-p 26257:26257	\
 	-v "$(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg":ro haproxy:1.7
 sleep 1
@@ -126,7 +126,7 @@ sleep 1
 echo "Bootstrapping RID Database tables"
 docker run --rm --name rid-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
-	--network dss_sandbox_default	\
+	--network dss_sandbox-default	\
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/rid \
@@ -137,7 +137,7 @@ sleep 1
 echo "Bootstrapping SCD Database tables"
 docker run --rm --name scd-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
-	--network dss_sandbox_default	\
+	--network dss_sandbox-default	\
 	local-interuss-dss-image \
 	/usr/bin/db-manager \
 	--schemas_dir db-schemas/scd \
@@ -152,7 +152,7 @@ docker rm -f core-service-for-testing &> /dev/null || echo "No core service to c
 echo "Starting core service on :8082"
 docker run -d --name core-service-for-testing -p 8082:8082 \
 	--link dss-crdb-cluster-for-testing:crdb \
-	--network dss_sandbox_default	\
+	--network dss_sandbox-default	\
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	core-service \
@@ -174,7 +174,7 @@ docker rm -f dummy-oauth-for-testing &> /dev/null || echo "No dummy oauth to cle
 
 echo "Starting mock oauth server on :8085"
 docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
-	--network dss_sandbox_default	\
+	--network dss_sandbox-default	\
 	-v "$(pwd)/build/test-certs/auth2.key:/app/test.key" \
 	local-dummy-oauth \
 	-private_key_file /app/test.key

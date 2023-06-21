@@ -120,7 +120,7 @@ command like the one below, using `defaultdb` instead of `rid` if wiping remote
 ID prior to schema version 4.0.0, and `scd` instead of `rid` if wiping SCD:
 
 ```bash
-docker container exec -i dss_sandbox_local-dss-crdb_1 cockroach sql --insecure <<< 'use postgres; drop database rid cascade;'
+docker container exec -i dss_sandbox-local-dss-crdb-1 cockroach sql --insecure <<< 'use postgres; drop database rid cascade;'
 ```
 
 To just determine the current version of a database schema, simply omit the

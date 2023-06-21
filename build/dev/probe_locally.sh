@@ -37,7 +37,7 @@ cat /dev/null > "${RESULTFILE}"
 
 if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
-	--network dss_sandbox_default \
+	--network dss_sandbox-default \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
 	interuss/monitoring:v0.2.0 \
