@@ -15,6 +15,8 @@ services:
     ports:
       - "8080:8080"
     restart: always
+    networks:
+      - dss_sandbox_default_network 
 
   local-dss-rid-bootstrapper:
     build:
@@ -27,6 +29,8 @@ services:
     entrypoint: /startup/rid_bootstrapper.sh
     depends_on:
       - local-dss-crdb
+    networks:
+      - dss_sandbox_default_network 
 
   local-dss-scd-bootstrapper:
     build:
@@ -39,6 +43,8 @@ services:
     entrypoint: /startup/scd_bootstrapper.sh
     depends_on:
       - local-dss-crdb
+    networks:
+      - dss_sandbox_default_network 
 
   local-dss-core-service:
     build:
@@ -56,6 +62,8 @@ services:
     depends_on:
       - local-dss-rid-bootstrapper
       - local-dss-scd-bootstrapper
+    networks:
+      - dss_sandbox_default_network 
 
   local-dss-dummy-oauth:
     build:
@@ -65,6 +73,12 @@ services:
     command: -private_key_file /var/test-certs/auth2.key
     ports:
       - "8085:8085"
+    networks:
+      - dss_sandbox_default_network 
+
+networks:
+  dss_sandbox_default_network:
+    name: dss_sandbox-default
 
 volumes:
   local-dss-data:
