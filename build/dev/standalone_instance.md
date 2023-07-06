@@ -25,7 +25,6 @@ sandbox environment consisting of:
 ## Prerequisites
 
 * Install [Docker](https://docs.docker.com/v17.12/install/)
-* Install [docker-compose](https://docs.docker.com/compose/install/)
 
 ## Run
 
@@ -93,11 +92,11 @@ to debug any request sent to the local DSS endpoints hosted at `localhost:8082`.
     ![Debug_result_2](../../assets/debug/debug_result_2.png)
 ## Advanced
 
-[`run_locally.sh`](run_locally.sh) is a thin wrapper around a `docker-compose`
-command and all the `docker-compose` verbs may be passed to `run_locally.sh`.
+[`run_locally.sh`](run_locally.sh) is a thin wrapper around a `docker compose`
+command and all the `docker compose` verbs may be passed to `run_locally.sh`.
 The default option is `up --build` which forces to re-build the local deployment images before starting the containers; however, containers can be started directly by `run_locally.sh up`.
 The system can be removed entirely with `run_locally.sh down`.
-See all `docker-compose` verbs
+See all `docker compose` verbs
 [here](https://docs.docker.com/compose/reference/overview/).
 
 ## Database migration and versioning
