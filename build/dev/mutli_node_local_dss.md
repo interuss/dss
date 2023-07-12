@@ -41,7 +41,7 @@ Run following to bring up a new node in the cluster environment:
 
     ```docker container run -d --name roachc \
         --hostname roachc -p 8087:8087  \
-        --network dss_sandbox_default \
+        --network dss_sandbox-default \
         cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb
     ```
 

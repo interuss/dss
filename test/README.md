@@ -41,7 +41,7 @@ simply add its name as the first argument to the script to run prober locally
 
 ### Examining Core Service logs
 After a `make probe-locally` run, the Core Service logs can be examined in the
-Core Service container (usually `dss_sandbox_local-dss-core-service_1`) or
+Core Service container (usually `dss_sandbox-local-dss-core-service-1`) or
 dumped to core-service-for-testing.log using `make collect-local-logs`.
 
 ## Continuous integration

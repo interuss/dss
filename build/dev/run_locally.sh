@@ -2,11 +2,11 @@
 
 set -eo pipefail
 
-# This script will deploy a standalone DSS instance with docker-compose.  See
+# This script will deploy a standalone DSS instance with docker compose.  See
 # standalone_instance.md for more information.
 
-if [[ -z $(command -v docker-compose) ]]; then
-  echo "docker-compose is required but not installed.  Visit https://docs.docker.com/compose/install/ to install."
+if [[ -z $(command -v docker) ]]; then
+  echo "docker is required but not installed.  Visit https://docs.docker.com/install/ to install."
   exit 1
 fi
 
@@ -33,4 +33,4 @@ elif [[ "$DC_COMMAND" == "debug" ]]; then
 fi
 
 # shellcheck disable=SC2086
-docker-compose -f docker-compose_dss.yaml -p dss_sandbox $DC_COMMAND $DC_OPTIONS
+docker compose -f docker-compose_dss.yaml -p dss_sandbox $DC_COMMAND $DC_OPTIONS
