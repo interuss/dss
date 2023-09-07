@@ -1,0 +1,67 @@
+# This is the configuration for the USS qualifier tool that probes the DSS, replacing the legacy prober tool.
+v1:
+  test_run:
+    non_baseline_inputs:
+      - v1.test_run.resources.resource_declarations.utm_auth
+      - v1.test_run.resources.resource_declarations.netrid_dss_instance_v19
+      - v1.test_run.resources.resource_declarations.netrid_dss_instance_v22a
+    resources:
+      resource_declarations:
+        utm_auth:
+          $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+          resource_type: resources.communications.AuthAdapterResource
+          specification:
+            environment_variable_containing_auth_spec: AUTH_SPEC
+        id_generator:
+          $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+          resource_type: resources.interuss.IDGeneratorResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            whoami_audience: localhost
+            whoami_scope: rid.display_provider
+        isa:
+          $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+          resource_type: resources.netrid.ServiceAreaResource
+          specification:
+            base_url: https://uss_qualifier.test.utm/dummy_base_url
+            footprint:
+              lat_min: 37.1853
+              lng_min: -80.6140
+              lat_max: 37.2148
+              lng_max: -80.5440
+            altitude_min: 0
+            altitude_max: 3048
+        netrid_dss_instance_v19:
+          $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+          resource_type: resources.astm.f3411.DSSInstanceResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            participant_id: uss1
+            rid_version: F3411-19
+            base_url: http://core-service:8082
+            has_private_address: true
+        netrid_dss_instance_v22a:
+          $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+          resource_type: resources.astm.f3411.DSSInstanceResource
+          dependencies:
+            auth_adapter: utm_auth
+          specification:
+            participant_id: uss1
+            rid_version: F3411-22a
+            base_url: http://core-service:8082/rid/v2
+            has_private_address: true
+    action:
+      test_suite:
+        suite_type: suites.interuss.dss_probing
+        resources:
+          netrid_dss_instance_v19: netrid_dss_instance_v19
+          netrid_dss_instance_v22a: netrid_dss_instance_v22a
+          id_generator: id_generator
+          isa: isa
+  artifacts:
+    tested_roles:
+      report_path: output/tested_roles_dss_probing
+    report:
+        report_path: output/report_dss_probing.json

@@ -52,6 +52,7 @@ coverage.xml
 .pytest_cache/
 e2e_test_result
 test_result
+build/dev/probe_locally_output
 
 # Translations
 *.mo

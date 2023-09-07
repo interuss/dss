@@ -35,6 +35,7 @@ RESULTFILE="$(pwd)/e2e_test_result"
 touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
 
+echo "========== Running legacy DSS prober =========="
 if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
@@ -53,7 +54,7 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--scd-api-version 1.0.0; then
 
     if [ "$CI" == "true" ]; then
-        echo "=== END OF TEST RESULTS ==="
+        echo "=== END OF LEGACY PROBER TEST RESULTS ==="
         echo "Dumping core-service logs"
         docker logs "$CORE_SERVICE_CONTAINER"
     fi
@@ -61,4 +62,47 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
     exit 1
 else
     echo "Prober succeeded."
+fi
+
+# TODO: ugly non-optimized way of getting the code we need
+git clone --recurse-submodules --branch uq_dss_probing git@github.com:Orbitalize/monitoring.git monitoring-repo-tmp
+pushd monitoring-repo-tmp
+make build-monitoring
+popd
+rm -rf monitoring-repo-tmp
+
+USS_QUALIFIER_CONF="$(pwd)/build/dev/probe_locally_configuration.yaml"
+OUTPUT_DIR="$(pwd)/build/dev/probe_locally_output"
+mkdir -p "$OUTPUT_DIR"
+
+start_time=$(date +%Y-%m-%dT%H:%M:%S)
+echo "========== Running uss_qualifier for DSS probing =========="
+# shellcheck disable=SC2086
+docker run --name dss_probing \
+  --rm \
+  --link "$OAUTH_CONTAINER":oauth \
+  --link "$CORE_SERVICE_CONTAINER":core-service \
+  --network dss_sandbox-default \
+  -u "$(id -u):$(id -g)" \
+  -e PYTHONBUFFERED=1 \
+  -e AUTH_SPEC='DummyOAuth(http://oauth:8085/token,sub=fake_uss)' \
+  -e USS_QUALIFIER_STOP_FAST=true \
+  -v "${OUTPUT_DIR}:/app/monitoring/uss_qualifier/output" \
+  -v "${USS_QUALIFIER_CONF}:/app/monitoring/uss_qualifier/configurations/dev/dss_probing.yaml" \
+  -w /app/monitoring/uss_qualifier \
+  interuss/monitoring \
+  python main.py --config configurations.dev.dss_probing
+
+# Set return code according to whether the test run was fully successful
+successful=$(jq '.report | .[] | .successful' "${OUTPUT_DIR}/report_dss_probing.json")
+if echo "${successful}" | grep -iqF true; then
+  echo "Full success indicated by DSS probing"
+else
+  echo "Could not establish that the DSS probing passed"
+  if [ "$CI" == "true" ]; then
+    echo "=== END OF USS QUALIFIER TEST RESULTS ==="
+    echo "Dumping core-service logs"
+    docker logs "$CORE_SERVICE_CONTAINER"
+  fi
+  exit 1
 fi
