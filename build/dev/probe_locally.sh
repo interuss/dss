@@ -75,7 +75,6 @@ USS_QUALIFIER_CONF="$(pwd)/build/dev/probe_locally_configuration.yaml"
 OUTPUT_DIR="$(pwd)/build/dev/probe_locally_output"
 mkdir -p "$OUTPUT_DIR"
 
-start_time=$(date +%Y-%m-%dT%H:%M:%S)
 echo "========== Running uss_qualifier for DSS probing =========="
 # shellcheck disable=SC2086
 docker run --name dss_probing \
