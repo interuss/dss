@@ -7,7 +7,6 @@ local util = import 'util.libsonnet';
     metadata: {
       name: name,
       namespace: metadata.namespace,
-      clusterName: metadata.clusterName,
       labels: {
         name: std.join('-', std.split(name, ':')),
       },
@@ -54,7 +53,7 @@ local util = import 'util.libsonnet';
 
   },
 
-  PodDisruptionBudget(metadata, name): $._Object('policy/v1beta1', 'PodDisruptionBudget', metadata, name) {
+  PodDisruptionBudget(metadata, name): $._Object('policy/v1', 'PodDisruptionBudget', metadata, name) {
     local pdb = self,
     app:: error "must specify app",
     metadata+: {
@@ -72,7 +71,7 @@ local util = import 'util.libsonnet';
     },
   },
 
-  ManagedCert(metadata, name): $._Object('networking.gke.io/v1beta1', 'ManagedCertificate', metadata, name) {
+  ManagedCert(metadata, name): $._Object('networking.gke.io/v1', 'ManagedCertificate', metadata, name) {
 
   },
 
