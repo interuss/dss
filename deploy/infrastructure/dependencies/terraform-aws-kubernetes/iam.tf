@@ -60,6 +60,11 @@ resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {
   role       = aws_iam_role.dss-cluster-node-group.name
 }
 
+resource "aws_iam_role_policy_attachment" "ElasticLoadBalancingFullAccess" {
+  policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
+  role       = aws_iam_role.dss-cluster-node-group.name
+}
+
 resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.dss-cluster-node-group.name
