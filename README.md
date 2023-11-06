@@ -11,8 +11,8 @@ This repository contains InterUSS's implementation of the Discovery and Synchron
 The DSS implementation targets compliance with the following standards and regulations:
 
 - [ASTM F3411-19](https://www.astm.org/f3411-19.html) and [ASTM F3411-22](https://www.astm.org/f3411-22.html): Remote ID.
-    - [F3411-19 OpenAPI interface](./interfaces/rid/v1/remoteid)
-    - [F3411-22 OpenAPI interface](./interfaces/rid/v2/remoteid)
+    - [F3411-19 OpenAPI interface](https://github.com/uastech/standards/releases/tag/astm_rid_1.0)
+    - [F3411-22 OpenAPI interface](https://github.com/uastech/standards/releases/tag/astm_rid_api_2.1)
     - See [documentation](./interfaces/rid/README.md) before mixing versions in a single ecosystem.
 - [ASTM F3548-21](https://www.astm.org/f3548-21.html): UAS Traffic Management (UTM) UAS
 Service Supplier (USS) Interoperability Specification.

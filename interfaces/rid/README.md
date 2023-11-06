@@ -2,11 +2,11 @@
 
 ## F3411-19
 
-[OpenAPI specification](v1/remoteid/augmented.yaml)
+[OpenAPI specification](https://github.com/uastech/standards/releases/tag/astm_rid_1.0)
 
 ## F3411-xx (second version)
 
-[OpenAPI specification](v2/remoteid/canonical.yaml)
+[OpenAPI specification](https://github.com/uastech/standards/releases/tag/astm_rid_api_2.1)
 
 ## Mixing versions in a single ecosystem
 
