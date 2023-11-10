@@ -53,18 +53,19 @@ func (s OperationalIntentState) IsValidInDSS() bool {
 // OperationalIntent models an operational intent.
 type OperationalIntent struct {
 	// Reference
-	ID             dssmodels.ID
-	Manager        dssmodels.Manager
-	Version        VersionNumber
-	State          OperationalIntentState
-	OVN            OVN
-	StartTime      *time.Time
-	EndTime        *time.Time
-	USSBaseURL     string
-	SubscriptionID dssmodels.ID
-	AltitudeLower  *float32
-	AltitudeUpper  *float32
-	Cells          s2.CellUnion
+	ID              dssmodels.ID
+	Manager         dssmodels.Manager
+	UssAvailability UssAvailabilityState
+	Version         VersionNumber
+	State           OperationalIntentState
+	OVN             OVN
+	StartTime       *time.Time
+	EndTime         *time.Time
+	USSBaseURL      string
+	SubscriptionID  dssmodels.ID
+	AltitudeLower   *float32
+	AltitudeUpper   *float32
+	Cells           s2.CellUnion
 }
 
 func (s OperationalIntentState) String() string {
@@ -86,7 +87,7 @@ func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 		UssBaseUrl:      restapi.OperationalIntentUssBaseURL(o.USSBaseURL),
 		SubscriptionId:  restapi.SubscriptionID(o.SubscriptionID.String()),
 		State:           o.State.ToRest(),
-		UssAvailability: UssAvailabilityStateUnknown.ToRest(),
+		UssAvailability: o.UssAvailability.ToRest(),
 	}
 
 	if o.StartTime != nil {

@@ -59,6 +59,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 
 	var payload []*scdmodels.OperationalIntent
 	pgCids := pgtype.Int8Array{}
+	ussAvailabilities := map[dssmodels.Manager]*scdmodels.UssAvailabilityStatus{}
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
@@ -87,16 +88,25 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		o.SetCells(cids)
+		ussAvailabilities[o.Manager] = nil
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
+	for manager := range ussAvailabilities {
+		if ussAvailabilities[manager], err = s.GetUssAvailability(ctx, manager); err != nil {
+			return nil, stacktrace.Propagate(err, "Error getting USS availability of %s", manager)
+		}
+	}
+
 	for _, op := range payload {
 		if err := s.populateOperationalIntentCells(ctx, q, op); err != nil {
 			return nil, stacktrace.Propagate(err, "Error populating cells for Operation %s", op.ID)
 		}
+
+		op.UssAvailability = ussAvailabilities[op.Manager].Availability
 	}
 
 	return payload, nil
