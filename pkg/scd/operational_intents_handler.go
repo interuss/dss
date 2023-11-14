@@ -551,7 +551,8 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 				return stacktrace.Propagate(err, "Unable to SearchOperations")
 			}
 			for _, relevantOp := range relevantOps {
-				if _, ok := key[relevantOp.OVN]; !ok {
+				_, ok := key[relevantOp.OVN]
+				if !ok && relevantOp.RequiresKey() {
 					if relevantOp.Manager != dssmodels.Manager(manager) {
 						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
