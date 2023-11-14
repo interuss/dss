@@ -138,3 +138,9 @@ func (o *OperationalIntent) SetCells(cids []int64) {
 	}
 	o.Cells = cells
 }
+
+// RequiresKey indicates whether this OperationalIntent requires its OVN to be included in the provided keys when
+// another intersecting OperationalIntent is being created or updated.
+func (o *OperationalIntent) RequiresKey() bool {
+	return !(o.UssAvailability == UssAvailabilityStateDown && o.State == OperationalIntentStateAccepted)
+}
