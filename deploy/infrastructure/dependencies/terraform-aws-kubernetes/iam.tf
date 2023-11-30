@@ -31,6 +31,8 @@ resource "aws_iam_role_policy_attachment" "dss-cluster-service" {
   role       = aws_iam_role.dss-cluster.name
 }
 
+# Roles
+
 resource "aws_iam_role" "dss-cluster-node-group" {
   name = "${var.cluster_name}-cluster-node-group"
 
@@ -48,35 +50,8 @@ resource "aws_iam_role" "dss-cluster-node-group" {
   })
 }
 
-resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
-  name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
-  # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
-  # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
-  policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
-}
+// EBS
 
-resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {
-  policy_arn = aws_iam_policy.AWSLoadBalancerControllerPolicy.arn
-  role       = aws_iam_role.dss-cluster-node-group.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.dss-cluster-node-group.name
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.dss-cluster-node-group.name
-}
-
-## Docker registry
-resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.dss-cluster-node-group.name
-}
-
-## EBS
 resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
   name = "${var.cluster_name}-AmazonEKS_EBS_CSI_DriverRole"
 
@@ -99,6 +74,38 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
     ]
   })
 }
+
+// Policies
+
+resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
+  name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
+  # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
+  # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
+  policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
+}
+
+// Attachments
+
+resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {
+  policy_arn = aws_iam_policy.AWSLoadBalancerControllerPolicy.arn
+  role       = aws_iam_role.dss-cluster-node-group.name
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.dss-cluster-node-group.name
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.dss-cluster-node-group.name
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.dss-cluster-node-group.name
+}
+
 
 resource "aws_iam_role_policy_attachment" "AmazonEKS_EBS_CSI_DriverRole" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
