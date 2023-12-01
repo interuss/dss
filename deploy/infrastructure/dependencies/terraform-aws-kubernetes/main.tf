@@ -24,7 +24,7 @@ provider "aws" {
   }
 }
 
-data "aws_eks_cluster_auth" "access" {
+data "aws_eks_cluster_auth" "kubernetes_cluster" {
   name = aws_eks_cluster.kubernetes_cluster.name
 }
 
@@ -32,6 +32,6 @@ provider "helm" {
   kubernetes {
     host                   = aws_eks_cluster.kubernetes_cluster.endpoint
     cluster_ca_certificate = base64decode(aws_eks_cluster.kubernetes_cluster.certificate_authority[0].data)
-    token = data.aws_eks_cluster_auth.access.token
+    token = data.aws_eks_cluster_auth.kubernetes_cluster.token
   }
 }

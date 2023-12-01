@@ -33,6 +33,17 @@ variable "aws_route53_zone_id" {
   EOT
 }
 
+variable "aws_iam_path" {
+  type        = string
+  description = <<-EOT
+    AWS IAM Resources Prefix
+    IAM related resources will be created with the specified prefix
+
+    Example: `ci/`
+  EOT
+  default     = ""
+}
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT

@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.11.5
 
 RUN pip install python-hcl2
 

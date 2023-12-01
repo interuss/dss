@@ -8,6 +8,7 @@ locals {
 
 resource "aws_iam_role" "dss-cluster" {
   name = "${var.cluster_name}-dss-cluster"
+  path = var.aws_iam_path
 
   assume_role_policy = <<POLICY
 {
@@ -35,6 +36,7 @@ resource "aws_iam_role_policy_attachment" "dss-cluster-service" {
 
 resource "aws_iam_role" "dss-cluster-node-group" {
   name = "${var.cluster_name}-cluster-node-group"
+  path = var.aws_iam_path
 
   assume_role_policy = jsonencode({
     Statement = [
@@ -54,6 +56,7 @@ resource "aws_iam_role" "dss-cluster-node-group" {
 
 resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
   name = "${var.cluster_name}-AmazonEKS_EBS_CSI_DriverRole"
+  path = var.aws_iam_path
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
@@ -79,6 +82,7 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
   name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
+  path = var.aws_iam_path
   # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
   # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
   policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")

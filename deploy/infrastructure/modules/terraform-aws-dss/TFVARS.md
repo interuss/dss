@@ -40,6 +40,18 @@ Leave empty to disable record creation.
 Example: `Z0123456789ABCDEFGHIJ`
 
 
+### aws_iam_path
+
+*Type: `string`*
+
+**Default: ""**
+
+AWS IAM Resources Prefix
+IAM related resources will be created with the specified prefix
+
+Example: `ci/`
+
+
 ### app_hostname
 
 *Type: `string`*
