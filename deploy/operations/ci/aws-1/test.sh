@@ -12,7 +12,6 @@ else
 fi
 cd "${BASEDIR}" || exit 1
 
-
 clean () {
   echo "Cleaning infrastructure"
   terraform destroy -auto-approve
@@ -20,6 +19,7 @@ clean () {
 
 clean
 terraform init
-terraform apply -auto-approve
+terraform plan
+#terraform apply -auto-approve
 clean
 
