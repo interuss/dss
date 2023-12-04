@@ -7,23 +7,24 @@ locals {
 }
 
 resource "aws_iam_role" "dss-cluster" {
+  // EKS does not support a path in the role arn
   name = "${var.cluster_name}-dss-cluster"
-  path = var.aws_iam_path
 
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "eks.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-POLICY
+  assume_role_policy = jsonencode(
+  {
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "eks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
+
+  permissions_boundary = var.aws_iam_permissions_boundary
 }
 
 # Policy used by internal kubernetes services to access AWS resources.
@@ -41,15 +42,17 @@ resource "aws_iam_role" "dss-cluster-node-group" {
   assume_role_policy = jsonencode({
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
         Principal = {
           Service = "ec2.amazonaws.com"
         }
       }
     ]
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
   })
+
+  permissions_boundary = var.aws_iam_permissions_boundary
 }
 
 // EBS
@@ -76,13 +79,15 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
       }
     ]
   })
+
+  permissions_boundary = var.aws_iam_permissions_boundary
 }
 
 // Policies
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
-  name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
-  path = var.aws_iam_path
+  name   = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
+  path   = var.aws_iam_path
   # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
   # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
   policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")

@@ -6,5 +6,5 @@ variable "aws_iam_path" {
 
     Example: `ci/`
   EOT
-  default     = ""
+  default     = "/"
 }

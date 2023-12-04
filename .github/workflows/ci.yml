@@ -62,27 +62,3 @@ jobs:
       run: make probe-locally
     - name: Bring down local DSS instance
       run: make down-locally
-
-  deploy-tests:
-    name: Deploy tests
-    runs-on: ubunutu-latest
-    concurrency: 1
-    steps:
-     - name: Job information
-       run: |
-         echo "Job information"
-         echo "Trigger: ${{ github.event_name }}"
-         echo "Host: ${{ runner.os }}"
-         echo "Repository: ${{ github.repository }}"
-         echo "Branch: ${{ github.ref }}"
-         docker images
-     - name: Checkout
-       uses: actions/checkout@v2
-       with:
-         submodules: true
-     - name: Test Scenario AWS-1
-       env:
-         AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-         AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-         COMPOSE_PROFILES: aws-1
-       run: docker-compose up -d

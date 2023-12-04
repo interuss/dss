@@ -14,7 +14,8 @@ module "terraform-aws-kubernetes" {
   crdb_hostname_suffix = var.crdb_hostname_suffix
   aws_instance_type    = var.aws_instance_type
   aws_route53_zone_id  = var.aws_route53_zone_id
-  aws_iam_path       = "ci/"
+  aws_iam_path         = "/interuss/"
+  aws_iam_permissions_boundary = "arn:aws:iam::301042233698:policy/GithubCIPermissionBoundaries20231130225039606500000001"
   node_count           = var.node_count
 
   source = "../../../infrastructure/dependencies/terraform-aws-kubernetes"

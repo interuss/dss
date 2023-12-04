@@ -44,12 +44,21 @@ Example: `Z0123456789ABCDEFGHIJ`
 
 *Type: `string`*
 
-**Default: ""**
+**Default: "/"**
 
-AWS IAM Resources Prefix
-IAM related resources will be created with the specified prefix
+AWS IAM Resources Path
+IAM related resources will be created within the specified path
 
 Example: `ci/`
+
+
+### aws_iam_permissions_boundary
+
+*Type: `string`*
+
+AWS IAM Policy to be used for permissions boundaries on created roles.
+
+Example: `GithubCIPermissionBoundaries`
 
 
 ### app_hostname

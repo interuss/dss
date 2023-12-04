@@ -1,13 +1,14 @@
 module "terraform-aws-kubernetes" {
   # See variables.tf for variables description.
-  cluster_name         = var.cluster_name
-  aws_region           = var.aws_region
-  app_hostname         = var.app_hostname
-  crdb_hostname_suffix = var.crdb_hostname_suffix
-  aws_instance_type    = var.aws_instance_type
-  aws_route53_zone_id  = var.aws_route53_zone_id
-  aws_iam_path         = var.aws_iam_path
-  node_count           = var.node_count
+  cluster_name                 = var.cluster_name
+  aws_region                   = var.aws_region
+  app_hostname                 = var.app_hostname
+  crdb_hostname_suffix         = var.crdb_hostname_suffix
+  aws_instance_type            = var.aws_instance_type
+  aws_route53_zone_id          = var.aws_route53_zone_id
+  aws_iam_path                 = var.aws_iam_path
+  aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
+  node_count                   = var.node_count
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
