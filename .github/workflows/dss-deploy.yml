@@ -45,4 +45,4 @@ jobs:
         env:
           COMPOSE_PROFILES: aws-1
         run: |
-          docker-compose up -d          
+          docker-compose up
