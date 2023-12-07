@@ -40,18 +40,6 @@ Leave empty to disable record creation.
 Example: `Z0123456789ABCDEFGHIJ`
 
 
-### aws_iam_path
-
-*Type: `string`*
-
-**Default: "/"**
-
-AWS IAM Resources Path
-IAM related resources will be created within the specified path
-
-Example: `ci/`
-
-
 ### aws_iam_permissions_boundary
 
 *Type: `string`*

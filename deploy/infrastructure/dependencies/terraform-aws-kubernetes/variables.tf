@@ -33,17 +33,6 @@ variable "aws_route53_zone_id" {
   EOT
 }
 
-variable "aws_iam_path" {
-  type        = string
-  description = <<-EOT
-    AWS IAM Resources Path
-    IAM related resources will be created within the specified path
-
-    Example: `ci/`
-  EOT
-  default     = "/"
-}
-
 variable "aws_iam_permissions_boundary" {
   type        = string
   description = <<-EOT
