@@ -17,8 +17,8 @@ clean () {
   terraform destroy -auto-approve
 }
 
-clean
 terraform init
+clean
 terraform plan
 #terraform apply -auto-approve
 clean
