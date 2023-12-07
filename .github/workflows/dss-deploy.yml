@@ -44,4 +44,5 @@ jobs:
           working-directory: ./deploy/operations/
         env:
           COMPOSE_PROFILES: aws-1
-        run: docker-compose up -d
+        run: |
+          docker-compose up -d
