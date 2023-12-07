@@ -40,9 +40,10 @@ jobs:
           aws sts get-caller-identity
 
       - name: Test Scenario AWS-1
+        shell: bash
         with:
           working-directory: ./deploy/operations/
         env:
           COMPOSE_PROFILES: aws-1
         run: |
-          docker-compose up -d
+          docker-compose up -d          
