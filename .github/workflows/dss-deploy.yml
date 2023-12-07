@@ -35,11 +35,11 @@ jobs:
           mask-aws-account-id: true
           role-duration-seconds: 1800
 
-      - name: Caller id
+      - name: Caller Id
         run: |
           aws sts get-caller-identity
 
-      - name: Test Scenario AWS-1
+      - name: Test Deployment Scenario AWS-1
         shell: bash
         working-directory: ./deploy/operations/
         env:
