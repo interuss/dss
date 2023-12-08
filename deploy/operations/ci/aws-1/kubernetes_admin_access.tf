@@ -24,7 +24,14 @@ resource "kubernetes_config_map_v1_data" "aws-auth" {
           "system:masters"
         ]
         rolearn  = var.aws_iam_administrator_role
-        username = "aws-administrator"
+        username = "interuss-aws-administrator"
+      },
+      {
+        groups   = [
+          "system:masters"
+        ]
+        rolearn  = var.aws_iam_ci_role
+        username = "interuss-ci"
       }
     ])
   }

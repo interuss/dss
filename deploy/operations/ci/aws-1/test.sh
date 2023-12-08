@@ -19,7 +19,6 @@ clean () {
 
 terraform init
 clean
-terraform plan
-#terraform apply -auto-approve
+terraform apply -auto-approve
 clean
 

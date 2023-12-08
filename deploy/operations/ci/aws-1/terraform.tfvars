@@ -27,3 +27,4 @@ crdb_external_nodes = []
 
 aws_iam_permissions_boundary = "arn:aws:iam::301042233698:policy/GithubCIPermissionBoundaries20231130225039606500000001"
 aws_iam_administrator_role = "arn:aws:iam::301042233698:role/AWSReservedSSO_AdministratorAccess_9b637c80b830ea2c"
+aws_iam_ci_role = "arn:aws:iam::301042233698:role/InterUSSGithubCI"
