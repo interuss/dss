@@ -44,9 +44,9 @@ Example: `Z0123456789ABCDEFGHIJ`
 
 *Type: `string`*
 
-AWS IAM Policy to be used for permissions boundaries on created roles.
+AWS IAM Policy ARN to be used for permissions boundaries on created roles.
 
-Example: `GithubCIPermissionBoundaries`
+Example: `arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries`
 
 
 ### app_hostname
