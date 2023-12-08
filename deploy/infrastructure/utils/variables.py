@@ -85,6 +85,9 @@ PROJECT_VARIABLES = {
     "../dependencies/terraform-aws-kubernetes": AWS_KUBERNETES_VARIABLES,
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
+    "../../operations/ci/aws-1": list(
+        dict.fromkeys(AWS_MODULE_VARIABLES)
+    )
 }
 
 
