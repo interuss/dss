@@ -1,6 +1,6 @@
 # AWS-1 CI deployment
 
-This module deploys a kubernetes cluster to AWS and provisions the dss using helm.
+This module deploys a Kubernetes cluster to AWS.
 
 ## Terraform state
 

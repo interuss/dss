@@ -20,5 +20,7 @@ clean () {
 terraform init
 clean
 terraform apply -auto-approve
+# TODO: Deploy the DSS
+# TODO: Test the deployment of the DSS
 clean
 
