@@ -1,0 +1,49 @@
+name: Deploy DSS
+on:
+  workflow_dispatch: {}
+  pull_request: {}
+jobs:
+  deploy:
+    name: Deploy DSS to AWS
+    runs-on: ubuntu-latest
+    if: github.repository == 'interuss/dss' || github.repository == 'Orbitalize/dss'
+    concurrency:
+      group: dss-deploy-aws
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Job information
+        run: |
+          echo "Job information"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Host: ${{ runner.os }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          docker images
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::301042233698:role/InterUSSGithubCI
+          aws-region: us-east-1
+          mask-aws-account-id: true
+          role-duration-seconds: 1800
+
+      - name: Caller Id
+        run: |
+          aws sts get-caller-identity
+
+      - name: Test Deployment Scenario AWS-1
+        shell: bash
+        working-directory: ./deploy/operations/
+        env:
+          COMPOSE_PROFILES: aws-1
+        run: |
+          docker compose up --exit-code-from ci-aws-1

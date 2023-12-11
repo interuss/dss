@@ -33,6 +33,16 @@ variable "aws_route53_zone_id" {
   EOT
 }
 
+variable "aws_iam_permissions_boundary" {
+  type        = string
+  description = <<-EOT
+    AWS IAM Policy ARN to be used for permissions boundaries on created roles.
+
+    Example: `arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries`
+  EOT
+}
+
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
