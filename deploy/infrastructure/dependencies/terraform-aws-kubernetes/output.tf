@@ -53,7 +53,3 @@ output "gateway_address" {
 output "workload_subnet" {
   value = data.aws_subnet.main_subnet.id
 }
-
-output "iam_role_node_group_arn" {
-  value = aws_iam_role.dss-cluster-node-group.arn
-}

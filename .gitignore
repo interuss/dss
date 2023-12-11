@@ -129,6 +129,3 @@ go
 
 # vscode files
 .vscode
-
-# terraform
-.terraform*
