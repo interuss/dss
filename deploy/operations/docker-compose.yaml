@@ -4,12 +4,13 @@ services:
     image: interuss-deploy
     profiles: ["aws-1"]
     command: operations/ci/aws-1/test.sh
-    working_dir: /opt/dss
+    working_dir: /opt/dss/deploy
     environment:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
+      - AWS_REGION
     volumes:
       - type: bind
-        source: ../
+        source: ../../
         target: /opt/dss/
