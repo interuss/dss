@@ -3,3 +3,7 @@ output "generated_files_location" {
   Workspace location with generated files: ${local.workspace_location}
   EOT
 }
+
+output "workspace_location" {
+  value = local.workspace_location
+}
