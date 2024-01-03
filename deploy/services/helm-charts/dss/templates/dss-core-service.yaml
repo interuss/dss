@@ -42,7 +42,7 @@ spec:
             - --cockroach_ssl_mode=verify-full
             - --cockroach_user=root
             - --dump_requests=true
-            - --enable_scd={{$dss.enableScd | default false}}
+            - --enable_scd={{$dss.enableScd | default true}}
             - --garbage_collector_spec=@every 30m
             - --gcp_prof_service_name=
             {{- if $dss.conf.jwksEndpoint }}
