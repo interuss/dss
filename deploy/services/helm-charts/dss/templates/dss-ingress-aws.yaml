@@ -1,0 +1,37 @@
+{{- $cloudProvider := $.Values.global.cloudProvider}}
+{{- if eq $cloudProvider "aws" }}
+{{/*
+AWS application load balancer Ingress do not support elastic ip assignment yet. Therefore, the
+ingress is replaced by a network load balancer (Kubernetes Service of type Load Balancer)
+*/}}
+{{- with $.Values.loadBalancers.dssGateway }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    {{- include (printf "%s-ingress-dss-gateway-annotations" $cloudProvider)
+      (merge .
+        (dict
+          "name" "dss-gateway-external"
+          "cloudProvider" $cloudProvider
+        )
+      ) | nindent 4
+    }}
+  labels:
+    app: {{$.Release.Name}}-core-service
+    name: {{$.Release.Name}}-dss-gateway
+  name: {{$.Release.Name}}-dss-gateway
+  namespace: default
+spec:
+  {{- include (printf "%s-ingress-spec" $cloudProvider) . | nindent 2 }}
+  ports:
+    - name: http
+      port: 443
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: {{$.Release.Name}}-core-service
+  type: LoadBalancer
+{{- end }}
+{{- end }}
