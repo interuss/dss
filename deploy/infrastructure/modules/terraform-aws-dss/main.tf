@@ -6,7 +6,6 @@ module "terraform-aws-kubernetes" {
   crdb_hostname_suffix         = var.crdb_hostname_suffix
   aws_instance_type            = var.aws_instance_type
   aws_route53_zone_id          = var.aws_route53_zone_id
-  aws_iam_path                 = var.aws_iam_path
   aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
   node_count                   = var.node_count
 
