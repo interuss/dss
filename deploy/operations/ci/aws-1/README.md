@@ -1,6 +1,7 @@
 # AWS-1 CI deployment
 
-This module deploys a Kubernetes cluster to AWS.
+This module deploys a DSS to a Kubernetes cluster in AWS. It is primarily by our [CI](../../../../.github/workflows/dss-deploy.yml).
+See [test.sh](test.sh) for the complete list of actions.
 
 ## Terraform state
 
@@ -23,7 +24,7 @@ Call the kubernetes cluster using `kubectl`
 #### Add other roles
 
 Access to the cluster is managed using the config map `aws-auth`. 
-Its definition is managed by [`kubernetes_admin_access.tf`](./kubernetes_admin_access.tf).
+Its definition is managed in [`kubernetes_admin_access.tf`](./kubernetes_admin_access.tf).
 Currently only the user who bootstrapped the cluster and the ones assuming 
 the administrator role (see [`local_variables.tf`](./local_variables.tf)) have access.
 
