@@ -18,4 +18,4 @@ which can be used as input to the `Services` deployment as shown in the diagram 
 ![Infrastructure Modules](../../assets/generated/deploy_infrastructure_modules.png)
 
 ## Utils
-This [utils](utils) folder contains scripts to help manage the terraform modules and dependencies. See [utils/README.md](utils/README.md) for details.
+This [utils folder](utils) contains scripts to help manage the terraform modules and dependencies. See the README in that folder for details.
