@@ -1,7 +1,7 @@
 # Infrastructure
 
 As a phase in [DSS deployment](..), this folder contains the terraform modules required to prepare the infrastructure to host a DSS deployment.
-See [Services](../services) to deploy the DSS once the infrastructure is ready.
+See [Services](../README.md#services) to deploy the DSS once the infrastructure is ready.
 
 ## Modules
 The [modules](modules) directory contains the terraform public modules required to prepare the infrastructure on various cloud providers.

@@ -5,21 +5,30 @@
 An operational DSS requires two different services: the DSS core-service API and the Cockroach database. 
 This folder contains the tools to prepare the infrastructure in multiple cloud providers, deploy the services and operate it.
 
-The deployment tools are conceptually broken down in three main categories:
+The deployment tools are conceptually broken down in three phases:
 
-- **Infrastructure**: It is responsible to prepare infrastructure on various cloud providers to accept deployment of Services below. It includes the Kubernetes cluster creation, cluster nodes, load balancer and associated fixed IPs, etc. This stage is cloud provider specific.
+- [Infrastructure](#infrastructure)
+- [Services](#services)
+- [Operations](#operations)
+
+## [Infrastructure](./infrastructure)
+It is responsible to prepare infrastructure on various cloud providers to accept deployment of Services below. It includes the Kubernetes cluster creation, cluster nodes, load balancer and associated fixed IPs, etc. This stage is cloud provider specific.
   
-  Terraform modules are provided for:
-  - [Amazon Web Services (EKS)](infrastructure/modules/terraform-aws-dss)
-  - [Google (GKE)](infrastructure/modules/terraform-google-dss)
+Terraform modules are provided for:
+- [Amazon Web Services (EKS)](infrastructure/modules/terraform-aws-dss)
+- [Google (GKE)](infrastructure/modules/terraform-google-dss)
 
-- **Services**: It is responsible for managing Kubernetes resources and **deploying** the Services required by an operational DSS. The ambition is to be cloud provider agnostic for the Services part. Services can be deployed using those approaches:
+## [Services](./services)
+It is responsible for managing Kubernetes resources and **deploying** the Services required by an operational DSS. The ambition is to be cloud provider agnostic for the Services part. 
+
+Services can be deployed using those approaches:
   - [Helm Charts](services/helm-charts/dss)
   - [Tanka](../build/deploy)
 
-- **Operations**: It is responsible to provide diagnostic capabilities and utilities to **operate** the Services, such as certificates management may be simplified using the deployment manager CLI tools. It also contains the Infrastructure and Services configurations [used by the CI](../.github/workflows/dss-deploy.yml).
+## [Operations](./operations)
+It is responsible to provide diagnostic capabilities and utilities to **operate** the Services, such as certificates management may be simplified using the deployment manager CLI tools. It also contains the Infrastructure and Services configurations [used by the CI](../.github/workflows/dss-deploy.yml).
 
-The following diagram represents the various modules per category and their impact on the various resources.
+The following diagram represents the modules provided in this repository per phase and their impact on the various resources.
 ![Deploy Overview](../assets/generated/deploy_overview.png)
 
 ## Getting started
