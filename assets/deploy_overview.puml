@@ -1,0 +1,37 @@
+@startuml
+
+frame "Infrastructure" #lightblue {
+  package "terraform-*-dss" as TD #lightblue {
+    [terraform-*-kubernetes] as TK #lightblue
+    [terraform-common-dss] as TCD #lightblue
+  }
+}
+
+frame "Services" #lightgreen {
+  [Helm Charts] as H #lightgreen
+}
+
+frame "Operations" as O #lightyellow {
+  [Scripts] as S #lightyellow
+}
+
+cloud "Cloud Provider" as C {
+  package "Kubernetes Cluster" as K #lightblue {
+    component "Kubernetes Node" as KN #lightblue {
+      () pods as P #lightgreen
+    }
+    component "Kubernetes Node" as KN2 #lightblue {
+      () pods as P2 #lightgreen
+    }
+  }
+}
+
+TD -> K #blue: 1. Prepare the Infrastructure
+TK -> TCD: harmonized\noutputs
+TCD -right-> H: 2. Generate Services configuration
+H -down-> P #green: 3. Deploy the Services
+H -down-> P2 #green
+S -up-> P #orange
+S -> P2 #orange: 4. Operate the Services
+
+@enduml
