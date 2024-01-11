@@ -31,7 +31,7 @@ To test the DB connection through HAProxy, run [`./build/dev/check_scd_write.sh`
 
 Stop one of the cluster nodes by running:
 
-    ```docker container stop roacha```
+    ```docker rm -f roacha```
 
 DSS services should still be up and running. Test it by running read operations:
 
@@ -39,8 +39,8 @@ DSS services should still be up and running. Test it by running read operations:
 
 Run following to bring up a new node in the cluster environment:
 
-    ```docker container run -d --name roachc \
-        --hostname roachc -p 8087:8087  \
+    ```docker run -d --name roachc \
+        --hostname roachc -p 8080:8080  \
         --network dss_sandbox-default \
         cockroachdb/cockroach:v21.2.3 start --insecure --join=roacha,roachb
     ```
