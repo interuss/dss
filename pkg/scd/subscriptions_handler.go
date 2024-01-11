@@ -439,8 +439,20 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
-		return restapi.QuerySubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		switch stacktrace.GetCode(err) {
+		case dsserr.BadRequest:
+			return restapi.QuerySubscriptionsResponseSet{Response400: errResp}
+		case dsserr.PermissionDenied:
+			return restapi.QuerySubscriptionsResponseSet{Response403: errResp}
+		case dsserr.AreaTooLarge:
+			return restapi.QuerySubscriptionsResponseSet{Response413: errResp}
+		default:
+			return restapi.QuerySubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
+
+		}
 	}
 
 	return restapi.QuerySubscriptionsResponseSet{Response200: response}
