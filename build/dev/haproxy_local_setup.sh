@@ -94,12 +94,12 @@ docker run -d --rm --name roacha \
 
 echo "Starting roachb with admin port on :8088"
 docker run -d --rm --name roachb \
-	-p 8088:8088 \
+	-p 8088:8080 \
 	$FLAGS > /dev/null
 
 echo "Starting roachc with admin port on :8089"
 docker run -d --rm --name roachc \
-	-p 8089:8089 \
+	-p 8089:8080 \
 	$FLAGS > /dev/null
 
 echo "Initialize cluster setup"
