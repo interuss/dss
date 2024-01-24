@@ -82,6 +82,16 @@ Number of Kubernetes nodes which should correspond to the desired CockroachDB no
 Example: `3`
 
 
+### kubernetes_version
+
+*Type: `string`*
+
+Desired version of the Kubernetes cluster control plane and nodes.
+
+Supported versions:
+- 1.24
+
+
 ### google_kubernetes_storage_class
 
 *Type: `string`*

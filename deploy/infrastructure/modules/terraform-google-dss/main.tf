@@ -8,6 +8,7 @@ module "terraform-google-kubernetes" {
   google_dns_managed_zone_name = var.google_dns_managed_zone_name
   google_machine_type          = var.google_machine_type
   node_count                   = var.node_count
+  kubernetes_version           = var.kubernetes_version
 
   source = "../../dependencies/terraform-google-kubernetes"
 }

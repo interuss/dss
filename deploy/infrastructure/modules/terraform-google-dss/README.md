@@ -20,8 +20,9 @@ Download & install the following tools to your workstation:
 2. Check that the DSS project is correctly selected: gcloud config list project
     1. Set another one if needed using: `gcloud config set project $GOOGLE_PROJECT_NAME`
 3. Enable the following API using [Google Cloud CLI](https://cloud.google.com/endpoints/docs/openapi/enable-api#gcloud):
-    1. `container.googleapis.com`
-    2. If you want to manage DNS entries with terraform: `dns.googleapis.com`
+    1. `compute.googleapis.com`
+    2. `container.googleapis.com`
+    3. If you want to manage DNS entries with terraform: `dns.googleapis.com`
 4. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`
 5. Run `gcloud auth application-default login` to generate credentials to call Google Cloud Platform APIs.
     1. If the result of performing the authorization indicates 404 in the browser, check whether a local dummy-oauth instance is running (using port 8085).  Stop the dummy-oauth instance if it is running.

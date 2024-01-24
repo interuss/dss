@@ -36,13 +36,14 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "desired_scd_db_version",
     "crdb_locality",
     "crdb_external_nodes",
-    "kubernetes_namespace",
+    "kubernetes_namespace"
 ]
 
 # dependencies/terraform-*-kubernetes
 COMMON_KUBERNETES_VARIABLES = GLOBAL_VARIABLES + [
     "cluster_name",
     "node_count",
+    "kubernetes_version"
 ]
 
 # dependencies/terraform-google-kubernetes
