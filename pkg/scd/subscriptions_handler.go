@@ -474,6 +474,13 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
+	// Retrieve Subscription Version
+	version := scdmodels.OVN(req.Version)
+	if version == "" {
+		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing version"))}}
+	}
+
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
 		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
@@ -493,6 +500,8 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			return stacktrace.Propagate(
 				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
 				"Subscription owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
+		case old.Version != version:
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", version)
 		}
 
 		// Get dependent Operations
@@ -537,6 +546,8 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			return restapi.DeleteSubscriptionResponseSet{Response400: errResp}
 		case dsserr.NotFound:
 			return restapi.DeleteSubscriptionResponseSet{Response404: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.DeleteSubscriptionResponseSet{Response409: errResp}
 		default:
 			return restapi.DeleteSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
