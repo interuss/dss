@@ -20,6 +20,7 @@ module "terraform-aws-dss" {
   crdb_hostname_suffix         = var.crdb_hostname_suffix
   crdb_locality                = var.crdb_locality
   image                        = var.image
+  kubernetes_version           = var.kubernetes_version
   node_count                   = 3
   should_init                  = true
   enable_scd                   = true

@@ -23,7 +23,7 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
     aws_eip.ip_crdb
   ]
 
-  version = "1.24"
+  version = var.kubernetes_version
 }
 
 resource "aws_eks_node_group" "eks_node_group" {

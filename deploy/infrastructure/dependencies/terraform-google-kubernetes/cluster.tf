@@ -11,6 +11,8 @@ resource "google_container_cluster" "kubernetes_cluster" {
   ip_allocation_policy {
     # Intentionally left empty.
   }
+
+  min_master_version = var.kubernetes_version
 }
 
 resource "google_container_node_pool" "dss_pool" {

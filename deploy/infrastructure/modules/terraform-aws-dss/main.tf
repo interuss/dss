@@ -8,6 +8,7 @@ module "terraform-aws-kubernetes" {
   aws_route53_zone_id          = var.aws_route53_zone_id
   aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
   node_count                   = var.node_count
+  kubernetes_version           = var.kubernetes_version
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
