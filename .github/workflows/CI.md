@@ -12,6 +12,8 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Go lint (`make go-lint`)
 
+### Terraform lint (`make terraform-lint`)
+
 ## DSS tests (`make check-dss`)
 
 ### Deployment infrastructure tests (`make evaluate-tanka`)

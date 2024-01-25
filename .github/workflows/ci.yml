@@ -29,6 +29,8 @@ jobs:
       run: make shell-lint
     - name: Go lint
       run: make go-lint
+    - name: Terraform lint
+      run: make terraform-lint
 
   dss-tests:
     name: DSS tests
