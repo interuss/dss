@@ -11,17 +11,17 @@ resource "aws_iam_role" "dss-cluster" {
   name = "${var.cluster_name}-dss-cluster"
 
   assume_role_policy = jsonencode(
-  {
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "eks.amazonaws.com"
-        },
-        "Action" : "sts:AssumeRole"
-      }
-    ]
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Principal" : {
+            "Service" : "eks.amazonaws.com"
+          },
+          "Action" : "sts:AssumeRole"
+        }
+      ]
   })
 
   permissions_boundary = var.aws_iam_permissions_boundary
@@ -41,14 +41,14 @@ resource "aws_iam_role" "dss-cluster-node-group" {
   assume_role_policy = jsonencode({
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "ec2.amazonaws.com"
         }
       }
     ]
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
   })
 
   permissions_boundary = var.aws_iam_permissions_boundary
@@ -84,7 +84,7 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
 // Policies
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
-  name   = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
+  name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
 
   # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
   # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json

@@ -24,11 +24,13 @@ jobs:
     - name: Python lint
       run: make python-lint
     - name: Automated hygiene verification
-      run: make check-hygiene
+      run: make hygiene
     - name: Shell lint
       run: make shell-lint
     - name: Go lint
       run: make go-lint
+    - name: Terraform lint
+      run: make terraform-lint
 
   dss-tests:
     name: DSS tests

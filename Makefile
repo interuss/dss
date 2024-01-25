@@ -37,10 +37,10 @@ format:
 	gofmt -s -w .
 
 .PHONY: lint
-lint: python-lint shell-lint go-lint
+lint: python-lint shell-lint go-lint terraform-lint
 
 .PHONY: check-hygiene
-check-hygiene: python-lint hygiene shell-lint go-lint
+check-hygiene: python-lint hygiene shell-lint go-lint terraform-lint
 
 .PHONY: python-lint
 python-lint:
@@ -57,6 +57,10 @@ shell-lint:
 .PHONY: go-lint
 go-lint:
 	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v1.50.1 golangci-lint run --timeout 5m --skip-dirs /dss/build/workspace --skip-files '.*\.gen\.go' -v -E gofmt,bodyclose,rowserrcheck,misspell,golint,staticcheck,vet
+
+.PHONY: terraform-lint
+terraform-lint:
+	docker run --rm -w /opt/dss -v ./deploy:/opt/dss/deploy -e TF_LOG=TRACE hashicorp/terraform fmt -recursive -check
 
 # This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: hygiene-tests

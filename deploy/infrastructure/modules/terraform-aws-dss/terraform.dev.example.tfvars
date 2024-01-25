@@ -5,7 +5,7 @@
 aws_region = "eu-west-1"
 
 # DNS Management
-aws_route53_zone_id  = "Z01551234567890123456"
+aws_route53_zone_id = "Z01551234567890123456"
 
 # Hostnames
 app_hostname         = "dss.interuss.example.com"
