@@ -88,8 +88,8 @@ variable "kubernetes_version" {
   EOT
 
   validation {
-    condition     = var.kubernetes_version == "1.24"
-    error_message = "Only 1.24 is supported."
+    condition     = contains(["1.24", "1.25", "1.26", "1.27", "1.28"], var.kubernetes_version)
+    error_message = "Supported versions: 1.24, 1.25, 1.26, 1.27 and 1.28"
   }
 }
 

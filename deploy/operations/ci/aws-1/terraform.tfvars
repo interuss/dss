@@ -11,7 +11,7 @@ app_hostname         = "dss.ci.aws-interuss.uspace.dev"
 crdb_hostname_suffix = "db.ci.aws-interuss.uspace.dev"
 
 # Kubernetes configuration
-kubernetes_version           = 1.24
+kubernetes_version           = 1.28
 cluster_name                 = "dss-ci-aws-ue1"
 node_count                   = 3
 aws_instance_type            = "t3.medium"
