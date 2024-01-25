@@ -7,7 +7,7 @@ aws_region = "us-east-1"
 aws_route53_zone_id = "Z03377073HUSGB4L9FKEK"
 
 # Hostnames
-app_hostname = "dss.ci.aws-interuss.uspace.dev"
+app_hostname         = "dss.ci.aws-interuss.uspace.dev"
 crdb_hostname_suffix = "db.ci.aws-interuss.uspace.dev"
 
 # Kubernetes configuration
@@ -26,5 +26,5 @@ crdb_locality       = "interuss_dss-ci-aws-ue1"
 crdb_external_nodes = []
 
 aws_iam_permissions_boundary = "arn:aws:iam::301042233698:policy/GithubCIPermissionBoundaries20231130225039606500000001"
-aws_iam_administrator_role = "arn:aws:iam::301042233698:role/AWSReservedSSO_AdministratorAccess_9b637c80b830ea2c"
-aws_iam_ci_role = "arn:aws:iam::301042233698:role/InterUSSGithubCI"
+aws_iam_administrator_role   = "arn:aws:iam::301042233698:role/AWSReservedSSO_AdministratorAccess_9b637c80b830ea2c"
+aws_iam_ci_role              = "arn:aws:iam::301042233698:role/InterUSSGithubCI"

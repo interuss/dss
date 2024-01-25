@@ -56,7 +56,7 @@ variable "image_pull_secret" {
 
   Example: docker-registry
   EOT
-  default = ""
+  default     = ""
 }
 
 variable "authorization" {

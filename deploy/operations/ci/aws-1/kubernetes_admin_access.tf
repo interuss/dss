@@ -4,7 +4,7 @@
 resource "local_file" "aws-auth-config-map" {
   content = yamlencode({
     apiVersion = "v1"
-    kind = "ConfigMap"
+    kind       = "ConfigMap"
     metadata = {
       name      = "aws-auth"
       namespace = "kube-system"
@@ -12,7 +12,7 @@ resource "local_file" "aws-auth-config-map" {
     data = {
       mapRoles = yamlencode([
         {
-          groups   = [
+          groups = [
             "system:bootstrappers",
             "system:nodes"
           ]
@@ -20,14 +20,14 @@ resource "local_file" "aws-auth-config-map" {
           username = "system:node:{{EC2PrivateDNSName}}"
         },
         {
-          groups   = [
+          groups = [
             "system:masters"
           ]
           rolearn  = var.aws_iam_administrator_role
           username = "interuss-aws-administrator"
         },
         {
-          groups   = [
+          groups = [
             "system:masters"
           ]
           rolearn  = var.aws_iam_ci_role
@@ -37,5 +37,5 @@ resource "local_file" "aws-auth-config-map" {
     }
   })
 
-  filename   = "${module.terraform-aws-dss.workspace_location}/aws_auth_config_map.yml"
+  filename = "${module.terraform-aws-dss.workspace_location}/aws_auth_config_map.yml"
 }
