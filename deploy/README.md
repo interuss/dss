@@ -38,3 +38,9 @@ If you wish to deploy a DSS from scratch, "Getting Started" instructions can be 
 - [Google (GKE)](infrastructure/modules/terraform-google-dss/README.md#Getting-started)
 
 For a real use case, you can look into the configurations of the [CI job](../.github/workflows/dss-deploy.yml) in operations: [ci](operations/ci)
+
+## Development
+
+### Formatting
+
+Terraform files must be formatted using `terraform fmt -recursive` command to pass the CI linter check.
