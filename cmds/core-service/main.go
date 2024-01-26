@@ -273,8 +273,12 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		))
 
 	httpServer := &http.Server{
-		Addr:    address,
-		Handler: handler,
+		Addr:              address,
+		Handler:           handler,
+		ReadHeaderTimeout: 15 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       30 * time.Second,
 	}
 
 	signals := make(chan os.Signal, 1)
