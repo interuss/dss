@@ -1,10 +1,13 @@
 # Kubernetes version migration
 
 This page provides information on how to upgrade your Kubernetes cluster deployed using the
-tools from this repository. Please note that it is highly recommended to rehearse such
-operation on a test cluster before applying them to a production environment.
-**Note that further work is required to test and evaluate the availability of the DSS 
-during migrations.**
+tools from this repository.
+
+**Important notes:**
+
+- The migration plan below has been tested with the deployment of services using [Helm](services/helm-charts). **Deployments using [Tanka](../build/deploy) has not been evaluated yet**.
+- Further work is required to test and evaluate the availability of the DSS during migrations.
+- It is highly recommended to rehearse such operation on a test cluster before applying them to a production environment.
 
 ## Google - Google Kubernetes Engine
 
