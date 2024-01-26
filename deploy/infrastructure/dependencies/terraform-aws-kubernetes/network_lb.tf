@@ -7,6 +7,8 @@ resource "helm_release" "aws-load-balancer-controller" {
 
   namespace = "kube-system"
 
+  wait = true
+
   set {
     name  = "clusterName"
     value = var.cluster_name
