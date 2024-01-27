@@ -108,8 +108,12 @@ func main() {
 	router := dummyoauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{})
 	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&router}}
 	s := &http.Server{
-		Addr:    *address,
-		Handler: &multiRouter,
+		Addr:              *address,
+		Handler:           &multiRouter,
+		ReadHeaderTimeout: 15 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       30 * time.Second,
 	}
 	log.Fatal(s.ListenAndServe())
 }
