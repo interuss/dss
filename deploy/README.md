@@ -39,6 +39,10 @@ If you wish to deploy a DSS from scratch, "Getting Started" instructions can be 
 
 For a real use case, you can look into the configurations of the [CI job](../.github/workflows/dss-deploy.yml) in operations: [ci](operations/ci)
 
+## Migrations and upgrades
+
+Information related to migrations and upgrades can be found in [MIGRATION.md](MIGRATION.md).
+
 ## Development
 
 ### Formatting
