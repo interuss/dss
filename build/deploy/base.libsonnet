@@ -195,7 +195,7 @@ local util = import 'util.libsonnet';
         metadata+: {
           labels: job.metadata.labels,
           annotations+: {
-            'sidecar.istio.io/inject': 'false'
+            'sidecar.istio.io/inject': 'false' # Kept for backward compatibility -- removing it breaks tanka diff since the field is expected to be immutable.
           },
         },
         spec: $.PodSpec(metadata) {

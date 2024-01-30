@@ -4,15 +4,6 @@ local crdbRuntimeDash = import 'grafana_dashboards/crdb-runtime-grafana.json';
 local crdbSqlDash = import 'grafana_dashboards/crdb-sql-grafana.json';
 local crdbStorageDash = import 'grafana_dashboards/crdb-storage-grafana.json';
 local promOverview = import 'grafana_dashboards/prometheus-overview.json';
-local istioCitadel = import 'grafana_dashboards/istio/citadel.json';
-local istioGalley = import 'grafana_dashboards/istio/galley.json';
-local istioMesh = import 'grafana_dashboards/istio/mesh.json';
-local istioMixer = import 'grafana_dashboards/istio/mixer.json';
-local istioOverview = import 'grafana_dashboards/istio/overview.json';
-local istioPerformance = import 'grafana_dashboards/istio/performance.json';
-local istioPilot = import 'grafana_dashboards/istio/pilot.json';
-local istioService = import 'grafana_dashboards/istio/service.json';
-local istioWorkload = import 'grafana_dashboards/istio/workload.json';
 local kubeOverview = import 'grafana_dashboards/kubernetes-overview.json';
 local util = import 'util.libsonnet';
 {
@@ -46,53 +37,6 @@ local util = import 'util.libsonnet';
       grafKubeOverview: base.ConfigMap(metadata, 'grafana-kube-overview') {
         data: {
           'kubernetes-overview.json': std.toString(kubeOverview),
-        },
-      },
-      istioDashboards: if metadata.enable_istio then {
-        overview: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-overview-dashboard') {
-          data: {
-            'istio-overview.json': std.toString(istioOverview),
-          },
-        },
-        pilot: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-pilot-dashboard') {
-          data: {
-            'pilot-dashboard.json': std.toString(istioPilot),
-          },
-        },
-        mixer: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-mixer-dashboard') {
-          data: {
-            'mixer-dashboard.json': std.toString(istioMixer),
-          },
-        },
-        workload: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-workload-dashboard') {
-          data: {
-            'workload-dashboard.json': std.toString(istioWorkload),
-          },
-        },
-        service: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-service-dashboard') {
-          data: {
-            'service-dashboard.json': std.toString(istioService),
-          },
-        },
-        performance: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-performance-dashboard') {
-          data: {
-            'performance-dashboard.json': std.toString(istioPerformance),
-          },
-        },
-        citadel: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-citadel-dashboard') {
-          data: {
-            'citadel-dashboard.json': std.toString(istioCitadel),
-          },
-        },
-        mesh: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-mesh-dashboard') {
-          data: {
-            'mesh-dashboard.json': std.toString(istioMesh),
-          },
-        },
-        galley: base.ConfigMap(metadata, 'istio-grafana-configuration-dashboards-galley-dashboard') {
-          data: {
-            'galley-dashboard.json': std.toString(istioGalley),
-          },
         },
       },
     },
@@ -139,71 +83,7 @@ local util = import 'util.libsonnet';
           name: 'grafana-kube-overview',
         },
       },
-    } + if metadata.enable_istio then {
-      grafIstioCitadel: {
-        name: 'istio-grafana-configuration-dashboards-citadel-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-citadel-dashboard',
-        },
-      },
-      grafIstioGalley: {
-        name: 'istio-grafana-configuration-dashboards-galley-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-galley-dashboard',
-        },
-      },
-      grafIstioMesh: {
-        name: 'istio-grafana-configuration-dashboards-mesh-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-mesh-dashboard',
-        },
-      },
-      grafIstioMixer: {
-        name: 'istio-grafana-configuration-dashboards-mixer-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-mixer-dashboard',
-        },
-      },
-      grafIstioOverview: {
-        name: 'istio-grafana-configuration-dashboards-overview-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-overview-dashboard',
-        },
-      },
-      grafIstioPerformance: {
-        name: 'istio-grafana-configuration-dashboards-performance-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-performance-dashboard',
-        },
-      },
-      grafIstioPilot: {
-        name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
-        },
-      },
-      grafIstioService: {
-        name: 'istio-grafana-configuration-dashboards-service-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-service-dashboard',
-        },
-      },
-      grafIstioWorkload: {
-        name: 'istio-grafana-configuration-dashboards-workload-dashboard',
-        configMap: {
-          defaultMode: 420,
-          name: 'istio-grafana-configuration-dashboards-workload-dashboard',
-        },
-      },
-    } else {},
+    },
     volumes: util.mapToList(self.volumeConfigs),
     mountConfigs: {
       grafCrdbReplica: {
@@ -236,53 +116,7 @@ local util = import 'util.libsonnet';
         readOnly: false,
         mountPath: '/var/lib/grafana/dashboards/grafana-kube-overview',
       },
-    } + if metadata.enable_istio then {
-      grafIstioCitadel: {
-        name: 'istio-grafana-configuration-dashboards-citadel-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-citadel-dashboard',
-      },
-      grafIstioGalley: {
-        name: 'istio-grafana-configuration-dashboards-galley-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-galley-dashboard',
-      },
-      grafIstioMesh: {
-        name: 'istio-grafana-configuration-dashboards-mesh-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-mesh-dashboard',
-      },
-      grafIstioMixer: {
-        name: 'istio-grafana-configuration-dashboards-mixer-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-mixer-dashboard',
-      },
-      grafIstioOverview: {
-        name: 'istio-grafana-configuration-dashboards-overview-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-overview-dashboard',
-      },
-      grafIstioPerformance: {
-        name: 'istio-grafana-configuration-dashboards-performance-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-performance-dashboard',
-      },
-      grafIstioPilot: {
-        name: 'istio-grafana-configuration-dashboards-pilot-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-pilot-dashboard',
-      },
-      grafIstioService: {
-        name: 'istio-grafana-configuration-dashboards-service-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-service-dashboard',
-      },
-      grafIstioWorkload: {
-        name: 'istio-grafana-configuration-dashboards-workload-dashboard',
-        readOnly: false,
-        mountPath: '/var/lib/grafana/dashboards/istio-workload-dashboard',
-      },
-    } else {}, 
+    },
     mount: util.mapToList(self.mountConfigs),
   },
 }

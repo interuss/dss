@@ -1,6 +1,5 @@
 local base = import 'base.libsonnet';
 local k8sEndpoints = import 'prometheus_configs/k8s-endpoints.libsonnet';
-local istioScrape = import 'prometheus_configs/istio.libsonnet';
 local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
 
 
@@ -18,7 +17,7 @@ local PrometheusConfig(metadata) = {
     'aggregation.rules.yml',
     'custom.rules.yml',
   ],
-  scrape_configs: k8sEndpoints.scrape_configs + istioScrape.scrape_configs,
+  scrape_configs: k8sEndpoints.scrape_configs,
 };
 
 local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {

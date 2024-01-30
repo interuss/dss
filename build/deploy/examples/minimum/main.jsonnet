@@ -7,7 +7,6 @@ local metadataBase = import '../../../deploy/metadata_base.libsonnet';
 local metadata = metadataBase {
   namespace: 'VAR_NAMESPACE',
   clusterName: 'VAR_CLUSTER_CONTEXT',
-  enable_istio: false,
   single_cluster: false,
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   cockroach+: {
