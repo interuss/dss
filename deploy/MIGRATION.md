@@ -5,7 +5,7 @@ tools from this repository.
 
 **Important notes:**
 
-- The migration plan below has been tested with the deployment of services using [Helm](services/helm-charts). **Deployments using [Tanka](../build/deploy) has not been evaluated yet**.
+- The migration plan below has been tested with the deployment of services using [Helm](services/helm-charts) and [Tanka](../build/deploy) without Istio enabled. Note that this configuration flag has been decommissioned since [#995](https://github.com/interuss/dss/pull/995).
 - Further work is required to test and evaluate the availability of the DSS during migrations.
 - It is highly recommended to rehearse such operation on a test cluster before applying them to a production environment.
 
