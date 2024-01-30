@@ -37,7 +37,8 @@ kubectl apply -f "aws_auth_config_map.yml"
 cd "$BASEDIR/../../../services/helm-charts/dss"
 RELEASE_NAME="dss"
 helm dep update --kube-context="$KUBE_CONTEXT"
-helm upgrade --install --kube-context="$KUBE_CONTEXT" -f "${WORKSPACE_LOCATION}/helm_values.yml" "$RELEASE_NAME" .
+helm upgrade --install --debug --kube-context="$KUBE_CONTEXT" -f "${WORKSPACE_LOCATION}/helm_values.yml" "$RELEASE_NAME" .
+kubectl wait --for=condition=complete --timeout=3m job/rid-schema-manager-1
 
 # TODO: Test the deployment of the DSS
 
@@ -48,11 +49,12 @@ fi
 
 # Cleanup
 # Delete workloads
-helm uninstall --kube-context="$KUBE_CONTEXT" "$RELEASE_NAME"
+helm uninstall --debug --kube-context="$KUBE_CONTEXT" --wait --timeout 5m "$RELEASE_NAME"
 
-# Delete PVC to delete persistant volumes
-kubectl delete pvc --all=true
-# TODO: Check completness
+# Delete PVC to delete persistent volumes
+kubectl delete pvc --wait --all=true
+kubectl delete pv --wait --all=true
+# TODO: Check completeness
 
 # Delete cluster
 cd "$BASEDIR"
