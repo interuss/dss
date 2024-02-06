@@ -2,7 +2,6 @@
   cloud_provider: 'google', // Either google or aws
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
-  enable_istio: false,
   release: 'config',
   environment: 'dev',
   // Set this field if you don't intend to ever join this instance with others.
