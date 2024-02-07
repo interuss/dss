@@ -3,7 +3,7 @@ module github.com/interuss/dss
 go 1.17
 
 require (
-	cloud.google.com/go/profiler v0.2.0
+	cloud.google.com/go/profiler v0.4.0
 	github.com/cockroachdb/cockroach-go/v2 v2.2.8
 	github.com/coreos/go-semver v0.3.0
 	github.com/golang-jwt/jwt v3.2.1+incompatible
