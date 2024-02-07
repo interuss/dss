@@ -29,6 +29,10 @@ output "ip_gateway" {
   value = google_compute_global_address.ip_gateway.name
 }
 
+output "ssl_policy" {
+  value = google_compute_ssl_policy.secure.name
+}
+
 output "crdb_nodes" {
   value = [
     for i in google_compute_address.ip_crdb : {

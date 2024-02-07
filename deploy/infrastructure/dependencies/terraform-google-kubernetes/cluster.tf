@@ -13,6 +13,7 @@ resource "google_container_cluster" "kubernetes_cluster" {
   }
 
   min_master_version = var.kubernetes_version
+
 }
 
 resource "google_container_node_pool" "dss_pool" {
@@ -57,4 +58,10 @@ resource "google_compute_address" "ip_crdb" {
 
 locals {
   kubectl_cluster_context_name = format("gke_%s_%s_%s", google_container_cluster.kubernetes_cluster.project, google_container_cluster.kubernetes_cluster.location, google_container_cluster.kubernetes_cluster.name)
+}
+
+resource "google_compute_ssl_policy" "secure" {
+  name            = format("%s-secure-ssl-policy", var.cluster_name)
+  profile         = "RESTRICTED"
+  min_tls_version = "TLS_1_2"
 }
