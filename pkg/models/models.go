@@ -63,11 +63,28 @@ func (manager Manager) String() string {
 	return string(manager)
 }
 
+// IDFromString converts a string to an ID, typically provided by an API client.
+// The OpenAPI spec for the SCD endpoints defines precisely the regex that UUIDs must conform to:
+//
+//	^[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-4[0-9a-fA-F]{3}\\-[8-b][0-9a-fA-F]{3}\\-[0-9a-fA-F]{12}$
+//
+// This is the strictest possible interpretation for a "V4 UUID RFC 4122 Variant" (See RFC 4122, section-4.4) and means we must refuse
+// even UUIDs that have the correct format but are not technically V4 UUID as described RFC 4122 variant (notably the fixed bits)
+//
+// RFC 4122 is the only RFC that describes a "version 4" UUID: the format requirement using the above regex is
+// thus also extended to the RID v1 and v2 endpoints, which explicitly mandate that the UUIDs to be used are the V4 one.
+//
+// See https://github.com/astm-utm/Protocol/blob/cb7cf962d3a0c01b5ab12502f5f54789624977bf/utm.yaml#L128 for more details
 func IDFromString(s string) (ID, error) {
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return ID(""), stacktrace.Propagate(err, "Error parsing ID in UUID format")
+		return ID(""), stacktrace.Propagate(err, "Error parsing ID in UUID V4 format: `%s`", s)
 	}
+
+	if id.Variant() != uuid.RFC4122 || id.Version() != 4 {
+		return ID(""), stacktrace.NewError("UUID must be V4 as per RFC4122, was: `%v`, id `%s`", id.Variant(), s)
+	}
+
 	return ID(id.String()), nil
 }
 
