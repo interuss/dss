@@ -29,6 +29,10 @@ resource "google_container_node_pool" "dss_pool" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+
+    metadata = {
+      "disable-legacy-endpoints" = true
+    }
   }
 
   lifecycle {
