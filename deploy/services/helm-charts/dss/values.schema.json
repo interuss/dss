@@ -117,6 +117,10 @@
             "certName": {
               "description": "Optional: ARN of the certificate for AWS only",
               "type": "string"
+            },
+            "sslPolicy": {
+              "description": "Optional: SSL Policy name for Google only",
+              "type": "string"
             }
           },
           "required": [

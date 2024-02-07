@@ -28,6 +28,7 @@ metadata:
       (dict
         "certName" (printf "%s-core-service-https-certificate" $.Release.Name)
         "ip" .ip
+        "sslPolicy" "ssl-frontend-config"
       ) | nindent 4
     }}
   labels:
@@ -55,6 +56,12 @@ metadata:
 spec:
   domains:
     - {{$dssHostname}}
-
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: ssl-frontend-config
+spec:
+  sslPolicy: {{.sslPolicy}}
 {{- end }}
 {{- end }}

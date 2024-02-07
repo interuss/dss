@@ -9,6 +9,7 @@ loadBalancerIP: {{.ip}}
 kubernetes.io/ingress.allow-http: "false"
 kubernetes.io/ingress.global-static-ip-name: {{.ip}}
 networking.gke.io/managed-certificates: {{.certName}}
+networking.gke.io/v1beta1.FrontendConfig: {{.sslPolicy}}
 {{- end -}}
 
 {{- define "google-ingress-spec" -}}
