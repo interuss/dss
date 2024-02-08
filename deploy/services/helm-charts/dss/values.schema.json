@@ -119,7 +119,7 @@
               "type": "string"
             },
             "sslPolicy": {
-              "description": "Optional: SSL Policy name for Google only",
+              "description": "For Google only: If provided, this SSL Policy is applied to the DSS Gateway Ingress",
               "type": "string"
             }
           },
