@@ -459,11 +459,7 @@ to select a dashboard to view.
 
 ### Istio
 
-Istio provides better observability by using a sidecar proxy on every binary
-that exports some default metrics, as well as enabling Istio tracing. Istio
-also provides mTLS between all binaries. Enabling Istio is completely optional.
-To enable Istio, simply set the `enable_istio` field in your metadata tuple to
-`true`, then run `tk apply ...` as you would normally.
+Istio has been removed from the standard deployment. See this [discussion](https://lists.interussplatform.org/g/dss/message/47) for more details.
 
 ### Prometheus Federation (Multi Cluster Monitoring)
 
