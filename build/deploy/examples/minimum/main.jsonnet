@@ -25,6 +25,7 @@ local metadata = metadataBase {
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
     hostname: 'VAR_APP_HOSTNAME',
     dumpRequests: true,
+    sslPolicy: 'VAR_SSL_POLICY'
   },
   schema_manager+: {
     image: 'VAR_DOCKER_IMAGE_NAME',

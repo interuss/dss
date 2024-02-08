@@ -258,5 +258,14 @@ local util = import 'util.libsonnet';
           'service.beta.kubernetes.io/aws-load-balancer-ssl-cert': certARN,
       },
     },
+  },
+
+  GoogleFrontendConfig(metadata, name, sslPolicy): $._Object('networking.gke.io/v1beta1', 'FrontendConfig', metadata, name) {
+    metadata+: {
+      name: name
+    },
+    spec+: {
+      sslPolicy: sslPolicy
+    }
   }
 }
