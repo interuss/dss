@@ -28,6 +28,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CLOUD_PROVIDER           = var.kubernetes_cloud_provider_name
     VAR_CERT_NAME                = var.gateway_cert_name
     VAR_SUBNET                   = var.workload_subnet
+    VAR_SSL_POLICY               = var.ssl_policy
   })
   filename = "${local.workspace_location}/main.jsonnet"
 }

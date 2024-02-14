@@ -380,6 +380,12 @@ a PR to that effect would be greatly appreciated.
 
     -   If you are only turning up a single DSS instance for development, you
         may optionally change `single_cluster` to `true`.
+    
+    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts) 
+        can be applied to the DSS Ingress. This can be used to secure the TLS connection.
+        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and 
+        replace VAR_SSL_POLICY variable with its name. `RESTRICTED` profile is recommended.
+        Leave it empty if not applicable.
 
 1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:

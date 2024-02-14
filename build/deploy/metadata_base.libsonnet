@@ -34,6 +34,7 @@
     hostname: error 'must specify hostname',
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
+    sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
   },
   alert: {
     enable: false,

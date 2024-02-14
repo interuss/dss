@@ -19,6 +19,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
       annotations: {
         'kubernetes.io/ingress.global-static-ip-name': metadata.backend.ipName,
         'kubernetes.io/ingress.allow-http': 'false',
+        [if metadata.backend.sslPolicy != '' then 'networking.gke.io/v1beta1.FrontendConfig']: 'ssl-frontend-config',
       },
     },
     spec: {
@@ -32,6 +33,8 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
       },
     },
   },
+
+  GoogleSSLPolicyFrontendConfig(metadata): base.GoogleFrontendConfig(metadata, 'ssl-frontend-config', metadata.backend.sslPolicy),
 
   GoogleManagedCertIngress(metadata): {
     ingress: $.GoogleIngress(metadata) {
@@ -68,6 +71,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
   CloudNetwork(metadata): {
     google: if metadata.cloud_provider == "google" then {
       ingress: $.GoogleManagedCertIngress(metadata),
+      [if metadata.backend.sslPolicy != '' then 'frontendConfig']: $.GoogleSSLPolicyFrontendConfig(metadata),
       service: $.GoogleService(metadata),
     },
     aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata)
