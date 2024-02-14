@@ -117,6 +117,10 @@
             "certName": {
               "description": "Optional: ARN of the certificate for AWS only",
               "type": "string"
+            },
+            "sslPolicy": {
+              "description": "For Google only: If provided, this SSL Policy is applied to the DSS Gateway Ingress",
+              "type": "string"
             }
           },
           "required": [

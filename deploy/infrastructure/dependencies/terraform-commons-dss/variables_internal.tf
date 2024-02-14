@@ -56,3 +56,9 @@ variable "workload_subnet" {
   description = "Only required for AWS cloud provider. Subnet where the kubernetes worker nodes is deployed. For AWS, provide the name or the id of the workload_subnet"
   default     = ""
 }
+
+variable "ssl_policy" {
+  type        = string
+  description = "Only required for Google cloud provider. Name of the SSL policy created for the DSS Gateway Ingress."
+  default     = ""
+}
