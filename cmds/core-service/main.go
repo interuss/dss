@@ -309,6 +309,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	if err != nil {
 		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
 	}
+	
 	err = readyFile.Close()
 	if err != nil {
         return stacktrace.Propagate(err, "Error closing touched file to indicate service ready")
