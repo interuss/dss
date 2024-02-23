@@ -2,7 +2,7 @@ package repos
 
 import (
 	"context"
-
+	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
@@ -51,6 +51,9 @@ type Subscription interface {
 	// specified Subscription and returns the resulting corresponding
 	// notification indices.
 	IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error)
+
+	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells.
+	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error
 }
 
 type UssAvailability interface {

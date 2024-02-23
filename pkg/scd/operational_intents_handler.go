@@ -430,6 +430,13 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		var version int32 // Version of the Operational Intent (0 means creation requested).
 
+		// Lock subscriptions based on the cell to reduce the number of retries under concurrent load.
+		// See issue #1002 for details.
+		err = r.LockSubscriptionsOnCells(ctx, cells)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to acquire lock")
+		}
+
 		// Get existing OperationalIntent, if any, and validate request
 		old, err := r.GetOperationalIntent(ctx, id)
 		if err != nil {

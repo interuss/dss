@@ -382,3 +382,34 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 
 	return indices, nil
 }
+
+func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
+	cids := make([]int64, len(cells))
+
+	for i, cell := range cells {
+		cids[i] = int64(cell)
+	}
+
+	var pgCids pgtype.Int8Array
+	err := pgCids.Set(cids)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+
+	const query = `
+		SELECT
+			id
+		FROM
+			scd_subscriptions
+		WHERE
+			cells && $1
+		FOR UPDATE
+	`
+
+	_, err = c.q.Exec(ctx, query, pgCids)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error in query: %s", query)
+	}
+
+	return nil
+}
