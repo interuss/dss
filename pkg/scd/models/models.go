@@ -7,12 +7,19 @@ import (
 	"strings"
 	"time"
 
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/stacktrace"
 )
 
 const (
 	// Value for OVN that should be returned for entities not owned by the client
 	NoOvnPhrase = "Available from USS"
+
+	// NullV4UUID is a valid V4 UUID to be used as a placeholder where no UUID is available
+	// but one needs to be specified, as in certain API return values.
+	// Note that this UUID is not meant to be persisted to the database: it should only be used
+	// to populate required API fields for which a proper value does not exist.
+	NullV4UUID = restapi.SubscriptionID("00000000-0000-4000-8000-000000000000")
 )
 
 type (

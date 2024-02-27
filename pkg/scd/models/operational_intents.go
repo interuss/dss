@@ -22,6 +22,12 @@ const (
 // OperationState models the state of an operation.
 type OperationalIntentState string
 
+// RequiresSubscription indicates whether transitioning an OperationalIntent
+// to this state requires a subscription.
+func (s OperationalIntentState) RequiresSubscription() bool {
+	return s != OperationalIntentStateAccepted
+}
+
 // RequiresKey indicates whether transitioning an OperationalIntent to this
 // OperationalIntentState requires a valid key.
 func (s OperationalIntentState) RequiresKey() bool {
@@ -62,7 +68,7 @@ type OperationalIntent struct {
 	StartTime       *time.Time
 	EndTime         *time.Time
 	USSBaseURL      string
-	SubscriptionID  dssmodels.ID
+	SubscriptionID  *dssmodels.ID
 	AltitudeLower   *float32
 	AltitudeUpper   *float32
 	Cells           s2.CellUnion
@@ -79,13 +85,17 @@ func (s OperationalIntentState) ToRest() restapi.OperationalIntentState {
 // ToRest converts the OperationalIntent to its SCD v1 REST model API format
 func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 	ovn := restapi.EntityOVN(o.OVN.String())
+	subID := NullV4UUID
+	if o.SubscriptionID != nil {
+		subID = restapi.SubscriptionID(o.SubscriptionID.String())
+	}
 	result := &restapi.OperationalIntentReference{
 		Id:              restapi.EntityID(o.ID.String()),
 		Ovn:             &ovn,
 		Manager:         o.Manager.String(),
 		Version:         int32(o.Version),
 		UssBaseUrl:      restapi.OperationalIntentUssBaseURL(o.USSBaseURL),
-		SubscriptionId:  restapi.SubscriptionID(o.SubscriptionID.String()),
+		SubscriptionId:  subID,
 		State:           o.State.ToRest(),
 		UssAvailability: o.UssAvailability.ToRest(),
 	}

@@ -38,8 +38,13 @@ const (
 	MaxResultLimit = 10000
 )
 
+// PgUUID converts an ID to a pgtype.UUID.
+// If the ID this is called on is nil, nil will be returned
 func (id *ID) PgUUID() (*pgtype.UUID, error) {
 	var pgUUID pgtype.UUID
+	if id == nil {
+		return nil, nil
+	}
 	err := pgUUID.Set(id.String())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error converting ID to PgUUID format")
