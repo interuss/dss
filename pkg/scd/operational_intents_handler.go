@@ -559,7 +559,8 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 			}
 			for _, relevantOp := range relevantOps {
 				_, ok := key[relevantOp.OVN]
-				if !ok && relevantOp.RequiresKey() {
+				// Note: The OIR being mutated does not need to be specified in the key:
+				if !ok && relevantOp.RequiresKey() && relevantOp.ID != id {
 					if relevantOp.Manager != dssmodels.Manager(manager) {
 						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
