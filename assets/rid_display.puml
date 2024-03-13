@@ -8,31 +8,64 @@ participant "Discovery and\nSynchronization Service" as DSS
 participant "Service Provider\n(USS 1)" as SP1
 participant "Service Provider\n(USS 2)" as SP2
 User -> DA : View flights\nin lat,lng box
+
 DA -> DP : Poll flights in lat,lng box
+activate DP
 DP -> DSS : PUT /dss/subscriptions
-DSS -> DP : Existing Identification\nService Areas for\nUSS 1 and USS 2
+activate DSS
+DSS -->> DP : Existing Identification\nService Areas for\nUSS 1 and USS 2
+deactivate DSS
+
 DP -> SP1 : t1 Poll /uss/flights for lat,lng box
+activate SP1
 DP -> SP2 : t1 Poll /uss/flights for lat,lng box
-SP1 -> DP : t1 Flights and recent positions for each
-SP2 -> DP : t1 Flights and recent positions for each
+activate SP2
+SP1 -->> DP : t1 Flights and recent positions for each
+deactivate SP1
+SP2 -->> DP : t1 Flights and recent positions for each
+deactivate SP2
+
 DP -> SP1 : t2 Poll /uss/flights for lat,lng box
+activate SP1
 DP -> SP2 : t2 Poll /uss/flights for lat,lng box
-DP -> DA : t1 Current flight telemetry
+activate SP2 
+DP -->> DA : t1 Current flight telemetry
+deactivate DP
+
 DA -> User : Update display
-SP1 -> DP : t2 Flights and recent positions for each
-SP2 -> DP : t2 Flights and recent positions for each
-DA -> DA : Delay to 1s
+
+SP1 -->> DP : t2 Flights and recent positions for each
+deactivate SP1
+SP2 -->> DP : t2 Flights and recent positions for each
+deactivate SP2
+
+DA -> DA : Delay 1s
+
 DA -> DP : Poll flights in lat,lng box
+activate DP
 DP -> SP1 : t3 Poll /uss/flights for lat,lng box
+activate SP1
 DP -> SP2 : t3 Poll /uss/flights for lat,lng box
+activate SP2
 DP -> DA : t2 Current flight telemetry
+deactivate DP
+
 DA -> User : Update display
+
 SP1 -> DP : t3 Flights and recent positions for each
+deactivate SP1
 SP2 -> DP : t3 Flights and recent positions for each
-DA -> DA : Delay to 1s
+deactivate SP2
+
+DA -> DA : Delay 1s
 DA -> DP : Poll flights in lat,lng box
+activate DP
 DP -> SP1 : t4 Poll /uss/flights for lat,lng box
+activate SP1
 DP -> SP2 : t4 Poll /uss/flights for lat,lng box
+activate SP2
 DP -> DA : t3 Current flight telemetry
+deactivate DP
+
 DA -> User : Update display
 @enduml
