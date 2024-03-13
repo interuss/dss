@@ -23,7 +23,7 @@ In the example sequence diagram below, an Entity consumer (such as a Remote ID D
 A DSS Region consists of one or more synchronized DSS instances.  From a client perspective, interacting with any DSS instance within the DSS Region is equivalent to interacting with any other DSS instance within the DSS Region.  For instance, an Entity may be written to one DSS instance and then read from a different DSS instance because all DSS instances in a DSS Region share a common DSS Airspace Representation (DAR).  The implementation of the DAR is a single distributed CockroachDB cluster per DSS Region.  The expectation is that multiple separate organizations will each host a DSS instance in the same DSS Region, and each DSS instance will be accompanied with some number of CockroachDB nodes which join into the same cluster.  With a relatively small number of DSS instances, each organization will host a full replica of the CockroachDB database in its nodes.  And in any case, the CockroachDB database will transparently survive the total loss of one or more organizations' DSS instances and CockroachDB nodes as long as there are a sufficient number of DSS instances in the DSS Region.
 
 ### Behavioral details
-The DSS does not store details of Entities, and specifically it does not store their precise 4D volumes.  Instead, each Entity is mapped into the DSS Airspace Representation (DAR), which happens to be S2 cells at a fixed zoom level currently, and then the precise extents are discarded as required by requirement DSS0040.  This means that true intersection tests between Entities cannot be performed.  If two Entities intersect, they are guaranteed to share at least one common DAR cell.  But, two Entities sharing a DAR cell do not necessarily intersect.  Because the DSS returns all relevant Entities in relevant DAR cells, some Entities that are nearby the area of interest may be returned even though those Entities are, in fact, entirely disjoint from the area of interest.
+The DSS does not store details of Entities, and specifically it does not store their precise 4D volumes.  Instead, each Entity is mapped into the DAR, which happens to be [S2](http://s2geometry.io/) cells at a fixed zoom level [currently](./pkg/geo/s2.go), and then the precise extents are discarded as required by requirement DSS0040.  This means that true intersection tests between Entities cannot be performed.  If two Entities intersect, they are guaranteed to share at least one common DAR cell.  But, two Entities sharing a DAR cell do not necessarily intersect.  Because the DSS returns all relevant Entities in relevant DAR cells, some Entities that are nearby the area of interest may be returned even though those Entities are, in fact, entirely disjoint from the area of interest.
 
 ## Remote ID
 
@@ -40,6 +40,20 @@ End users of remote ID (members of the general public) access remote ID through 
 
 ![Remote ID telemetry consumption sequence diagram](assets/generated/rid_display.png)
 
-## Strategic deconfliction
-<!-- TODO: Needs update -->
-Although it is envisioned that the DSS will also coordinate strategic deconfliction during flight planning, this functionality is not currently supported in this implementation of a DSS.  In the future, strategic deconfliction will likely be supported through the use of new types of Entities representing flight operations and non-operation constraints, as well as a synchronization system that ensures anyone planning a new flight operation was aware of all relevant information while planning.
+## USS Interoperability
+
+### Overview
+ASTM Standard [F3548-21](https://www.astm.org/f3548-21.html), "Standard Specification for UAS Traffic Management (UTM) UAS Service Supplier (USS) Interoperability," defines interactions between USSs to support various services requiring interoperability between those USSs. The DSS is a key facilitiator in these interactions.
+
+### Services
+The standard defines multiple services:
+
+* Strategic Conflict Detection (SCD)
+* Constraint Management
+* Constraint Processing
+* Conformance Monitoring for Situational Awareness (CMSA)
+* Aggregate Operational Intent Conformance Monitoring (ACM)
+
+Each of these other than ACM require coordination between USSs and this is facilitated by the DSS similarly to the support provided to RemoteID described above.
+
+The endpoints for the USSs to use DSS are well-defined and involve managing subscriptions and entities within DSS.
