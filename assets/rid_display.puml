@@ -47,14 +47,14 @@ DP -> SP1 : t3 Poll /uss/flights for lat,lng box
 activate SP1
 DP -> SP2 : t3 Poll /uss/flights for lat,lng box
 activate SP2
-DP -> DA : t2 Current flight telemetry
+DP -->> DA : t2 Current flight telemetry
 deactivate DP
 
 DA -> User : Update display
 
-SP1 -> DP : t3 Flights and recent positions for each
+SP1 -->> DP : t3 Flights and recent positions for each
 deactivate SP1
-SP2 -> DP : t3 Flights and recent positions for each
+SP2 -->> DP : t3 Flights and recent positions for each
 deactivate SP2
 
 DA -> DA : Delay 1s
@@ -64,7 +64,7 @@ DP -> SP1 : t4 Poll /uss/flights for lat,lng box
 activate SP1
 DP -> SP2 : t4 Poll /uss/flights for lat,lng box
 activate SP2
-DP -> DA : t3 Current flight telemetry
+DP -->> DA : t3 Current flight telemetry
 deactivate DP
 
 DA -> User : Update display
