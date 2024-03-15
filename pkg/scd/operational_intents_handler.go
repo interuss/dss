@@ -55,26 +55,29 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
-		// Get the Subscription supporting the OperationalIntent
-		sub, err := r.GetSubscription(ctx, old.SubscriptionID)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
-		}
-		if sub == nil {
-			return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
-		}
-
+		// Get the Subscription supporting the OperationalIntent, if one is defined
+		var sub *scdmodels.Subscription
 		removeImplicitSubscription := false
-		if sub.ImplicitSubscription {
-			// Get the Subscription's dependent OperationalIntents
-			dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
+		if old.SubscriptionID != nil {
+			sub, err = r.GetSubscription(ctx, *old.SubscriptionID)
 			if err != nil {
-				return stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
+				return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
 			}
-			if len(dependentOps) == 0 {
-				return stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-			} else if len(dependentOps) == 1 {
-				removeImplicitSubscription = true
+			if sub == nil {
+				return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
+			}
+
+			if sub.ImplicitSubscription {
+				// Get the Subscription's dependent OperationalIntents
+				dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
+				if err != nil {
+					return stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
+				}
+				if len(dependentOps) == 0 {
+					return stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
+				} else if len(dependentOps) == 1 {
+					removeImplicitSubscription = true
+				}
 			}
 		}
 
@@ -111,6 +114,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
 		}
 
+		// removeImplicitSubscription is only true if the OIR had a subscription defined
 		if removeImplicitSubscription {
 			// Automatically remove a now-unused implicit Subscription
 			err = r.DeleteSubscription(ctx, sub.ID)
@@ -291,7 +295,7 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 
 	respOK, respConflict, err := a.PutOperationalIntentReference(ctx, *req.Auth.ClientID, req.Entityid, "", req.Body)
 	if err != nil {
-		err = stacktrace.Propagate(err, "Could not put subscription")
+		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
@@ -425,6 +429,15 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 		}
 	}
 
+	// Check if a subscription is required for this request:
+	// OIRs in an accepted state do not need a subscription.
+	if state.RequiresSubscription() &&
+		subscriptionID.Empty() &&
+		(params.NewSubscription == nil ||
+			params.NewSubscription.UssBaseUrl == "") {
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Provided Operational Intent Reference state `%s` requires either a subscription ID or information to create an implicit subscription", state)
+	}
+
 	var responseOK *restapi.ChangeOperationalIntentReferenceResponse
 	var responseConflict *restapi.AirspaceConflictResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
@@ -463,36 +476,38 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 
 		var sub *scdmodels.Subscription
 		if subscriptionID.Empty() {
-			// Create implicit Subscription
-			if params.NewSubscription == nil || params.NewSubscription.UssBaseUrl == "" {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing new_subscription or uss_base_url in new_subscription")
-			}
-			if !a.EnableHTTP {
-				err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
-				if err != nil {
-					return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
+			// Create an implicit subscription if the implicit subscription params are set:
+			// for situations where these params are required but have not been set,
+			// an error will have been returned earlier.
+			// If they are not set at this point, continue without creating an implicit subscription.
+			if params.NewSubscription != nil && params.NewSubscription.UssBaseUrl != "" {
+				if !a.EnableHTTP {
+					err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
+					if err != nil {
+						return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
+					}
 				}
-			}
 
-			subToUpsert := scdmodels.Subscription{
-				ID:                          dssmodels.ID(uuid.New().String()),
-				Manager:                     dssmodels.Manager(manager),
-				StartTime:                   uExtent.StartTime,
-				EndTime:                     uExtent.EndTime,
-				AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
-				AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
-				Cells:                       cells,
-				USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
-				NotifyForOperationalIntents: true,
-				ImplicitSubscription:        true,
-			}
-			if params.NewSubscription.NotifyForConstraints != nil {
-				subToUpsert.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
-			}
+				subToUpsert := scdmodels.Subscription{
+					ID:                          dssmodels.ID(uuid.New().String()),
+					Manager:                     dssmodels.Manager(manager),
+					StartTime:                   uExtent.StartTime,
+					EndTime:                     uExtent.EndTime,
+					AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,
+					AltitudeHi:                  uExtent.SpatialVolume.AltitudeHi,
+					Cells:                       cells,
+					USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
+					NotifyForOperationalIntents: true,
+					ImplicitSubscription:        true,
+				}
+				if params.NewSubscription.NotifyForConstraints != nil {
+					subToUpsert.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
+				}
 
-			sub, err = r.UpsertSubscription(ctx, &subToUpsert)
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to create implicit subscription")
+				sub, err = r.UpsertSubscription(ctx, &subToUpsert)
+				if err != nil {
+					return stacktrace.Propagate(err, "Failed to create implicit subscription")
+				}
 			}
 
 		} else {
@@ -570,7 +585,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 
 			// Identify Constraints missing from the key
 			var missingConstraints []*scdmodels.Constraint
-			if sub.NotifyForConstraints {
+			if sub != nil && sub.NotifyForConstraints {
 				constraints, err := r.SearchConstraints(ctx, uExtent)
 				if err != nil {
 					return stacktrace.Propagate(err, "Unable to SearchConstraints")
@@ -609,6 +624,14 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 			}
 		}
 
+		// For OIR's in the accepted state, we may not have a subscription available,
+		// in such cases the subscription ID on scdmodels.OperationalIntent will be nil
+		// and will be replaced with the 'NullV4UUID' when sent over to a client.
+		var subID *dssmodels.ID = nil
+		if sub != nil {
+			subID = &sub.ID
+		}
+
 		// Construct the new OperationalIntent
 		op := &scdmodels.OperationalIntent{
 			ID:      id,
@@ -622,7 +645,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 			Cells:         cells,
 
 			USSBaseURL:     string(params.UssBaseUrl),
-			SubscriptionID: sub.ID,
+			SubscriptionID: subID,
 			State:          state,
 		}
 		err = op.ValidateTimeRange()

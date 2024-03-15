@@ -82,7 +82,7 @@ docker run --link dummy-oauth-for-testing:oauth \
 	--link core-service-for-testing:core-service \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
-	interuss/monitoring:v0.3.0 \
+	interuss/monitoring:v0.5.0 \
 	pytest \
 	"${1:-.}" \
 	-rsx \
