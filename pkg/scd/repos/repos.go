@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"github.com/golang/geo/s2"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
@@ -80,7 +81,14 @@ type Constraint interface {
 	DeleteConstraint(ctx context.Context, id dssmodels.ID) error
 }
 
+// DssReport takes care of handling a DSS report.
+type DssReport interface {
+	// HandleDssReport handles a DSS report request. Returns the error report passed in 'req' after having set its identifier.
+	HandleDssReport(ctx context.Context, req *restapi.MakeDssReportRequest) (*restapi.ErrorReport, error)
+}
+
 // Repository aggregates all SCD-specific repo interfaces.
+// Note that 'DssReport' is not yet part of it, while we figure exactly how we want to handle DSS reports
 type Repository interface {
 	OperationalIntent
 	Subscription
