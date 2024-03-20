@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"github.com/interuss/dss/pkg/scd/repos"
 	"time"
 
 	"github.com/interuss/dss/pkg/api"
@@ -37,32 +36,9 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.
 // Server implements scdv1.Implementation.
 type Server struct {
 	Store            scdstore.Store
-	DssReportHandler repos.DssReport
+	DSSReportHandler ReceivedReportHandler
 	Timeout          time.Duration
 	EnableHTTP       bool
-}
-
-// MakeDssReport creates an error report about a DSS.
-func (a *Server) MakeDssReport(ctx context.Context, req *restapi.MakeDssReportRequest,
-) restapi.MakeDssReportResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.MakeDssReportResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
-
-	if req.BodyParseError != nil {
-		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
-	}
-
-	resp, err := a.DssReportHandler.HandleDssReport(ctx, req)
-	if err != nil {
-		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to handle DSS Report"))}}
-	}
-
-	return restapi.MakeDssReportResponseSet{Response201: resp}
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {

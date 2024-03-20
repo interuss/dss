@@ -198,7 +198,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 
 	return &scd.Server{
 		Store:            scdStore,
-		DssReportHandler: scd.JSONLoggingDssReportHandler{ReportLogger: logger},
+		DSSReportHandler: &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
 		Timeout:          *timeout,
 		EnableHTTP:       *enableHTTP,
 	}, nil

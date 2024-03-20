@@ -77,9 +77,6 @@ func Configure(level string, format string) error {
 // WithValuesFromContext augments logger with relevant fields from ctx and returns
 // the resulting logger.
 func WithValuesFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger {
-	// TODO: WithValuesFromContext is used in multiple places that might assume this
-	//  method does more than it actually does:
-	//  given it was added in 2019 we may want to check?
 	// Naive implementation for now, meant to evolve over time.
 	return logger
 }
