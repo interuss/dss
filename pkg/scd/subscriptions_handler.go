@@ -2,6 +2,7 @@ package scd
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api"
@@ -375,6 +376,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 // QuerySubscriptions queries existing subscriptions in the given bounds.
 func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubscriptionsRequest,
 ) restapi.QuerySubscriptionsResponseSet {
+	nowMarker := time.Now()
 	if req.Auth.Error != nil {
 		resp := restapi.QuerySubscriptionsResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -419,7 +421,10 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 			Subscriptions: make([]restapi.Subscription, 0),
 		}
 		for _, sub := range subs {
-			if sub.Manager == dssmodels.Manager(*req.Auth.ClientID) {
+			// Do not return subscriptions which are expired.
+			// This implementation decision is described and motivated in https://github.com/interuss/tsc/pull/12.
+			isExpired := sub.EndTime.Before(nowMarker)
+			if !isExpired && sub.Manager == dssmodels.Manager(*req.Auth.ClientID) {
 				// Get dependent Operations
 				dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
 				if err != nil {
