@@ -422,7 +422,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 		}
 		for _, sub := range subs {
 			// Do not return subscriptions which are expired.
-			// TODO: Add reference to TSC investigation outcome.
+			// This implementation decision is described and motivated in https://github.com/interuss/tsc/pull/12.
 			isExpired := sub.EndTime.Before(nowMarker)
 			if !isExpired && sub.Manager == dssmodels.Manager(*req.Auth.ClientID) {
 				// Get dependent Operations
