@@ -13,7 +13,7 @@ resource "local_file" "helm_chart_values" {
 
       conf = {
         join         = local.helm_nodes_to_join
-        cluster-name = "dss-aws-1"
+        cluster-name = var.crdb_cluster_name
         single-node  = false
         locality     = "zone=${var.crdb_locality}"
       }
