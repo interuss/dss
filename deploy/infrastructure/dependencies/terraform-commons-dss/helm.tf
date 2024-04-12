@@ -1,8 +1,7 @@
 locals {
-  # Tanka defines itself the variables below. For helm, since we are using the official helm CRDB chart,
-  # the following has to be provided and constructed here.
+  # Tanka defines itself the variable below. For helm, since we are using the official helm CRDB chart,
+  # the following variable has to be provided here.
   helm_crdb_statefulset_name = "dss-cockroachdb"
-  helm_nodes_to_join         = concat(["${local.helm_crdb_statefulset_name}-0.${local.helm_crdb_statefulset_name}"], var.crdb_external_nodes)
 }
 
 resource "local_file" "helm_chart_values" {
@@ -12,7 +11,7 @@ resource "local_file" "helm_chart_values" {
       fullnameOverride = local.helm_crdb_statefulset_name
 
       conf = {
-        join         = local.helm_nodes_to_join
+        join         = var.crdb_external_nodes
         cluster-name = "dss-aws-1"
         single-node  = false
         locality     = "zone=${var.crdb_locality}"
