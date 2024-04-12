@@ -19,6 +19,7 @@ module "terraform-aws-dss" {
   cluster_name                 = var.cluster_name
   crdb_hostname_suffix         = var.crdb_hostname_suffix
   crdb_locality                = var.crdb_locality
+  crdb_external_nodes          = var.crdb_external_nodes
   image                        = var.image
   kubernetes_version           = var.kubernetes_version
   node_count                   = 3

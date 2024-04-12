@@ -24,6 +24,7 @@ module "terraform-commons-dss" {
   should_init                    = var.should_init
   authorization                  = var.authorization
   crdb_locality                  = var.crdb_locality
+  crdb_external_nodes            = var.crdb_external_nodes
   crdb_internal_nodes            = module.terraform-aws-kubernetes.crdb_nodes
   ip_gateway                     = module.terraform-aws-kubernetes.ip_gateway
   kubernetes_api_endpoint        = module.terraform-aws-kubernetes.kubernetes_api_endpoint
