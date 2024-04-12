@@ -23,7 +23,7 @@ image = "latest"
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
-should_init         = true
+should_init = true
 
 # CockroachDB
 crdb_cluster_name   = "interuss_example"
