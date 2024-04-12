@@ -8,4 +8,4 @@ and operate the cluster.
 
 ## Configuration
 
-See [variables.tf](variables.tf).
+See [variables.gen.tf](variables.gen.tf).

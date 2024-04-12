@@ -7,7 +7,7 @@ Kubernetes in AWS.
 
 ## Configuration
 
-See [variables.tf](variables.tf).
+See [variables.gen.tf](variables.gen.tf).
 
 ## Design
 
