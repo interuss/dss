@@ -1,3 +1,9 @@
+locals {
+  # Tanka defines itself the variables below. For helm, since we are using the official helm CRDB chart,
+  # the following has to be provided and constructed here.
+  helm_crdb_statefulset_name = "dss-cockroachdb"
+  helm_nodes_to_join         = concat(["${local.helm_crdb_statefulset_name}-0.${local.helm_crdb_statefulset_name}"], var.crdb_external_nodes)
+}
 
 resource "local_file" "helm_chart_values" {
   filename = "${local.workspace_location}/helm_values.yml"
