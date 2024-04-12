@@ -24,7 +24,9 @@ image_pull_secret = ""
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
-should_init   = true
-crdb_locality = "interuss_dss-dev-w6a"
+should_init = true
 
+# CockroachDB
+crdb_cluster_name   = "interuss_example"
+crdb_locality       = "interuss_dss-dev-w6a"
 crdb_external_nodes = []
