@@ -7,60 +7,62 @@ import (
 )
 
 var (
+	RidServiceProviderScope                  = api.RequiredScope("rid.service_provider")
+	RidDisplayProviderScope                  = api.RequiredScope("rid.display_provider")
 	SearchIdentificationServiceAreasSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 	}
 	GetIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 		{
-			"Authority": {"rid.service_provider"},
+			"Authority": {RidServiceProviderScope},
 		},
 	}
 	CreateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.service_provider"},
+			"Authority": {RidServiceProviderScope},
 		},
 	}
 	UpdateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.service_provider"},
+			"Authority": {RidServiceProviderScope},
 		},
 	}
 	DeleteIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.service_provider"},
+			"Authority": {RidServiceProviderScope},
 		},
 	}
 	SearchSubscriptionsSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 	}
 	GetSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 		{
-			"Authority": {"rid.service_provider"},
+			"Authority": {RidServiceProviderScope},
 		},
 	}
 	CreateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 	}
 	UpdateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 	}
 	DeleteSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"rid.display_provider"},
+			"Authority": {RidDisplayProviderScope},
 		},
 	}
 )
