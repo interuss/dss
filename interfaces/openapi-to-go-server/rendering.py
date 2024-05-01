@@ -106,6 +106,11 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
     # Provide security constants
     lines.append('var (')
 
+    for _, scope in api.security_scopes():
+        lines.append(
+            '%s = api.RequiredScope("%s")' % (scope.go_constant_name, scope.name)
+        )
+
     var_body: List[str] = []
     for operation in api.operations:
         var_body.append(
@@ -118,7 +123,7 @@ def implementation_interface(api: apis.API, api_package: str, ensure_500: bool) 
                 init_body.extend(indent([
                     '"%s": {%s},' % (
                         scheme,
-                        ', '.join('"{}"'.format(scope) for scope in scopes)
+                        ', '.join(scope.go_constant_name for scope in scopes)
                     )
                 ], 1))
             init_body.append('},')
