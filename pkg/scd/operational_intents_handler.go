@@ -2,6 +2,7 @@ package scd
 
 import (
 	"context"
+	"github.com/interuss/dss/pkg/auth"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -288,12 +289,8 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	if req.Auth.ClientID == nil {
-		return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
-	}
 
-	respOK, respConflict, err := a.PutOperationalIntentReference(ctx, *req.Auth.ClientID, req.Entityid, "", req.Body)
+	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, &req.Auth, req.Entityid, "", req.Body)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -328,12 +325,8 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	if req.Auth.ClientID == nil {
-		return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
-	}
 
-	respOK, respConflict, err := a.PutOperationalIntentReference(ctx, *req.Auth.ClientID, req.Entityid, req.Ovn, req.Body)
+	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, &req.Auth, req.Entityid, req.Ovn, req.Body)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -356,10 +349,15 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 	return restapi.UpdateOperationalIntentReferenceResponseSet{Response200: respOK}
 }
 
-// PutOperationalIntentReference inserts or updates an Operational Intent.
+// upsertOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
-func (a *Server) PutOperationalIntentReference(ctx context.Context, manager string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
+func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
+	if authorizedManager.ClientID == nil {
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager")
+	}
+	manager := dssmodels.Manager(*authorizedManager.ClientID)
+
 	id, err := dssmodels.IDFromString(string(entityid))
 	if err != nil {
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
@@ -383,6 +381,10 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 	state := scdmodels.OperationalIntentState(params.State)
 	if !state.IsValidInDSS() {
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
+	}
+	hasCMSARole := auth.HasScope(authorizedManager.Scopes, restapi.UtmConformanceMonitoringSaScope)
+	if state.IsOffNominal() && !hasCMSARole {
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing `%s` scope to transition to off-nominal state: %s", restapi.UtmConformanceMonitoringSaScope, params.State)
 	}
 
 	for idx, extent := range params.Extents {
@@ -456,7 +458,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 		if old != nil {
-			if old.Manager != dssmodels.Manager(manager) {
+			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
@@ -490,7 +492,7 @@ func (a *Server) PutOperationalIntentReference(ctx context.Context, manager stri
 
 				subToUpsert := scdmodels.Subscription{
 					ID:                          dssmodels.ID(uuid.New().String()),
-					Manager:                     dssmodels.Manager(manager),
+					Manager:                     manager,
 					StartTime:                   uExtent.StartTime,
 					EndTime:                     uExtent.EndTime,
 					AltitudeLo:                  uExtent.SpatialVolume.AltitudeLo,

@@ -56,6 +56,17 @@ func (s OperationalIntentState) IsValidInDSS() bool {
 	return false
 }
 
+// IsOffNominal indicates whether a state is categorized as off-nominal per the standard.
+func (s OperationalIntentState) IsOffNominal() bool {
+	switch s {
+	case OperationalIntentStateNonconforming:
+		fallthrough
+	case OperationalIntentStateContingent:
+		return true
+	}
+	return false
+}
+
 // OperationalIntent models an operational intent.
 type OperationalIntent struct {
 	// Reference

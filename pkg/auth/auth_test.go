@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"github.com/interuss/dss/pkg/api/scdv1"
 	"net/http"
 	"os"
 	"strconv"
@@ -219,4 +220,15 @@ func TestClaimsValidation(t *testing.T) {
 	claims.Issuer = ""
 	claims.ExpiresAt = 45
 	require.Error(t, claims.Valid())
+}
+
+func TestHasScope(t *testing.T) {
+	scopes := []string{
+		string(scdv1.UtmStrategicCoordinationScope),
+		string(scdv1.UtmConformanceMonitoringSaScope),
+	}
+
+	require.True(t, HasScope(scopes, scdv1.UtmStrategicCoordinationScope))
+	require.True(t, HasScope(scopes, scdv1.UtmConformanceMonitoringSaScope))
+	require.False(t, HasScope(scopes, scdv1.UtmAvailabilityArbitrationScope))
 }

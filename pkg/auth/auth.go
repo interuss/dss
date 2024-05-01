@@ -227,6 +227,15 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 	}
 }
 
+func HasScope(scopes []string, requiredScope api.RequiredScope) bool {
+	for _, scope := range scopes {
+		if scope == string(requiredScope) {
+			return true
+		}
+	}
+	return false
+}
+
 // describeAuthorizationExpectations builds a human-readable string describing the expectations of the authorization options.
 func describeAuthorizationExpectations(authOptions []api.AuthorizationOption) string {
 	if len(authOptions) == 0 {
