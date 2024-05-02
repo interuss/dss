@@ -25,10 +25,26 @@ class StringParameter:
 
 
 @dataclasses.dataclass
+class Scope:
+    """Representation of a scope used to authorize a particular Operation"""
+
+    name: str
+    """Name of the scope"""
+
+    @property
+    def go_constant_name(self) -> str:
+        """Go-style field name for this parameter in the Operation's `request_type_name`"""
+        return "{}Scope".format(formatting.string_to_pascal_case(self.name))
+
+    def __hash__(self):
+        return self.name.__hash__()
+
+
+@dataclasses.dataclass
 class AuthorizationOption:
     """One acceptable option for authorization to invoke a particular Operation"""
 
-    option: Dict[str, List[str]]
+    option: Dict[str, List[Scope]]
     """Mapping between authorization scheme name and a list of scope combination options that may be used to access the Operation under that authorization scheme"""
 
 
@@ -201,7 +217,7 @@ def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data
         for security_option in action.get('security', []):
             auth_option = AuthorizationOption(option={})
             for scheme, scopes in security_option.items():
-                auth_option.option[scheme] = scopes
+                auth_option.option[scheme] = [Scope(s) for s in scopes]
             security.options.append(auth_option)
 
         responses: List[Response] = []

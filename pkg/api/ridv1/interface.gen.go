@@ -7,57 +7,59 @@ import (
 )
 
 var (
+	DssWriteIdentificationServiceAreasScope  = api.RequiredScope("dss.write.identification_service_areas")
+	DssReadIdentificationServiceAreasScope   = api.RequiredScope("dss.read.identification_service_areas")
 	SearchIdentificationServiceAreasSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 	GetIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 	CreateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
 	UpdateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
 	DeleteIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
 	SearchSubscriptionsSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 	GetSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 		{
-			"AuthFromAuthorizationAuthority": {"dss.write.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
 	CreateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 	UpdateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 	DeleteSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"AuthFromAuthorizationAuthority": {"dss.read.identification_service_areas"},
+			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
 		},
 	}
 )

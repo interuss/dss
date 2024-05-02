@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Dict, List, Set
+from itertools import chain
+from typing import Dict, List, Set, Tuple
 
 import data_types
 import operations
@@ -57,6 +58,19 @@ class API:
         # Select only the necessary data types
         self.data_types = [dt for dt in self.data_types
                            if dt.name in required_data_types]
+
+    def security_scopes(self) -> Set[Tuple[str, operations.Scope]]:
+        """Returns a set of unique security scopes used by this API.
+
+        :return: set of unique tuples containing the authorization scheme and scope
+        """
+        security_options = [op.security.options for op in self.operations]
+        scopes_set = set()
+        for so in chain.from_iterable(security_options):
+            for scheme, scopes in so.option.items():
+                for scope in scopes:
+                    scopes_set.add((scheme, scope))
+        return scopes_set
 
 
 def make_api(package: str, api_path: str, spec: Dict) -> API:

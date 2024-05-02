@@ -7,154 +7,159 @@ import (
 )
 
 var (
+	UtmConstraintManagementScope             = api.RequiredScope("utm.constraint_management")
+	UtmConformanceMonitoringSaScope          = api.RequiredScope("utm.conformance_monitoring_sa")
+	UtmStrategicCoordinationScope            = api.RequiredScope("utm.strategic_coordination")
+	UtmConstraintProcessingScope             = api.RequiredScope("utm.constraint_processing")
+	UtmAvailabilityArbitrationScope          = api.RequiredScope("utm.availability_arbitration")
 	QueryOperationalIntentReferencesSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	GetOperationalIntentReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	CreateOperationalIntentReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination", "utm.constraint_processing"},
+			"Authority": {UtmStrategicCoordinationScope, UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	UpdateOperationalIntentReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination", "utm.constraint_processing"},
+			"Authority": {UtmStrategicCoordinationScope, UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	DeleteOperationalIntentReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	QueryConstraintReferencesSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 	}
 	GetConstraintReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 	}
 	CreateConstraintReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 	}
 	UpdateConstraintReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 	}
 	DeleteConstraintReferenceSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 	}
 	QuerySubscriptionsSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 	}
 	GetSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 	}
 	CreateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 	}
 	UpdateSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 	}
 	DeleteSubscriptionSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 	}
 	MakeDssReportSecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.constraint_management"},
+			"Authority": {UtmConstraintManagementScope},
 		},
 		{
-			"Authority": {"utm.constraint_processing"},
+			"Authority": {UtmConstraintProcessingScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 		{
-			"Authority": {"utm.availability_arbitration"},
+			"Authority": {UtmAvailabilityArbitrationScope},
 		},
 	}
 	GetUssAvailabilitySecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.availability_arbitration"},
+			"Authority": {UtmAvailabilityArbitrationScope},
 		},
 		{
-			"Authority": {"utm.strategic_coordination"},
+			"Authority": {UtmStrategicCoordinationScope},
 		},
 		{
-			"Authority": {"utm.conformance_monitoring_sa"},
+			"Authority": {UtmConformanceMonitoringSaScope},
 		},
 	}
 	SetUssAvailabilitySecurity = []api.AuthorizationOption{
 		{
-			"Authority": {"utm.availability_arbitration"},
+			"Authority": {UtmAvailabilityArbitrationScope},
 		},
 	}
 )
