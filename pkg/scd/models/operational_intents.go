@@ -56,8 +56,8 @@ func (s OperationalIntentState) IsValidInDSS() bool {
 	return false
 }
 
-// IsOffNominal indicates whether a state is categorized as off-nominal per the standard.
-func (s OperationalIntentState) IsOffNominal() bool {
+// RequiresCMSA indicates whether a state requires the CMSA role to be transition to.
+func (s OperationalIntentState) RequiresCMSA() bool {
 	switch s {
 	case OperationalIntentStateNonconforming:
 		fallthrough

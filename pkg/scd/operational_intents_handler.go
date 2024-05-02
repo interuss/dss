@@ -2,13 +2,13 @@ package scd
 
 import (
 	"context"
-	"github.com/interuss/dss/pkg/auth"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -383,8 +383,8 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
 	}
 	hasCMSARole := auth.HasScope(authorizedManager.Scopes, restapi.UtmConformanceMonitoringSaScope)
-	if state.IsOffNominal() && !hasCMSARole {
-		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing `%s` scope to transition to off-nominal state: %s", restapi.UtmConformanceMonitoringSaScope, params.State)
+	if state.RequiresCMSA() && !hasCMSARole {
+		return nil, nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing `%s` Conformance Monitoring for Situational Awareness scope to transition to CMSA state: %s (see SCD0100)", restapi.UtmConformanceMonitoringSaScope, params.State)
 	}
 
 	for idx, extent := range params.Extents {

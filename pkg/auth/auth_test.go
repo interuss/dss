@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/interuss/dss/pkg/api/scdv1"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/interuss/dss/pkg/api"
+	"github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
