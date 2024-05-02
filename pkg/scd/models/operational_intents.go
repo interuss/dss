@@ -56,6 +56,17 @@ func (s OperationalIntentState) IsValidInDSS() bool {
 	return false
 }
 
+// RequiresCMSA indicates whether a state requires the CMSA role to be transition to.
+func (s OperationalIntentState) RequiresCMSA() bool {
+	switch s {
+	case OperationalIntentStateNonconforming:
+		fallthrough
+	case OperationalIntentStateContingent:
+		return true
+	}
+	return false
+}
+
 // OperationalIntent models an operational intent.
 type OperationalIntent struct {
 	// Reference
