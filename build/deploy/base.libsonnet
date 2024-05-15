@@ -108,7 +108,8 @@ local util = import 'util.libsonnet';
 
       minReadySeconds: 30,
 
-      replicas: 3,
+      replicas: std.length(metadata.cockroach.nodeIPs),
+      assert self.replicas >= 1,
     },
   },
 
@@ -182,7 +183,7 @@ local util = import 'util.libsonnet';
         for kv in util.objectItems(self.volumeClaimTemplates_)
       ],
 
-      replicas: 3,
+      replicas: std.length(metadata.cockroach.nodeIPs),
       assert self.replicas >= 1,
     },
   },
