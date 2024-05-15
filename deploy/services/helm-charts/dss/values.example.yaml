@@ -10,6 +10,7 @@ cockroachdb:
     locality: zone=interuss-example-google-ew1
 
   statefulset:
+    replicas: 3 # Must match the number of .loadBalancers.cockroachdbNodes items.
     args:
       - --locality-advertise-addr=zone=interuss-example-google-ew1@$(hostname -f)
       - --advertise-addr=${HOSTNAME##*-}.db.example.com

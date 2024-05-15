@@ -13,11 +13,12 @@ resource "local_file" "helm_chart_values" {
       conf = {
         join         = var.crdb_external_nodes
         cluster-name = var.crdb_cluster_name
-        single-node  = false
+        single-node  = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
         locality     = "zone=${var.crdb_locality}"
       }
 
       statefulset = {
+        replicas = length(var.crdb_internal_nodes)
         args = [
           "--locality-advertise-addr=zone=${var.crdb_locality}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.crdb_hostname_suffix}"
