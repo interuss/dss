@@ -77,7 +77,7 @@ Example: `dss-che-1`
 *Type: `number`*
 
 Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
-**Always 3.**
+Currently, only single node or three nodes deployments are supported.
 
 Example: `3`
 

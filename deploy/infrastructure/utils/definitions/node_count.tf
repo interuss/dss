@@ -2,13 +2,13 @@ variable "node_count" {
   type        = number
   description = <<-EOT
     Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
-    **Always 3.**
+    Currently, only single node or three nodes deployments are supported.
 
     Example: `3`
   EOT
 
   validation {
-    condition     = var.node_count == 3
-    error_message = "Node count should be 3. Only configuration supported at the moment"
+    condition     = contains([1, 3], var.node_count)
+    error_message = "Currently, only 1 node or 3 nodes deployments are supported."
   }
 }
