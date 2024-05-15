@@ -26,7 +26,7 @@ Services can be deployed using those approaches:
   - [Tanka](../build/deploy)
 
 ## [Operations](./operations)
-It is responsible to provide diagnostic capabilities and utilities to **operate** the Services, such as certificates management may be simplified using the deployment manager CLI tools. It also contains the Infrastructure and Services configurations [used by the CI](../.github/workflows/dss-deploy.yml).
+It is responsible to provide diagnostic capabilities and utilities to **operate** the Services, such as certificates management. Currently, the operations scripts are located inside [build](../../build) and helpers are generated in the workspace directory by terraform after deployment. It also contains the Infrastructure and Services configurations [used by the CI](../.github/workflows/dss-deploy.yml).
 
 The following diagram represents the modules provided in this repository per phase and their impact on the various resources.
 ![Deploy Overview](../assets/generated/deploy_overview.png)
