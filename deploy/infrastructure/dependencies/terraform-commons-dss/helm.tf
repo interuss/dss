@@ -13,7 +13,7 @@ resource "local_file" "helm_chart_values" {
       conf = {
         join         = var.crdb_external_nodes
         cluster-name = var.crdb_cluster_name
-        single-node  = false # Always false, even with replicas 1 since we want the node to be possibly pooled.
+        single-node  = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
         locality     = "zone=${var.crdb_locality}"
       }
 
