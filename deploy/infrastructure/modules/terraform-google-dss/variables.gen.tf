@@ -118,7 +118,7 @@ variable "image" {
   EOT
 
   validation {
-    condition = var.image != "latest"
+    condition     = var.image != "latest"
     error_message = "latest value is not supported anymore. Use `docker.io/interuss/dss:latest` for similar behavior."
   }
 
