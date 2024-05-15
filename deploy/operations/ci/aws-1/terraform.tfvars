@@ -18,7 +18,7 @@ aws_instance_type            = "t3.medium"
 aws_kubernetes_storage_class = "gp2"
 
 # DSS configuration
-image = "latest"
+image = "docker.io/interuss/dss:latest"
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
