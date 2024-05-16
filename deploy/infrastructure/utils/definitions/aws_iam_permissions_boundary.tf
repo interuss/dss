@@ -5,4 +5,6 @@ variable "aws_iam_permissions_boundary" {
 
     Example: `arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries`
   EOT
+
+  default = ""
 }
