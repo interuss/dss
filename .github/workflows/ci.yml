@@ -44,6 +44,7 @@ jobs:
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref }}"
         docker images
+        go env
     - name: Checkout
       uses: actions/checkout@v2
       with:

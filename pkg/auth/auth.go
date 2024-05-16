@@ -14,13 +14,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-jose/go-jose/v3"
 	"github.com/golang-jwt/jwt"
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
-	"gopkg.in/square/go-jose.v2"
 )
 
 // KeyResolver abstracts resolving keys.

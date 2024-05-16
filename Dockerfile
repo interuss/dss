@@ -4,7 +4,7 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/core-service or /usr/bin/db-manager).
 
-FROM golang:1.17-alpine AS build
+FROM golang:1.22-alpine AS build
 RUN apk add build-base
 RUN apk add git bash make
 RUN mkdir /app
