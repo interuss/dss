@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 	"github.com/interuss/dss/cmds/dummy-oauth/api/dummyoauth"
 )
