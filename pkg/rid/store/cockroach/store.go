@@ -6,13 +6,13 @@ import (
 	"github.com/interuss/dss/pkg/cockroach/flags"
 	"time"
 
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
+	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )

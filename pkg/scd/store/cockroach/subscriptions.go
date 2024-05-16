@@ -9,10 +9,10 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
-	"github.com/jackc/pgtype"
+	"github.com/interuss/stacktrace"
 
 	"github.com/golang/geo/s2"
-	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
@@ -97,7 +97,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 	defer rows.Close()
 
 	var payload []*scdmodels.Subscription
-	pgCids := pgtype.Int8Array{}
+	pgCids := pgtype.Array[pgtype.Int8]{}
 	for rows.Next() {
 		var (
 			s         = new(scdmodels.Subscription)
@@ -126,8 +126,12 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
 		var cids []int64
-		if err := pgCids.AssignTo(&cids); err != nil {
-			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		for _, cid := range pgCids.Elements {
+			if cid.Valid {
+				cids = append(cids, cid.Int64)
+			} else {
+				return nil, stacktrace.NewError("Invalid cell ID in Subscription: %v", cid.Int64)
+			}
 		}
 		s.SetCells(cids)
 		payload = append(payload, s)
@@ -202,16 +206,12 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	)
 
 	cids := make([]int64, len(s.Cells))
+	// TODO get rid of clevels?
 	clevels := make([]int, len(s.Cells))
 
 	for i, cell := range s.Cells {
 		cids[i] = int64(cell)
 		clevels[i] = cell.Level()
-	}
-
-	var pgCids pgtype.Int8Array
-	if err := pgCids.Set(cids); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
 	id, err := s.ID.PgUUID()
@@ -229,7 +229,7 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.ImplicitSubscription,
 		s.StartTime,
 		s.EndTime,
-		pgCids)
+		cids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
 	}
@@ -317,19 +317,8 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 		return nil, nil
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-
-	if err := pgCids.Set(cids); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, query, pgCids, v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
@@ -350,12 +339,7 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 		ids[i] = id.String()
 	}
 
-	var pgIds pgtype.UUIDArray
-	err := pgIds.Set(ids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-	rows, err := c.q.Query(ctx, updateQuery, pgIds)
+	rows, err := c.q.Query(ctx, updateQuery, ids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", updateQuery)
 	}
@@ -384,17 +368,6 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
-	cids := make([]int64, len(cells))
-
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
 
 	const query = `
 		SELECT
@@ -406,7 +379,7 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion)
 		FOR UPDATE
 	`
 
-	_, err = c.q.Exec(ctx, query, pgCids)
+	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells))
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}

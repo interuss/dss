@@ -7,7 +7,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"strings"
 	"time"
 )

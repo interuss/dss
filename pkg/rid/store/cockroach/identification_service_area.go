@@ -3,20 +3,19 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"github.com/interuss/dss/pkg/geo"
 	"time"
 
-	"github.com/coreos/go-semver/semver"
-	"github.com/jackc/pgtype"
-
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-
-	"github.com/golang/geo/s2"
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+
+	"github.com/coreos/go-semver/semver"
+	"github.com/golang/geo/s2"
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 )
 
@@ -53,9 +52,9 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
-	pgCids := pgtype.Int8Array{}
+	pgCids := pgtype.Array[pgtype.Int8]{}
 
-	var writer pgtype.Varchar
+	var writer pgtype.Text
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
 
@@ -76,8 +75,12 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 		}
 		i.Writer = writer.String
 		var cids []int64
-		if err := pgCids.AssignTo(&cids); err != nil {
-			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
+		for _, cid := range pgCids.Elements {
+			if cid.Valid {
+				cids = append(cids, cid.Int64)
+			} else {
+				return nil, stacktrace.NewError("Invalid cell in ISA: %v", cid.Int64)
+			}
 		}
 		i.SetCells(cids)
 		i.Version = dssmodels.VersionFromTime(updateTime)
@@ -146,15 +149,12 @@ func (c *isaRepo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationSe
 		}
 		cids[i] = int64(cell)
 	}
-	var pgCids pgtype.Int8Array
-	if err := pgCids.Set(cids); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
+
 	id, err := isa.ID.PgUUID()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, insertAreasQuery, id, isa.Owner, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Writer)
+	return c.processOne(ctx, insertAreasQuery, id, isa.Owner, isa.URL, cids, isa.StartTime, isa.EndTime, isa.Writer)
 
 }
 
@@ -176,17 +176,7 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 				%s`, updateISAFields, isaFields)
 	)
 
-	cids := make([]int64, len(isa.Cells))
-
-	for i, cell := range isa.Cells {
-		if err := geo.ValidateCell(cell); err != nil {
-			return nil, stacktrace.Propagate(err, "Error validating cell")
-		}
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
+	cids, err := dssql.CellUnionToCellIdsWithValidation(isa.Cells)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
@@ -194,7 +184,7 @@ func (c *isaRepo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationSe
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, updateAreasQuery, id, isa.URL, pgCids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
+	return c.processOne(ctx, updateAreasQuery, id, isa.URL, cids, isa.StartTime, isa.EndTime, isa.Version.ToTimestamp(), isa.Writer)
 }
 
 // DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
@@ -247,18 +237,7 @@ func (c *isaRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *
 		return nil, stacktrace.NewError("Earliest start time is missing")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cid := range cells {
-		cids[i] = int64(cid)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
-	return c.process(ctx, isasInCellsQuery, earliest, latest, pgCids, dssmodels.MaxResultLimit)
+	return c.process(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.

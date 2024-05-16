@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,8 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/golang-jwt/jwt"
+	"github.com/go-jose/go-jose/v4"
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
