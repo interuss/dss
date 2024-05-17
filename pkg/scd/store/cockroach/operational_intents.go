@@ -14,7 +14,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 )
 
@@ -61,7 +60,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	defer rows.Close()
 
 	var payload []*scdmodels.OperationalIntent
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 	ussAvailabilities := map[dssmodels.Manager]scdmodels.UssAvailabilityState{}
 	for rows.Next() {
 		var (
@@ -80,18 +79,10 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.SubscriptionID,
 			&updatedAt,
 			&o.State,
-			&pgCids,
+			&cids,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
-		}
-		var cids []int64
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				cids = append(cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell in Operation: %v", cid.Int64)
-			}
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		o.SetCells(cids)

@@ -12,7 +12,6 @@ import (
 	"github.com/interuss/stacktrace"
 
 	"github.com/golang/geo/s2"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
@@ -97,7 +96,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 	defer rows.Close()
 
 	var payload []*scdmodels.Subscription
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 	for rows.Next() {
 		var (
 			s         = new(scdmodels.Subscription)
@@ -115,7 +114,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			&s.ImplicitSubscription,
 			&s.StartTime,
 			&s.EndTime,
-			&pgCids,
+			&cids,
 			&updatedAt,
 		)
 		if err != nil {
@@ -124,14 +123,6 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		s.Version = scdmodels.NewOVNFromTime(updatedAt, s.ID.String())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
-		}
-		var cids []int64
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				cids = append(cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell ID in Subscription: %v", cid.Int64)
-			}
 		}
 		s.SetCells(cids)
 		payload = append(payload, s)

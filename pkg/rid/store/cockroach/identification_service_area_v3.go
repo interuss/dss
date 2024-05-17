@@ -12,7 +12,6 @@ import (
 	"github.com/interuss/stacktrace"
 
 	"github.com/golang/geo/s2"
-	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +36,7 @@ func (c *isaRepoV3) process(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 
 	for rows.Next() {
 		i := new(ridmodels.IdentificationServiceArea)
@@ -48,21 +47,13 @@ func (c *isaRepoV3) process(ctx context.Context, query string, args ...interface
 			&i.ID,
 			&i.Owner,
 			&i.URL,
-			&pgCids,
+			&cids,
 			&i.StartTime,
 			&i.EndTime,
 			&updateTime,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
-		}
-		var cids []int64
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				cids = append(cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell ID in ISA: %v", cid.Int64)
-			}
 		}
 		i.SetCells(cids)
 		i.Version = dssmodels.VersionFromTime(updateTime)

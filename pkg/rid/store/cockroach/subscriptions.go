@@ -57,7 +57,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 
 	var writer pgtype.Text
 	for rows.Next() {
@@ -70,7 +70,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&pgCids,
+			&cids,
 			&s.StartTime,
 			&s.EndTime,
 			&writer,
@@ -80,14 +80,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		s.Writer = writer.String
-		var cids []int64
-		for _, pgCid := range pgCids.Elements {
-			if pgCid.Valid {
-				cids = append(cids, pgCid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell id: %v", pgCid.Int64)
-			}
-		}
+
 		s.SetCells(cids)
 		s.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, s)

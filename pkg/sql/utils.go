@@ -7,7 +7,6 @@ import (
 	"github.com/golang/geo/s2"
 )
 
-// Converts a cell union to a pgtype.Array[pgtype.Int8] ready for use in database queries
 func CellUnionToCellIds(cu s2.CellUnion) []int64 {
 	pgCids := make([]int64, len(cu))
 	for i, cell := range cu {

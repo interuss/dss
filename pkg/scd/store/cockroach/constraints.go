@@ -13,7 +13,6 @@ import (
 	"github.com/interuss/stacktrace"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const (
@@ -61,7 +60,7 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 	defer rows.Close()
 
 	var payload []*scdmodels.Constraint
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 	for rows.Next() {
 		var (
 			c         = new(scdmodels.Constraint)
@@ -76,19 +75,11 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 			&c.AltitudeUpper,
 			&c.StartTime,
 			&c.EndTime,
-			&pgCids,
+			&cids,
 			&updatedAt,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Constraint row")
-		}
-		var cids []int64
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				cids = append(cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell in constraint: %v", cid.Int64)
-			}
 		}
 		c.Cells = geo.CellUnionFromInt64(cids)
 		c.OVN = scdmodels.NewOVNFromTime(updatedAt, c.ID.String())

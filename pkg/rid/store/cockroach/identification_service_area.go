@@ -3,10 +3,10 @@ package cockroach
 import (
 	"context"
 	"fmt"
-	"github.com/interuss/dss/pkg/geo"
 	"time"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	repos "github.com/interuss/dss/pkg/rid/repos"
@@ -52,7 +52,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 	defer rows.Close()
 
 	var payload []*ridmodels.IdentificationServiceArea
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 
 	var writer pgtype.Text
 	for rows.Next() {
@@ -64,7 +64,7 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			&i.ID,
 			&i.Owner,
 			&i.URL,
-			&pgCids,
+			&cids,
 			&i.StartTime,
 			&i.EndTime,
 			&writer,
@@ -74,14 +74,6 @@ func (c *isaRepo) process(ctx context.Context, query string, args ...interface{}
 			return nil, stacktrace.Propagate(err, "Error scanning ISA row")
 		}
 		i.Writer = writer.String
-		var cids []int64
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				cids = append(cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell in ISA: %v", cid.Int64)
-			}
-		}
 		i.SetCells(cids)
 		i.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, i)

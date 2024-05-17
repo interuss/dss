@@ -8,7 +8,6 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jonboulle/clockwork"
 
 	"github.com/golang/geo/s2"
@@ -39,8 +38,7 @@ func (c *subscriptionRepoV3) process(ctx context.Context, query string, args ...
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
-	// Note pgtype.Int8 represents a 64-bit signed integer (int64 in Go).
-	pgCids := pgtype.Array[pgtype.Int8]{}
+	var cids []int64
 
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
@@ -52,7 +50,7 @@ func (c *subscriptionRepoV3) process(ctx context.Context, query string, args ...
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&pgCids,
+			&cids,
 			&s.StartTime,
 			&s.EndTime,
 			&updateTime,
@@ -60,15 +58,7 @@ func (c *subscriptionRepoV3) process(ctx context.Context, query string, args ...
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
-		int64Cids := make([]int64, len(pgCids.Elements))
-		for _, cid := range pgCids.Elements {
-			if cid.Valid {
-				int64Cids = append(int64Cids, cid.Int64)
-			} else {
-				return nil, stacktrace.NewError("Invalid cell in subscription: %v", cid.Int64)
-			}
-		}
-		s.SetCells(int64Cids)
+		s.SetCells(cids)
 		s.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, s)
 	}
