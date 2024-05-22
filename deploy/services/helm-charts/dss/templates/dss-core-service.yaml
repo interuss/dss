@@ -46,10 +46,10 @@ spec:
             - --garbage_collector_spec=@every 30m
             - --gcp_prof_service_name=
             {{- if $dss.conf.jwksEndpoint }}
-            - --jwks_endpoint={{ $dss.jwksEndpoint }}
+            - --jwks_endpoint={{ $dss.conf.jwksEndpoint }}
             {{- end }}
             {{- if $dss.conf.jwksKeyIds }}
-            - --jwks_key_ids={{ $dss.jwksKeyIds | join "," }}
+            - --jwks_key_ids={{ $dss.conf.jwksKeyIds | join "," }}
             {{- end }}
             - --locality={{ .Values.cockroachdb.conf.locality }}
             {{- if $dss.conf.pubKeys}}
