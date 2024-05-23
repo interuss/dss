@@ -11,7 +11,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func GetDefaultAvailabilityResponse(id dssmodels.Manager) *restapi.UssAvailabilityStatusResponse {

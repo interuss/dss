@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coreos/go-semver/semver"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/jonboulle/clockwork"
-
-	"github.com/golang/geo/s2"
 	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgtype"
+
+	"github.com/coreos/go-semver/semver"
+	"github.com/golang/geo/s2"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jonboulle/clockwork"
+
 	"go.uber.org/zap"
 )
 
@@ -57,9 +57,9 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 	defer rows.Close()
 
 	var payload []*ridmodels.Subscription
-	pgCids := pgtype.Int8Array{}
+	var cids []int64
 
-	var writer pgtype.Varchar
+	var writer pgtype.Text
 	for rows.Next() {
 		s := new(ridmodels.Subscription)
 
@@ -70,7 +70,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 			&s.Owner,
 			&s.URL,
 			&s.NotificationIndex,
-			&pgCids,
+			&cids,
 			&s.StartTime,
 			&s.EndTime,
 			&writer,
@@ -80,10 +80,7 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 			return nil, stacktrace.Propagate(err, "Error scanning Subscription row")
 		}
 		s.Writer = writer.String
-		var cids []int64
-		if err := pgCids.AssignTo(&cids); err != nil {
-			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
-		}
+
 		s.SetCells(cids)
 		s.Version = dssmodels.VersionFromTime(updateTime)
 		payload = append(payload, s)
@@ -133,18 +130,7 @@ func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Contex
       GROUP BY cell_id
     )`
 
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-
-	if err := pgCids.Set(cids); err != nil {
-		return 0, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
-	row := c.QueryRow(ctx, query, owner, c.clock.Now(), pgCids)
+	row := c.QueryRow(ctx, query, owner, c.clock.Now(), dssql.CellUnionToCellIds(cells))
 	var ret int
 	err := row.Scan(&ret)
 	return ret, stacktrace.Propagate(err, "Error scanning subscription count row")
@@ -177,18 +163,9 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 			%s`, updateSubscriptionFields, subscriptionFields)
 	)
 
-	cids := make([]int64, len(s.Cells))
+	cids, err := dssql.CellUnionToCellIdsWithValidation(s.Cells)
 
-	for i, cell := range s.Cells {
-		if err := geo.ValidateCell(cell); err != nil {
-			return nil, stacktrace.Propagate(err, "Error validating cell")
-		}
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-
-	if err := pgCids.Set(cids); err != nil {
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
@@ -200,7 +177,7 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 		id,
 		s.URL,
 		s.NotificationIndex,
-		pgCids,
+		cids,
 		s.StartTime,
 		s.EndTime,
 		s.Writer,
@@ -221,18 +198,9 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 			%s`, subscriptionFields, subscriptionFields)
 	)
 
-	cids := make([]int64, len(s.Cells))
+	cids, err := dssql.CellUnionToCellIdsWithValidation(s.Cells)
 
-	for i, cell := range s.Cells {
-		if err := geo.ValidateCell(cell); err != nil {
-			return nil, stacktrace.Propagate(err, "Error validating cell")
-		}
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-
-	if err := pgCids.Set(cids); err != nil {
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
@@ -245,7 +213,7 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 		s.Owner,
 		s.URL,
 		s.NotificationIndex,
-		pgCids,
+		cids,
 		s.StartTime,
 		s.EndTime,
 		s.Writer)
@@ -281,19 +249,8 @@ func (c *subscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, ce
 				AND ends_at >= $2
 			RETURNING %s`, subscriptionFields)
 
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
 	return c.process(
-		ctx, updateQuery, pgCids, c.clock.Now())
+		ctx, updateQuery, dssql.CellUnionToCellIds(cells), c.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
@@ -315,18 +272,7 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
-	return c.process(ctx, query, pgCids, c.clock.Now(), dssmodels.MaxResultLimit)
+	return c.process(ctx, query, dssql.CellUnionToCellIds(cells), c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -350,18 +296,7 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cell := range cells {
-		cids[i] = int64(cell)
-	}
-
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
-	return c.process(ctx, query, pgCids, owner, c.clock.Now(), dssmodels.MaxResultLimit)
+	return c.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, c.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.

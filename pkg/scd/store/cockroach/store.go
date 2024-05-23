@@ -3,14 +3,14 @@ package cockroach
 import (
 	"context"
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
+	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
 	"github.com/interuss/dss/pkg/cockroach/flags"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )

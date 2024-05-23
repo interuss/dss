@@ -10,7 +10,7 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -163,7 +163,7 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*DB, error) {
 	config.HealthCheckPeriod = (1 * time.Second)
 	config.MinConns = 1
 
-	db, err := pgxpool.ConnectConfig(ctx, config)
+	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}

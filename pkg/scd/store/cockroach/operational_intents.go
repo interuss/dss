@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+
+	"github.com/golang/geo/s2"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
 
@@ -60,7 +60,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	defer rows.Close()
 
 	var payload []*scdmodels.OperationalIntent
-	pgCids := pgtype.Int8Array{}
+	var cids []int64
 	ussAvailabilities := map[dssmodels.Manager]scdmodels.UssAvailabilityState{}
 	for rows.Next() {
 		var (
@@ -79,14 +79,10 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.SubscriptionID,
 			&updatedAt,
 			&o.State,
-			&pgCids,
+			&cids,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
-		}
-		var cids []int64
-		if err := pgCids.AssignTo(&cids); err != nil {
-			return nil, stacktrace.Propagate(err, "Error Converting jackc/pgtype to array")
 		}
 		o.OVN = scdmodels.NewOVNFromTime(updatedAt, o.ID.String())
 		o.SetCells(cids)
@@ -226,6 +222,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	)
 
 	cids := make([]int64, len(operation.Cells))
+	// TODO clevels not used, can get rid of it?
 	clevels := make([]int, len(operation.Cells))
 
 	for i, cell := range operation.Cells {
@@ -233,11 +230,6 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		clevels[i] = cell.Level()
 	}
 
-	var pgCids pgtype.Int8Array
-	err := pgCids.Set(cids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
 	opid, err := operation.ID.PgUUID()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
@@ -257,7 +249,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.EndTime,
 		subid,
 		operation.State,
-		pgCids,
+		cids,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operation")
@@ -297,19 +289,9 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
-	cids := make([]int64, len(cells))
-	for i, cid := range cells {
-		cids[i] = int64(cid)
-	}
-
-	var pgCids pgtype.Int8Array
-	if err := pgCids.Set(cids); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
-	}
-
 	result, err := s.fetchOperationalIntents(
 		ctx, q, operationsIntersectingVolumeQuery,
-		pgCids,
+		dsssql.CellUnionToCellIds(cells),
 		v4d.SpatialVolume.AltitudeLo,
 		v4d.SpatialVolume.AltitudeHi,
 		v4d.StartTime,
