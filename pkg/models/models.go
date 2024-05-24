@@ -41,6 +41,9 @@ const (
 // PgUUID converts an ID to a pgtype.UUID.
 // If the ID this is called on is nil, nil will be returned
 func (id *ID) PgUUID() (*pgtype.UUID, error) {
+	if id == nil {
+		return nil, nil
+	}
 	pgUUID := pgtype.UUID{}
 	err := (&pgUUID).Scan(id.String())
 	if err != nil {
