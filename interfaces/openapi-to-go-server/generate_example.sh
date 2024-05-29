@@ -13,8 +13,8 @@ cd "${BASEDIR}" || exit
 docker image build -t interuss/openapi-to-go-server .
 
 docker container run -it \
-  	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
-  	-v "$(pwd)/../rid/v1/remoteid/augmented.yaml:/resources/rid.yaml" \
+  	-v "$(pwd)/../brutm/utm/utm.yaml:/resources/utm.yaml" \
+  	-v "$(pwd)/../brutm/remoteid/remoteid.yaml:/resources/rid.yaml" \
 	  -v "$(pwd)/example:/resources/example" \
 	  interuss/openapi-to-go-server \
 	      --api_import example/api \
