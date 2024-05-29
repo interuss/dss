@@ -16,7 +16,7 @@ echo "DSS response to Mauna Loa ISA query:"
 echo "============="
 TIMESTAMP_NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 curl --silent -X GET \
-  "http://localhost:8082/v1/dss/identification_service_areas?area=19.4763,-155.6043,19.4884,-155.5746,19.4516,-155.5941&earliest_time=${TIMESTAMP_NOW}&latest_time=${TIMESTAMP_NOW}" \
+  "http://localhost:8082/v2/dss/identification_service_areas?area=19.4763,-155.6043,19.4884,-155.5746,19.4516,-155.5941&earliest_time=${TIMESTAMP_NOW}&latest_time=${TIMESTAMP_NOW}" \
   -H "Authorization: Bearer ${ACCESS_TOKEN}"
 echo
 echo "============="
