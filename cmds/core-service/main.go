@@ -17,7 +17,6 @@ import (
 	"cloud.google.com/go/profiler"
 	"github.com/interuss/dss/pkg/api"
 	apiauxv1 "github.com/interuss/dss/pkg/api/auxv1"
-	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	apiridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	apiscdv1 "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/auth"
@@ -27,7 +26,6 @@ import (
 	"github.com/interuss/dss/pkg/cockroach/flags" // Force command line flag registration
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
-	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	"github.com/interuss/dss/pkg/scd"
@@ -102,16 +100,16 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+func createRIDServer(ctx context.Context, locality string, logger *zap.Logger) (*rid_v2.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
 	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
 		}
-		return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+		return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
@@ -121,22 +119,22 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		connectParameters.DBName = "defaultdb"
 		ridCrdb, err := cockroach.Dial(ctx, connectParameters)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+			return nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
 		ridStore, err = ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
 		if err != nil {
 			// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 			if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
 				ridCrdb.Pool.Close()
-				return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+				return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
 			}
-			return nil, nil, stacktrace.Propagate(err, "Failed to create remote ID store")
+			return nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 		}
 	}
 
 	repo, err := ridStore.Interact(ctx)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	gc := ridc.NewGarbageCollector(repo, locality)
 
@@ -144,29 +142,23 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	ridCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
 	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, connectParameters.DBName) }); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
 	}
 
 	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
 	if _, err = ridCron.AddJob(*garbageCollectorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", connectParameters.DBName)
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", connectParameters.DBName)
 	}
 	ridCron.Start()
 
 	app := application.NewFromTransactor(ridStore, logger)
-	return &rid_v1.Server{
-			App:        app,
-			Timeout:    *timeout,
-			Locality:   locality,
-			EnableHTTP: *enableHTTP,
-			Cron:       ridCron,
-		}, &rid_v2.Server{
-			App:        app,
-			Timeout:    *timeout,
-			Locality:   locality,
-			EnableHTTP: *enableHTTP,
-			Cron:       ridCron,
-		}, nil
+	return &rid_v2.Server{
+		App:        app,
+		Timeout:    *timeout,
+		Locality:   locality,
+		EnableHTTP: *enableHTTP,
+		Cron:       ridCron,
+	}, nil
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
@@ -218,14 +210,13 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	var (
 		err         error
-		ridV1Server *rid_v1.Server
 		ridV2Server *rid_v2.Server
 		scdV1Server *scd.Server
 		auxV1Server = &aux.Server{}
 	)
 
 	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+	ridV2Server, err = createRIDServer(ctx, locality, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
@@ -251,15 +242,13 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
-	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&auxV1Router, &ridV1Router, &ridV2Router}}
+	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&auxV1Router, &ridV2Router}}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
 		scdV1Server, err = createSCDServer(ctx, logger)
 		if err != nil {
-			ridV1Server.Cron.Stop()
 			ridV2Server.Cron.Stop()
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}

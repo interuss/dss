@@ -21,9 +21,8 @@ failures.
 Component responsible for all the business logic as well as
 authentication. This backend talks directly to CockroachDB.
 See the API specifications:
-- [ASTM F3411-19 (Network Remote ID)](interfaces/rid/v1)
-- [ASTM F3411-22a (Network Remote ID)](interfaces/rid/v2)
-- [ASTM F3548-21 (Strategic Coordination)](interfaces/astm-utm)
+- [ASTM F3411-22a (Network Remote ID)](interfaces/brutm/remoteid)
+- [ASTM F3548-21 (Strategic Coordination)](interfaces/brutm/utm)
 
 ### CockroachDB (CRDB)
 

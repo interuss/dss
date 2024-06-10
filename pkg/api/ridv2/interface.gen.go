@@ -18,9 +18,6 @@ var (
 		{
 			"Authority": {RidDisplayProviderScope},
 		},
-		{
-			"Authority": {RidServiceProviderScope},
-		},
 	}
 	CreateIdentificationServiceAreaSecurity = []api.AuthorizationOption{
 		{

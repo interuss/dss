@@ -3,7 +3,6 @@ package testdata
 import (
 	"time"
 
-	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 )
 

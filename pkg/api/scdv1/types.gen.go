@@ -1,6 +1,15 @@
 // This file is auto-generated; do not change as any changes will be overwritten
 package scdv1
 
+// String for flight type. Accepted values are "VLOS", "EVLOS" or "BVLOS"
+type FlightType string
+
+const (
+	FlightType_VLOS  FlightType = "VLOS"
+	FlightType_EVLOS FlightType = "EVLOS"
+	FlightType_BVLOS FlightType = "BVLOS"
+)
+
 // String whose format matches a version-4 UUID according to RFC 4122.
 type UUIDv4Format string
 
@@ -223,6 +232,8 @@ const (
 type OperationalIntentReference struct {
 	Id EntityID `json:"id"`
 
+	FlightType OperationalIntentFlightType `json:"flight_type"`
+
 	// Created by the DSS based on creating client's ID (via access token).  Used internal to the DSS for restricting mutation and deletion operations to manager.  Used by USSs to reject operational intent update notifications originating from a USS that does not manage the operational intent.
 	Manager string `json:"manager"`
 
@@ -248,6 +259,9 @@ type OperationalIntentReference struct {
 	SubscriptionId SubscriptionID `json:"subscription_id"`
 }
 
+// Flight Type
+type OperationalIntentFlightType FlightType
+
 // The base URL of a USS implementation that implements the parts of the USS-USS API necessary for providing the details of this operational intent, and telemetry during non-conformance or contingency, if applicable.
 type OperationalIntentUssBaseURL UssBaseURL
 
@@ -269,6 +283,8 @@ type PutOperationalIntentReferenceParameters struct {
 
 	// If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
 	NewSubscription *ImplicitSubscriptionParameters `json:"new_subscription,omitempty"`
+
+	FlightType OperationalIntentFlightType `json:"flight_type"`
 }
 
 // Information necessary to create a subscription to serve a single operational intent's notification needs.

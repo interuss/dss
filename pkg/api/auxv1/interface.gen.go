@@ -7,13 +7,15 @@ import (
 )
 
 var (
-	GetVersionSecurity    = []api.AuthorizationOption{}
-	ValidateOauthSecurity = []api.AuthorizationOption{
+	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
+	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
+	GetVersionSecurity                      = []api.AuthorizationOption{}
+	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{
-			"Auth": {"dss.read.identification_service_areas"},
+			"Auth": {DssReadIdentificationServiceAreasScope},
 		},
 		{
-			"Auth": {"dss.write.identification_service_areas"},
+			"Auth": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
 )
