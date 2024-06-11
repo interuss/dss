@@ -1,0 +1,54 @@
+services:
+  kong-database:
+    container_name: kong_db
+    image: postgres:13
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=kong
+      - POSTGRES_DB=kong
+      - POSTGRES_PASSWORD=kongpass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kong-database-bootstrap:
+    container_name: kong_db_bootstrap
+    image: kong:alpine
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong_db
+      - KONG_PG_PASSWORD=kongpass
+      - KONG_PASSWORD=test
+    command: bash -c "kong migrations bootstrap"
+    depends_on:
+      kong-database:
+        condition: service_healthy
+
+  kong:
+    container_name: kong_gateway
+    # image: kong/kong-gateway:3.7.0.0
+    build:
+      context: cmds/kong
+      dockerfile: Dockerfile
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong_db
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=kongpass
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ADMIN_GUI_URL=http://localhost:8002
+      - KONG_PLUGINS=bundled,scope-acl
+    ports:
+      - 8000-8004:8000-8004
+      - 8443-8445:8443-8445
+    depends_on:
+      kong-database-bootstrap:
+        condition: service_completed_successfully
+

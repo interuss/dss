@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  konga-database:
+    container_name: konga_db
+    image: mongo:4.4-focal
+    volumes:
+      - ./konga_mongo_data:/data/db
+    networks:
+      - default
+
+  konga-dashboard:
+    container_name: konga_dashboard
+    image: pantsel/konga
+    environment:
+      - TOKEN_SECRET=kongsecret
+      - DB_ADAPTER=mongo
+      - DB_HOST=konga-database
+      - DB_PORT=27017
+      - DB_USER=kong
+      - BASE_URL=
+    ports:
+      - 1337:1337
+    networks:
+      - default

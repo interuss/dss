@@ -164,3 +164,18 @@ evaluate-tanka:
 # This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
 .PHONY: presubmit
 presubmit: hygiene-tests dss-tests
+
+
+.PHONY: kong
+kong:
+	docker-compose -f ./docker-compose-kong.yml build
+	docker-compose -f ./docker-compose-kong.yml up -d
+
+.PHONY: konga
+konga:
+	docker-compose -f ./docker-compose-konga.yml build
+	docker-compose -f ./docker-compose-konga.yml up -d
+
+.PHONY: kong-reset-db
+kong-reset-db:
+	sudo rm -rf kong_postgres_data
