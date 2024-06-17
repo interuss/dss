@@ -35,9 +35,6 @@ function cleanup() {
 	echo "Stopping haproxy docker"
 	docker rm -f dss-crdb-cluster-for-testing &> /dev/null || true
 
-	echo "Stopping dummy oauth container"
-	docker rm -f dummy-oauth-for-testing &> /dev/null || true
-
 	echo "Stopping core-service container"
 	docker kill -f core-service-for-testing &> /dev/null || true
 	docker rm -f core-service-for-testing &> /dev/null || true
@@ -164,19 +161,5 @@ docker run -d --name core-service-for-testing -p 8082:8082 \
 	-accepted_jwt_audiences core-service,localhost \
 	-enable_scd	\
 	-enable_http
-
-echo " -------------- DUMMY OAUTH -------------- "
-echo "Building dummy-oauth server container"
-docker build --rm -f cmds/dummy-oauth/Dockerfile . -t local-dummy-oauth > dummy-oauth-build.log
-
-echo "Cleaning up any pre-existing dummy-oauth container"
-docker rm -f dummy-oauth-for-testing &> /dev/null || echo "No dummy oauth to clean up"
-
-echo "Starting mock oauth server on :8085"
-docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
-	--network dss_sandbox-default	\
-	-v "$(pwd)/build/test-certs/auth2.key:/app/test.key" \
-	local-dummy-oauth \
-	-private_key_file /app/test.key
-
+	
 echo "Finished setting up Local dss cluster."
