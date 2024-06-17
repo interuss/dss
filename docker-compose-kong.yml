@@ -29,10 +29,14 @@ services:
 
   kong:
     container_name: kong_gateway
-    # image: kong/kong-gateway:3.7.0.0
     build:
       context: cmds/kong
       dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
     environment:
       - KONG_DATABASE=postgres
       - KONG_PG_HOST=kong_db
@@ -51,4 +55,21 @@ services:
     depends_on:
       kong-database-bootstrap:
         condition: service_completed_successfully
+  
+  token-signer:
+    container_name: auth_token_signer
+    build:
+      context: .
+      dockerfile: cmds/token-signer/Dockerfile
+    ports:
+      - 9096:9096
 
+  kong_gateway_boostrap:
+    container_name: kong_gateway_bootstrap
+    build:
+      context: cmds/kong/bootstrap
+      dockerfile: Dockerfile
+    command: ["sync", "--kong-addr", "http://172.17.0.1:8001"]
+    depends_on:
+      kong:
+        condition: service_healthy
