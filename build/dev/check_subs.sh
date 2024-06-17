@@ -6,9 +6,9 @@ set -eo pipefail
 # DSS instance using any of the deployment method described in
 # standalone_instance.md.
 
-# Retrieve token from dummy OAuth server
+# Retrieve token from auth server
 ACCESS_TOKEN=$(curl --silent \
-  "http://localhost:8085/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost" \
+  "http://localhost:8000/token?grant_type=client_credentials&scope=utm.strategic_coordination&intended_audience=localhost&issuer=localhost&apikey=brutm&aud=localhost" \
   | python extract_json_field.py 'access_token')
 
 echo "DSS response to [SCD] PUT Subscriptions query:"
