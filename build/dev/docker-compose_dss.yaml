@@ -65,17 +65,6 @@ services:
     networks:
       - dss_sandbox_default_network 
 
-  local-dss-dummy-oauth:
-    build:
-      context: ../..
-      dockerfile: cmds/dummy-oauth/Dockerfile
-    image: interuss-local/dummy-oauth
-    command: -private_key_file /var/test-certs/auth2.key
-    ports:
-      - "8085:8085"
-    networks:
-      - dss_sandbox_default_network 
-
 networks:
   dss_sandbox_default_network:
     name: dss_sandbox-default
