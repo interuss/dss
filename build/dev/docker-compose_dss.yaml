@@ -1,5 +1,4 @@
-# Brings up a full stand-alone DSS sandbox environment with locally-built dss
-# and dummy-oauth InterUSS images.
+# Brings up a full stand-alone DSS sandbox environment with locally-built dss InterUSS images.
 
 # To bring up this system, see standalone_instance.md.
 
