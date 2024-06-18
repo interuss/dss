@@ -25,10 +25,7 @@ if [[ -z "${DOCKER_URL}" ]]; then
   echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."
   docker image build . -t interuss-local/dss
 
-  echo "Building image to interuss-local/dummy-oauth..."
-  docker image build . --file cmds/dummy-oauth/Dockerfile -t interuss-local/dummy-oauth
-
-  echo "DOCKER_URL environment variable was not set; built images to interuss-local/dss and interuss-local/dummy-oauth"
+  echo "DOCKER_URL environment variable was not set; built images to interuss-local/dss"
 else
   echo "Building image ${DOCKER_URL}/dss:${VERSION}"
   docker image build . -t "${DOCKER_URL}/dss:${VERSION}"

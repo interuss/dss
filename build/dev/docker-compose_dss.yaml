@@ -1,5 +1,4 @@
-# Brings up a full stand-alone DSS sandbox environment with locally-built dss
-# and dummy-oauth InterUSS images.
+# Brings up a full stand-alone DSS sandbox environment with locally-built dss InterUSS images.
 
 # To bring up this system, see standalone_instance.md.
 
@@ -62,17 +61,6 @@ services:
     depends_on:
       - local-dss-rid-bootstrapper
       - local-dss-scd-bootstrapper
-    networks:
-      - dss_sandbox_default_network 
-
-  local-dss-dummy-oauth:
-    build:
-      context: ../..
-      dockerfile: cmds/dummy-oauth/Dockerfile
-    image: interuss-local/dummy-oauth
-    command: -private_key_file /var/test-certs/auth2.key
-    ports:
-      - "8085:8085"
     networks:
       - dss_sandbox_default_network 
 

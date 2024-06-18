@@ -1,8 +1,7 @@
 #!/bin/bash
 
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
 CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-declare -a localhost_containers=("$OAUTH_CONTAINER" "$CORE_SERVICE_CONTAINER")
+declare -a localhost_containers=("$CORE_SERVICE_CONTAINER")
 
 # 2 minute timer to prevent infinite looping if a docker issue is present.
 timeout_duration=120

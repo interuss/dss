@@ -68,7 +68,7 @@ hygiene-tests: check-hygiene
 
 # --- Targets to autogenerate Go code for OpenAPI-defined interfaces ---
 .PHONY: apis
-apis: example_apis dummy_oauth_api dss_apis
+apis: example_apis dss_apis
 
 openapi-to-go-server:
 	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
@@ -88,16 +88,6 @@ dss_apis: openapi-to-go-server
 
 example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
-
-dummy_oauth_api: openapi-to-go-server
-	docker container run -it \
-		-v $(CURDIR)/interfaces/dummy-oauth/dummy-oauth.yaml:/resources/dummy-oauth.yaml \
-		-v $(CURDIR)/cmds/dummy-oauth:/resources/output \
-		interuss/openapi-to-go-server \
-			--api_import github.com/interuss/dss/cmds/dummy-oauth/api \
-			--api /resources/dummy-oauth.yaml \
-			--api_folder /resources/output/api
-# ---
 
 .PHONY: check-dss
 check-dss: evaluate-tanka test-go-units test-go-units-crdb build-dss test-e2e
