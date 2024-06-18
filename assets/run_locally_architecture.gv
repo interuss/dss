@@ -3,7 +3,7 @@
 digraph G {
   node [shape=box];
   USS [shape=oval];
-  OAuth [label="dummy-oauth"];
+  OAuth [label="auth-server"];
   CoreService [label="core-service"];
   CRDB [label="CockroachDB node"];
   PrivateKey [label="auth2.key"];

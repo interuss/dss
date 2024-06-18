@@ -9,7 +9,6 @@ Multi-node local instance can be deployed by running [`./build/dev/haproxy_local
 
 Once the setup is complete, the following endpoints will be available:
 
-* Dummy OAuth Server: http://localhost:8085/token
 * DSS Core Service: http://localhost:8082/healthy
 * CockroachDB web UI: http://localhost:8080
 
