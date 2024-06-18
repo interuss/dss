@@ -24,20 +24,21 @@ func (h HttpServer) Serve(signer tokenSigner.TokenSigner) {
 		log.Println("Token requested with parameters")
 		log.Println(r)
 
-		if r.Method != "GET" {
-			http.Error(w, "Invalid request method", 405)
+		if r.Method != http.MethodGet {
+			log.Print("Invalid request method: " + r.Method)
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
 		request, err := parser.ParseRequest(r)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		response, err := signer.CreateSignedToken(request)
 		if err != nil {
 			log.Print(err.Error())
-			http.Error(w, "Internal Error", 500)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
@@ -45,12 +46,11 @@ func (h HttpServer) Serve(signer tokenSigner.TokenSigner) {
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			log.Print(err.Error())
-			http.Error(w, "Internal Error", 500)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
 		return
 	})
-	log.Print("Server started on port :" + conf.Port)
 	log.Fatal(http.ListenAndServe(":"+conf.Port, nil))
 }
