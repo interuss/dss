@@ -12,7 +12,6 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 
-	"github.com/golang/geo/s2"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 )
@@ -105,10 +104,6 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	}
 
 	for _, op := range payload {
-		if err := s.populateOperationalIntentCells(ctx, q, op); err != nil {
-			return nil, stacktrace.Propagate(err, "Error populating cells for Operation %s", op.ID)
-		}
-
 		op.UssAvailability = ussAvailabilities[op.Manager]
 	}
 
@@ -140,40 +135,6 @@ func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id ds
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
 	return s.fetchOperationalIntent(ctx, q, query, uid)
-}
-
-func (s *repo) populateOperationalIntentCells(ctx context.Context, q dsssql.Queryable, o *scdmodels.OperationalIntent) error {
-	const query = `
-	SELECT
-		unnest(cells) as cell_id
-	FROM
-		scd_operations
-	WHERE id = $1`
-
-	uid, err := o.ID.PgUUID()
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
-	}
-	rows, err := q.Query(ctx, query, uid)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error in query: %s", query)
-	}
-	defer rows.Close()
-
-	var cell int64
-	o.Cells = s2.CellUnion{}
-
-	for rows.Next() {
-		if err := rows.Scan(&cell); err != nil {
-			return stacktrace.Propagate(err, "Error scanning cell ID row")
-		}
-		o.Cells = append(o.Cells, s2.CellID(uint64(cell)))
-	}
-	if err := rows.Err(); err != nil {
-		return stacktrace.Propagate(err, "Error in rows query result")
-	}
-
-	return nil
 }
 
 // GetOperation implements repos.Operation.GetOperation.
