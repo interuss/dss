@@ -40,7 +40,13 @@ helm dep update --kube-context="$KUBE_CONTEXT"
 helm upgrade --install --debug --kube-context="$KUBE_CONTEXT" -f "${WORKSPACE_LOCATION}/helm_values.yml" "$RELEASE_NAME" .
 kubectl wait --for=condition=complete --timeout=3m job/rid-schema-manager-1
 
-# TODO: Test the deployment of the DSS
+# Test the deployment of the DSS
+kubectl apply -f test/test-resources.yaml
+kubectl create secret generic -n tests dummy-oauth-certs --from-file="$BASEDIR/../../../../build/test-certs/auth2.key"
+kubectl wait -n tests --for=condition=complete --timeout=10m job.batch/uss-qualifier
+# dummy-oauth-certs secret is deleted with the namespace using the command below
+kubectl delete -f test/test-resources.yaml
+
 
 if [ -n "$DO_NOT_DESTROY" ]; then
   echo "Destroy disabled. Exit."
