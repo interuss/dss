@@ -38,7 +38,7 @@ cd "$BASEDIR/../../../services/helm-charts/dss"
 RELEASE_NAME="dss"
 helm dep update --kube-context="$KUBE_CONTEXT"
 helm upgrade --install --debug --kube-context="$KUBE_CONTEXT" -f "${WORKSPACE_LOCATION}/helm_values.yml" "$RELEASE_NAME" .
-kubectl wait --for=condition=complete --timeout=3m job/rid-schema-manager-1
+kubectl wait --for=condition=complete --timeout=3m job --all
 
 # Test the deployment of the DSS
 kubectl apply -f test/test-resources.yaml
