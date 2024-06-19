@@ -145,6 +145,10 @@ start-locally:
 probe-locally:
 	build/dev/probe_locally.sh
 
+.PHONY: qualify-locally
+qualify-locally:
+	build/dev/qualify_locally.sh
+
 .PHONY: collect-local-logs
 collect-local-logs:
 	docker logs dss_sandbox-local-dss-core-service-1 2> core-service-for-testing.log
