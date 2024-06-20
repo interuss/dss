@@ -18,10 +18,10 @@ func (v HttpRequestParser) ParseRequest(r *http.Request) (tokenSigner.CreateSign
 
 	request := tokenSigner.CreateSignedTokenRequest{}
 
-	if queryStrings.Has("aud") {
-		request.Aud = queryStrings.Get("aud")
+	if queryStrings.Has("intended_audience") {
+		request.Aud = queryStrings.Get("intended_audience")
 	} else {
-		return request, errors.New("Missing `aud` query parameter")
+		return request, errors.New("Missing `intended_audience` query parameter")
 	}
 
 	if queryStrings.Has("scope") {
