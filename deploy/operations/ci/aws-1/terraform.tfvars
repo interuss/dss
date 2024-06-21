@@ -23,7 +23,7 @@ authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
 should_init         = true
-crdb_cluster_name   = "interuss_ci"
+crdb_cluster_name   = "interuss-ci"
 crdb_locality       = "interuss_dss-ci-aws-ue1"
 crdb_external_nodes = []
 
