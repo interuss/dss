@@ -62,6 +62,9 @@ kubectl delete pvc --wait --all=true
 kubectl delete pv --wait --all=true
 # TODO: Check completeness
 
+# Debug: show all resources
+kubectl get all
+
 # Delete cluster
 cd "$BASEDIR"
 terraform destroy -auto-approve
