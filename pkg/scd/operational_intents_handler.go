@@ -611,14 +611,24 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 				if len(missingOps) > 0 {
 					responseConflict.MissingOperationalIntents = new([]restapi.OperationalIntentReference)
 					for _, missingOp := range missingOps {
-						*responseConflict.MissingOperationalIntents = append(*responseConflict.MissingOperationalIntents, *missingOp.ToRest())
+						p := missingOp.ToRest()
+						if missingOp.Manager != manager {
+							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+							p.Ovn = &noOvnPhrase
+						}
+						*responseConflict.MissingOperationalIntents = append(*responseConflict.MissingOperationalIntents, *p)
 					}
 				}
 
 				if len(missingConstraints) > 0 {
 					responseConflict.MissingConstraints = new([]restapi.ConstraintReference)
 					for _, missingConstraint := range missingConstraints {
-						*responseConflict.MissingConstraints = append(*responseConflict.MissingConstraints, *missingConstraint.ToRest())
+						c := missingConstraint.ToRest()
+						if missingConstraint.Manager != manager {
+							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+							c.Ovn = &noOvnPhrase
+						}
+						*responseConflict.MissingConstraints = append(*responseConflict.MissingConstraints, *c)
 					}
 				}
 
