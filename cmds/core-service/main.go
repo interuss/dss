@@ -32,6 +32,7 @@ import (
 	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
+	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -207,6 +208,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 // RunHTTPServer starts the DSS HTTP server.
 func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality string) error {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(zap.String("address", address))
+	logger.Info("version", zap.Any("version", version.Current()))
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 
