@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/interuss/dss/pkg/versioning"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,6 +21,7 @@ import (
 	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	apiridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	apiscdv1 "github.com/interuss/dss/pkg/api/scdv1"
+	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
 	"github.com/interuss/dss/pkg/build"
@@ -44,6 +46,9 @@ var (
 	enableHTTP = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
 	timeout    = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	locality   = flag.String("locality", "", "self-identification string used as CRDB table writer column")
+
+	systemIdentity = flag.String("system_identity", "", "System identity for which a version should be provided via the automated testing versioning interface")
+	systemVersion  = flag.String("system_version", "", "System version to provide via the automated testing versioning interface")
 
 	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
@@ -219,11 +224,12 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	var (
-		err         error
-		ridV1Server *rid_v1.Server
-		ridV2Server *rid_v2.Server
-		scdV1Server *scd.Server
-		auxV1Server = &aux.Server{}
+		err                error
+		ridV1Server        *rid_v1.Server
+		ridV2Server        *rid_v2.Server
+		versioningV1Server *versioning.Server
+		scdV1Server        *scd.Server
+		auxV1Server        = &aux.Server{}
 	)
 
 	// Initialize remote ID
@@ -231,6 +237,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
+
+	// Initialize versioning
+	versioningV1Server = versioning.NewServer(*systemIdentity, *systemVersion)
 
 	// Initialize access token validation
 	keyResolver, err := createKeyResolver()
@@ -255,7 +264,14 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
 	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&auxV1Router, &ridV1Router, &ridV2Router}}
+	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
+	multiRouter := api.MultiRouter{
+		Routers: []api.PartialRouter{
+			&auxV1Router,
+			&ridV1Router,
+			&ridV2Router,
+			&versioningV1Router,
+		}}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
@@ -355,6 +371,14 @@ func main() {
 	flag.Parse()
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
 		panic(fmt.Sprintf("Failed to configure logging: %s", err.Error()))
+	}
+
+	if *systemIdentity == "" {
+		panic("system_identity is a required argument")
+	}
+
+	if *systemVersion == "" {
+		panic("system_version is a required argument")
 	}
 
 	var (
