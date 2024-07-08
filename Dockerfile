@@ -17,17 +17,9 @@ WORKDIR /app
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
 
-COPY .git /app/.git
-COPY cmds /app/cmds
-RUN mkdir -p cmds/db-manager
-
-COPY pkg /app/pkg
-COPY cmds/db-manager cmds/db-manager
-
-RUN go install ./...
-
-COPY scripts /app/scripts
-COPY Makefile /app
+# In order to reliably compute the version of the build, all files must be present.
+# This is required to detect a dirty workspace using `scripts/git/version.sh`.
+COPY . /app
 RUN make interuss
 
 
