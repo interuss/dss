@@ -20,6 +20,7 @@ import (
 	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	apiridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	apiscdv1 "github.com/interuss/dss/pkg/api/scdv1"
+	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
 	"github.com/interuss/dss/pkg/build"
@@ -33,6 +34,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scdc "github.com/interuss/dss/pkg/scd/store/cockroach"
 	"github.com/interuss/dss/pkg/version"
+	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -219,11 +221,12 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	var (
-		err         error
-		ridV1Server *rid_v1.Server
-		ridV2Server *rid_v2.Server
-		scdV1Server *scd.Server
-		auxV1Server = &aux.Server{}
+		err                error
+		ridV1Server        *rid_v1.Server
+		ridV2Server        *rid_v2.Server
+		scdV1Server        *scd.Server
+		auxV1Server        = &aux.Server{}
+		versioningV1Server = &versioning.Server{}
 	)
 
 	// Initialize remote ID
@@ -253,9 +256,16 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
 	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&auxV1Router, &ridV1Router, &ridV2Router}}
+	multiRouter := api.MultiRouter{
+		Routers: []api.PartialRouter{
+			&auxV1Router,
+			&versioningV1Router,
+			&ridV1Router,
+			&ridV2Router,
+		}}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
