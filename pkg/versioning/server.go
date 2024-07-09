@@ -5,19 +5,11 @@ import (
 	"github.com/interuss/dss/pkg/api"
 	versioning "github.com/interuss/dss/pkg/api/versioningv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/stacktrace"
 )
 
 type Server struct {
-	systemIdentity    *versioning.SystemBoundaryIdentifier
-	versionIdentifier *versioning.VersionIdentifier
-}
-
-func NewServer(systemIdentity string, versionIdentifier string) *Server {
-	return &Server{
-		systemIdentity:    (*versioning.SystemBoundaryIdentifier)(&systemIdentity),
-		versionIdentifier: (*versioning.VersionIdentifier)(&versionIdentifier),
-	}
 }
 
 func (s *Server) GetVersion(ctx context.Context, req *versioning.GetVersionRequest) versioning.GetVersionResponseSet {
@@ -29,19 +21,13 @@ func (s *Server) GetVersion(ctx context.Context, req *versioning.GetVersionReque
 		return resp
 	}
 
-	// TODO initial assumption is that the DSS reports the version for itself _only_:
-	//  confirm this is the correct approach. Alternatively we could configure a map of identities to versions
-	//  and provide versions for multiple identities.
-	if *s.systemIdentity != req.SystemIdentity {
-		return versioning.GetVersionResponseSet{
-			Response404: &api.EmptyResponseBody{},
-		}
-	}
-
+	// The DSS has no notion of particular system identities: whatever the request, we will
+	// always return the current version of the DSS binary.
+	versionStr := version.Current().String()
 	return versioning.GetVersionResponseSet{
 		Response200: &versioning.GetVersionResponse{
-			SystemIdentity: s.systemIdentity,
-			SystemVersion:  s.versionIdentifier,
+			SystemIdentity: &req.SystemIdentity,
+			SystemVersion:  (*versioning.VersionIdentifier)(&versionStr),
 		},
 	}
 }

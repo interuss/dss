@@ -18,9 +18,7 @@ if [ "$DEBUG_ON" = "1" ]; then
   -addr :8082 \
   -accepted_jwt_audiences localhost,host.docker.internal,local-dss-core-service,dss_sandbox-local-dss-core-service-1,core-service \
   -enable_scd \
-  -enable_http \
-  -system_identity "local.test.identity" \
-  -system_version "test-version"
+  -enable_http
 else
   echo "Debug Mode: off"
 
@@ -32,8 +30,6 @@ else
   -addr :8082 \
   -accepted_jwt_audiences localhost,host.docker.internal,local-dss-core-service,dss_sandbox-local-dss-core-service-1,core-service \
   -enable_scd \
-  -enable_http \
-  -system_identity "local.test.identity" \
-  -system_version "test-version"
+  -enable_http
 fi
 
