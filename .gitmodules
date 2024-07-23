@@ -1,6 +1,3 @@
 [submodule "interfaces/brutm"]
 	path = interfaces/brutm
 	url = https://github.com/dp-icea/Protocols.git
-[submodule "interfaces/automated_testing_interfaces"]
-	path = interfaces/automated_testing_interfaces
-	url = https://github.com/interuss/automated_testing_interfaces.git
