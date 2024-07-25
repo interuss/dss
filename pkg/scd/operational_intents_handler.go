@@ -16,6 +16,15 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
+// subscriptionCanBeRemoved will check if:
+// - a previous subscription was attached,
+// - if so, if it was an implicit subscription
+// - if so, if we can remove it after creating the new implicit subscription
+//
+// This is to be used in contexts where an implicit subscription may need to be cleaned up.
+// NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
+//
+//	See https://github.com/interuss/dss/issues/1059 for more details
 func subscriptionCanBeRemoved(ctx context.Context, r repos.Repository, subscriptionID *dssmodels.ID) (bool, error) {
 	// Get the Subscription supporting the OperationalIntent, if one is defined
 	if subscriptionID != nil {
@@ -514,17 +523,14 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					}
 				}
 
-				// If an implicit subscription creation is requested, we need to check if:
-				// - a previous subscription was attached,
-				// - if so, if it was an implicit subscription
-				// - if so, if we can remove it after creating the new implicit subscription
 				removePreviousImplicitSubscription, err = subscriptionCanBeRemoved(ctx, r, previousSubscriptionID)
 				if err != nil {
 					return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
 				}
 
-				// We _could_ reuse the previous subscription ID if it was an implicit subscription,
-				// but for now we chose to always create a new subscription.
+				// Note: parameters for a new implicit subscription have been passed, so we will create
+				// a new implicit subscription even if another subscription was attaches to this OIR before,
+				// (and regardless of whether it was an implicit subscription or not).
 				subToUpsert := scdmodels.Subscription{
 					ID:                          dssmodels.ID(uuid.New().String()),
 					Manager:                     manager,
@@ -727,7 +733,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
 		}
 
-		// Check if the previously attached subscription should be removedre
+		// Check if the previously attached subscription should be removed
 		if removePreviousImplicitSubscription {
 			err = r.DeleteSubscription(ctx, *previousSubscriptionID)
 			if err != nil {
