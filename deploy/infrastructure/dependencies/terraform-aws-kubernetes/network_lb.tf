@@ -15,7 +15,9 @@ resource "helm_release" "aws-load-balancer-controller" {
   }
 
   depends_on = [
-    aws_eks_cluster.kubernetes_cluster
+    aws_eks_cluster.kubernetes_cluster,
+    aws_iam_role_policy_attachment.AWSLoadBalancerControllerPolicy,
+    aws_eks_node_group.eks_node_group
   ]
 }
 
