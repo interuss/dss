@@ -111,11 +111,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			}
 		}
 
-		removeImplicitSubscription, err := subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, id, previousSubscription)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not determine if Subscription can be removed")
-		}
-
 		// Gather the subscriptions that need to be notified
 		notifyVolume := &dssmodels.Volume4D{
 			StartTime: old.StartTime,
@@ -136,15 +131,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		// Delete OperationalIntent from repo
 		if err := r.DeleteOperationalIntent(ctx, id); err != nil {
 			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
-		}
-
-		// removeImplicitSubscription is only true if the OIR had a subscription defined
-		if removeImplicitSubscription {
-			// Automatically remove a now-unused implicit Subscription
-			err = r.DeleteSubscription(ctx, previousSubscription.ID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete associated implicit Subscription")
-			}
 		}
 
 		// Return response to client
