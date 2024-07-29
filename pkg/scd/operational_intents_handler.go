@@ -92,11 +92,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
-		removeImplicitSubscription, err := subscriptionCanBeRemoved(ctx, r, old.SubscriptionID)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not determine if Subscription can be removed")
-		}
-
 		// Find Subscriptions that may overlap the OperationalIntent's Volume4D
 		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
 			StartTime: old.StartTime,
@@ -128,15 +123,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		// Delete OperationalIntent from repo
 		if err := r.DeleteOperationalIntent(ctx, id); err != nil {
 			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
-		}
-
-		// removeImplicitSubscription is only true if the OIR had a subscription defined
-		if removeImplicitSubscription {
-			// Automatically remove a now-unused implicit Subscription
-			err = r.DeleteSubscription(ctx, *old.SubscriptionID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete associated implicit Subscription")
-			}
 		}
 
 		// Return response to client
