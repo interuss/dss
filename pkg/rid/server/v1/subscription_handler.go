@@ -187,7 +187,7 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	if !s.EnableHTTP {
+	if !s.AllowHTTPBaseUrls {
 		err = ridmodels.ValidateURL(string(*req.Body.Callbacks.IdentificationServiceAreaUrl))
 		if err != nil {
 			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{

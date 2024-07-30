@@ -88,7 +88,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	if !s.EnableHTTP {
+	if !s.AllowHTTPBaseUrls {
 		err = ridmodels.ValidateURL(string(req.Body.FlightsUrl))
 		if err != nil {
 			return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{

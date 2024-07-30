@@ -371,7 +371,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
-	if !a.EnableHTTP {
+	if !a.AllowHTTPBaseUrls {
 		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
 			return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
@@ -483,7 +483,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			// an error will have been returned earlier.
 			// If they are not set at this point, continue without creating an implicit subscription.
 			if params.NewSubscription != nil && params.NewSubscription.UssBaseUrl != "" {
-				if !a.EnableHTTP {
+				if !a.AllowHTTPBaseUrls {
 					err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
 					if err != nil {
 						return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")

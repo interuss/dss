@@ -260,7 +260,7 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
 	}
 
-	if !a.EnableHTTP {
+	if !a.AllowHTTPBaseUrls {
 		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
