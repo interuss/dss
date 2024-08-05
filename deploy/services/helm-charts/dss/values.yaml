@@ -13,6 +13,3 @@ cockroachdb:
         enabled: false
   ingress:
     enabled: false
-
-dss:
-  image: docker.io/interuss/dss:v0.7.0
