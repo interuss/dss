@@ -10,13 +10,12 @@ services:
   local-dss-crdb:
     image: cockroachdb/cockroach:v21.2.7
     command: start-single-node --insecure
-    expose:
-      - 26257
     ports:
+      - "26257:26257"
       - "8080:8080"
     restart: always
     networks:
-      - dss_sandbox_default_network 
+      - dss_sandbox_default_network
 
   local-dss-rid-bootstrapper:
     build:
@@ -30,7 +29,7 @@ services:
     depends_on:
       - local-dss-crdb
     networks:
-      - dss_sandbox_default_network 
+      - dss_sandbox_default_network
 
   local-dss-scd-bootstrapper:
     build:
@@ -44,7 +43,7 @@ services:
     depends_on:
       - local-dss-crdb
     networks:
-      - dss_sandbox_default_network 
+      - dss_sandbox_default_network
 
   local-dss-core-service:
     build:
@@ -63,7 +62,7 @@ services:
       - local-dss-rid-bootstrapper
       - local-dss-scd-bootstrapper
     networks:
-      - dss_sandbox_default_network 
+      - dss_sandbox_default_network
 
   local-dss-dummy-oauth:
     build:
@@ -74,7 +73,7 @@ services:
     ports:
       - "8085:8085"
     networks:
-      - dss_sandbox_default_network 
+      - dss_sandbox_default_network
 
 networks:
   dss_sandbox_default_network:

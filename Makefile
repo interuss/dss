@@ -133,6 +133,9 @@ test-e2e: down-locally build-dss start-locally probe-locally collect-local-logs 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
 
+.PHONY: restart-all
+restart-all: build-dss down-locally start-locally
+
 .PHONY: start-locally
 start-locally:
 	build/dev/run_locally.sh up -d
