@@ -16,37 +16,6 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// subscriptionIsImplicitAndOnlyAttachedToOIR will check if:
-// - the subscription is defined and is implicit
-// - the subscription is attached to the specified operational intent
-// - the subscription is not attached to any other operational intent
-//
-// This is to be used in contexts where an implicit subscription may need to be cleaned up: if true is returned,
-// the subscription can be safely removed after the operational intent is deleted or attached to another subscription.
-//
-// NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
-//
-//	See https://github.com/interuss/dss/issues/1059 for more details
-func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID dssmodels.ID, subscription *scdmodels.Subscription) (bool, error) {
-	if subscription == nil {
-		return false, nil
-	}
-	if !subscription.ImplicitSubscription {
-		return false, nil
-	}
-	// Get the Subscription's dependent OperationalIntents
-	dependentOps, err := r.GetDependentOperationalIntents(ctx, subscription.ID)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
-	}
-	if len(dependentOps) == 0 {
-		return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-	} else if len(dependentOps) == 1 && dependentOps[0] == oirID {
-		return true, nil
-	}
-	return false, nil
-}
-
 // DeleteOperationalIntentReference deletes a single operational intent ref for a given ID at
 // the specified version.
 func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *restapi.DeleteOperationalIntentReferenceRequest,
@@ -837,13 +806,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		// Determine if the previous subscription is being replaced and if it will need to be cleaned up
 		previousSubIsBeingReplaced := previousSub != nil && validParams.subscriptionID != previousSub.ID
-		removePreviousImplicitSubscription := false
-		if previousSubIsBeingReplaced {
-			removePreviousImplicitSubscription, err = subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, validParams.id, previousSub)
-			if err != nil {
-				return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
-			}
-		}
 
 		// attachedSub is the subscription that will end up being attached to the OIR
 		// it defaults to the previous subscription (which may be nil), and may be updated if required by the parameters
@@ -914,14 +876,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		op, err = r.UpsertOperationalIntent(ctx, op)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
-		}
-
-		// Check if the previously attached subscription should be removed
-		if removePreviousImplicitSubscription {
-			err = r.DeleteSubscription(ctx, previousSub.ID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete previous implicit Subscription")
-			}
 		}
 
 		notifyVolume, err := computeNotificationVolume(old, validParams.uExtent)

@@ -233,13 +233,51 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
-			UPSERT INTO
-				scd_operations
-				(%s)
-			VALUES
-				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
-			RETURNING
-				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
+			WITH previous_implicit_sub AS (
+                -- get the current subscription id if:
+                --  - it exists
+                --  - it is implicit
+                --  - the OIR's subscription is being updated (ie, the new subscription id is different from the old one)
+                SELECT
+                    scd_subscriptions.id
+                FROM scd_operations
+                JOIN scd_subscriptions ON scd_operations.subscription_id = scd_subscriptions.id
+                WHERE
+                    scd_operations.id = $1
+                AND
+                    scd_subscriptions.implicit = true
+                AND
+                    -- in SQL, X != NULL will always be false:
+                    -- this condition needs to cover cases where the new subscription is undefined,
+                    -- so we add an explicit 'IS NULL' check.
+                    (scd_subscriptions.id != $9 OR $9 IS NULL)
+            ),
+            upserted_oir AS (
+                -- actual insertion/update statement
+                UPSERT INTO
+				    scd_operations
+				    (%s)
+			    VALUES
+				    ($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
+			    RETURNING
+				    %s
+            ),
+            dependent_oirs AS ( -- NOTE: this sub-query will still return the OIR being mutated (!)
+                SELECT id
+                FROM scd_operations
+                WHERE subscription_id = (SELECT id FROM previous_implicit_sub)
+            ),
+            deleted_subscription_id AS (
+                -- We are guaranteed to only delete something here if the OIR is being updated. Upon creation
+                -- previous_implicit_sub will be empty
+                DELETE FROM scd_subscriptions
+                WHERE id = (SELECT id FROM previous_implicit_sub)
+                AND (SELECT COUNT(*) FROM dependent_oirs) = 1 -- NOTE: see above, the OIR being updated is still counted here, hence a value of 1
+                RETURNING id
+            )
+            -- return the upserted OIR
+            SELECT * FROM upserted_oir
+            `, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
 	)
 
 	cids := make([]int64, len(operation.Cells))
