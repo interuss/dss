@@ -16,42 +16,6 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// subscriptionCanBeRemoved will check if:
-// - a previous subscription was attached,
-// - if so, if it was an implicit subscription
-// - if so, if we can remove it after creating the new implicit subscription
-//
-// This is to be used in contexts where an implicit subscription may need to be cleaned up.
-// NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
-//
-//	See https://github.com/interuss/dss/issues/1059 for more details
-func subscriptionCanBeRemoved(ctx context.Context, r repos.Repository, subscriptionID *dssmodels.ID) (bool, error) {
-	// Get the Subscription supporting the OperationalIntent, if one is defined
-	if subscriptionID != nil {
-		sub, err := r.GetSubscription(ctx, *subscriptionID)
-		if err != nil {
-			return false, stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
-		}
-		if sub == nil {
-			return false, stacktrace.NewError("OperationalIntent's Subscription missing from repo")
-		}
-
-		if sub.ImplicitSubscription {
-			// Get the Subscription's dependent OperationalIntents
-			dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
-			if err != nil {
-				return false, stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
-			}
-			if len(dependentOps) == 0 {
-				return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-			} else if len(dependentOps) == 1 {
-				return true, nil
-			}
-		}
-	}
-	return false, nil
-}
-
 // DeleteOperationalIntentReference deletes a single operational intent ref for a given ID at
 // the specified version.
 func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *restapi.DeleteOperationalIntentReferenceRequest,
@@ -459,7 +423,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 
-		var previousSubscriptionID *dssmodels.ID
 		if old != nil {
 			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
@@ -471,7 +434,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			}
 
 			version = int32(old.Version)
-			previousSubscriptionID = old.SubscriptionID
 		} else {
 			if ovn != "" {
 				return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", ovn)
@@ -481,7 +443,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		var sub *scdmodels.Subscription
-		removePreviousImplicitSubscription := false
 		if subscriptionID.Empty() {
 			// Create an implicit subscription if the implicit subscription params are set:
 			// for situations where these params are required but have not been set,
@@ -493,11 +454,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					if err != nil {
 						return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 					}
-				}
-
-				removePreviousImplicitSubscription, err = subscriptionCanBeRemoved(ctx, r, previousSubscriptionID)
-				if err != nil {
-					return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
 				}
 
 				// Note: parameters for a new implicit subscription have been passed, so we will create
@@ -703,14 +659,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		op, err = r.UpsertOperationalIntent(ctx, op)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
-		}
-
-		// Check if the previously attached subscription should be removed
-		if removePreviousImplicitSubscription {
-			err = r.DeleteSubscription(ctx, *previousSubscriptionID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete previous implicit Subscription")
-			}
 		}
 
 		// Find Subscriptions that may need to be notified
