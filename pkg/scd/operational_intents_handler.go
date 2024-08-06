@@ -56,32 +56,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
-		// Get the Subscription supporting the OperationalIntent, if one is defined
-		var sub *scdmodels.Subscription
-		removeImplicitSubscription := false
-		if old.SubscriptionID != nil {
-			sub, err = r.GetSubscription(ctx, *old.SubscriptionID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
-			}
-			if sub == nil {
-				return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
-			}
-
-			if sub.ImplicitSubscription {
-				// Get the Subscription's dependent OperationalIntents
-				dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
-				if err != nil {
-					return stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
-				}
-				if len(dependentOps) == 0 {
-					return stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-				} else if len(dependentOps) == 1 {
-					removeImplicitSubscription = true
-				}
-			}
-		}
-
 		// Find Subscriptions that may overlap the OperationalIntent's Volume4D
 		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
 			StartTime: old.StartTime,
@@ -113,15 +87,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		// Delete OperationalIntent from repo
 		if err := r.DeleteOperationalIntent(ctx, id); err != nil {
 			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
-		}
-
-		// removeImplicitSubscription is only true if the OIR had a subscription defined
-		if removeImplicitSubscription {
-			// Automatically remove a now-unused implicit Subscription
-			err = r.DeleteSubscription(ctx, sub.ID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete associated implicit Subscription")
-			}
 		}
 
 		// Return response to client
@@ -457,6 +422,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
+
 		if old != nil {
 			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
@@ -490,6 +456,9 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					}
 				}
 
+				// Note: parameters for a new implicit subscription have been passed, so we will create
+				// a new implicit subscription even if another subscription was attaches to this OIR before,
+				// (and regardless of whether it was an implicit subscription or not).
 				subToUpsert := scdmodels.Subscription{
 					ID:                          dssmodels.ID(uuid.New().String()),
 					Manager:                     manager,
