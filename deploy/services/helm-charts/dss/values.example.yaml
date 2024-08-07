@@ -1,7 +1,7 @@
 # See values.schema.json for schema description
 
 dss:
-  #  image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
+  image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
   conf:
     pubKeys:
       - /test-certs/auth2.pem
