@@ -1,5 +1,15 @@
 # See values.schema.json for schema description
 
+dss:
+  image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
+  conf:
+    pubKeys:
+      - /test-certs/auth2.pem
+    jwksEndpoint: ''
+    jwksKeyIds: []
+    hostname: dss.example.com
+    enableScd: true
+
 cockroachdb:
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
   fullnameOverride: dss-cockroachdb
@@ -31,15 +41,6 @@ loadBalancers:
     ip: 192.168.0.10
 #    subnet: subnet-xxx # for aws only
 #    certName: arn:xxxx # for aws only
-
-dss:
-  conf:
-    pubKeys:
-      - /test-certs/auth2.pem
-    jwksEndpoint: ''
-    jwksKeyIds: []
-    hostname: dss.example.com
-    enableScd: true
 
 global:
   cloudProvider: google

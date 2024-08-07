@@ -133,7 +133,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "type": "string"
+          "type": "string",
+          "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
         },
         "conf": {
           "type": "object",
