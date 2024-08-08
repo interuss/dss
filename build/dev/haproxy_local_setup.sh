@@ -163,7 +163,7 @@ docker run -d --name core-service-for-testing -p 8082:8082 \
 	-dump_requests \
 	-accepted_jwt_audiences core-service,localhost \
 	-enable_scd	\
-	-enable_http
+	-allow_http_base_urls
 
 echo " -------------- DUMMY OAUTH -------------- "
 echo "Building dummy-oauth server container"

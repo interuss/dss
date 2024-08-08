@@ -41,11 +41,12 @@ import (
 )
 
 var (
-	address    = flag.String("addr", ":8080", "Local address that the service binds to and listens on for incoming connections")
-	enableSCD  = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
-	enableHTTP = flag.Bool("enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
-	timeout    = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
-	locality   = flag.String("locality", "", "self-identification string used as CRDB table writer column")
+	address           = flag.String("addr", ":8080", "Local address that the service binds to and listens on for incoming connections")
+	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
+	allowHTTPBaseUrls = flag.Bool("allow_http_base_urls", false, "Enables http scheme for Strategic Conflict Detection API")
+	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
+	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
+	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 
 	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
@@ -158,17 +159,17 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
-			App:        app,
-			Timeout:    *timeout,
-			Locality:   locality,
-			EnableHTTP: *enableHTTP,
-			Cron:       ridCron,
+			App:               app,
+			Timeout:           *timeout,
+			Locality:          locality,
+			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+			Cron:              ridCron,
 		}, &rid_v2.Server{
-			App:        app,
-			Timeout:    *timeout,
-			Locality:   locality,
-			EnableHTTP: *enableHTTP,
-			Cron:       ridCron,
+			App:               app,
+			Timeout:           *timeout,
+			Locality:          locality,
+			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+			Cron:              ridCron,
 		}, nil
 }
 
@@ -200,10 +201,10 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	scdCron.Start()
 
 	return &scd.Server{
-		Store:            scdStore,
-		DSSReportHandler: &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
-		Timeout:          *timeout,
-		EnableHTTP:       *enableHTTP,
+		Store:             scdStore,
+		DSSReportHandler:  &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
+		Timeout:           *timeout,
+		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 	}, nil
 }
 
@@ -361,6 +362,15 @@ func (gcj RIDGarbageCollectorJob) Run() {
 	}
 }
 
+func SetDeprecatingHttpFlag(logger *zap.Logger, newFlag **bool, deprecatedFlag **bool) {
+	if **deprecatedFlag {
+		logger.Warn("DEPRECATED: enable_http has been renamed to allow_http_base_urls.")
+		if !**newFlag {
+			*newFlag = *deprecatedFlag
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
@@ -372,6 +382,8 @@ func main() {
 		logger      = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	defer cancel()
+
+	SetDeprecatingHttpFlag(logger, &allowHTTPBaseUrls, &enableHTTP)
 
 	if *profServiceName != "" {
 		if err := profiler.Start(profiler.Config{Service: *profServiceName}); err != nil {

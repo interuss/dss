@@ -15,11 +15,11 @@ import (
 
 // Server implements ridv1.Implementation.
 type Server struct {
-	App        application.App
-	Timeout    time.Duration
-	Locality   string
-	EnableHTTP bool
-	Cron       *cron.Cron
+	App               application.App
+	Timeout           time.Duration
+	Locality          string
+	AllowHTTPBaseUrls bool
+	Cron              *cron.Cron
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {

@@ -35,10 +35,10 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.
 
 // Server implements scdv1.Implementation.
 type Server struct {
-	Store            scdstore.Store
-	DSSReportHandler ReceivedReportHandler
-	Timeout          time.Duration
-	EnableHTTP       bool
+	Store             scdstore.Store
+	DSSReportHandler  ReceivedReportHandler
+	Timeout           time.Duration
+	AllowHTTPBaseUrls bool
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {

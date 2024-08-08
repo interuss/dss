@@ -104,7 +104,7 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", subscriptionid)
 	}
 
-	if !a.EnableHTTP {
+	if !a.AllowHTTPBaseUrls {
 		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")

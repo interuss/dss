@@ -22,7 +22,7 @@ go run ./cmds/core-service \
   -dump_requests \
   -accepted_jwt_audiences localhost \
   -enable_scd \
-  -enable_http
+  -allow_http_base_urls
 ```
 
 ### Prerequisites
