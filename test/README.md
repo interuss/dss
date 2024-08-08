@@ -30,6 +30,16 @@ repeatedly with `make probe-locally` without needing to rerun
 bring down the local DSS instance at the conclusion of testing, run
 `make stop-locally` or `make down-locally`.
 
+When developing or troubleshooting features with the help of the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier)
+where it might be useful to quickly iterate on changes both in the DSS and in a qualifier scenario,
+an option is to:
+
+1. build the DSS image locally via `make build-dss`
+2. use the locally built version (`interuss-local/dss:latest`) in the [docker-compose file](https://github.com/interuss/monitoring/blob/843e69a166e6fb76459ebcda171dcd77a26ea5dc/build/dev/docker-compose.yaml#L46) that defines the qualifier's local test environment
+3. start or restart the local USS qualifier deployment via `make restart-all` (in the [monitoring repository](https://github.com/interuss/monitoring/blob/843e69a166e6fb76459ebcda171dcd77a26ea5dc/Makefile#L116))
+4. run the USS qualifier with a pre-packaged configuration such as `f3548_self_contained` or `dss_probing` in the monitoring repo. Eg, `./run_locally.sh configurations.dev.f3548_self_contained` from within the [monitoring/uss_qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) directory of the qualifier repository.
+
+
 ### Running a subset of tests
 To run a specific test in the [prober](../monitoring/prober) test suite,
 simply add its name as the first argument to the script to run prober locally

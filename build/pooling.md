@@ -27,7 +27,7 @@ Kubernetes manages a set of services in a "cluster".  This is an entirely
 different thing from the CRDB data store, and this type of cluster is what the
 deployment instructions refer to.  A Kubernetes cluster contains one or more
 node pools: collections of machines available to run jobs.  This node pool is an
-entirely different thing from a DSS pool. 
+entirely different thing from a DSS pool.
 
 ## Objective
 
@@ -57,7 +57,7 @@ characteristic will not pass because the certificate is issued by
 "Cockroach CA" which is not a generally-trusted root CA, but we
 explicitly enable trust by manually exchanging the trusted CA public keys
 in ca.crt (see "Each CockroachDB node accepts the certificates of every other
-node" below).  However, all other checks should generally pass. 
+node" below).  However, all other checks should generally pass.
 
 ### "Each CockroachDB node is discoverable"
 
@@ -149,9 +149,11 @@ DSS instances to allow the new instance to join the existing pool:
 The USS owning the first DSS instance should follow
 [the deployment instructions](README.md).  They are not joining any existing
 cluster, and specifically `VAR_SHOULD_INIT` should be set `true` to initialize
-the CRDB cluster.  Upon deployment completion, the
-[prober test](https://github.com/interuss/monitoring/blob/main/monitoring/prober/README.md)
-should be run against the DSS instance to verify functionality.
+the CRDB cluster.  Upon deployment completion, the following should be run against the DSS instance to verify functionality:
+
+ - The [prober test](https://github.com/interuss/monitoring/blob/main/monitoring/prober/README.md)
+ - The [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier), using the [DSS Probing](https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/configurations/dev/dss_probing.yaml) configuration
+
 
 ### Joining an existing pool with new instance
 A USS wishing to join an existing pool (of perhaps just one instance following
@@ -175,7 +177,7 @@ by running the prober test on each DSS instance, and the
 [interoperability test scenario](https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/scenarios/astm/netrid/v19/dss_interoperability.md)
 on the full pool (including the newly-added instance).
 
-Finally, the joining USS should provide its node addresses to all other 
+Finally, the joining USS should provide its node addresses to all other
 participants in the pool, and each other participant should add those addresses
 to the list of CRDB nodes their CRDB nodes will attempt to contact upon restart.
 
@@ -196,9 +198,9 @@ to scale down the Statefulset and that removes the last node first (ex:
 
 1. Check if all nodes are healthy and there are no
    under-replicated/unavailable ranges:
-   
+
    `kubectl exec -it cockroachdb-0 -- cockroach node status --ranges --certs-dir=cockroach-certs/`
-    
+
     1. If there are under-replicated ranges changes are it is because of a node
        failure. If all nodes are healthy then it should auto recover.
 
@@ -209,7 +211,7 @@ to scale down the Statefulset and that removes the last node first (ex:
    then decommission them. The following command assumes that `cockroachdb-0` is
    not targeted for decommission otherwise select a different instance to
    connect to:
-   
+
    `kubectl exec -it cockroachdb-0 -- cockroach node decommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
 
 1. If the command executes successfully all targeted nodes should not host any
@@ -217,7 +219,7 @@ to scale down the Statefulset and that removes the last node first (ex:
 
     a. In the event of a hung decommission please recommission the nodes and
     repeat the above step with smaller number of nodes to decommission:
-    
+
     `kubectl exec -it cockroachdb-0 -- cockroach node recommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
 
 1. Power down the pods or delete the Statefulset, whichever is applicable
@@ -226,7 +228,7 @@ to scale down the Statefulset and that removes the last node first (ex:
        restart it immediately you will need to scale down understanding that it
        will remove node `cockroachdb-n` first; where `n` is the
        `size of statefulset - 1`.
-       
+
        To proceed: `kubectl scale statefulset cockroachdb --replicas=<X>`
 
     b. To remove the entire Statefulset:
