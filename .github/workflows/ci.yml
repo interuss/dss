@@ -65,3 +65,22 @@ jobs:
       run: make probe-locally
     - name: Bring down local DSS instance
       run: make down-locally
+    - name: Checkout monitoring repository
+      uses: actions/checkout@v2
+      with:
+        repository: interuss/monitoring
+        submodules: true
+        path: monitoring-repo
+        ref: main  # consider checking out a tag instead? Downside is that we'd need to update it with each release
+    - name: Run qualifier in monitoring repository
+      run: |
+        set -e
+        cd monitoring-repo
+        # Set the docker-compose file to use the locally built DSS instance
+        # Note that on OS X you'll need to use `sed -i ''` instead of `sed -i`
+        sed -i 's|interuss/dss:[^ ]*|interuss-local/dss:latest|g' build/dev/docker-compose.yaml
+        # Start all required containers to run the qualifier
+        make restart-all
+        cd monitoring/uss_qualifier/
+        # Run the qualifier
+        ./run_locally.sh configurations.dev.noop,configurations.dev.uspace,configurations.dev.geoawareness_cis,configurations.dev.generate_rid_test_data,configurations.dev.geospatial_comprehension,configurations.dev.general_flight_auth,configurations.dev.message_signing,configurations.dev.dss_probing,configurations.dev.f3548_self_contained,configurations.dev.netrid_v22a,configurations.dev.netrid_v19
