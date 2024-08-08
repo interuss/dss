@@ -40,18 +40,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func DeprecatingBool(newName string, oldName string, value bool, usage string) *bool {
-	var newFlag = flag.Bool(newName, value, usage)
-	if *newFlag {
-		return newFlag
-	}
-	return flag.Bool(oldName, value, usage)
-}
-
 var (
 	address           = flag.String("addr", ":8080", "Local address that the service binds to and listens on for incoming connections")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
-	allowHTTPBaseUrls = DeprecatingBool("allow_http_base_urls", "enable_http", false, "Enables http scheme for Strategic Conflict Detection API")
+	allowHTTPBaseUrls = flag.Bool("allow_http_base_urls", false, "Enables http scheme for Strategic Conflict Detection API")
+	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
 	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	locality          = flag.String("locality", "", "self-identification string used as CRDB table writer column")
 
@@ -369,6 +362,15 @@ func (gcj RIDGarbageCollectorJob) Run() {
 	}
 }
 
+func SetDeprecatingHttpFlag(logger *zap.Logger, newFlag **bool, deprecatedFlag **bool) {
+	if **deprecatedFlag {
+		logger.Warn("DEPRECATED: enable_http has been renamed to allow_http_base_urls.")
+		if !**newFlag {
+			*newFlag = *deprecatedFlag
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
@@ -380,6 +382,8 @@ func main() {
 		logger      = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	defer cancel()
+
+	SetDeprecatingHttpFlag(logger, &allowHTTPBaseUrls, &enableHTTP)
 
 	if *profServiceName != "" {
 		if err := profiler.Start(profiler.Config{Service: *profServiceName}); err != nil {
