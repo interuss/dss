@@ -14,3 +14,8 @@ The [`monitoring` repository](https://github.com/interuss/monitoring) contains a
 #### Prober
 
 - The first and largest monitoring tool is the "prober" which is a full integration test of the DSS.  This tool is used during [continuous integration](.github/workflows/CI.md) for the DSS.
+
+#### USS Qualifier
+
+The Prober is slowly being superseded by the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier):
+it provides extensive test coverage for the features of a DSS deployment via the [DSS Probing](https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/configurations/dev/dss_probing.yaml) configuration.
