@@ -16,8 +16,8 @@ When a new database version is created, it needs to be targeted in a number of
 places:
 * Both .sql files in the appropriate folder in db_schemas when setting
   schema_versions.schema_version
-* [DSS main.jsonnet](../examples/minimum/main.jsonnet)
-* [Schema manager main.jsonnet](../examples/schema_manager/main.jsonnet)
-* scd_ or rid_ bootstrapper.sh in [dev/startup](../../dev/startup)
+* [DSS main.jsonnet](../deploy/examples/minimum/main.jsonnet)
+* [Schema manager main.jsonnet](../deploy/examples/schema_manager/main.jsonnet)
+* scd_ or rid_ bootstrapper.sh in [dev/startup](../dev/startup)
 * /pkg/{rid|scd}/store/cockroach/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf

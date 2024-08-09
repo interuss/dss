@@ -104,9 +104,9 @@ See all `docker compose` verbs
 `run_locally.sh` automatically creates a database with the latest schema
 versions.  To migrate to a different version, use
 [`migrate_local_db.sh`](migrate_local_db.sh).  It accepts two arguments: the
-database name ([`rid`](../deploy/db_schemas/rid) for remote ID or
-[`scd`](../deploy/db_schemas/rid) for SCD) and the desired schema version (see
-[`db_schemas`](../deploy/db_schemas) for options).  The desired schema version
+database name ([`rid`](../db_schemas/rid) for remote ID or
+[`scd`](../db_schemas/rid) for SCD) and the desired schema version (see
+[`db_schemas`](../db_schemas) for options).  The desired schema version
 may also be `latest`.  For example:
 
 ```bash
