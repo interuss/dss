@@ -16,16 +16,18 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// subscriptionCanBeRemoved will check if:
-// - a previous subscription was attached,
-// - if so, if it was an implicit subscription
-// - if so, if we can remove it after creating the new implicit subscription
+// subscriptionIsOnlyAttachedToOIR will check if:
+// - the subscription exists and is implicit
+// - the subscription is attached to the specified operational intent
+// - the subscription is not attached to any other operational intent
 //
-// This is to be used in contexts where an implicit subscription may need to be cleaned up.
+// This is to be used in contexts where an implicit subscription may need to be cleaned up: if true is returned,
+// the subscription can be safely removed after the operational intent is deleted or attached to another subscription.
+//
 // NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
 //
 //	See https://github.com/interuss/dss/issues/1059 for more details
-func subscriptionCanBeRemoved(ctx context.Context, r repos.Repository, subscriptionID *dssmodels.ID) (bool, error) {
+func subscriptionIsOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID, subscriptionID *dssmodels.ID) (bool, error) {
 	// Get the Subscription supporting the OperationalIntent, if one is defined
 	if subscriptionID != nil {
 		sub, err := r.GetSubscription(ctx, *subscriptionID)
@@ -44,7 +46,7 @@ func subscriptionCanBeRemoved(ctx context.Context, r repos.Repository, subscript
 			}
 			if len(dependentOps) == 0 {
 				return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-			} else if len(dependentOps) == 1 {
+			} else if len(dependentOps) == 1 && dependentOps[0] == *oirID {
 				return true, nil
 			}
 		}
@@ -99,12 +101,16 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
+<<<<<<< HEAD
         if old.OVN != ovn {
             return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
                 "Current version is %s but client specified version %s", old.OVN, ovn)
         }
 
 		removeImplicitSubscription, err := subscriptionCanBeRemoved(ctx, r, old.SubscriptionID)
+=======
+		removeImplicitSubscription, err := subscriptionIsOnlyAttachedToOIR(ctx, r, &id, old.SubscriptionID)
+>>>>>>> fdd5e11 (rename and make subscriptionCanBeRemoved more specific)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not determine if Subscription can be removed")
 		}
@@ -523,7 +529,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					}
 				}
 
-				removePreviousImplicitSubscription, err = subscriptionCanBeRemoved(ctx, r, previousSubscriptionID)
+				removePreviousImplicitSubscription, err = subscriptionIsOnlyAttachedToOIR(ctx, r, &id, previousSubscriptionID)
 				if err != nil {
 					return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
 				}
