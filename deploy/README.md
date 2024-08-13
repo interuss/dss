@@ -4,17 +4,18 @@
 
 ## Introduction
 
-An operational DSS deployment requires a specific architecture to be compliant with standard requirements and meet performance expectations as described in [architecture](./architecture.md).
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](../README.md#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).
 
 ## Deployment options
 
-This repository provides three layers of abstraction to deploy a DSS instance via Kubernetes. You can do this on any supported
-[cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.
-Review [InterUSS pooling requirements](./pooling.md#objective) and consult the Kubernetes documentation for your chosen provider.
-As described below, InterUSS provides tooling for deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
+This repository provides three layers of abstraction to deploy a DSS instance via Kubernetes.
+As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
+However, you can do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.
+Review [InterUSS pooling requirements](./architecture.md#objective) and consult the Kubernetes documentation for your chosen provider.
 
+The three layers are the following:
 
-1. [Infrastructure](#infrastructure) provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the [Pooling requirements](./pooling.md#objective).
+1. [Infrastructure](#infrastructure) provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the [Pooling requirements](./architecture.md#objective).
 Terraform modules are provided for:
    - [Amazon Web Services (EKS)](infrastructure/modules/terraform-aws-dss)
    - [Google (GKE)](infrastructure/modules/terraform-google-dss)
