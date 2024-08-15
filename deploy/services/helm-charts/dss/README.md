@@ -12,7 +12,7 @@ Requirements and instructions to create a new Kubernetes cluster can be found [h
 2. Validate the configuration: `helm lint -f values.dev.yaml .`
 3. Set a RELEASE_NAME to `dss`: `export RELEASE_NAME=dss`
 It is temporarily the only release name possible.
-4. Set the kube client context of your , example: `export KUBE_CONTEXT=gke_interuss-deploy-example_europe-west6-a_dss-dev-w6`
+4. Set the kube client context of your system, example: `export KUBE_CONTEXT=gke_interuss-deploy-example_europe-west6-a_dss-dev-w6`
 5. Run `helm dep update --kube-context=$KUBE_CONTEXT`
 6. Install the chart: `helm install --kube-context=$KUBE_CONTEXT -f values.dev.yaml $RELEASE_NAME .`
 
