@@ -2,19 +2,7 @@
 
 ## Introduction
 
-The DSS is designed to be deployed in a federated manner where multiple
-organizations each host a DSS instance, and all of those instances interoperate.
-Specifically, if a change is made on one DSS instance, that change may be read
-from a different DSS instance.  A set of interoperable DSS instances is called a
-"pool", and the purpose of this document is to describe how to form and maintain
-a DSS pool.
-
-It is expected that there will be exactly one production DSS pool for any given
-DSS region, and that a DSS region will generally match aviation jurisdictional
-boundaries (usually national boundaries).  A given DSS region (e.g.,
-Switzerland) will likely have one pool for production operations, and an
-additional pool for partner qualification and testing (per, e.g.,
-F3411-19 A2.6.2).
+The content of this section has been migrated to [Introduction](../deploy/architecture.md#introduction).
 
 ### Terminology notes
 
