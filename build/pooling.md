@@ -18,16 +18,7 @@ F3411-19 A2.6.2).
 
 ### Terminology notes
 
-CockroachDB (CRDB) establishes a distributed data store called a "cluster".
-This cluster stores the DSS Airspace Representation (DAR) in multiple SQL
-databases within that cluster.  This cluster is composed of many CRDB nodes,
-potentially hosted by multiple organizations.
-
-Kubernetes manages a set of services in a "cluster".  This is an entirely
-different thing from the CRDB data store, and this type of cluster is what the
-deployment instructions refer to.  A Kubernetes cluster contains one or more
-node pools: collections of machines available to run jobs.  This node pool is an
-entirely different thing from a DSS pool.
+The content of this section has been migrated to [Definitions and terminology notes](../deploy/architecture.md#definitions-and-terminology-notes).
 
 ## Objective
 
