@@ -19,12 +19,16 @@ operated by a separate organization.  A specific environment (for example,
 "production" or "staging") in a particular DSS Region is called a "pool".
 
 #### DSS Pool
-A DSS Pool is a set of interoperable DSS instances in a specific DSS Region. 
-Each instance is typically operated by a separate organization.
+A DSS Pool is a set of interoperable and interconnected DSS instances in a specific
+DSS Region. Each instance is typically operated by a separate organization.
 
 #### DSS instance
 A DSS instance is a single logical replica in a DSS pool hosted by a single
 organization.
+
+#### Pooling
+The process required by a DSS Instance to join a DSS Pool is referred to "Pooling"
+in this documentation.
 
 #### CRDB cluster
 CockroachDB (CRDB) establishes a distributed data store called a "cluster".
