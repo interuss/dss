@@ -4,10 +4,10 @@
 
 See [introduction](../build/pooling.md#introduction)
 
-## Architecture
+## Target Architecture
 
-The expected deployment configuration of a DSS pool supporting a DSS Region is
-multiple organizations to each host one DSS instance that is interoperable with
+The expected deployment of a DSS pool supporting a DSS Region consists of
+multiple organizations hosting one DSS instance that is interoperable with
 each other organization's DSS instance.  A DSS pool with three participating
 organizations (USSs) will have an architecture similar to the diagram below.
 
