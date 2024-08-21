@@ -6,7 +6,7 @@ Kubernetes following the procedures found in the [build](..) folder.
 
 ## Architecture
 
-The content of this section has been migrated to [Architecture](../deploy/architecture.md#architecture).
+The content of this section has been migrated to [Architecture](../../deploy/architecture.md#target-architecture).
 
 ## Survivability
 
