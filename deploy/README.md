@@ -4,7 +4,7 @@
 
 ## Introduction
 
-An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](../README.md#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](../README.md#standards-and-regulations) and meet performance expectations as described in [Deployment of a DSS Pool](./architecture.md).
 
 ## Deployment options
 

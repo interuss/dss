@@ -1,4 +1,4 @@
-# DSS deployment architecture
+# Deployment of a DSS Pool
 
 ## Introduction
 
