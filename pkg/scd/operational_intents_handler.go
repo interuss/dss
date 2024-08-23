@@ -16,8 +16,8 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// subscriptionIsOnlyAttachedToOIR will check if:
-// - the subscription exists and is implicit
+// subscriptionIsImplicitAndOnlyAttachedToOIR will check if:
+// - the subscription is defined and is implicit
 // - the subscription is attached to the specified operational intent
 // - the subscription is not attached to any other operational intent
 //
@@ -27,29 +27,22 @@ import (
 // NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
 //
 //	See https://github.com/interuss/dss/issues/1059 for more details
-func subscriptionIsOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID, subscriptionID *dssmodels.ID) (bool, error) {
-	// Get the Subscription supporting the OperationalIntent, if one is defined
-	if subscriptionID != nil {
-		sub, err := r.GetSubscription(ctx, *subscriptionID)
-		if err != nil {
-			return false, stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
-		}
-		if sub == nil {
-			return false, stacktrace.NewError("OperationalIntent's Subscription missing from repo")
-		}
-
-		if sub.ImplicitSubscription {
-			// Get the Subscription's dependent OperationalIntents
-			dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
-			if err != nil {
-				return false, stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
-			}
-			if len(dependentOps) == 0 {
-				return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-			} else if len(dependentOps) == 1 && dependentOps[0] == *oirID {
-				return true, nil
-			}
-		}
+func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID *dssmodels.ID, subscription *scdmodels.Subscription) (bool, error) {
+	if subscription == nil {
+		return false, nil
+	}
+	if !subscription.ImplicitSubscription {
+		return false, nil
+	}
+	// Get the Subscription's dependent OperationalIntents
+	dependentOps, err := r.GetDependentOperationalIntents(ctx, subscription.ID)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
+	}
+	if len(dependentOps) == 0 {
+		return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
+	} else if len(dependentOps) == 1 && dependentOps[0] == *oirID {
+		return true, nil
 	}
 	return false, nil
 }
@@ -101,16 +94,23 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
 		}
 
-<<<<<<< HEAD
-        if old.OVN != ovn {
-            return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-                "Current version is %s but client specified version %s", old.OVN, ovn)
-        }
+		if old.OVN != ovn {
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+				"Current version is %s but client specified version %s", old.OVN, ovn)
+		}
 
-		removeImplicitSubscription, err := subscriptionCanBeRemoved(ctx, r, old.SubscriptionID)
-=======
-		removeImplicitSubscription, err := subscriptionIsOnlyAttachedToOIR(ctx, r, &id, old.SubscriptionID)
->>>>>>> fdd5e11 (rename and make subscriptionCanBeRemoved more specific)
+		var previousSubscription *scdmodels.Subscription
+		if old.SubscriptionID != nil {
+			previousSubscription, err = r.GetSubscription(ctx, *old.SubscriptionID)
+			if err != nil {
+				return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
+			}
+			if previousSubscription == nil {
+				return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
+			}
+		}
+
+		removeImplicitSubscription, err := subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, &id, previousSubscription)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not determine if Subscription can be removed")
 		}
@@ -458,9 +458,9 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
 	}
 
-	subscriptionID := dssmodels.ID("")
+	specifiedSubscriptionID := dssmodels.ID("")
 	if params.SubscriptionId != nil {
-		subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
+		specifiedSubscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
 		if err != nil {
 			return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
 		}
@@ -469,7 +469,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
 	if state.RequiresSubscription() &&
-		subscriptionID.Empty() &&
+		specifiedSubscriptionID.Empty() &&
 		(params.NewSubscription == nil ||
 			params.NewSubscription.UssBaseUrl == "") {
 		return nil, nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Provided Operational Intent Reference state `%s` requires either a subscription ID or information to create an implicit subscription", state)
@@ -493,7 +493,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 
-		var previousSubscriptionID *dssmodels.ID
+		var previousSubscription *scdmodels.Subscription
 		if old != nil {
 			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
@@ -505,7 +505,13 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			}
 
 			version = int32(old.Version)
-			previousSubscriptionID = old.SubscriptionID
+
+			if old.SubscriptionID != nil {
+				previousSubscription, err = r.GetSubscription(ctx, *old.SubscriptionID)
+				if err != nil {
+					return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
+				}
+			}
 		} else {
 			if ovn != "" {
 				return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", ovn)
@@ -514,24 +520,29 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			version = 0
 		}
 
-		var sub *scdmodels.Subscription
+		// Determine if the previous subscription needs to be cleaned up
+		previousSubIsBeingReplaced := previousSubscription != nil && specifiedSubscriptionID != previousSubscription.ID
 		removePreviousImplicitSubscription := false
-		if subscriptionID.Empty() {
-			// Create an implicit subscription if the implicit subscription params are set:
-			// for situations where these params are required but have not been set,
-			// an error will have been returned earlier.
-			// If they are not set at this point, continue without creating an implicit subscription.
+		if previousSubIsBeingReplaced {
+			removePreviousImplicitSubscription, err = subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, &id, previousSubscription)
+			if err != nil {
+				return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
+			}
+		}
+
+		// effectiveSubscription is the subscription that will end up being attached to the OIR
+		// it defaults to the previous subscription, but may be updated if required by the parameters
+		effectiveSubscription := previousSubscription
+		if specifiedSubscriptionID.Empty() {
+			// No subscription ID was provided:
+			// We will check if parameters to create a new implicit subscription were provided,
+			// otherwise we will do nothing.
 			if params.NewSubscription != nil && params.NewSubscription.UssBaseUrl != "" {
 				if !a.AllowHTTPBaseUrls {
 					err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
 					if err != nil {
 						return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
 					}
-				}
-
-				removePreviousImplicitSubscription, err = subscriptionIsOnlyAttachedToOIR(ctx, r, &id, previousSubscriptionID)
-				if err != nil {
-					return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
 				}
 
 				// Note: parameters for a new implicit subscription have been passed, so we will create
@@ -553,53 +564,57 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					subToUpsert.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
 				}
 
-				sub, err = r.UpsertSubscription(ctx, &subToUpsert)
+				effectiveSubscription, err = r.UpsertSubscription(ctx, &subToUpsert)
 				if err != nil {
 					return stacktrace.Propagate(err, "Failed to create implicit subscription")
 				}
 			}
 
 		} else {
-			// Use existing Subscription
-			sub, err = r.GetSubscription(ctx, subscriptionID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to get Subscription")
+			// A subscription has been specified:
+			// If it is different from the previous subscription, we need to fetch it from the store
+			// in order to ensure it correctly covers the OIR.
+			if effectiveSubscription == nil || previousSubIsBeingReplaced {
+				effectiveSubscription, err = r.GetSubscription(ctx, specifiedSubscriptionID)
+				if err != nil {
+					return stacktrace.Propagate(err, "Unable to get requested Subscription from store")
+				}
+				if effectiveSubscription == nil {
+					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", specifiedSubscriptionID)
+				}
 			}
-			if sub == nil {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", subscriptionID)
-			}
-			if sub.Manager != dssmodels.Manager(manager) {
+			if effectiveSubscription.Manager != dssmodels.Manager(manager) {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", subscriptionID, sub.Manager, manager)
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", specifiedSubscriptionID, effectiveSubscription.Manager, manager)
 			}
 			updateSub := false
-			if sub.StartTime != nil && sub.StartTime.After(*uExtent.StartTime) {
-				if sub.ImplicitSubscription {
-					sub.StartTime = uExtent.StartTime
+			if effectiveSubscription.StartTime != nil && effectiveSubscription.StartTime.After(*uExtent.StartTime) {
+				if effectiveSubscription.ImplicitSubscription {
+					effectiveSubscription.StartTime = uExtent.StartTime
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
 				}
 			}
-			if sub.EndTime != nil && sub.EndTime.Before(*uExtent.EndTime) {
-				if sub.ImplicitSubscription {
-					sub.EndTime = uExtent.EndTime
+			if effectiveSubscription.EndTime != nil && effectiveSubscription.EndTime.Before(*uExtent.EndTime) {
+				if effectiveSubscription.ImplicitSubscription {
+					effectiveSubscription.EndTime = uExtent.EndTime
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
 				}
 			}
-			if !sub.Cells.Contains(cells) {
-				if sub.ImplicitSubscription {
-					sub.Cells = s2.CellUnionFromUnion(sub.Cells, cells)
+			if !effectiveSubscription.Cells.Contains(cells) {
+				if effectiveSubscription.ImplicitSubscription {
+					effectiveSubscription.Cells = s2.CellUnionFromUnion(effectiveSubscription.Cells, cells)
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
 				}
 			}
 			if updateSub {
-				sub, err = r.UpsertSubscription(ctx, sub)
+				effectiveSubscription, err = r.UpsertSubscription(ctx, effectiveSubscription)
 				if err != nil {
 					return stacktrace.Propagate(err, "Failed to update existing Subscription")
 				}
@@ -634,7 +649,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 			// Identify Constraints missing from the key
 			var missingConstraints []*scdmodels.Constraint
-			if sub != nil && sub.NotifyForConstraints {
+			if effectiveSubscription != nil && effectiveSubscription.NotifyForConstraints {
 				constraints, err := r.SearchConstraints(ctx, uExtent)
 				if err != nil {
 					return stacktrace.Propagate(err, "Unable to SearchConstraints")
@@ -687,8 +702,8 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		// in such cases the subscription ID on scdmodels.OperationalIntent will be nil
 		// and will be replaced with the 'NullV4UUID' when sent over to a client.
 		var subID *dssmodels.ID = nil
-		if sub != nil {
-			subID = &sub.ID
+		if effectiveSubscription != nil {
+			subID = &effectiveSubscription.ID
 		}
 
 		// Construct the new OperationalIntent
@@ -741,7 +756,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		// Check if the previously attached subscription should be removed
 		if removePreviousImplicitSubscription {
-			err = r.DeleteSubscription(ctx, *previousSubscriptionID)
+			err = r.DeleteSubscription(ctx, previousSubscription.ID)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to delete previous implicit Subscription")
 			}
