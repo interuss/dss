@@ -77,6 +77,12 @@ func main() {
 		crdb.Pool.Close()
 	}()
 
+	crdbVersion, err := crdb.GetServerVersion()
+	if err != nil {
+		log.Panicf("Unable to retrieve the version of the server %s:%d: %v", connectParameters.Host, connectParameters.Port, err)
+	}
+	log.Printf("CRDB server version: %s", crdbVersion)
+
 	// Make sure specified database exists
 	exists, err := doesDatabaseExist(crdb, dbName)
 	if err != nil {
@@ -144,7 +150,14 @@ func main() {
 		if err != nil {
 			log.Panicf("Failed to load SQL content from %s: %v", fullFilePath, err)
 		}
-		migrationSQL := fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
+
+		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
+		sessionConfigurationSQL := ""
+		if crdbVersion.Compare(*semver.New("22.2.0")) >= 0 {
+			sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
+		}
+
+		migrationSQL := sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 
 		// Execute migration step
 		if _, err := crdb.Pool.Exec(context.Background(), migrationSQL); err != nil {

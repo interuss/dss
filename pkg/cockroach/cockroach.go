@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -218,4 +219,19 @@ func (db *DB) GetVersion(ctx context.Context, dbName string) (*semver.Version, e
 	}
 
 	return semver.NewVersion(dbVersion)
+}
+
+func (db *DB) GetServerVersion() (*semver.Version, error) {
+	const versionDbQuery = `
+      SELECT version();
+    `
+	var fullVersion string
+	err := db.Pool.QueryRow(context.Background(), versionDbQuery).Scan(&fullVersion)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error querying CRDB server version")
+	}
+
+	re := regexp.MustCompile(`v((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)
+	match := re.FindStringSubmatch(fullVersion)
+	return semver.New(match[1]), nil
 }
