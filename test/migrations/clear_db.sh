@@ -8,5 +8,5 @@ echo "Starting CRDB container"
 docker run -d --rm --name dss-crdb-for-migration-testing \
 	-p 26257:26257 \
 	-p 8080:8080 \
-  cockroachdb/cockroach:v21.2.7 start-single-node \
+  cockroachdb/cockroach:v24.1.3 start-single-node \
   --insecure > /dev/null

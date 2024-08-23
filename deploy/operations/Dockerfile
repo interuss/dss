@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ENV COCKROACH_VERSION 21.2.7
+ENV COCKROACH_VERSION 24.1.3
 
 RUN  apt-get update \
 && apt-get install -y unzip curl gnupg lsb-release apt-transport-https ca-certificates

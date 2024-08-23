@@ -27,7 +27,7 @@ authorization = {
 should_init = true
 
 # CockroachDB
-crdb_image_tag      = "v21.2.7"
+crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss_example"
 crdb_locality       = "interuss_dss-dev-w6a"
 crdb_external_nodes = []
