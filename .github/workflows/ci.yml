@@ -63,5 +63,7 @@ jobs:
       run: make start-locally
     - name: Probe local DSS instance
       run: make probe-locally
+    - name: Run Qualifier against local DSS instance
+      run: make qualify-locally
     - name: Bring down local DSS instance
       run: make down-locally

@@ -1,0 +1,217 @@
+v1:
+    artifacts:
+        raw_report:
+            indent: null
+            redact_access_tokens: true
+        report_html: null
+        sequence_view:
+            redact_access_tokens: true
+            render_kml: true
+        templated_reports: null
+        tested_requirements:
+            - participant_requirements:
+                  uss1: all_astm_dss_requirements
+              report_name: requirements
+              requirement_collections:
+                  all_astm_dss_requirements:
+                      requirement_collections:
+                          - requirement_sets:
+                                - astm.f3411.v22a.dss_provider
+                                - astm.f3411.v19.dss_provider
+                                - astm.f3548.v21.dss_provider
+    test_run:
+        action:
+            on_failure: Continue
+            test_suite:
+                resources:
+                    f3411v19_dss_instances: netrid_dss_instances_v19
+                    f3411v22a_dss_instances: netrid_dss_instances_v22a
+                    f3548v21_dss_instances: scd_dss_instances
+                    flight_intents: che_non_conflicting_flights
+                    id_generator: id_generator
+                    planning_area: kentland_planning_area
+                    problematically_big_area: kentland_problematically_big_area
+                    second_utm_auth: second_utm_auth
+                    service_area: kentland_service_area
+                    test_exclusions: test_exclusions
+                    utm_client_identity: utm_client_identity
+                suite_type: suites.interuss.dss.all_tests
+        execution:
+            include_action_when: null
+            skip_action_when: null
+            stop_fast: true
+            stop_when_resource_not_created: false
+        non_baseline_inputs:
+            - v1.test_run.resources.resource_declarations.utm_auth
+            - v1.test_run.resources.resource_declarations.second_utm_auth
+            - v1.test_run.resources.resource_declarations.scd_dss_instances
+            - v1.test_run.resources.resource_declarations.netrid_dss_instances_v22a
+            - v1.test_run.resources.resource_declarations.netrid_dss_instances_v19
+        resources:
+            resource_declarations:
+                che_non_conflicting_flights:
+                    dependencies: {}
+                    resource_type: resources.flight_planning.FlightIntentsResource
+                    specification:
+                        file:
+                            path: test_data.flight_intents.standard.non_conflicting
+                        transformations:
+                            - relative_translation:
+                                  degrees_east: 7.4774
+                                  degrees_north: 46.9748
+                                  meters_up: 605
+                id_generator:
+                    dependencies:
+                        client_identity: utm_client_identity
+                    resource_type: resources.interuss.IDGeneratorResource
+                    specification: {}
+                kentland_planning_area:
+                    dependencies: {}
+                    resource_type: resources.astm.f3548.v21.PlanningAreaResource
+                    specification:
+                        base_url: https://uss_qualifier.test.utm/dummy_base_url
+                        volume:
+                            altitude_lower:
+                                reference: W84
+                                units: M
+                                value: 0
+                            altitude_upper:
+                                reference: W84
+                                units: M
+                                value: 3048
+                            outline_polygon:
+                                vertices:
+                                    - lat: 37.1853
+                                      lng: -80.614
+                                    - lat: 37.2148
+                                      lng: -80.614
+                                    - lat: 37.2148
+                                      lng: -80.544
+                                    - lat: 37.1853
+                                      lng: -80.544
+                kentland_problematically_big_area:
+                    dependencies: {}
+                    resource_type: resources.VerticesResource
+                    specification:
+                        vertices:
+                            - lat: 38
+                              lng: -81
+                            - lat: 37
+                              lng: -81
+                            - lat: 37
+                              lng: -80
+                            - lat: 38
+                              lng: -80
+                kentland_service_area:
+                    dependencies: {}
+                    resource_type: resources.netrid.ServiceAreaResource
+                    specification:
+                        altitude_max: 3048
+                        altitude_min: 0
+                        base_url: https://uss_qualifier.test.utm/dummy_base_url
+                        footprint:
+                            - lat: 37.1853
+                              lng: -80.614
+                            - lat: 37.2148
+                              lng: -80.614
+                            - lat: 37.2148
+                              lng: -80.544
+                            - lat: 37.1853
+                              lng: -80.544
+                        reference_time: '2023-01-10T00:00:00.123456+00:00'
+                        time_end: '2023-01-10T01:00:01.123456+00:00'
+                        time_start: '2023-01-10T00:00:01.123456+00:00'
+                netrid_dss_instances_v19:
+                    dependencies:
+                        auth_adapter: utm_auth
+                    resource_type: resources.astm.f3411.DSSInstancesResource
+                    specification:
+                        dss_instances:
+                            - base_url: http://core-service:8082
+                              has_private_address: true
+                              participant_id: uss1
+                              rid_version: F3411-19
+                netrid_dss_instances_v22a:
+                    dependencies:
+                        auth_adapter: utm_auth
+                    resource_type: resources.astm.f3411.DSSInstancesResource
+                    specification:
+                        dss_instances:
+                            - base_url: http://core-service:8082/rid/v2
+                              has_private_address: true
+                              participant_id: uss1
+                              rid_version: F3411-22a
+                scd_dss_instances:
+                    dependencies:
+                        auth_adapter: utm_auth
+                    resource_type: resources.astm.f3548.v21.DSSInstancesResource
+                    specification:
+                        dss_instances:
+                            - base_url: http://core-service:8082
+                              has_private_address: true
+                              participant_id: uss1
+                              user_participant_ids:
+                                  - mock_uss
+                second_utm_auth:
+                    dependencies: {}
+                    resource_type: resources.communications.AuthAdapterResource
+                    specification:
+                        environment_variable_containing_auth_spec: AUTH_SPEC_2
+                        scopes_authorized:
+                            - utm.strategic_coordination
+                test_exclusions:
+                    dependencies: {}
+                    resource_type: resources.dev.TestExclusionsResource
+                    specification:
+                        allow_cleartext_queries: true
+                        allow_private_addresses: true
+                utm_auth:
+                    dependencies: {}
+                    resource_type: resources.communications.AuthAdapterResource
+                    specification:
+                        environment_variable_containing_auth_spec: AUTH_SPEC
+                        scopes_authorized:
+                            - rid.inject_test_data
+                            - dss.read.identification_service_areas
+                            - rid.service_provider
+                            - rid.display_provider
+                            - dss.write.identification_service_areas
+                            - dss.read.identification_service_areas
+                            - interuss.flight_planning.direct_automated_test
+                            - interuss.flight_planning.plan
+                            - utm.inject_test_data
+                            - utm.strategic_coordination
+                            - utm.conformance_monitoring_sa
+                            - utm.availability_arbitration
+                            - utm.constraint_management
+                            - interuss.versioning.read_system_versions
+                            - interuss.geospatial_map.query
+                            - ''
+                utm_client_identity:
+                    dependencies:
+                        auth_adapter: utm_auth
+                    resource_type: resources.communications.ClientIdentityResource
+                    specification:
+                        whoami_audience: localhost
+                        whoami_scope: rid.display_provider
+    validation:
+        criteria:
+            - applicability:
+                  test_scenarios: {}
+              pass_condition:
+                  each_element:
+                      has_execution_error: false
+            - applicability:
+                  failed_checks:
+                      has_severity:
+                          higher_than: Low
+              pass_condition:
+                  elements:
+                      count:
+                          equal_to: 0.0
+            - applicability:
+                  skipped_actions: {}
+              pass_condition:
+                  elements:
+                      count:
+                          equal_to: 3.0
