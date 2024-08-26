@@ -233,5 +233,9 @@ func (db *DB) GetServerVersion() (*semver.Version, error) {
 
 	re := regexp.MustCompile(`v((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)
 	match := re.FindStringSubmatch(fullVersion)
-	return semver.New(match[1]), nil
+	version, err := semver.NewVersion(match[1])
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "CRDB server version could not be parsed in semver format")
+	}
+	return version, nil
 }
