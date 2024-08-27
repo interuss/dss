@@ -22,8 +22,7 @@ image = "docker.io/interuss/dss:latest"
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
-should_init = true
-
+should_init         = true
 crdb_image_tag      = "v21.2.7"
 crdb_cluster_name   = "interuss-ci"
 crdb_locality       = "interuss_dss-ci-aws-ue1"
