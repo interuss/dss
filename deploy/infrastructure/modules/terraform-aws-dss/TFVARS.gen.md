@@ -237,6 +237,17 @@ Use `latest` to use the latest schema version.
 Example: `3.1.0`
 
 
+### crdb_image_tag
+
+*Type: `string`*
+
+Version tag of the CockroachDB image.
+Until v.16, the recommended CockroachDB version is v21.2.7.
+From v.17, the recommended CockroachDB version is v24.1.3.
+
+Example: v24.1.3
+
+
 ### crdb_cluster_name
 
 *Type: `string`*

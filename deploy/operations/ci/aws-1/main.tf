@@ -17,6 +17,7 @@ module "terraform-aws-dss" {
   aws_region                   = var.aws_region
   aws_route53_zone_id          = var.aws_route53_zone_id
   cluster_name                 = var.cluster_name
+  crdb_image_tag               = var.crdb_image_tag
   crdb_cluster_name            = var.crdb_cluster_name
   crdb_hostname_suffix         = var.crdb_hostname_suffix
   crdb_locality                = var.crdb_locality

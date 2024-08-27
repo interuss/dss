@@ -8,6 +8,9 @@ resource "local_file" "helm_chart_values" {
   filename = "${local.workspace_location}/helm_values.yml"
   content = yamlencode({
     cockroachdb = {
+      image = {
+        tag = var.crdb_image_tag
+      }
       fullnameOverride = local.helm_crdb_statefulset_name
 
       conf = {
@@ -50,7 +53,7 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = local.image
+      image = var.image
 
       conf = {
         pubKeys = [
