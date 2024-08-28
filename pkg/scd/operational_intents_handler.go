@@ -39,6 +39,13 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
+	// Retrieve OVN
+	ovn := scdmodels.OVN(req.Ovn)
+	if ovn == "" {
+		return restapi.DeleteOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for operational intent to modify"))}}
+	}
+
 	var response *restapi.ChangeOperationalIntentReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Get OperationalIntent to delete
@@ -54,6 +61,11 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		if old.Manager != dssmodels.Manager(*req.Auth.ClientID) {
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
+		}
+
+		if old.OVN != ovn {
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 
 		// Get the Subscription supporting the OperationalIntent, if one is defined
@@ -142,6 +154,8 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: errResp}
 		case dsserr.NotFound:
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response404: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response409: errResp}
 		default:
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
