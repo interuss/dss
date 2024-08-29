@@ -12,6 +12,8 @@ dss:
 
 cockroachdb:
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
+  image:
+    tag: v21.2.7
   fullnameOverride: dss-cockroachdb
   conf:
     join: []

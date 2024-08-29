@@ -12,9 +12,13 @@
               "type": "string"
             },
             "tag": {
-              "type": "string"
+              "type": "string",
+              "description": "Version tag of the CockroachDB image. Until DSS v0.16, the recommended CockroachDB version is `v21.2.7`. From DSS v0.17, the recommended CockroachDB version is `v24.1.3`."
             }
-          }
+          },
+          "required": [
+            "tag"
+          ]
         },
         "fullnameOverride": {
           "description": "Name of the internal statefulset",
