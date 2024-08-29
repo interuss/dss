@@ -64,10 +64,10 @@ We recommend the second approach to keep your helm values in sync with the clust
 CockroachDB requires to upgrade one minor version at a time, therefore the following migrations have to be performed:
 
 1. 21.2.7 to 22.1: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v22.1/upgrade-cockroachdb-kubernetes?filters=helm).
-2. 22.1 to 22.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=helm).
-3. 22.2 to 23.1: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v23.1/upgrade-cockroachdb-kubernetes?filters=helm).
-4. 23.1 to 23.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v23.2/upgrade-cockroachdb-kubernetes?filters=helm).
-5. 23.2 to 24.1.3: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v24.1/upgrade-cockroachdb-kubernetes?filters=helm).
+1. 22.1 to 22.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=helm).
+1. 22.2 to 23.1: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v23.1/upgrade-cockroachdb-kubernetes?filters=helm).
+1. 23.1 to 23.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v23.2/upgrade-cockroachdb-kubernetes?filters=helm).
+1. 23.2 to 24.1.3: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v24.1/upgrade-cockroachdb-kubernetes?filters=helm).
 
 ### Tanka deployment
 
@@ -82,10 +82,10 @@ values in the *Leader* and *Followers* Tanka configurations, namely the new imag
 CockroachDB requires to upgrade one minor version at a time, therefore the following migrations have to be performed:
 
 1. 21.2.7 to 22.1: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.1/upgrade-cockroachdb-kubernetes?filters=manual).
-2. 22.1 to 22.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=manual).
-3. 22.2 to 23.1: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v23.1/upgrade-cockroachdb-kubernetes?filters=manual).
-4. 23.1 to 23.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v23.2/upgrade-cockroachdb-kubernetes?filters=manual).
-5. 23.2 to 24.1.3: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v24.1/upgrade-cockroachdb-kubernetes?filters=manual).
+1. 22.1 to 22.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=manual).
+1. 22.2 to 23.1: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v23.1/upgrade-cockroachdb-kubernetes?filters=manual).
+1. 23.1 to 23.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v23.2/upgrade-cockroachdb-kubernetes?filters=manual).
+1. 23.2 to 24.1.3: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v24.1/upgrade-cockroachdb-kubernetes?filters=manual).
 
 ## Kubernetes upgrades
 
@@ -105,8 +105,8 @@ Migrations of GKE clusters are managed using terraform.
    ```terraform
    kubernetes_version = 1.28
    ```
-2. Run `terraform apply`. This operation may take more than 30min.
-3. Monitor the upgrade of the nodes in the Google Cloud console.
+1. Run `terraform apply`. This operation may take more than 30min.
+1. Monitor the upgrade of the nodes in the Google Cloud console.
 
 #### 1.26 to 1.27
 
@@ -114,8 +114,8 @@ Migrations of GKE clusters are managed using terraform.
    ```terraform
    kubernetes_version = 1.27
    ```
-2. Run `terraform apply`. This operation may take more than 30min.
-3. Monitor the upgrade of the nodes in the Google Cloud console.
+1. Run `terraform apply`. This operation may take more than 30min.
+1. Monitor the upgrade of the nodes in the Google Cloud console.
 
 #### 1.25 to 1.26
 
@@ -123,8 +123,8 @@ Migrations of GKE clusters are managed using terraform.
    ```terraform
    kubernetes_version = 1.26
    ```
-2. Run `terraform apply`
-3. Monitor the upgrade of the nodes in the Google Cloud console.
+1. Run `terraform apply`
+1. Monitor the upgrade of the nodes in the Google Cloud console.
 
 #### 1.24 to 1.25
 
@@ -132,8 +132,8 @@ Migrations of GKE clusters are managed using terraform.
    ```terraform
    kubernetes_version = 1.25
    ```
-2. Run `terraform apply`. This operation may take more than 30min.
-3. Monitor the upgrade of the nodes in the Google Cloud console.
+1. Run `terraform apply`. This operation may take more than 30min.
+1. Monitor the upgrade of the nodes in the Google Cloud console.
 
 ### AWS - Elastic Kubernetes Service
 
@@ -146,8 +146,8 @@ expected to be reported in the context of a standard deployment performed with t
 #### 1.27 to 1.28
 
 1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
-2. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-3. Change your `terraform.tfvars` to use `1.28` by adding or updating the `kubernetes_version` variable:
+1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
+1. Change your `terraform.tfvars` to use `1.28` by adding or updating the `kubernetes_version` variable:
    ```terraform
    kubernetes_version = 1.28
    ```
@@ -155,8 +155,8 @@ expected to be reported in the context of a standard deployment performed with t
 #### 1.26 to 1.27
 
 1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
-2. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-3. Change your `terraform.tfvars` to use `1.27` by adding or updating the `kubernetes_version` variable:
+1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
+1. Change your `terraform.tfvars` to use `1.27` by adding or updating the `kubernetes_version` variable:
    ```terraform
    kubernetes_version = 1.27
    ```
@@ -164,8 +164,8 @@ expected to be reported in the context of a standard deployment performed with t
 #### 1.25 to 1.26
 
 1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
-2. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-3. Change your `terraform.tfvars` to use `1.26` by adding or updating the `kubernetes_version` variable:
+1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
+1. Change your `terraform.tfvars` to use `1.26` by adding or updating the `kubernetes_version` variable:
    ```terraform
    kubernetes_version = 1.26
    ```
@@ -177,8 +177,8 @@ expected to be reported in the context of a standard deployment performed with t
     - Evaluate errors in Deprecated APIs removed in Kubernetes v1.25. Using `kubectl get podsecuritypolicies`,
       check if there is only one *Pod Security Policy* named `eks.privileged`. If it is the case,
       according to the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/pod-security-policy-removal-faq.html), you can proceed.
-2. Upgrade the cluster using the AWS console. It should take ~15 minutes.
-3. Change your `terraform.tfvars` to use `1.25` by adding or updating the `kubernetes_version` variable:
+1. Upgrade the cluster using the AWS console. It should take ~15 minutes.
+1. Change your `terraform.tfvars` to use `1.25` by adding or updating the `kubernetes_version` variable:
    ```terraform
    kubernetes_version = 1.25
    ```
