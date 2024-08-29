@@ -26,6 +26,9 @@ cockroachdb:
     args:
       - --locality-advertise-addr=zone=interuss-example-google-ew1@$(hostname -f)
       - --advertise-addr=${HOSTNAME##*-}.db.example.com
+    updateStrategy:
+      rollingUpdate:
+        partition: 0 # Used for migrations. See /deploy/MIGRATIONS.md#helm-deployment-notes
 
   storage:
     persistentVolume:
