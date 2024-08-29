@@ -284,6 +284,10 @@ a PR to that effect would be greatly appreciated.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
+    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until 
+        DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
+        From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
+
     1.  `VAR_CRDB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
         CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
         `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then

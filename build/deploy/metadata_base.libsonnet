@@ -14,7 +14,7 @@
     shouldInit: false,  // Set this to true if you are starting a new cluster.
     grpc_port: 26257,
     http_port: 8080,
-    image: 'cockroachdb/cockroach:v21.2.7',
+    image: error 'must specify cockroach db image. Until DSS v0.16, the recommended CockroachDB image is `cockroachdb/cockroach:v21.2.7`. From DSS v0.17, the recommended CockroachDB image is cockroachdb/cockroach:v24.1.3. Example: cockroachdb/cockroach:v21.2.7',
     nodeIPs: error 'must supply the per-node ip addresses as an array', // For AWS, this array should contain the allocation id of the elastic ips.
     JoinExisting: [],
     storageClass: 'standard',
