@@ -27,7 +27,7 @@ const (
 	// BadRequest is used when a user supplies bad request parameters.
 	BadRequest
 
-	// VersionMismatch is used when updating a resource with an old version.
+	// VersionMismatch is used when updating or deleting a resource with an old or incorrect version.
 	VersionMismatch
 
 	// NotFound is used when looking up a resource that doesn't exist.
