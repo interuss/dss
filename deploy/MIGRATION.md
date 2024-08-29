@@ -18,7 +18,7 @@ In general a CockroachDB upgrade consists of:
 1. Roll back the upgrade (optional): Like the rolling upgrade, this step should be carefully coordinated with all DSS instances to guarantee the minimum number of healthy nodes to keep the cluster available.
 1. Finish the upgrade: This step should be accomplished by the Leader.
 
-The following sections provide links to the CockroachDB migration documentation.
+The following sections provide links to the CockroachDB migration documentation depending on your deployment type.
 
 **Important notes:**
 
@@ -30,14 +30,14 @@ The following sections provide links to the CockroachDB migration documentation.
 
 If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](MIGRATION.md#helm-deployment) or [Tanka](MIGRATION.md#tanka-deployment).
 Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to align your configuration with the new state of
-the cluster and avoid a conflict on the next terraform update.
+the cluster.
 
 ### Helm deployment
 
 If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
 provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). Note that the CockroachDB documentation
 suggest to edit the values using `helm upgrade ... --set` commands. However, you can alternatively update `helm_values.yml`
-in your deployment. With both approaches, you will need to use the root key `cockroachdb` since the cockroachdb helm chart is
+in your deployment. With both approaches, you will need to use the root key `cockroachdb` since the cockroachdb Helm chart is
 a dependency of the dss chart.
 For instance, setting the image tag and partition using the command line would look like this:
 ```
@@ -46,7 +46,8 @@ helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.image.tag=v24.1
 ```
 helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.statefulset.updateStrategy.rollingUpdate.partition=0 --reuse-values
 ```
-and if editing the image tag and rollout partition in your `values.yaml`, it would look like this:
+
+If using a values file (eg `helm_values.yml`), you can set the new image tag and rollout partition like this:
 ```yaml
 cockroachdb:
   image:
@@ -57,7 +58,7 @@ cockroachdb:
       rollingUpdate:
         partition: 0
 ```
-New values can then be applied using `helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] -f [values.yaml]`
+New values can then be applied using `helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] -f [helm_values.yml]`
 
 #### 21.2.7 to 24.1.3
 
@@ -71,15 +72,14 @@ CockroachDB requires to upgrade one minor version at a time:
 
 ### Tanka deployment
 
-For deployments using Tanka configuration, following the `Cluster Upgrade with Manual configs` approach is recommended. (See specific links below)
-To apply the changes to your cluster, you have two options:
-1. Follow the manual steps and reflect the new values in the *Leader* and *Followers* Tanka configuration, especially the new image version 
-(see [`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)) to ensure the new configuration is aligned with the cluster state.
+For deployments using Tanka configuration, since no instructions are provided for tanka specifically,
+we recommend to follow the manual steps documented by CockroachDB: `Cluster Upgrade with Manual configs`. (See specific links below)
+To apply the changes to your cluster, follow the manual steps and reflect the new values in the *Leader* and *Followers* Tanka configuration,
+especially the new image version (see [`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)) to ensure the new configuration is aligned with the cluster state.
 
 #### 21.2.7 to 24.1.3
 
-CockroachDB requires to upgrade one minor version at a time. As mentioned above, no instruction is provided for tanka specifically,
-therefore we recommend to follow the manual steps:
+CockroachDB requires to upgrade one minor version at a time.
 
 1. 21.2.7 to 22.1: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.1/upgrade-cockroachdb-kubernetes?filters=manual).
 2. 22.1 to 22.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=manual).
