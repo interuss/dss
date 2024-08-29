@@ -18,6 +18,7 @@
     nodeIPs: error 'must supply the per-node ip addresses as an array', // For AWS, this array should contain the allocation id of the elastic ips.
     JoinExisting: [],
     storageClass: 'standard',
+    partition: 0, // Only used for CRDB upgrades. This manages the partition of the statefulset rolling update. See /deploy/MIGRATIONS.md#tanka-deployment-notes
   },
   PSP: {
     roleRef: '',

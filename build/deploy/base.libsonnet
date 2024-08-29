@@ -155,7 +155,7 @@ local util = import 'util.libsonnet';
       updateStrategy: {
         type: 'RollingUpdate',
         rollingUpdate: {
-          partition: 0,
+          partition: metadata.cockroach.partition,
         },
       },
 
