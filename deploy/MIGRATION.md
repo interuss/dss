@@ -26,13 +26,13 @@ The following sections provide links to the CockroachDB migration documentation.
 - We recommend to review carefully the instructions provided by CockroachDB and to rehearse all migrations on a test
   environment before applying them to production.
 
-### Terraform deployment notes
+### Terraform deployment
 
-If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](MIGRATION.md#helm-deployment-notes) or [Tanka](MIGRATION.md#tanka-deployment-notes).
+If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](MIGRATION.md#helm-deployment) or [Tanka](MIGRATION.md#tanka-deployment).
 Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to align your configuration with the new state of
 the cluster and avoid a conflict on the next terraform update.
 
-### Helm deployment notes
+### Helm deployment
 
 If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
 provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). Note that the CockroachDB documentation
@@ -69,7 +69,7 @@ CockroachDB requires to upgrade one minor version at a time:
 4. 23.1 to 23.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v23.2/upgrade-cockroachdb-kubernetes?filters=helm).
 5. 23.2 to 24.1.3: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v24.1/upgrade-cockroachdb-kubernetes?filters=helm).
 
-### Tanka deployment notes
+### Tanka deployment
 
 For deployments using Tanka configuration, following the `Cluster Upgrade with Manual configs` approach is recommended. (See specific links below)
 To apply the changes to your cluster, you have two options:
