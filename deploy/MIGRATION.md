@@ -50,7 +50,7 @@ and if editing the image tag and rollout partition in your `values.yaml`, it wou
 cockroachdb:
   image:
     # ...
-    tag: v24.1.3
+    tag: # version
   statefulset:
     updateStrategy:
       rollingUpdate:
@@ -74,22 +74,6 @@ For deployments using Tanka configuration, following the `Cluster Upgrade with M
 To apply the changes to your cluster, you have two options:
 1. Follow the manual steps and reflect the new values in the *Leader* and *Followers* Tanka configuration, especially the new image version 
 (see [`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)) to ensure the new configuration is aligned with the cluster state.
-1. It is also possible to use Tanka to propagate the changes instead of editing resources directly using kubectl as documented in the CockroachDB documentation:
-   1. Patching the image version can be achieved by updating the value of your configuration metadata key [`cockroach.image`](https://github.com/interuss/dss/blob/master/build/deploy/examples/minimum/main.jsonnet#L13) (see [`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)).  
-      
-   1. Patching the rolling update partition `{"spec":{"updateStrategy":{"type":"RollingUpdate","rollingUpdate":{"partition":2}}}}` can be achieved by adding 
-      the metadata key `cockroach.partition`.
-      ```
-      local metadata = metadataBase {
-      #...
-        cockroach+: {
-          image: 'VAR_CRDB_DOCKER_IMAGE_NAME',
-          #...
-          partition: 0
-        }
-      #...
-      }
-      ```
 
 #### 21.2.7 to 24.1.3
 
