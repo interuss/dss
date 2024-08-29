@@ -34,9 +34,11 @@ the cluster and avoid a conflict on the next terraform update.
 
 ### Helm deployment notes
 
-If you deployed the DSS using the Helm chart and the instructions provided in this repository, the values edited using `helm upgrade ... --set`
-commands should preferably be updated in your deployment `values.yaml`.
-In order to edit keys of the `cockroachdb/cockroachdb` Helm chart, you need to use the root key `cockroachdb` since it is
+If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
+provided by CockroachDB `Cluster Upgrade with Helm` (Links below). Note that the CockroachDB documentation suggest
+to edit the values using `helm upgrade ... --set` commands.
+However, you can alternatively update `helm_values.yaml` in your deployment.
+With both approaches, you will need to use the root key `cockroachdb` since the cockroachdb helm chart is
 a dependency of the dss chart.
 For instance, setting the image tag and partition using the command line would look like this:
 ```
