@@ -5,9 +5,8 @@ tools from this repository.
 
 ## CockroachDB upgrades
 
-CockroachDB must be upgraded on all DSS instances of the pool at the same time. Therefore, all DSS instances
-connected to a pool must coordinate the upgrade. The rollout of the upgrades on the whole CRDB cluster
-must be carefully performed in a sequence in order to keep the majority of nodes healthy during that period
+CockroachDB must be upgraded on all DSS instances of the pool one after the other. The rollout of the upgrades on 
+the whole CRDB cluster must be carefully performed in sequence to keep the majority of nodes healthy during that period
 and prevent downtime.
 For a Pooled deployment, one of the DSS Instance must take the role of the upgrade "Leader" and coordinate the
 upgrade with other "Followers" DSS instances.
@@ -18,7 +17,8 @@ In general a CockroachDB upgrade consists of:
 1. Roll back the upgrade (optional): Like the rolling upgrade, this step should be carefully coordinated with all DSS instances to guarantee the minimum number of healthy nodes to keep the cluster available.
 1. Finish the upgrade: This step should be accomplished by the Leader.
 
-The following sections provide links to the CockroachDB migration documentation depending on your deployment type.
+The following sections provide links to the CockroachDB migration documentation depending on your deployment type, which can
+be different by DSS instance.
 
 **Important notes:**
 
@@ -28,17 +28,16 @@ The following sections provide links to the CockroachDB migration documentation 
 
 ### Terraform deployment
 
-If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](MIGRATION.md#helm-deployment) or [Tanka](MIGRATION.md#tanka-deployment).
-Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to align your configuration with the new state of
-the cluster.
+If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](MIGRATION.md#helm-deployment)
+or [Tanka](MIGRATION.md#tanka-deployment). Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to
+align your configuration with the new state of the cluster.
 
 ### Helm deployment
 
 If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
 provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). Note that the CockroachDB documentation
-suggest to edit the values using `helm upgrade ... --set` commands. However, you can alternatively update `helm_values.yml`
-in your deployment. With both approaches, you will need to use the root key `cockroachdb` since the cockroachdb Helm chart is
-a dependency of the dss chart.
+suggest to edit the values using `helm upgrade ... --set` commands. You will need to use the root key `cockroachdb` 
+since the cockroachdb Helm chart is a dependency of the dss chart.
 For instance, setting the image tag and partition using the command line would look like this:
 ```
 helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.image.tag=v24.1.3 --reuse-values
@@ -46,8 +45,7 @@ helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.image.tag=v24.1
 ```
 helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.statefulset.updateStrategy.rollingUpdate.partition=0 --reuse-values
 ```
-
-If using a values file (eg `helm_values.yml`), you can set the new image tag and rollout partition like this:
+Alternatively, you can update `helm_values.yml` in your deployment and set the new image tag and rollout partition like this:
 ```yaml
 cockroachdb:
   image:
@@ -58,11 +56,12 @@ cockroachdb:
       rollingUpdate:
         partition: 0
 ```
-New values can then be applied using `helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] -f [helm_values.yml]`
+New values can then be applied using `helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] -f [helm_values.yml]`.
+We recommend the second approach to keep your helm values in sync with the cluster state.
 
 #### 21.2.7 to 24.1.3
 
-CockroachDB requires to upgrade one minor version at a time:
+CockroachDB requires to upgrade one minor version at a time, therefore the following migrations have to be performed:
 
 1. 21.2.7 to 22.1: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v22.1/upgrade-cockroachdb-kubernetes?filters=helm).
 2. 22.1 to 22.2: see [CockroachDB Cluster upgrade for Helm](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=helm).
@@ -73,13 +72,14 @@ CockroachDB requires to upgrade one minor version at a time:
 ### Tanka deployment
 
 For deployments using Tanka configuration, since no instructions are provided for tanka specifically,
-we recommend to follow the manual steps documented by CockroachDB: `Cluster Upgrade with Manual configs`. (See specific links below)
-To apply the changes to your cluster, follow the manual steps and reflect the new values in the *Leader* and *Followers* Tanka configuration,
-especially the new image version (see [`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)) to ensure the new configuration is aligned with the cluster state.
+we recommend to follow the manual steps documented by CockroachDB: `Cluster Upgrade with Manual configs`.
+(See specific links below) To apply the changes to your cluster, follow the manual steps and reflect the new 
+values in the *Leader* and *Followers* Tanka configurations, namely the new image version (see 
+[`VAR_CRDB_DOCKER_IMAGE_NAME`](../build/README.md)) to ensure the new configuration is aligned with the cluster state.
 
 #### 21.2.7 to 24.1.3
 
-CockroachDB requires to upgrade one minor version at a time.
+CockroachDB requires to upgrade one minor version at a time, therefore the following migrations have to be performed:
 
 1. 21.2.7 to 22.1: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.1/upgrade-cockroachdb-kubernetes?filters=manual).
 2. 22.1 to 22.2: see [CockroachDB Cluster upgrade with Manual configs](https://www.cockroachlabs.com/docs/v22.2/upgrade-cockroachdb-kubernetes?filters=manual).
