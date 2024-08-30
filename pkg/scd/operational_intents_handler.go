@@ -478,34 +478,34 @@ func checkUpsertPermissionsAndReturnManager(authorizedManager *api.Authorization
 	return dssmodels.Manager(*authorizedManager.ClientID), nil
 }
 
-// validateUpsertRequestAgainstPreviousOIRAndReturnVersion checks that the client requesting an OIR upsert has the necessary permissions and that the request is valid.
+// validateUpsertRequestAgainstPreviousOIR checks that the client requesting an OIR upsert has the necessary permissions and that the request is valid.
 // On success, the version of the OIR is returned:
 //   - upon initial creation (if no previous OIR exists), it is 0
 //   - otherwise, it is the version of the previous OIR
-func validateUpsertRequestAgainstPreviousOIRAndReturnVersion(
+func validateUpsertRequestAgainstPreviousOIR(
 	requestingManager dssmodels.Manager,
 	providedOVN restapi.EntityOVN,
 	previousOIR *scdmodels.OperationalIntent,
-) (int32, error) {
+) error {
 
 	if previousOIR != nil {
 		if previousOIR.Manager != requestingManager {
-			return 0, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"OperationalIntent owned by %s, but %s attempted to modify", previousOIR.Manager, requestingManager)
 		}
 		if previousOIR.OVN != scdmodels.OVN(providedOVN) {
-			return 0, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 				"Current version is %s but client specified version %s", previousOIR.OVN, providedOVN)
 		}
 
-		return int32(previousOIR.Version), nil
+		return nil
 	}
 
 	if providedOVN != "" {
-		return 0, stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", providedOVN)
+		return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent does not exist and therefore is not version %s", providedOVN)
 	}
 
-	return 0, nil
+	return nil
 }
 
 // upsertOperationalIntentReference inserts or updates an Operational Intent.
@@ -540,9 +540,14 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 		// Validate the request against the previous OIR and return the current version
 		// (upon new OIR creation, version is 0)
-		version, err := validateUpsertRequestAgainstPreviousOIRAndReturnVersion(manager, validParams.ovn, old)
-		if err != nil {
+		if err := validateUpsertRequestAgainstPreviousOIR(manager, validParams.ovn, old); err != nil {
 			return stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Request validation failed")
+		}
+
+		// For an OIR being created, version starts at 0
+		version := int32(0)
+		if old != nil {
+			version = int32(old.Version)
 		}
 
 		var sub *scdmodels.Subscription
