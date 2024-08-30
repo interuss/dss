@@ -364,7 +364,6 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 }
 
 type validOIRUpsertParams struct {
-	manager        dssmodels.Manager
 	id             dssmodels.ID
 	ovn            restapi.EntityOVN
 	state          scdmodels.OperationalIntentState
@@ -374,45 +373,38 @@ type validOIRUpsertParams struct {
 	subscriptionID dssmodels.ID
 }
 
-func (a *Server) validateAndReturnUpsertParams(
-	authorizedManager *api.AuthorizationResult,
+// validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
+// Note that this does NOT check for anything related to access controls: any error returned should be labeled
+// as a dsserr.BadRequest.
+func validateAndReturnUpsertParams(
 	entityid restapi.EntityID,
 	ovn restapi.EntityOVN,
 	params *restapi.PutOperationalIntentReferenceParameters,
+	allowHTTPBaseUrls bool,
 ) (*validOIRUpsertParams, error) {
 
 	valid := &validOIRUpsertParams{}
 	var err error
 
-	if authorizedManager.ClientID == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager")
-	}
-	valid.manager = dssmodels.Manager(*authorizedManager.ClientID)
-
 	valid.id, err = dssmodels.IDFromString(string(entityid))
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
+		return nil, stacktrace.NewError("Invalid ID format: `%s`", entityid)
 	}
 
 	if len(params.UssBaseUrl) == 0 {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
+		return nil, stacktrace.NewError("Missing required UssBaseUrl")
 	}
 
-	if !a.AllowHTTPBaseUrls {
+	if !allowHTTPBaseUrls {
 		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+			return nil, stacktrace.Propagate(err, "Failed to validate base URL")
 		}
 	}
 
 	valid.state = scdmodels.OperationalIntentState(params.State)
 	if !valid.state.IsValidInDSS() {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid OperationalIntent state: %s", params.State)
-	}
-
-	hasCMSARole := auth.HasScope(authorizedManager.Scopes, restapi.UtmConformanceMonitoringSaScope)
-	if valid.state.RequiresCMSA() && !hasCMSARole {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing `%s` Conformance Monitoring for Situational Awareness scope to transition to CMSA state: %s (see SCD0100)", restapi.UtmConformanceMonitoringSaScope, params.State)
+		return nil, stacktrace.NewError("Invalid OperationalIntent state: %s", params.State)
 	}
 
 	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
@@ -420,45 +412,45 @@ func (a *Server) validateAndReturnUpsertParams(
 	for idx, extent := range params.Extents {
 		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
 		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
+			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
 		}
 		valid.extents[idx] = cExtent
 	}
 
 	valid.uExtent, err = dssmodels.UnionVolumes4D(valid.extents...)
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
+		return nil, stacktrace.Propagate(err, "Failed to union extents")
 	}
 
 	if valid.uExtent.StartTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
+		return nil, stacktrace.NewError("Missing time_start from extents")
 	}
 	if valid.uExtent.EndTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
+		return nil, stacktrace.NewError("Missing time_end from extents")
 	}
 
 	if time.Now().After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "OperationalIntents may not end in the past")
+		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
 	}
 
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
 	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	if valid.uExtent.EndTime.Before(*valid.uExtent.StartTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "End time is past the start time")
+		return nil, stacktrace.NewError("End time is past the start time")
 	}
 
 	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid state for initial version: `%s`", params.State)
+		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
 	valid.ovn = ovn
 
 	if params.SubscriptionId != nil {
 		valid.subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
 		if err != nil {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
+			return nil, stacktrace.NewError("Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
 		}
 	}
 
@@ -468,27 +460,37 @@ func (a *Server) validateAndReturnUpsertParams(
 		valid.subscriptionID.Empty() &&
 		(params.NewSubscription == nil ||
 			params.NewSubscription.UssBaseUrl == "") {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Provided Operational Intent Reference state `%s` requires either a subscription ID or information to create an implicit subscription", valid.state)
+		return nil, stacktrace.NewError("Provided Operational Intent Reference state `%s` requires either a subscription ID or information to create an implicit subscription", valid.state)
 	}
 
 	return valid, nil
+}
+
+// checkUpsertPermissions verifies that the client has the necessary permissions to upsert an Operational Intent with the requested state.
+func checkUpsertPermissionsAndReturnManager(authorizedManager *api.AuthorizationResult, requestedState scdmodels.OperationalIntentState) (dssmodels.Manager, error) {
+	if authorizedManager.ClientID == nil {
+		return "", stacktrace.NewError("Missing manager")
+	}
+	hasCMSARole := auth.HasScope(authorizedManager.Scopes, restapi.UtmConformanceMonitoringSaScope)
+	if requestedState.RequiresCMSA() && !hasCMSARole {
+		return "", stacktrace.NewError("Missing `%s` Conformance Monitoring for Situational Awareness scope to transition to CMSA state: %s (see SCD0100)", restapi.UtmConformanceMonitoringSaScope, requestedState)
+	}
+	return dssmodels.Manager(*authorizedManager.ClientID), nil
 }
 
 // upsertOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
-	// Note: validateAndReturnUpsertParams could be moved out of this method and only the valid params passed,
+	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
-	upsertParams, err := a.validateAndReturnUpsertParams(authorizedManager, entityid, ovn, params)
+	upsertParams, err := validateAndReturnUpsertParams(entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
-		// Important note:
-		//   - stacktrace.Propagate sets NoCode as the code for the error
-		//   - subsequently, stacktrace.GetCode(err) only looks into the first error in the stack and returns NoCode if the error has no code
-		//   - therefore, we need to explicitly use stacktrace.PropagateWithCode if we want the calling logic
-		//   to be able to retrieve the code of the error
-		// TODO we can consider fixing this in the stacktrace library
-		return nil, nil, stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Failed to validate Operational Intent Reference upsert parameters")
+		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
+	}
+	manager, err := checkUpsertPermissionsAndReturnManager(authorizedManager, upsertParams.state)
+	if err != nil {
+		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state")
 	}
 
 	var responseOK *restapi.ChangeOperationalIntentReferenceResponse
@@ -509,9 +511,9 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
 		if old != nil {
-			if old.Manager != upsertParams.manager {
+			if old.Manager != manager {
 				return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, upsertParams.manager)
+					"OperationalIntent owned by %s, but %s attempted to modify", old.Manager, manager)
 			}
 			if old.OVN != scdmodels.OVN(ovn) {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
@@ -543,7 +545,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 				subToUpsert := scdmodels.Subscription{
 					ID:                          dssmodels.ID(uuid.New().String()),
-					Manager:                     upsertParams.manager,
+					Manager:                     manager,
 					StartTime:                   upsertParams.uExtent.StartTime,
 					EndTime:                     upsertParams.uExtent.EndTime,
 					AltitudeLo:                  upsertParams.uExtent.SpatialVolume.AltitudeLo,
@@ -572,10 +574,10 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			if sub == nil {
 				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", upsertParams.subscriptionID)
 			}
-			if sub.Manager != dssmodels.Manager(upsertParams.manager) {
+			if sub.Manager != manager {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", upsertParams.subscriptionID, sub.Manager, upsertParams.manager)
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", upsertParams.subscriptionID, sub.Manager, manager)
 			}
 			updateSub := false
 			if sub.StartTime != nil && sub.StartTime.After(*upsertParams.uExtent.StartTime) {
@@ -629,7 +631,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 				_, ok := key[relevantOp.OVN]
 				// Note: The OIR being mutated does not need to be specified in the key:
 				if !ok && relevantOp.RequiresKey() && relevantOp.ID != upsertParams.id {
-					if relevantOp.Manager != dssmodels.Manager(upsertParams.manager) {
+					if relevantOp.Manager != manager {
 						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
 					missingOps = append(missingOps, relevantOp)
@@ -645,7 +647,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 				}
 				for _, relevantConstraint := range constraints {
 					if _, ok := key[relevantConstraint.OVN]; !ok {
-						if relevantConstraint.Manager != dssmodels.Manager(upsertParams.manager) {
+						if relevantConstraint.Manager != manager {
 							relevantConstraint.OVN = scdmodels.NoOvnPhrase
 						}
 						missingConstraints = append(missingConstraints, relevantConstraint)
@@ -663,7 +665,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					responseConflict.MissingOperationalIntents = new([]restapi.OperationalIntentReference)
 					for _, missingOp := range missingOps {
 						p := missingOp.ToRest()
-						if missingOp.Manager != upsertParams.manager {
+						if missingOp.Manager != manager {
 							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 							p.Ovn = &noOvnPhrase
 						}
@@ -675,7 +677,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 					responseConflict.MissingConstraints = new([]restapi.ConstraintReference)
 					for _, missingConstraint := range missingConstraints {
 						c := missingConstraint.ToRest()
-						if missingConstraint.Manager != upsertParams.manager {
+						if missingConstraint.Manager != manager {
 							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 							c.Ovn = &noOvnPhrase
 						}
@@ -698,7 +700,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		// Construct the new OperationalIntent
 		op := &scdmodels.OperationalIntent{
 			ID:      upsertParams.id,
-			Manager: dssmodels.Manager(upsertParams.manager),
+			Manager: manager,
 			Version: scdmodels.VersionNumber(version + 1),
 
 			StartTime:     upsertParams.uExtent.StartTime,
