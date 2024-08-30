@@ -36,7 +36,7 @@ align your configuration with the new state of the cluster.
 
 If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
 provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). Note that the CockroachDB documentation
-suggest to edit the values using `helm upgrade ... --set` commands. You will need to use the root key `cockroachdb` 
+suggests to edit the values using `helm upgrade ... --set` commands. You will need to use the root key `cockroachdb` 
 since the cockroachdb Helm chart is a dependency of the dss chart.
 For instance, setting the image tag and partition using the command line would look like this:
 ```
@@ -71,7 +71,7 @@ CockroachDB requires to upgrade one minor version at a time, therefore the follo
 
 ### Tanka deployment
 
-For deployments using Tanka configuration, since no instructions are provided for tanka specifically,
+For deployments using Tanka configuration, since no instructions are provided for Tanka specifically,
 we recommend to follow the manual steps documented by CockroachDB: `Cluster Upgrade with Manual configs`.
 (See specific links below) To apply the changes to your cluster, follow the manual steps and reflect the new 
 values in the *Leader* and *Followers* Tanka configurations, namely the new image version (see 
