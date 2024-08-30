@@ -363,7 +363,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 	return restapi.UpdateOperationalIntentReferenceResponseSet{Response200: respOK}
 }
 
-type validOIRUpsertParams struct {
+type validOIRParams struct {
 	id             dssmodels.ID
 	ovn            restapi.EntityOVN
 	state          scdmodels.OperationalIntentState
@@ -381,9 +381,9 @@ func validateAndReturnUpsertParams(
 	ovn restapi.EntityOVN,
 	params *restapi.PutOperationalIntentReferenceParameters,
 	allowHTTPBaseUrls bool,
-) (*validOIRUpsertParams, error) {
+) (*validOIRParams, error) {
 
-	valid := &validOIRUpsertParams{}
+	valid := &validOIRParams{}
 	var err error
 
 	valid.id, err = dssmodels.IDFromString(string(entityid))
@@ -484,11 +484,11 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
 	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
-	upsertParams, err := validateAndReturnUpsertParams(entityid, ovn, params, a.AllowHTTPBaseUrls)
+	validParams, err := validateAndReturnUpsertParams(entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
 	}
-	manager, err := checkUpsertPermissionsAndReturnManager(authorizedManager, upsertParams.state)
+	manager, err := checkUpsertPermissionsAndReturnManager(authorizedManager, validParams.state)
 	if err != nil {
 		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state")
 	}
@@ -500,13 +500,13 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		// Lock subscriptions based on the cell to reduce the number of retries under concurrent load.
 		// See issue #1002 for details.
-		err = r.LockSubscriptionsOnCells(ctx, upsertParams.cells)
+		err = r.LockSubscriptionsOnCells(ctx, validParams.cells)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
 
 		// Get existing OperationalIntent, if any, and validate request
-		old, err := r.GetOperationalIntent(ctx, upsertParams.id)
+		old, err := r.GetOperationalIntent(ctx, validParams.id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
@@ -530,7 +530,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		var sub *scdmodels.Subscription
-		if upsertParams.subscriptionID.Empty() {
+		if validParams.subscriptionID.Empty() {
 			// Create an implicit subscription if the implicit subscription params are set:
 			// for situations where these params are required but have not been set,
 			// an error will have been returned earlier.
@@ -546,11 +546,11 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 				subToUpsert := scdmodels.Subscription{
 					ID:                          dssmodels.ID(uuid.New().String()),
 					Manager:                     manager,
-					StartTime:                   upsertParams.uExtent.StartTime,
-					EndTime:                     upsertParams.uExtent.EndTime,
-					AltitudeLo:                  upsertParams.uExtent.SpatialVolume.AltitudeLo,
-					AltitudeHi:                  upsertParams.uExtent.SpatialVolume.AltitudeHi,
-					Cells:                       upsertParams.cells,
+					StartTime:                   validParams.uExtent.StartTime,
+					EndTime:                     validParams.uExtent.EndTime,
+					AltitudeLo:                  validParams.uExtent.SpatialVolume.AltitudeLo,
+					AltitudeHi:                  validParams.uExtent.SpatialVolume.AltitudeHi,
+					Cells:                       validParams.cells,
 					USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
 					NotifyForOperationalIntents: true,
 					ImplicitSubscription:        true,
@@ -567,38 +567,38 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		} else {
 			// Use existing Subscription
-			sub, err = r.GetSubscription(ctx, upsertParams.subscriptionID)
+			sub, err = r.GetSubscription(ctx, validParams.subscriptionID)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to get Subscription")
 			}
 			if sub == nil {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", upsertParams.subscriptionID)
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.subscriptionID)
 			}
 			if sub.Manager != manager {
 				return stacktrace.Propagate(
 					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", upsertParams.subscriptionID, sub.Manager, manager)
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", validParams.subscriptionID, sub.Manager, manager)
 			}
 			updateSub := false
-			if sub.StartTime != nil && sub.StartTime.After(*upsertParams.uExtent.StartTime) {
+			if sub.StartTime != nil && sub.StartTime.After(*validParams.uExtent.StartTime) {
 				if sub.ImplicitSubscription {
-					sub.StartTime = upsertParams.uExtent.StartTime
+					sub.StartTime = validParams.uExtent.StartTime
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
 				}
 			}
-			if sub.EndTime != nil && sub.EndTime.Before(*upsertParams.uExtent.EndTime) {
+			if sub.EndTime != nil && sub.EndTime.Before(*validParams.uExtent.EndTime) {
 				if sub.ImplicitSubscription {
-					sub.EndTime = upsertParams.uExtent.EndTime
+					sub.EndTime = validParams.uExtent.EndTime
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
 				}
 			}
-			if !sub.Cells.Contains(upsertParams.cells) {
+			if !sub.Cells.Contains(validParams.cells) {
 				if sub.ImplicitSubscription {
-					sub.Cells = s2.CellUnionFromUnion(sub.Cells, upsertParams.cells)
+					sub.Cells = s2.CellUnionFromUnion(sub.Cells, validParams.cells)
 					updateSub = true
 				} else {
 					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
@@ -612,7 +612,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			}
 		}
 
-		if upsertParams.state.RequiresKey() {
+		if validParams.state.RequiresKey() {
 			// Construct a hash set of OVNs as the key
 			key := map[scdmodels.OVN]bool{}
 			if params.Key != nil {
@@ -623,14 +623,14 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 			// Identify OperationalIntents missing from the key
 			var missingOps []*scdmodels.OperationalIntent
-			relevantOps, err := r.SearchOperationalIntents(ctx, upsertParams.uExtent)
+			relevantOps, err := r.SearchOperationalIntents(ctx, validParams.uExtent)
 			if err != nil {
 				return stacktrace.Propagate(err, "Unable to SearchOperations")
 			}
 			for _, relevantOp := range relevantOps {
 				_, ok := key[relevantOp.OVN]
 				// Note: The OIR being mutated does not need to be specified in the key:
-				if !ok && relevantOp.RequiresKey() && relevantOp.ID != upsertParams.id {
+				if !ok && relevantOp.RequiresKey() && relevantOp.ID != validParams.id {
 					if relevantOp.Manager != manager {
 						relevantOp.OVN = scdmodels.NoOvnPhrase
 					}
@@ -641,7 +641,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			// Identify Constraints missing from the key
 			var missingConstraints []*scdmodels.Constraint
 			if sub != nil && sub.NotifyForConstraints {
-				constraints, err := r.SearchConstraints(ctx, upsertParams.uExtent)
+				constraints, err := r.SearchConstraints(ctx, validParams.uExtent)
 				if err != nil {
 					return stacktrace.Propagate(err, "Unable to SearchConstraints")
 				}
@@ -699,19 +699,19 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		// Construct the new OperationalIntent
 		op := &scdmodels.OperationalIntent{
-			ID:      upsertParams.id,
+			ID:      validParams.id,
 			Manager: manager,
 			Version: scdmodels.VersionNumber(version + 1),
 
-			StartTime:     upsertParams.uExtent.StartTime,
-			EndTime:       upsertParams.uExtent.EndTime,
-			AltitudeLower: upsertParams.uExtent.SpatialVolume.AltitudeLo,
-			AltitudeUpper: upsertParams.uExtent.SpatialVolume.AltitudeHi,
-			Cells:         upsertParams.cells,
+			StartTime:     validParams.uExtent.StartTime,
+			EndTime:       validParams.uExtent.EndTime,
+			AltitudeLower: validParams.uExtent.SpatialVolume.AltitudeLo,
+			AltitudeUpper: validParams.uExtent.SpatialVolume.AltitudeHi,
+			Cells:         validParams.cells,
 
 			USSBaseURL:     string(params.UssBaseUrl),
 			SubscriptionID: subID,
-			State:          upsertParams.state,
+			State:          validParams.state,
 		}
 		err = op.ValidateTimeRange()
 		if err != nil {
@@ -721,7 +721,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		// Compute total affected Volume4D for notification purposes
 		var notifyVol4 *dssmodels.Volume4D
 		if old == nil {
-			notifyVol4 = upsertParams.uExtent
+			notifyVol4 = validParams.uExtent
 		} else {
 			oldVol4 := &dssmodels.Volume4D{
 				StartTime: old.StartTime,
@@ -733,7 +733,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 						return old.Cells, nil
 					}),
 				}}
-			notifyVol4, err = dssmodels.UnionVolumes4D(upsertParams.uExtent, oldVol4)
+			notifyVol4, err = dssmodels.UnionVolumes4D(validParams.uExtent, oldVol4)
 			if err != nil {
 				return stacktrace.Propagate(err, "Error constructing 4D volumes union")
 			}
