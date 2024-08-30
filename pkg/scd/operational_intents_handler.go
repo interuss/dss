@@ -517,6 +517,56 @@ func validateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
+func incrementIndicesAndGetRelevantSubscriptions(
+	ctx context.Context,
+	r repos.Repository,
+	previousOIR *scdmodels.OperationalIntent,
+	requestedExtent *dssmodels.Volume4D,
+) (repos.Subscriptions, error) {
+
+	// Compute total affected Volume4D for notification purposes
+	notifyVol4 := requestedExtent
+	if previousOIR != nil {
+		oldVol4 := &dssmodels.Volume4D{
+			StartTime: previousOIR.StartTime,
+			EndTime:   previousOIR.EndTime,
+			SpatialVolume: &dssmodels.Volume3D{
+				AltitudeHi: previousOIR.AltitudeUpper,
+				AltitudeLo: previousOIR.AltitudeLower,
+				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+					return previousOIR.Cells, nil
+				}),
+			},
+		}
+		var err error
+		notifyVol4, err = dssmodels.UnionVolumes4D(requestedExtent, oldVol4)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
+		}
+	}
+
+	// Find Subscriptions that may need to be notified
+	allsubs, err := r.SearchSubscriptions(ctx, notifyVol4)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to search for impacted subscriptions.")
+	}
+
+	// Limit Subscription notifications to only those interested in OperationalIntents
+	subs := repos.Subscriptions{}
+	for _, sub := range allsubs {
+		if sub.NotifyForOperationalIntents {
+			subs = append(subs, sub)
+		}
+	}
+
+	// Increment notification indices for relevant Subscriptions
+	if err := subs.IncrementNotificationIndices(ctx, r); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to increment notification indices of relevant subscriptions")
+	}
+
+	return subs, nil
+}
+
 // validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
 // - If all required keys are provided, (nil, nil) will be returned.
 // - If keys are missing, the conflict response to be sent back as well as an error with the dsserr.MissingOVNs code will be returned.
@@ -758,57 +808,22 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Error validating time range")
 		}
 
-		// Compute total affected Volume4D for notification purposes
-		var notifyVol4 *dssmodels.Volume4D
-		if old == nil {
-			notifyVol4 = validParams.uExtent
-		} else {
-			oldVol4 := &dssmodels.Volume4D{
-				StartTime: old.StartTime,
-				EndTime:   old.EndTime,
-				SpatialVolume: &dssmodels.Volume3D{
-					AltitudeHi: old.AltitudeUpper,
-					AltitudeLo: old.AltitudeLower,
-					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-						return old.Cells, nil
-					}),
-				}}
-			notifyVol4, err = dssmodels.UnionVolumes4D(validParams.uExtent, oldVol4)
-			if err != nil {
-				return stacktrace.Propagate(err, "Error constructing 4D volumes union")
-			}
-		}
-
 		// Upsert the OperationalIntent
 		op, err = r.UpsertOperationalIntent(ctx, op)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
 		}
 
-		// Find Subscriptions that may need to be notified
-		allsubs, err := r.SearchSubscriptions(ctx, notifyVol4)
+		// Notify relevant Subscriptions
+		subsToNotify, err := incrementIndicesAndGetRelevantSubscriptions(ctx, r, old, validParams.uExtent)
 		if err != nil {
-			return err
-		}
-
-		// Limit Subscription notifications to only those interested in OperationalIntents
-		subs := repos.Subscriptions{}
-		for _, sub := range allsubs {
-			if sub.NotifyForOperationalIntents {
-				subs = append(subs, sub)
-			}
-		}
-
-		// Increment notification indices for relevant Subscriptions
-		err = subs.IncrementNotificationIndices(ctx, r)
-		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 		}
 
 		// Return response to client
 		responseOK = &restapi.ChangeOperationalIntentReferenceResponse{
 			OperationalIntentReference: *op.ToRest(),
-			Subscribers:                makeSubscribersToNotify(subs),
+			Subscribers:                makeSubscribersToNotify(subsToNotify),
 		}
 
 		return nil
