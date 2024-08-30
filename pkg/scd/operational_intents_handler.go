@@ -371,6 +371,7 @@ type validOIRParams struct {
 	uExtent        *dssmodels.Volume4D
 	cells          s2.CellUnion
 	subscriptionID dssmodels.ID
+	key            map[scdmodels.OVN]bool
 }
 
 // validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
@@ -463,6 +464,14 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Provided Operational Intent Reference state `%s` requires either a subscription ID or information to create an implicit subscription", valid.state)
 	}
 
+	// Construct a hash set of OVNs as the key
+	valid.key = map[scdmodels.OVN]bool{}
+	if params.Key != nil {
+		for _, ovn := range *params.Key {
+			valid.key[scdmodels.OVN(ovn)] = true
+		}
+	}
+
 	return valid, nil
 }
 
@@ -506,6 +515,86 @@ func validateUpsertRequestAgainstPreviousOIR(
 	}
 
 	return nil
+}
+
+// validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
+// - If all required keys are provided, (nil, nil) will be returned.
+// - If keys are missing, the conflict response to be sent back as well as an error with the dsserr.MissingOVNs code will be returned.
+// - In case of any other error, (nil, error) will be returned.
+func validateKeyAndProvideConflictResponse(
+	ctx context.Context,
+	r repos.Repository,
+	requestingManager dssmodels.Manager,
+	params *validOIRParams,
+	attachedSubscription *scdmodels.Subscription,
+) (*restapi.AirspaceConflictResponse, error) {
+
+	// Identify OperationalIntents missing from the key
+	var missingOps []*scdmodels.OperationalIntent
+	relevantOps, err := r.SearchOperationalIntents(ctx, params.uExtent)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to SearchOperations")
+	}
+	for _, relevantOp := range relevantOps {
+		_, ok := params.key[relevantOp.OVN]
+		// Note: The OIR being mutated does not need to be specified in the key:
+		if !ok && relevantOp.RequiresKey() && relevantOp.ID != params.id {
+			missingOps = append(missingOps, relevantOp)
+		}
+	}
+
+	// Identify Constraints missing from the key
+	var missingConstraints []*scdmodels.Constraint
+	if attachedSubscription != nil && attachedSubscription.NotifyForConstraints {
+		constraints, err := r.SearchConstraints(ctx, params.uExtent)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to SearchConstraints")
+		}
+		for _, relevantConstraint := range constraints {
+			if _, ok := params.key[relevantConstraint.OVN]; !ok {
+				missingConstraints = append(missingConstraints, relevantConstraint)
+			}
+		}
+	}
+
+	// If the client is missing some OVNs, provide the pointers to the
+	// information they need
+	if len(missingOps) > 0 || len(missingConstraints) > 0 {
+		msg := "Current OVNs not provided for one or more OperationalIntents or Constraints"
+		responseConflict := &restapi.AirspaceConflictResponse{Message: &msg}
+
+		if len(missingOps) > 0 {
+			responseConflict.MissingOperationalIntents = new([]restapi.OperationalIntentReference)
+			for _, missingOp := range missingOps {
+				p := missingOp.ToRest()
+				// We scrub the OVNs of entities not owned by the requesting manager to make sure
+				// they have really contacted the managing USS
+				if missingOp.Manager != requestingManager {
+					noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+					p.Ovn = &noOvnPhrase
+				}
+				*responseConflict.MissingOperationalIntents = append(*responseConflict.MissingOperationalIntents, *p)
+			}
+		}
+
+		if len(missingConstraints) > 0 {
+			responseConflict.MissingConstraints = new([]restapi.ConstraintReference)
+			for _, missingConstraint := range missingConstraints {
+				c := missingConstraint.ToRest()
+				// We scrub the OVNs of entities not owned by the requesting manager to make sure
+				// they have really contacted the managing USS
+				if missingConstraint.Manager != requestingManager {
+					noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+					c.Ovn = &noOvnPhrase
+				}
+				*responseConflict.MissingConstraints = append(*responseConflict.MissingConstraints, *c)
+			}
+		}
+
+		return responseConflict, stacktrace.NewErrorWithCode(dsserr.MissingOVNs, "Missing OVNs: %v", msg)
+	}
+
+	return nil, nil
 }
 
 // upsertOperationalIntentReference inserts or updates an Operational Intent.
@@ -634,79 +723,9 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		if validParams.state.RequiresKey() {
-			// Construct a hash set of OVNs as the key
-			key := map[scdmodels.OVN]bool{}
-			if params.Key != nil {
-				for _, ovn := range *params.Key {
-					key[scdmodels.OVN(ovn)] = true
-				}
-			}
-
-			// Identify OperationalIntents missing from the key
-			var missingOps []*scdmodels.OperationalIntent
-			relevantOps, err := r.SearchOperationalIntents(ctx, validParams.uExtent)
+			responseConflict, err = validateKeyAndProvideConflictResponse(ctx, r, manager, validParams, sub)
 			if err != nil {
-				return stacktrace.Propagate(err, "Unable to SearchOperations")
-			}
-			for _, relevantOp := range relevantOps {
-				_, ok := key[relevantOp.OVN]
-				// Note: The OIR being mutated does not need to be specified in the key:
-				if !ok && relevantOp.RequiresKey() && relevantOp.ID != validParams.id {
-					if relevantOp.Manager != manager {
-						relevantOp.OVN = scdmodels.NoOvnPhrase
-					}
-					missingOps = append(missingOps, relevantOp)
-				}
-			}
-
-			// Identify Constraints missing from the key
-			var missingConstraints []*scdmodels.Constraint
-			if sub != nil && sub.NotifyForConstraints {
-				constraints, err := r.SearchConstraints(ctx, validParams.uExtent)
-				if err != nil {
-					return stacktrace.Propagate(err, "Unable to SearchConstraints")
-				}
-				for _, relevantConstraint := range constraints {
-					if _, ok := key[relevantConstraint.OVN]; !ok {
-						if relevantConstraint.Manager != manager {
-							relevantConstraint.OVN = scdmodels.NoOvnPhrase
-						}
-						missingConstraints = append(missingConstraints, relevantConstraint)
-					}
-				}
-			}
-
-			// If the client is missing some OVNs, provide the pointers to the
-			// information they need
-			if len(missingOps) > 0 || len(missingConstraints) > 0 {
-				msg := "Current OVNs not provided for one or more OperationalIntents or Constraints"
-				responseConflict = &restapi.AirspaceConflictResponse{Message: &msg}
-
-				if len(missingOps) > 0 {
-					responseConflict.MissingOperationalIntents = new([]restapi.OperationalIntentReference)
-					for _, missingOp := range missingOps {
-						p := missingOp.ToRest()
-						if missingOp.Manager != manager {
-							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
-							p.Ovn = &noOvnPhrase
-						}
-						*responseConflict.MissingOperationalIntents = append(*responseConflict.MissingOperationalIntents, *p)
-					}
-				}
-
-				if len(missingConstraints) > 0 {
-					responseConflict.MissingConstraints = new([]restapi.ConstraintReference)
-					for _, missingConstraint := range missingConstraints {
-						c := missingConstraint.ToRest()
-						if missingConstraint.Manager != manager {
-							noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
-							c.Ovn = &noOvnPhrase
-						}
-						*responseConflict.MissingConstraints = append(*responseConflict.MissingConstraints, *c)
-					}
-				}
-
-				return stacktrace.NewErrorWithCode(dsserr.MissingOVNs, "Missing OVNs: %v", msg)
+				return stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Failed to validate key")
 			}
 		}
 
