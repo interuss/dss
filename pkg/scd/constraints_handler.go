@@ -37,6 +37,13 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
+	// Retrieve OVN
+	ovn := scdmodels.OVN(req.Ovn)
+	if ovn == "" {
+		return restapi.DeleteConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for constraint to modify"))}}
+	}
+
 	var response *restapi.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
 		// Make sure deletion request is valid
@@ -49,6 +56,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 		case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"Constraint owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
+		case old.OVN != ovn:
+			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 
 		// Find Subscriptions that may overlap the Constraint's Volume4D
@@ -106,6 +116,8 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 			return restapi.DeleteConstraintReferenceResponseSet{Response400: errResp}
 		case dsserr.NotFound:
 			return restapi.DeleteConstraintReferenceResponseSet{Response404: errResp}
+		case dsserr.VersionMismatch:
+			return restapi.DeleteConstraintReferenceResponseSet{Response409: errResp}
 		default:
 			return restapi.DeleteConstraintReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
