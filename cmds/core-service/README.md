@@ -32,7 +32,7 @@ go run ./cmds/core-service \
 To run correctly, core-service must be able to [access](../../pkg/cockroach/flags/flags.go) a CockroachDB cluster.  Provision of this cluster is handled automatically for a local development environment if following [the instructions for a standalone instance](../../build/dev/standalone_instance.md).  Or, a CockroachDB instance can be created manually with:
 
 ```bash
-docker container run -p 26257:26257 -p 8080:8080 --rm cockroachdb/cockroach:v21.2.7 start-single-node --insecure
+docker container run -p 26257:26257 -p 8080:8080 --rm cockroachdb/cockroach:v24.1.3 start-single-node --insecure
 ```
 
 #### Database configuration
