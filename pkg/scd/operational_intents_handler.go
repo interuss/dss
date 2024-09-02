@@ -94,8 +94,8 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			}
 		}
 
-		// Find Subscriptions that may overlap the OperationalIntent's Volume4D
-		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
+		// Gather the subscriptions that need to be notified
+		notifyVolume := &dssmodels.Volume4D{
 			StartTime: old.StartTime,
 			EndTime:   old.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -104,22 +104,11 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
 					return old.Cells, nil
 				}),
-			}})
+			}}
+
+		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to search Subscriptions in repo")
-		}
-
-		// Limit Subscription notifications to only those interested in OperationalIntents
-		subs := repos.Subscriptions{}
-		for _, s := range allsubs {
-			if s.NotifyForOperationalIntents {
-				subs = append(subs, s)
-			}
-		}
-
-		// Increment notification indices for Subscriptions to be notified
-		if err := subs.IncrementNotificationIndices(ctx, r); err != nil {
-			return stacktrace.Propagate(err, "Unable to increment notification indices")
+			return stacktrace.Propagate(err, "could not obtain relevant subscriptions")
 		}
 
 		// Delete OperationalIntent from repo
@@ -139,7 +128,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		// Return response to client
 		response = &restapi.ChangeOperationalIntentReferenceResponse{
 			OperationalIntentReference: *old.ToRest(),
-			Subscribers:                makeSubscribersToNotify(subs),
+			Subscribers:                makeSubscribersToNotify(subsToNotify),
 		}
 
 		return nil
@@ -517,36 +506,48 @@ func validateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
+// computeNotificationVolume computes the volume that needs to be queried for subscriptions
+// given the requested extent and the (possibly nil) previous operational intent.
+// The returned volume is either the union of the requested extent and the previous OIR's extent, or just the requested extent
+// if the previous OIR is nil.
+func computeNotificationVolume(
+	previousOIR *scdmodels.OperationalIntent,
+	requestedExtent *dssmodels.Volume4D) (*dssmodels.Volume4D, error) {
+
+	if previousOIR == nil {
+		return requestedExtent, nil
+	}
+
+	// Compute total affected Volume4D for notification purposes
+	oldVolume := &dssmodels.Volume4D{
+		StartTime: previousOIR.StartTime,
+		EndTime:   previousOIR.EndTime,
+		SpatialVolume: &dssmodels.Volume3D{
+			AltitudeHi: previousOIR.AltitudeUpper,
+			AltitudeLo: previousOIR.AltitudeLower,
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+				return previousOIR.Cells, nil
+			}),
+		},
+	}
+	notifyVolume, err := dssmodels.UnionVolumes4D(requestedExtent, oldVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
+	}
+
+	return notifyVolume, nil
+}
+
+// getRelevantSubscriptionsAndIncrementIndices retrieves the subscriptions relevant to the passed volume and increments their notification indices
+// before returning them.
 func getRelevantSubscriptionsAndIncrementIndices(
 	ctx context.Context,
 	r repos.Repository,
-	previousOIR *scdmodels.OperationalIntent,
-	requestedExtent *dssmodels.Volume4D,
+	notifyVolume *dssmodels.Volume4D,
 ) (repos.Subscriptions, error) {
 
-	// Compute total affected Volume4D for notification purposes
-	notifyVol4 := requestedExtent
-	if previousOIR != nil {
-		oldVol4 := &dssmodels.Volume4D{
-			StartTime: previousOIR.StartTime,
-			EndTime:   previousOIR.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeHi: previousOIR.AltitudeUpper,
-				AltitudeLo: previousOIR.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return previousOIR.Cells, nil
-				}),
-			},
-		}
-		var err error
-		notifyVol4, err = dssmodels.UnionVolumes4D(requestedExtent, oldVol4)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
-		}
-	}
-
 	// Find Subscriptions that may need to be notified
-	allsubs, err := r.SearchSubscriptions(ctx, notifyVol4)
+	allsubs, err := r.SearchSubscriptions(ctx, notifyVolume)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to search for impacted subscriptions.")
 	}
@@ -814,8 +815,13 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
 		}
 
+		notifyVolume, err := computeNotificationVolume(old, validParams.uExtent)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to compute notification volume")
+		}
+
 		// Notify relevant Subscriptions
-		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, old, validParams.uExtent)
+		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 		}
