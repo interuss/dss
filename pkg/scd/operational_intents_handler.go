@@ -517,7 +517,7 @@ func validateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
-func incrementIndicesAndGetRelevantSubscriptions(
+func getRelevantSubscriptionsAndIncrementIndices(
 	ctx context.Context,
 	r repos.Repository,
 	previousOIR *scdmodels.OperationalIntent,
@@ -815,7 +815,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		// Notify relevant Subscriptions
-		subsToNotify, err := incrementIndicesAndGetRelevantSubscriptions(ctx, r, old, validParams.uExtent)
+		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, old, validParams.uExtent)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 		}
