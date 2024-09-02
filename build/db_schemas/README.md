@@ -18,6 +18,6 @@ places:
   schema_versions.schema_version
 * [DSS main.jsonnet](../deploy/examples/minimum/main.jsonnet)
 * [Schema manager main.jsonnet](../deploy/examples/schema_manager/main.jsonnet)
-* scd_ or rid_ bootstrapper.sh in [dev/startup](../dev/startup)
 * /pkg/{rid|scd}/store/cockroach/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
+* /deploy/services/helm-charts/dss/templates/schema-manager.yaml
