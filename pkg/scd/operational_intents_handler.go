@@ -391,7 +391,7 @@ type validOIRParams struct {
 	key map[scdmodels.OVN]bool
 }
 
-func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber) *scdmodels.OperationalIntent {
+func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber, pastOVNs []scdmodels.OVN) *scdmodels.OperationalIntent {
 	// For OIR's in the accepted state, we may not have a attachedSub available,
 	// in such cases the attachedSub ID on scdmodels.OperationalIntent will be nil
 	// and will be replaced with the 'NullV4UUID' when sent over to a client.
@@ -401,9 +401,11 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 		subID = &attachedSub.ID
 	}
 	return &scdmodels.OperationalIntent{
-		ID:      vp.id,
-		Manager: manager,
-		Version: version,
+		ID:       vp.id,
+		Manager:  manager,
+		Version:  version,
+		OVN:      "", // TODO dss#1078: this field must be populated to support USSs setting OVNs in advance
+		PastOVNs: pastOVNs,
 
 		StartTime:     vp.uExtent.StartTime,
 		EndTime:       vp.uExtent.EndTime,
@@ -829,10 +831,15 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			return stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Request validation failed")
 		}
 
-		version := scdmodels.VersionNumber(1)
-		var previousSub *scdmodels.Subscription
+		var (
+			version     = scdmodels.VersionNumber(1)
+			pastOVNs    = make([]scdmodels.OVN, 0)
+			previousSub *scdmodels.Subscription
+		)
 		if old != nil {
 			version = old.Version + 1
+			pastOVNs = append(old.PastOVNs, validParams.ovn)
+
 			// Fetch the previous OIR's subscription if it exists
 			if old.SubscriptionID != nil {
 				previousSub, err = r.GetSubscription(ctx, *old.SubscriptionID)
@@ -915,7 +922,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		// Construct the new OperationalIntent
-		op := validParams.toOIR(manager, attachedSub, version)
+		op := validParams.toOIR(manager, attachedSub, version, pastOVNs)
 
 		// Upsert the OperationalIntent
 		op, err = r.UpsertOperationalIntent(ctx, op)
