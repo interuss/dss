@@ -353,18 +353,20 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 }
 
 type validOIRParams struct {
-	id                                 dssmodels.ID
-	ovn                                restapi.EntityOVN
-	state                              scdmodels.OperationalIntentState
-	extents                            []*dssmodels.Volume4D
-	uExtent                            *dssmodels.Volume4D
-	cells                              s2.CellUnion
-	subscriptionID                     dssmodels.ID
-	ussBaseURL                         string
-	implicitSubscriptionRequested      bool
-	implicitSubscriptionBaseURL        string
-	implicitSubscriptionForConstraints bool
-	key                                map[scdmodels.OVN]bool
+	id                   dssmodels.ID
+	ovn                  restapi.EntityOVN
+	state                scdmodels.OperationalIntentState
+	extents              []*dssmodels.Volume4D
+	uExtent              *dssmodels.Volume4D
+	cells                s2.CellUnion
+	subscriptionID       dssmodels.ID
+	ussBaseURL           string
+	implicitSubscription struct {
+		requested      bool
+		baseURL        string
+		forConstraints bool
+	}
+	key map[scdmodels.OVN]bool
 }
 
 // validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
@@ -404,12 +406,16 @@ func validateAndReturnUpsertParams(
 		if params.NewSubscription.UssBaseUrl == "" {
 			return nil, stacktrace.NewError("Missing required USS base url for new subscription (in parameters for implicit subscription)")
 		}
+		// If an implicit subscription is requested, the Subscription ID cannot be present.
 		if params.SubscriptionId != nil {
 			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
 		}
-		valid.implicitSubscriptionRequested = true
-		valid.implicitSubscriptionBaseURL = string(params.NewSubscription.UssBaseUrl)
-		valid.implicitSubscriptionForConstraints = *params.NewSubscription.NotifyForConstraints
+		valid.implicitSubscription.requested = true
+		valid.implicitSubscription.baseURL = string(params.NewSubscription.UssBaseUrl)
+		// notify for constraints defaults to false if not specified
+		if params.NewSubscription.NotifyForConstraints != nil {
+			valid.implicitSubscription.forConstraints = *params.NewSubscription.NotifyForConstraints
+		}
 	}
 
 	if !allowHTTPBaseUrls {
@@ -418,9 +424,8 @@ func validateAndReturnUpsertParams(
 			return nil, stacktrace.Propagate(err, "Failed to validate base URL")
 		}
 
-		// TODO check if the check for an empty UssBaseURL is correct here, and if we should not fail if it is empty
 		if params.NewSubscription != nil {
-			err := scdmodels.ValidateUSSBaseURL(valid.implicitSubscriptionBaseURL)
+			err := scdmodels.ValidateUSSBaseURL(valid.implicitSubscription.baseURL)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Failed to validate USS base URL for subscription (in parameters for implicit subscription)")
 			}
@@ -471,25 +476,6 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
 	valid.ovn = ovn
-
-	if params.SubscriptionId != nil {
-		valid.subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
-		if err != nil {
-			return nil, stacktrace.NewError("Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
-		}
-	}
-
-	if params.NewSubscription != nil {
-		// The spec states that NewSubscription.UssBaseUrl is required and an empty value
-		// makes no sense, so we will fail if an implicit subscription is requested but the base url is empty
-		if params.NewSubscription.UssBaseUrl == "" {
-			return nil, stacktrace.NewError("Missing required USS base url for new subscription (in parameters for implicit subscription)")
-		}
-		// If an implicit subscription is requested, the Subscription ID cannot be present.
-		if params.SubscriptionId != nil {
-			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
-		}
-	}
 
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
@@ -564,9 +550,9 @@ func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Reposito
 		AltitudeLo:                  validParams.uExtent.SpatialVolume.AltitudeLo,
 		AltitudeHi:                  validParams.uExtent.SpatialVolume.AltitudeHi,
 		Cells:                       validParams.cells,
-		USSBaseURL:                  validParams.implicitSubscriptionBaseURL,
+		USSBaseURL:                  validParams.implicitSubscription.baseURL,
 		NotifyForOperationalIntents: true,
-		NotifyForConstraints:        validParams.implicitSubscriptionForConstraints,
+		NotifyForConstraints:        validParams.implicitSubscription.forConstraints,
 		ImplicitSubscription:        true,
 	}
 
@@ -763,7 +749,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			// Requesting neither an explicit nor an implicit subscription is allowed for ACCEPTED states:
 			// for other states, an error will have been returned earlier.
 			// if no implicit subscription is requested and we reached this point, we will proceed without subscription
-			if validParams.implicitSubscriptionRequested {
+			if validParams.implicitSubscription.requested {
 				if sub, err = createAndStoreNewImplicitSubscription(ctx, r, manager, validParams); err != nil {
 					return stacktrace.Propagate(err, "Failed to create implicit subscription")
 				}
