@@ -5,9 +5,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/interuss/stacktrace"
 )
 
 // Aggregates constants for operational intents.
@@ -126,25 +124,6 @@ func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 	}
 
 	return result
-}
-
-// ValidateTimeRange validates the time range of o.
-func (o *OperationalIntent) ValidateTimeRange() error {
-	if o.StartTime == nil {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_start")
-	}
-
-	// EndTime cannot be omitted for new Operational Intents.
-	if o.EndTime == nil {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation must have an time_end")
-	}
-
-	// EndTime cannot be before StartTime.
-	if o.EndTime.Sub(*o.StartTime) < 0 {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Operation time_end must be after time_start")
-	}
-
-	return nil
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts

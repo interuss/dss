@@ -369,6 +369,32 @@ type validOIRParams struct {
 	key map[scdmodels.OVN]bool
 }
 
+func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version int32) *scdmodels.OperationalIntent {
+	// For OIR's in the accepted state, we may not have a attachedSub available,
+	// in such cases the attachedSub ID on scdmodels.OperationalIntent will be nil
+	// and will be replaced with the 'NullV4UUID' when sent over to a client.
+	var subID *dssmodels.ID
+	if attachedSub != nil {
+		// Note: do _not_ use vp.subscriptionID here, as it may be empty
+		subID = &attachedSub.ID
+	}
+	return &scdmodels.OperationalIntent{
+		ID:      vp.id,
+		Manager: manager,
+		Version: scdmodels.VersionNumber(version),
+
+		StartTime:     vp.uExtent.StartTime,
+		EndTime:       vp.uExtent.EndTime,
+		AltitudeLower: vp.uExtent.SpatialVolume.AltitudeLo,
+		AltitudeUpper: vp.uExtent.SpatialVolume.AltitudeHi,
+		Cells:         vp.cells,
+
+		USSBaseURL:     vp.ussBaseURL,
+		SubscriptionID: subID,
+		State:          vp.state,
+	}
+}
+
 // validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
@@ -461,6 +487,10 @@ func validateAndReturnUpsertParams(
 
 	if time.Now().After(*valid.uExtent.EndTime) {
 		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
+	}
+
+	if valid.uExtent.StartTime.After(*valid.uExtent.EndTime) {
+		return nil, stacktrace.NewError("Operation time_end must be after time_start")
 	}
 
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
@@ -808,34 +838,8 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			}
 		}
 
-		// For OIR's in the accepted state, we may not have a subscription available,
-		// in such cases the subscription ID on scdmodels.OperationalIntent will be nil
-		// and will be replaced with the 'NullV4UUID' when sent over to a client.
-		var subID *dssmodels.ID = nil
-		if sub != nil {
-			subID = &sub.ID
-		}
-
 		// Construct the new OperationalIntent
-		op := &scdmodels.OperationalIntent{
-			ID:      validParams.id,
-			Manager: manager,
-			Version: scdmodels.VersionNumber(version + 1),
-
-			StartTime:     validParams.uExtent.StartTime,
-			EndTime:       validParams.uExtent.EndTime,
-			AltitudeLower: validParams.uExtent.SpatialVolume.AltitudeLo,
-			AltitudeUpper: validParams.uExtent.SpatialVolume.AltitudeHi,
-			Cells:         validParams.cells,
-
-			USSBaseURL:     validParams.ussBaseURL,
-			SubscriptionID: subID,
-			State:          validParams.state,
-		}
-		err = op.ValidateTimeRange()
-		if err != nil {
-			return stacktrace.Propagate(err, "Error validating time range")
-		}
+		op := validParams.toOIR(manager, sub, version+1)
 
 		// Upsert the OperationalIntent
 		op, err = r.UpsertOperationalIntent(ctx, op)
