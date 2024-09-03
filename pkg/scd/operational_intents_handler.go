@@ -353,14 +353,20 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 }
 
 type validOIRParams struct {
-	id             dssmodels.ID
-	ovn            restapi.EntityOVN
-	state          scdmodels.OperationalIntentState
-	extents        []*dssmodels.Volume4D
-	uExtent        *dssmodels.Volume4D
-	cells          s2.CellUnion
-	subscriptionID dssmodels.ID
-	key            map[scdmodels.OVN]bool
+	id                   dssmodels.ID
+	ovn                  restapi.EntityOVN
+	state                scdmodels.OperationalIntentState
+	extents              []*dssmodels.Volume4D
+	uExtent              *dssmodels.Volume4D
+	cells                s2.CellUnion
+	subscriptionID       dssmodels.ID
+	ussBaseURL           string
+	implicitSubscription struct {
+		requested      bool
+		baseURL        string
+		forConstraints bool
+	}
+	key map[scdmodels.OVN]bool
 }
 
 // validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
@@ -385,10 +391,44 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Missing required UssBaseUrl")
 	}
 
+	valid.ussBaseURL = string(params.UssBaseUrl)
+
+	if params.SubscriptionId != nil {
+		valid.subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
+		if err != nil {
+			return nil, stacktrace.NewError("Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
+		}
+	}
+
+	if params.NewSubscription != nil {
+		// The spec states that NewSubscription.UssBaseUrl is required and an empty value
+		// makes no sense, so we will fail if an implicit subscription is requested but the base url is empty
+		if params.NewSubscription.UssBaseUrl == "" {
+			return nil, stacktrace.NewError("Missing required USS base url for new subscription (in parameters for implicit subscription)")
+		}
+		// If an implicit subscription is requested, the Subscription ID cannot be present.
+		if params.SubscriptionId != nil {
+			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
+		}
+		valid.implicitSubscription.requested = true
+		valid.implicitSubscription.baseURL = string(params.NewSubscription.UssBaseUrl)
+		// notify for constraints defaults to false if not specified
+		if params.NewSubscription.NotifyForConstraints != nil {
+			valid.implicitSubscription.forConstraints = *params.NewSubscription.NotifyForConstraints
+		}
+	}
+
 	if !allowHTTPBaseUrls {
 		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to validate base URL")
+		}
+
+		if params.NewSubscription != nil {
+			err := scdmodels.ValidateUSSBaseURL(valid.implicitSubscription.baseURL)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to validate USS base URL for subscription (in parameters for implicit subscription)")
+			}
 		}
 	}
 
@@ -436,25 +476,6 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
 	valid.ovn = ovn
-
-	if params.SubscriptionId != nil {
-		valid.subscriptionID, err = dssmodels.IDFromOptionalString(string(*params.SubscriptionId))
-		if err != nil {
-			return nil, stacktrace.NewError("Invalid ID format for Subscription ID: `%s`", *params.SubscriptionId)
-		}
-	}
-
-	if params.NewSubscription != nil {
-		// The spec states that NewSubscription.UssBaseUrl is required and an empty value
-		// makes no sense, so we will fail if an implicit subscription is requested but the base url is empty
-		if params.NewSubscription.UssBaseUrl == "" {
-			return nil, stacktrace.NewError("Missing required USS base url for new subscription (in parameters for implicit subscription)")
-		}
-		// If an implicit subscription is requested, the Subscription ID cannot be present.
-		if params.SubscriptionId != nil {
-			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
-		}
-	}
 
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
@@ -516,6 +537,26 @@ func validateUpsertRequestAgainstPreviousOIR(
 	}
 
 	return nil
+}
+
+// createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
+// store it and return it.
+func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
+	subToUpsert := scdmodels.Subscription{
+		ID:                          dssmodels.ID(uuid.New().String()),
+		Manager:                     manager,
+		StartTime:                   validParams.uExtent.StartTime,
+		EndTime:                     validParams.uExtent.EndTime,
+		AltitudeLo:                  validParams.uExtent.SpatialVolume.AltitudeLo,
+		AltitudeHi:                  validParams.uExtent.SpatialVolume.AltitudeHi,
+		Cells:                       validParams.cells,
+		USSBaseURL:                  validParams.implicitSubscription.baseURL,
+		NotifyForOperationalIntents: true,
+		NotifyForConstraints:        validParams.implicitSubscription.forConstraints,
+		ImplicitSubscription:        true,
+	}
+
+	return r.UpsertSubscription(ctx, &subToUpsert)
 }
 
 // computeNotificationVolume computes the volume that needs to be queried for subscriptions
@@ -704,40 +745,15 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 
 		var sub *scdmodels.Subscription
 		if validParams.subscriptionID.Empty() {
-			// Create an implicit subscription if the implicit subscription params are set:
-			// for situations where these params are required but have not been set,
-			// an error will have been returned earlier.
-			// If they are not set at this point, continue without creating an implicit subscription.
-			if params.NewSubscription != nil && params.NewSubscription.UssBaseUrl != "" {
-				if !a.AllowHTTPBaseUrls {
-					err := scdmodels.ValidateUSSBaseURL(string(params.NewSubscription.UssBaseUrl))
-					if err != nil {
-						return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate USS base URL")
-					}
-				}
-
-				subToUpsert := scdmodels.Subscription{
-					ID:                          dssmodels.ID(uuid.New().String()),
-					Manager:                     manager,
-					StartTime:                   validParams.uExtent.StartTime,
-					EndTime:                     validParams.uExtent.EndTime,
-					AltitudeLo:                  validParams.uExtent.SpatialVolume.AltitudeLo,
-					AltitudeHi:                  validParams.uExtent.SpatialVolume.AltitudeHi,
-					Cells:                       validParams.cells,
-					USSBaseURL:                  string(params.NewSubscription.UssBaseUrl),
-					NotifyForOperationalIntents: true,
-					ImplicitSubscription:        true,
-				}
-				if params.NewSubscription.NotifyForConstraints != nil {
-					subToUpsert.NotifyForConstraints = *params.NewSubscription.NotifyForConstraints
-				}
-
-				sub, err = r.UpsertSubscription(ctx, &subToUpsert)
-				if err != nil {
+			// Create an implicit subscription if one has been requested.
+			// Requesting neither an explicit nor an implicit subscription is allowed for ACCEPTED states:
+			// for other states, an error will have been returned earlier.
+			// if no implicit subscription is requested and we reached this point, we will proceed without subscription
+			if validParams.implicitSubscription.requested {
+				if sub, err = createAndStoreNewImplicitSubscription(ctx, r, manager, validParams); err != nil {
 					return stacktrace.Propagate(err, "Failed to create implicit subscription")
 				}
 			}
-
 		} else {
 			// Use existing Subscription
 			sub, err = r.GetSubscription(ctx, validParams.subscriptionID)
@@ -812,7 +828,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 			AltitudeUpper: validParams.uExtent.SpatialVolume.AltitudeHi,
 			Cells:         validParams.cells,
 
-			USSBaseURL:     string(params.UssBaseUrl),
+			USSBaseURL:     validParams.ussBaseURL,
 			SubscriptionID: subID,
 			State:          validParams.state,
 		}
