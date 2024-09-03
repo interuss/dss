@@ -444,6 +444,18 @@ func validateAndReturnUpsertParams(
 		}
 	}
 
+	if params.NewSubscription != nil {
+		// The spec states that NewSubscription.UssBaseUrl is required and an empty value
+		// makes no sense, so we will fail if an implicit subscription is requested but the base url is empty
+		if params.NewSubscription.UssBaseUrl == "" {
+			return nil, stacktrace.NewError("Missing required USS base url for new subscription (in parameters for implicit subscription)")
+		}
+		// If an implicit subscription is requested, the Subscription ID cannot be present.
+		if params.SubscriptionId != nil {
+			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
+		}
+	}
+
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
 	if valid.state.RequiresSubscription() &&
