@@ -731,6 +731,47 @@ func validateKeyAndProvideConflictResponse(
 	return nil, nil
 }
 
+// ensureSubscriptionCoversOIR ensures that the subscription covers the requested geo-temporal extent, extending it if both possible and required,
+// or failing otherwise.
+// After this method returns successfully, the subscription will cover the requested geo-temporal extent.
+func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
+
+	updateSub := false
+	if sub.StartTime != nil && sub.StartTime.After(*params.uExtent.StartTime) {
+		if sub.ImplicitSubscription {
+			sub.StartTime = params.uExtent.StartTime
+			updateSub = true
+		} else {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
+		}
+	}
+	if sub.EndTime != nil && sub.EndTime.Before(*params.uExtent.EndTime) {
+		if sub.ImplicitSubscription {
+			sub.EndTime = params.uExtent.EndTime
+			updateSub = true
+		} else {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
+		}
+	}
+	if !sub.Cells.Contains(params.cells) {
+		if sub.ImplicitSubscription {
+			sub.Cells = s2.CellUnionFromUnion(sub.Cells, params.cells)
+			updateSub = true
+		} else {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
+		}
+	}
+	if updateSub {
+		upsertedSub, err := r.UpsertSubscription(ctx, sub)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to update existing Subscription")
+		}
+		return upsertedSub, nil
+	}
+
+	return sub, nil
+}
+
 // upsertOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
@@ -785,49 +826,34 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 				}
 			}
 		} else {
-			// Use existing Subscription
+			// Attempt to rely on the specified subscription
 			sub, err = r.GetSubscription(ctx, validParams.subscriptionID)
 			if err != nil {
-				return stacktrace.Propagate(err, "Unable to get Subscription")
+				return stacktrace.Propagate(err, "Unable to get depended-upon Subscription")
 			}
 			if sub == nil {
-				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.subscriptionID)
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Depended-upon Subscription %s does not exist", validParams.subscriptionID)
 			}
+
+			// We need to confirm that it is owned by the calling manager
 			if sub.Manager != manager {
 				return stacktrace.Propagate(
-					stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent", validParams.subscriptionID, sub.Manager, manager)
+					// We do a bit of wrapping gymnastics because the root error message will be sent in the response,
+					// and we don't want to include the effective manager in there.
+					stacktrace.NewErrorWithCode(
+						dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
+					// The propagation message will end in the logs and help with debugging.
+					"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent",
+					validParams.subscriptionID,
+					sub.Manager,
+					manager,
+				)
 			}
-			updateSub := false
-			if sub.StartTime != nil && sub.StartTime.After(*validParams.uExtent.StartTime) {
-				if sub.ImplicitSubscription {
-					sub.StartTime = validParams.uExtent.StartTime
-					updateSub = true
-				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
-				}
-			}
-			if sub.EndTime != nil && sub.EndTime.Before(*validParams.uExtent.EndTime) {
-				if sub.ImplicitSubscription {
-					sub.EndTime = validParams.uExtent.EndTime
-					updateSub = true
-				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
-				}
-			}
-			if !sub.Cells.Contains(validParams.cells) {
-				if sub.ImplicitSubscription {
-					sub.Cells = s2.CellUnionFromUnion(sub.Cells, validParams.cells)
-					updateSub = true
-				} else {
-					return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
-				}
-			}
-			if updateSub {
-				sub, err = r.UpsertSubscription(ctx, sub)
-				if err != nil {
-					return stacktrace.Propagate(err, "Failed to update existing Subscription")
-				}
+
+			// We need to ensure the subscription covers the OIR's geo-temporal extent
+			sub, err = ensureSubscriptionCoversOIR(ctx, r, sub, validParams)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
 			}
 		}
 
