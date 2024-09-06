@@ -376,7 +376,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 
 type validOIRParams struct {
 	id                   dssmodels.ID
-	ovn                  restapi.EntityOVN
+	ovn                  scdmodels.OVN
 	state                scdmodels.OperationalIntentState
 	extents              []*dssmodels.Volume4D
 	uExtent              *dssmodels.Volume4D
@@ -391,7 +391,7 @@ type validOIRParams struct {
 	key map[scdmodels.OVN]bool
 }
 
-func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version int32) *scdmodels.OperationalIntent {
+func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber) *scdmodels.OperationalIntent {
 	// For OIR's in the accepted state, we may not have a attachedSub available,
 	// in such cases the attachedSub ID on scdmodels.OperationalIntent will be nil
 	// and will be replaced with the 'NullV4UUID' when sent over to a client.
@@ -403,7 +403,7 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 	return &scdmodels.OperationalIntent{
 		ID:      vp.id,
 		Manager: manager,
-		Version: scdmodels.VersionNumber(version),
+		Version: version,
 
 		StartTime:     vp.uExtent.StartTime,
 		EndTime:       vp.uExtent.EndTime,
@@ -527,7 +527,7 @@ func validateAndReturnUpsertParams(
 	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
-	valid.ovn = ovn
+	valid.ovn = scdmodels.OVN(ovn)
 
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
@@ -567,7 +567,7 @@ func checkUpsertPermissionsAndReturnManager(authorizedManager *api.Authorization
 //   - otherwise, it is the version of the previous OIR
 func validateUpsertRequestAgainstPreviousOIR(
 	requestingManager dssmodels.Manager,
-	providedOVN restapi.EntityOVN,
+	providedOVN scdmodels.OVN,
 	previousOIR *scdmodels.OperationalIntent,
 ) error {
 
@@ -576,7 +576,7 @@ func validateUpsertRequestAgainstPreviousOIR(
 			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 				"OperationalIntent owned by %s, but %s attempted to modify", previousOIR.Manager, requestingManager)
 		}
-		if previousOIR.OVN != scdmodels.OVN(providedOVN) {
+		if previousOIR.OVN != providedOVN {
 			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 				"Current version is %s but client specified version %s", previousOIR.OVN, providedOVN)
 		}
@@ -824,17 +824,15 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
-		// Validate the request against the previous OIR and return the current version
-		// (upon new OIR creation, version is 0)
+		// Validate the request against the previous OIR
 		if err := validateUpsertRequestAgainstPreviousOIR(manager, validParams.ovn, old); err != nil {
 			return stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Request validation failed")
 		}
 
-		// For an OIR being created, version starts at 0
-		version := int32(0)
+		version := scdmodels.VersionNumber(1)
 		var previousSub *scdmodels.Subscription
 		if old != nil {
-			version = int32(old.Version)
+			version = old.Version + 1
 			// Fetch the previous OIR's subscription if it exists
 			if old.SubscriptionID != nil {
 				previousSub, err = r.GetSubscription(ctx, *old.SubscriptionID)
@@ -917,7 +915,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorize
 		}
 
 		// Construct the new OperationalIntent
-		op := validParams.toOIR(manager, attachedSub, version+1)
+		op := validParams.toOIR(manager, attachedSub, version)
 
 		// Upsert the OperationalIntent
 		op, err = r.UpsertOperationalIntent(ctx, op)
