@@ -22,10 +22,7 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = [
-    "app_hostname",
-    "crdb_hostname_suffix"
-]
+GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix"]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
@@ -40,14 +37,14 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_cluster_name",
     "crdb_locality",
     "crdb_external_nodes",
-    "kubernetes_namespace"
+    "kubernetes_namespace",
 ]
 
 # dependencies/terraform-*-kubernetes
 COMMON_KUBERNETES_VARIABLES = GLOBAL_VARIABLES + [
     "cluster_name",
     "node_count",
-    "kubernetes_version"
+    "kubernetes_version",
 ]
 
 # dependencies/terraform-google-kubernetes
@@ -72,7 +69,7 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_region",
     "aws_instance_type",
     "aws_route53_zone_id",
-    "aws_iam_permissions_boundary"
+    "aws_iam_permissions_boundary",
 ] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-aws-dss
@@ -90,9 +87,7 @@ PROJECT_VARIABLES = {
     "../dependencies/terraform-aws-kubernetes": AWS_KUBERNETES_VARIABLES,
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
-    "../../operations/ci/aws-1": list(
-        dict.fromkeys(AWS_MODULE_VARIABLES)
-    )
+    "../../operations/ci/aws-1": list(dict.fromkeys(AWS_MODULE_VARIABLES)),
 }
 
 
@@ -250,13 +245,15 @@ def write_files(definitions: Dict[str, str]):
             )
             write_file(tfvars_md_filename, content)
 
+
 def read_file(filename: str) -> str:
     """
     Reads a file and returns its content as a string
     """
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         content = file.read()
     return content
+
 
 def diff_files(definitions: Dict[str, str]) -> bool:
     """
@@ -271,7 +268,7 @@ def diff_files(definitions: Dict[str, str]) -> bool:
         try:
             actual_content = read_file(var_filename)
         except Exception as e:
-            print(f'Error reading {var_filename}: {e}')
+            print(f"Error reading {var_filename}: {e}")
             return False
 
         if generated_content != actual_content:
@@ -279,9 +276,10 @@ def diff_files(definitions: Dict[str, str]) -> bool:
 
     return True
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--diff', action='store_true')
+    parser.add_argument("--diff", action="store_true")
     args = parser.parse_args()
 
     definitions = load_tf_definitions()
