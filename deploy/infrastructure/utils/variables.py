@@ -172,9 +172,11 @@ def comment(content: str) -> str:
     return commented_lines
 
 
-def get_variables_tf_content(variables: List[str], definitions: Dict[str, str]) -> str:
+def get_variables_gen_tf_content(
+    variables: List[str], definitions: Dict[str, str]
+) -> str:
     """
-    Generate the content of variables.tf (Terraform definitions) based
+    Generate the content of variables.gen.tf (Terraform definitions) based
     on the `variables` list. `variables` contains the variables names to
     include in the content. `definitions` contains the definitions of all
     available variables.
@@ -231,9 +233,9 @@ def write_files(definitions: Dict[str, str]):
     for path, variables in PROJECT_VARIABLES.items():
         project_name = path.split("/")[-1]
 
-        # Generate variables.tf definition
+        # Generate variables.gen.tf definition
         var_filename = join(path, GENERATED_VARIABLES_FILENAME)
-        content = get_variables_tf_content(variables, definitions)
+        content = get_variables_gen_tf_content(variables, definitions)
         write_file(var_filename, content)
 
         if is_example_project(path):
@@ -246,24 +248,36 @@ def write_files(definitions: Dict[str, str]):
             write_file(tfvars_md_filename, content)
 
 
-def read_file(filename: str) -> str:
+def read_file(file_path: str) -> str:
     """
-    Reads a file and returns its content as a string
+    Reads a file and returns its content
+
+    Arguments:
+        file_path: the relative path of the file to be read from
+    Returns:
+        the content of the file as a str
     """
-    with open(filename, "r") as file:
+    with open(file_path, "r") as file:
         content = file.read()
     return content
 
 
 def diff_files(definitions: Dict[str, str]) -> bool:
     """
-    Generates the `.gen.tf` in memory and diffs them against the ones found
-    on disk
+    Generates the `variables.gen.tf` file content in memory and diffs it
+    against the `variables.get.tf` files found on disk
+
+    Arguments:
+        definitions: a dict where the keys are the terraform variable names,
+        and the valuies are the content of that file.
+    Returns:
+        true iff the generated content and locally stored content are equal
+        string values
     """
     for path, variables in PROJECT_VARIABLES.items():
-        # Generate variables.tf definition
+        # Generate variables.gen.tf definition
         var_filename = join(path, GENERATED_VARIABLES_FILENAME)
-        generated_content = get_variables_tf_content(variables, definitions)
+        generated_content = get_variables_gen_tf_content(variables, definitions)
 
         try:
             actual_content = read_file(var_filename)
@@ -278,16 +292,29 @@ def diff_files(definitions: Dict[str, str]) -> bool:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--diff", action="store_true")
+    parser = argparse.ArgumentParser(usage="python variables")
+    parser.add_argument(
+        "--diff",
+        action="store_true",
+        help="diffs the generated `variables.gen.tf` files against the ones\
+                found locally without modifiying existing files or writing any\
+                results out to disk.\
+                Exits with code 0 if there are no diffs, else exits with code 1",
+    )
     args = parser.parse_args()
 
     definitions = load_tf_definitions()
 
     if args.diff:
         if not diff_files(definitions):
+            print(
+                "variables.py: generated content was NOT equal to local variables.gen.tf content"
+            )
             sys.exit(1)
         else:
+            print(
+                "variables.py: generated content was equal to local variables.gen.tf content"
+            )
             sys.exit(0)
     else:
         write_files(definitions)
