@@ -290,5 +290,4 @@ if __name__ == "__main__":
         else:
             sys.exit(0)
     else:
-        print("not activated")
         write_files(definitions)
