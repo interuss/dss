@@ -67,6 +67,12 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 				// replace req.Body with a copy
 				r.Body = io.NopCloser(bytes.NewReader(reqData))
 			}
+
+			subject, ok := r.Context().Value("authSubject").(string)
+			if !ok {
+				subject = ""
+			}
+			logger = logger.With(zap.String("req_sub", subject))
 		}
 
 		handler.ServeHTTP(trw, r)

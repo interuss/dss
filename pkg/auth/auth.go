@@ -185,29 +185,26 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 // Authorize extracts and verifies bearer tokens from a http.Request.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 
-	tknStr, ok := getToken(r)
-	if !ok {
+	missing, ok := r.Context().Value("authTokenMissing").(bool)
+	if !ok || missing {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
 	}
 
-	a.keyGuard.RLock()
-	keys := a.keys
-	a.keyGuard.RUnlock()
-	validated := false
-	var err error
-	var keyClaims claims
-
-	for _, key := range keys {
-		keyClaims = claims{}
-		key := key
-		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
-			return key, nil
-		})
-		if err == nil {
-			validated = true
-			break
-		}
+	validated, ok := r.Context().Value("authValidated").(bool)
+	if !ok {
+		validated = false
 	}
+
+	err, ok := r.Context().Value("authError").(error)
+	if !ok {
+		err = nil
+	}
+
+	keyClaims, ok := r.Context().Value("authClaims").(claims)
+	if !ok {
+		keyClaims = claims{}
+	}
+
 	if !validated {
 		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")}
 	}
@@ -299,4 +296,57 @@ func getToken(r *http.Request) (string, bool) {
 		return "", false
 	}
 	return authHeader[7:], true
+}
+
+// Extract valid claims from a JWT token.
+func (a *Authorizer) extractClaims(r *http.Request) (missing bool, validated bool, keyClaims claims, err error) {
+	tknStr, ok := getToken(r)
+
+	if !ok {
+		return true, false, claims{}, nil
+	}
+
+	a.keyGuard.RLock()
+	keys := a.keys
+	a.keyGuard.RUnlock()
+	validated = false
+	missing = false
+
+	for _, key := range keys {
+		keyClaims = claims{}
+		key := key
+		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
+			return key, nil
+		})
+		if err == nil {
+			validated = true
+			break
+		}
+	}
+
+	return missing, validated, keyClaims, err
+
+}
+
+// Decoder Middleware
+func DecoderMiddleware(a *Authorizer, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		missing, validated, keyClaims, err := a.extractClaims(r)
+
+		ctx := context.WithValue(r.Context(), "authValidated", validated)
+		ctx = context.WithValue(ctx, "authTokenMissing", missing)
+		ctx = context.WithValue(ctx, "authClaims", keyClaims)
+		ctx = context.WithValue(ctx, "authError", err)
+
+		if validated && err == nil {
+			// If the token is valid, we can extract the subject from the token and add them to the context.
+			ctx = context.WithValue(ctx, "authSubject", keyClaims.Subject)
+		}
+
+		// Create a new request with the updated context
+		r = r.WithContext(ctx)
+
+		handler.ServeHTTP(w, r)
+	})
 }

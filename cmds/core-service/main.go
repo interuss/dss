@@ -281,10 +281,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
-	handler := logging.HTTPMiddleware(logger, *dumpRequests,
-		healthyEndpointMiddleware(logger,
-			&multiRouter,
-		))
+	handler := logging.HTTPMiddleware(logger, *dumpRequests, &multiRouter)
+
+	handler = auth.DecoderMiddleware(authorizer, healthyEndpointMiddleware(logger, handler))
 
 	httpServer := &http.Server{
 		Addr:              address,
