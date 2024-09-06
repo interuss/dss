@@ -193,10 +193,8 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 
 	// if the decoding middleware wasn't triggered, attempt decoding
 	if _, ok = r.Context().Value("authDecoded").(bool); !ok {
-		a.logger.Info("Decoding middleware not triggered")
 		missing, validated, keyClaims, err = a.extractClaims(r)
 	} else {
-		a.logger.Info("Decoding middleware already triggered")
 		// Use previously decoded values
 		missing, ok = r.Context().Value("authTokenMissing").(bool)
 		if !ok || missing {
