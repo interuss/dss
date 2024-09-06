@@ -185,24 +185,38 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 // Authorize extracts and verifies bearer tokens from a http.Request.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 
-	missing, ok := r.Context().Value("authTokenMissing").(bool)
-	if !ok || missing {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
-	}
+	missing := false
+	validated := false
+	keyClaims := claims{}
+	err := error(nil)
+	ok := false
 
-	validated, ok := r.Context().Value("authValidated").(bool)
-	if !ok {
-		validated = false
-	}
+	// if the decoding middleware wasn't triggered, attempt decoding
+	if _, ok = r.Context().Value("authDecoded").(bool); !ok {
+		a.logger.Info("Decoding middleware not triggered")
+		missing, validated, keyClaims, err = a.extractClaims(r)
+	} else {
+		a.logger.Info("Decoding middleware already triggered")
+		// Use previously decoded values
+		missing, ok = r.Context().Value("authTokenMissing").(bool)
+		if !ok || missing {
+			return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
+		}
 
-	err, ok := r.Context().Value("authError").(error)
-	if !ok {
-		err = nil
-	}
+		validated, ok = r.Context().Value("authValidated").(bool)
+		if !ok {
+			validated = false
+		}
 
-	keyClaims, ok := r.Context().Value("authClaims").(claims)
-	if !ok {
-		keyClaims = claims{}
+		err, ok = r.Context().Value("authError").(error)
+		if !ok {
+			err = nil
+		}
+
+		keyClaims, ok = r.Context().Value("authClaims").(claims)
+		if !ok {
+			keyClaims = claims{}
+		}
 	}
 
 	if !validated {
@@ -343,6 +357,9 @@ func DecoderMiddleware(a *Authorizer, handler http.Handler) http.Handler {
 			// If the token is valid, we can extract the subject from the token and add them to the context.
 			ctx = context.WithValue(ctx, "authSubject", keyClaims.Subject)
 		}
+
+		// Add a flag to the context to indicate that the token was decoded
+		ctx = context.WithValue(ctx, "authDecoded", true)
 
 		// Create a new request with the updated context
 		r = r.WithContext(ctx)
