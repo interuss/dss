@@ -8,6 +8,8 @@ from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
 from typing import Dict, List, Tuple
 import hcl2
+import argparse
+import sys
 
 DEFINITIONS_PATH = join(abspath(dirname(__file__)), "definitions")
 GENERATED_TFVARS_MD_FILENAME = "TFVARS.gen.md"
@@ -248,7 +250,47 @@ def write_files(definitions: Dict[str, str]):
             )
             write_file(tfvars_md_filename, content)
 
+def read_file(filename: str) -> str:
+    """
+    Reads a file and returns its content as a string
+    """
+    with open(filename, 'r') as file:
+        content = file.read()
+    return content
+
+def diff_files(definitions: Dict[str, str]) -> bool:
+    """
+    Generates the `.gen.tf` in memory and diffs them against the ones found
+    on disk
+    """
+    for path, variables in PROJECT_VARIABLES.items():
+        # Generate variables.tf definition
+        var_filename = join(path, GENERATED_VARIABLES_FILENAME)
+        generated_content = get_variables_tf_content(variables, definitions)
+
+        try:
+            actual_content = read_file(var_filename)
+        except Exception as e:
+            print(f'Error reading {var_filename}: {e}')
+            return False
+
+        if generated_content != actual_content:
+            return False
+
+    return True
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--diff', action='store_true')
+    args = parser.parse_args()
+
     definitions = load_tf_definitions()
-    write_files(definitions)
+
+    if args.diff:
+        if not diff_files(definitions):
+            sys.exit(1)
+        else:
+            sys.exit(0)
+    else:
+        print("not activated")
+        write_files(definitions)
