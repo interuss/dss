@@ -197,8 +197,8 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 	} else {
 		// Use previously decoded values
 		missing, ok = r.Context().Value("authTokenMissing").(bool)
-		if !ok || missing {
-			return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
+		if !ok {
+			missing = true
 		}
 
 		validated, ok = r.Context().Value("authValidated").(bool)
@@ -215,6 +215,10 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 		if !ok {
 			keyClaims = claims{}
 		}
+	}
+
+	if missing {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
 	}
 
 	if !validated {
