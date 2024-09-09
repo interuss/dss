@@ -10,4 +10,4 @@ docker run \
     -v "${SCRIPT_DIR}/../modules":/app/modules:rw \
     -w /app/utils \
     terraform-variables \
-    ls ../ && python variables.py
+    ls ../ && python variables.py $@
