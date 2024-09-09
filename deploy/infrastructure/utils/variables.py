@@ -8,7 +8,6 @@ from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
 from typing import Dict, List, Tuple
 import hcl2
-import difflib
 import argparse
 import sys
 

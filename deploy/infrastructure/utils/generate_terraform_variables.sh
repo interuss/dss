@@ -12,11 +12,13 @@ else
 fi
 cd "${BASEDIR}"
 
+SCRIPT_DIR=.
+
 docker build -t terraform-variables:latest .
 docker run \
-    -v "/":/app/utils:rw \
-    -v "/../dependencies":/app/examples:rw \
-    -v "/../modules":/app/modules:rw \
+    -v "$(SCRIPT_DIR)/":/app/utils:rw \
+    -v "$(SCRIPT_DIR)/../dependencies":/app/examples:rw \
+    -v "$(SCRIPT_DIR)/../modules":/app/modules:rw \
     -w /app/utils \
     terraform-variables \
     ls ../ && python variables.py $@
