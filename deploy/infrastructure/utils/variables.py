@@ -8,6 +8,7 @@ from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
 from typing import Dict, List, Tuple
 import hcl2
+import difflib
 import argparse
 import sys
 
@@ -292,20 +293,20 @@ def diff_files(definitions: Dict[str, str]) -> bool:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(usage="python variables")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--diff",
+        "--diff-only",
         action="store_true",
-        help="diffs the generated `variables.gen.tf` files against the ones\
-                found locally without modifiying existing files or writing any\
+        help="Evaluates the differences between the generated `variables.gen.tf` files and the ones\
+                stored locally without modifiying existing files or writing any\
                 results out to disk.\
-                Exits with code 0 if there are no diffs, else exits with code 1",
+                Exits with code 0 on success and if there are no differences, else exits with code 1",
     )
     args = parser.parse_args()
 
     definitions = load_tf_definitions()
 
-    if args.diff:
+    if args.diff_only:
         if not diff_files(definitions):
             print(
                 "variables.py: generated content was NOT equal to local variables.gen.tf content"
