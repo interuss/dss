@@ -117,10 +117,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := make([]restapi.SubscriberToNotify, 0, len(subscribers))
-	for _, subscriber := range subscribers {
-		apiSubscribers = append(apiSubscribers, *apiv2.ToSubscriberToNotify(subscriber))
-	}
+	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
 
 	return restapi.CreateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
 		ServiceArea: *apiv2.ToIdentificationServiceArea(insertedISA),
@@ -199,10 +196,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := make([]restapi.SubscriberToNotify, 0, len(subscribers))
-	for _, subscriber := range subscribers {
-		apiSubscribers = append(apiSubscribers, *apiv2.ToSubscriberToNotify(subscriber))
-	}
+	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
 
 	return restapi.UpdateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
 		ServiceArea: *apiv2.ToIdentificationServiceArea(insertedISA),
@@ -253,10 +247,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := make([]restapi.SubscriberToNotify, 0, len(subscribers))
-	for _, subscriber := range subscribers {
-		apiSubscribers = append(apiSubscribers, *apiv2.ToSubscriberToNotify(subscriber))
-	}
+	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
 
 	return restapi.DeleteIdentificationServiceAreaResponseSet{Response200: &restapi.DeleteIdentificationServiceAreaResponse{
 		ServiceArea: *apiv2.ToIdentificationServiceArea(isa),
