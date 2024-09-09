@@ -74,6 +74,7 @@ type OperationalIntent struct {
 	Version         VersionNumber
 	State           OperationalIntentState
 	OVN             OVN
+	PastOVNs        []OVN
 	StartTime       *time.Time
 	EndTime         *time.Time
 	USSBaseURL      string

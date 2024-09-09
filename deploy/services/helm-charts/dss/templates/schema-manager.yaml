@@ -3,7 +3,7 @@
 {{- $jobVersion := .Release.Revision -}} {{/* Jobs template definition is immutable, using the revision in the name forces the job to be recreated at each helm upgrade. */}}
 {{- $waitForCockroachDB := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $cockroachHost)) -}}
 
-{{- range $service, $schemaVersion := dict "rid" "4.0.0" "scd" "3.1.0" }}
+{{- range $service, $schemaVersion := dict "rid" "4.0.0" "scd" "3.2.0" }}
 ---
 apiVersion: batch/v1
 kind: Job

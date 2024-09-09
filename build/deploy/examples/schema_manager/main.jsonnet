@@ -15,7 +15,7 @@ local metadata = metadataBase {
   schema_manager+: {
     image: 'VAR_DOCKER_IMAGE_NAME',
     desired_rid_db_version: '4.0.0',
-    desired_scd_db_version: '3.1.0',
+    desired_scd_db_version: '3.2.0',
   },
 };
 
