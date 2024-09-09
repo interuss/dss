@@ -295,7 +295,7 @@ def diff_files(definitions: Dict[str, str]) -> bool:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--diff-only",
+        "--lint",
         action="store_true",
         help="Evaluates the differences between the generated `variables.gen.tf` files and the ones\
                 stored locally without modifiying existing files or writing any\
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
     definitions = load_tf_definitions()
 
-    if args.diff_only:
+    if args.lint:
         if not diff_files(definitions):
             print(
                 "variables.py: generated content was NOT equal to local variables.gen.tf content"
