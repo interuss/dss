@@ -208,6 +208,30 @@ func ToSubscriberToNotify(s *ridmodels.Subscription) *restapi.SubscriberToNotify
 	}
 }
 
+// MakeSubscribersToNotify groups the passed subscriptions by their callback URL,
+// returning a collection of subscribers to notify that contains one entry per distinct callback URL.
+func MakeSubscribersToNotify(subscriptions []*ridmodels.Subscription) []restapi.SubscriberToNotify {
+	subscriptionsByURL := map[string][]restapi.SubscriptionState{}
+	for _, sub := range subscriptions {
+		notifIdx := restapi.SubscriptionNotificationIndex(sub.NotificationIndex)
+		subState := restapi.SubscriptionState{
+			SubscriptionId:    restapi.SubscriptionUUID(sub.ID),
+			NotificationIndex: &notifIdx,
+		}
+		subscriptionsByURL[sub.URL] = append(subscriptionsByURL[sub.URL], subState)
+	}
+
+	result := []restapi.SubscriberToNotify{}
+	for url, states := range subscriptionsByURL {
+		result = append(result, restapi.SubscriberToNotify{
+			Url:           restapi.URL(url),
+			Subscriptions: states,
+		})
+	}
+
+	return result
+}
+
 // ToSubscription converts a subscription business object to a Subscription
 // RID v2 REST model for API consumption.
 func ToSubscription(s *ridmodels.Subscription) *restapi.Subscription {
