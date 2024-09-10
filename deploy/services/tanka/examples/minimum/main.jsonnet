@@ -1,5 +1,5 @@
-local dss = import '../../../deploy/services/tanka/dss.libsonnet';
-local metadataBase = import '../../../deploy/services/tanka/metadata_base.libsonnet';
+local dss = import '../dss.libsonnet';
+local metadataBase = import '../metadata_base.libsonnet';
 
 // All VAR_* values below must be replaced with appropriate values; see
 // dss/build/README.md for more information.

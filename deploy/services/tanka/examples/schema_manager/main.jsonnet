@@ -1,5 +1,7 @@
-local schemaManager = import '../../../deploy/services/tanka/schema-manager.libsonnet';
-local metadataBase = import '../../../deploy/services/tanka/metadata_base.libsonnet';
+
+
+local schemaManager = import '../schema-manager.libsonnet';
+local metadataBase = import '../metadata_base.libsonnet';
 
 // All VAR_* values below must be replaced with appropriate values; see
 // dss/build/README.md for more information.
