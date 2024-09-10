@@ -1,3 +1,5 @@
+
+# The path used in imports below must be updated to point to /deploy/services/tanka/
 local dss = import '../dss.libsonnet';
 local metadataBase = import '../metadata_base.libsonnet';
 

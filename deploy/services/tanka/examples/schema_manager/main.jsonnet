@@ -1,4 +1,4 @@
-
+# The path used in imports below must be updated to point to /deploy/services/tanka/
 
 local schemaManager = import '../schema-manager.libsonnet';
 local metadataBase = import '../metadata_base.libsonnet';

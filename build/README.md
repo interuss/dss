@@ -265,6 +265,11 @@ a PR to that effect would be greatly appreciated.
     `cp -r ../deploy/services/tanka/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
     the `workspace/$CLUSTER_CONTEXT` folder should have already been created
     by the `make-certs.py` script.
+    Replace the imports at the top of `main.jsonnet` to correctly locate the files:
+    ```
+    local dss = import '../../../deploy/services/tanka/dss.libsonnet';
+    local metadataBase = import '../../../deploy/services/tanka/metadata_base.libsonnet';
+    ```
 
 1.  If providing a .pem file directly as the public key to validate incoming
     access tokens, copy it to [dss/build/jwt-public-certs](./jwt-public-certs).
