@@ -14,9 +14,9 @@ cd "${BASEDIR}"
 
 docker build -t terraform-variables:latest .
 docker run \
-    -v "${BASE_DIR}/":/app/utils:rw \
-    -v "${BASE_DIR}/../dependencies":/app/examples:rw \
-    -v "${BASE_DIR}/../modules":/app/modules:rw \
+    -v "${BASEDIR}/":/app/utils:rw \
+    -v "${BASEDIR}/../dependencies":/app/examples:rw \
+    -v "${BASEDIR}/../modules":/app/modules:rw \
     -w /app/utils \
     terraform-variables \
     ls ../ && python variables.py $@
