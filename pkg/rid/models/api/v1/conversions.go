@@ -163,20 +163,29 @@ func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *restap
 	return result
 }
 
-// ToSubscriberToNotify converts a Subscription to a SubscriberToNotify RID v1
-// REST model for API consumption.
-func ToSubscriberToNotify(s *ridmodels.Subscription) *restapi.SubscriberToNotify {
-	notifIndex := restapi.SubscriptionNotificationIndex(s.NotificationIndex)
-	subID := restapi.SubscriptionUUID(s.ID.String())
-	return &restapi.SubscriberToNotify{
-		Url: restapi.URL(s.URL),
-		Subscriptions: []restapi.SubscriptionState{
-			{
-				NotificationIndex: &notifIndex,
-				SubscriptionId:    &subID,
-			},
-		},
+// MakeSubscribersToNotify groups the passed subscriptions by their callback URL,
+// returning a collection of subscribers to notify that contains one entry per distinct callback URL.
+func MakeSubscribersToNotify(subscriptions []*ridmodels.Subscription) []restapi.SubscriberToNotify {
+	subscriptionsByURL := map[string][]restapi.SubscriptionState{}
+	for _, sub := range subscriptions {
+		notifIdx := restapi.SubscriptionNotificationIndex(sub.NotificationIndex)
+		subID := restapi.SubscriptionUUID(sub.ID)
+		subState := restapi.SubscriptionState{
+			SubscriptionId:    &subID,
+			NotificationIndex: &notifIdx,
+		}
+		subscriptionsByURL[sub.URL] = append(subscriptionsByURL[sub.URL], subState)
 	}
+
+	result := []restapi.SubscriberToNotify{}
+	for url, states := range subscriptionsByURL {
+		result = append(result, restapi.SubscriberToNotify{
+			Url:           restapi.URL(url),
+			Subscriptions: states,
+		})
+	}
+
+	return result
 }
 
 // ToSubscription converts a subscription business object to a Subscription RID
