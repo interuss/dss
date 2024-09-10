@@ -2,7 +2,7 @@
 
 This folder contains a set of configuration files to be used by
 [tanka](https://tanka.dev/install) to deploy a single DSS instance via
-Kubernetes following the procedures found in the [build](..) folder.
+Kubernetes following the procedures found in the [build](../../../build) folder.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ _**Note** that the diagram shows 2 stateful sets per DSS instance.  Currently, t
 files in this folder produce 3 stateful sets per DSS instance.  However, after
 Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
 
-![Pool architecture diagram](../../assets/generated/pool_architecture.png)
+![Pool architecture diagram](../../../assets/generated/pool_architecture.png)
 
 ## Survivability
 
@@ -25,7 +25,7 @@ underlying CockroachDB database technology and how we configure it.  The diagram
 below shows the result of failures (bringing a node down for maintenance, or
 having an entire USS go down) from different starting points, assuming 3 replicas.
 
-![Survivability diagram](../../assets/generated/survivability_3x2.svg)
+![Survivability diagram](../../../assets/generated/survivability_3x2.svg)
 
 
 The table
