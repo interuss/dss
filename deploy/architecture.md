@@ -6,7 +6,7 @@ See [introduction](../build/pooling.md#introduction)
 
 ## Architecture
 
-See [architecture](../build/deploy/README.md#architecture)
+See [architecture](services/tanka/README.md#architecture)
 
 ### Terminology notes
 
@@ -24,8 +24,8 @@ See [Additional requirements](../build/pooling.md#additional-requirements).
 
 ### Survivability
 
-See [survivability](../build/deploy/README.md#survivability).
+See [survivability](services/tanka/README.md#survivability).
 
 ### Sizing
 
-See [sizing](../build/deploy/README.md#sizing).
+See [sizing](services/tanka/README.md#sizing).

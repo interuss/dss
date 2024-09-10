@@ -262,7 +262,7 @@ a PR to that effect would be greatly appreciated.
     [previous section](#docker-images).
 
 1.  From this working directory,
-    `cp -r deploy/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
+    `cp -r ../deploy/services/tanka/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
     the `workspace/$CLUSTER_CONTEXT` folder should have already been created
     by the `make-certs.py` script.
 
@@ -561,7 +561,7 @@ existing clusters you will need to:
 1. Create `workspace/$CLUSTER_CONTEXT_schema_manager` in this (build) directory.
 
 1.  From this (build) working directory,
-    `cp -r deploy/examples/schema_manager/* workspace/$CLUSTER_CONTEXT_schema_manager`.
+    `cp -r ../deploy/services/tanka/examples/schema_manager/* workspace/$CLUSTER_CONTEXT_schema_manager`.
 
 1.  Edit `workspace/$CLUSTER_CONTEXT_schema_manager/main.jsonnet` and replace all `VAR_*`
     instances with appropriate values where applicable as explained in the above section.
