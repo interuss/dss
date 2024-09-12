@@ -2,6 +2,7 @@ package cockroach
 
 import (
 	"context"
+
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
@@ -12,7 +13,6 @@ import (
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jonboulle/clockwork"
-	"go.uber.org/zap"
 )
 
 const (
@@ -31,25 +31,22 @@ var (
 // repo is an implementation of repos.Repo using
 // a CockroachDB transaction.
 type repo struct {
-	q      dsssql.Queryable
-	logger *zap.Logger
-	clock  clockwork.Clock
+	q     dsssql.Queryable
+	clock clockwork.Clock
 }
 
 // Store is an implementation of an scd.Store using
 // a CockroachDB database.
 type Store struct {
-	db     *cockroach.DB
-	logger *zap.Logger
-	clock  clockwork.Clock
+	db    *cockroach.DB
+	clock clockwork.Clock
 }
 
 // NewStore returns a Store instance connected to a cockroach instance via db.
-func NewStore(ctx context.Context, db *cockroach.DB, logger *zap.Logger) (*Store, error) {
+func NewStore(ctx context.Context, db *cockroach.DB) (*Store, error) {
 	store := &Store{
-		db:     db,
-		logger: logger,
-		clock:  DefaultClock,
+		db:    db,
+		clock: DefaultClock,
 	}
 
 	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
@@ -79,9 +76,8 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 	return &repo{
-		q:      s.db.Pool,
-		logger: s.logger,
-		clock:  s.clock,
+		q:     s.db.Pool,
+		clock: s.clock,
 	}, nil
 }
 
@@ -90,9 +86,8 @@ func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repo
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
-			q:      tx,
-			logger: s.logger,
-			clock:  s.clock,
+			q:     tx,
+			clock: s.clock,
 		})
 	})
 }
