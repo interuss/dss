@@ -377,3 +377,30 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion)
 
 	return nil
 }
+
+// ListExpiredSubscriptions lists all subscriptions older than the threshold.
+// Their age is determined by their end time, or by their update time if they do not have an end time.
+func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+	expiredSubsQuery := fmt.Sprintf(`
+        SELECT
+            %s
+        FROM
+            scd_subscriptions
+        WHERE
+            scd_subscriptions.ends_at IS NOT NULL AND scd_subscriptions.ends_at <= $1
+            OR
+            scd_subscriptions.ends_at IS NULL AND scd_subscriptions.updated_at <= $1 -- use last update time as reference if there is no end time
+        LIMIT $2`, subscriptionFieldsWithPrefix)
+
+	subscriptions, err := c.fetchSubscriptions(
+		ctx, c.q, expiredSubsQuery,
+		threshold,
+		dssmodels.MaxResultLimit,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
+	}
+
+	return subscriptions, nil
+
+}
