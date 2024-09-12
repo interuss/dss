@@ -14,10 +14,10 @@ cd "${BASEDIR}"
 
 docker build -t terraform-variables:latest .
 docker run \
-    -v "${BASEDIR}/":/app/utils:rw \
-    -v "${BASEDIR}/../dependencies":/app/dependencies:rw \
-    -v "${BASEDIR}/../modules":/app/modules:rw \
-    -v "${BASEDIR}/../../operations":/operations:rw \
-    -w /app/utils \
+    -v "${BASEDIR}/":/app/infrastructure/utils:rw \
+    -v "${BASEDIR}/../dependencies":/app/infrastructure/dependencies:rw \
+    -v "${BASEDIR}/../modules":/app/infrastructure/modules:rw \
+    -v "${BASEDIR}/../../operations":/app/operations:rw \
+    -w /app/infrastructure/utils/ \
     terraform-variables \
     /bin/bash -c "python variables.py $*"
