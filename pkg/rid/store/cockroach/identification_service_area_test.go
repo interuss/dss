@@ -186,7 +186,7 @@ func TestStoreExpiredISA(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 
-	ret, err := repo.GetISA(ctx, serviceArea.ID)
+	ret, err := repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
@@ -199,7 +199,7 @@ func TestStoreExpiredISA(t *testing.T) {
 	require.Len(t, serviceAreas, 0)
 
 	// A get should work even if it is expired.
-	ret, err = repo.GetISA(ctx, serviceArea.ID)
+	ret, err = repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 }
@@ -222,7 +222,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the sub indexes
-	isa, err = repo.GetISA(ctx, isa.ID)
+	isa, err = repo.GetISA(ctx, isa.ID, false)
 	require.NoError(t, err)
 
 	serviceAreaOut, err := repo.DeleteISA(ctx, isa)

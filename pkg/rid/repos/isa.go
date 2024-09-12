@@ -12,7 +12,7 @@ import (
 // ISA is an interface to a storage layer for the ISA entity
 type ISA interface {
 	// Returns nil, nil if not found
-	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
+	GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error)
 
 	// DeleteISA deletes the IdentificationServiceArea identified by "id" and owned by "owner".
 	// Returns the delete IdentificationServiceArea and all Subscriptions affected by the delete.
