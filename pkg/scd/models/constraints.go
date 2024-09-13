@@ -32,7 +32,7 @@ func (c *Constraint) ToRest() *restapi.ConstraintReference {
 		Id:              restapi.EntityID(c.ID.String()),
 		Ovn:             &ovn,
 		Manager:         c.Manager.String(),
-		Version:         int32(c.Version),
+		Version:         restapi.EntityVersion(c.Version),
 		UssBaseUrl:      restapi.ConstraintUssBaseURL(c.USSBaseURL),
 		UssAvailability: UssAvailabilityStateUnknown.ToRest(),
 	}
