@@ -15,10 +15,6 @@ const (
 	// maxSubscriptionDuration is the largest allowed interval between StartTime
 	// and EndTime.
 	maxSubscriptionDuration = time.Hour * 24
-
-	// maxClockSkew is the largest allowed interval between the StartTime of a new
-	// subscription and the server's idea of the current time.
-	maxClockSkew = time.Minute * 5
 )
 
 // Subscription represents an SCD subscription
