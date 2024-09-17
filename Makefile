@@ -61,6 +61,7 @@ go-lint:
 .PHONY: terraform-lint
 terraform-lint:
 	docker run --rm -w /opt/dss -v ./deploy:/opt/dss/deploy -e TF_LOG=TRACE hashicorp/terraform fmt -recursive -check
+	./deploy/infrastructure/utils/generate_terraform_variables.sh --lint
 
 # This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: hygiene-tests

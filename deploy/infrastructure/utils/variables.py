@@ -8,6 +8,8 @@ from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
 from typing import Dict, List, Tuple
 import hcl2
+import argparse
+import sys
 
 DEFINITIONS_PATH = join(abspath(dirname(__file__)), "definitions")
 GENERATED_TFVARS_MD_FILENAME = "TFVARS.gen.md"
@@ -20,10 +22,7 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = [
-    "app_hostname",
-    "crdb_hostname_suffix"
-]
+GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix"]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
@@ -38,14 +37,14 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_cluster_name",
     "crdb_locality",
     "crdb_external_nodes",
-    "kubernetes_namespace"
+    "kubernetes_namespace",
 ]
 
 # dependencies/terraform-*-kubernetes
 COMMON_KUBERNETES_VARIABLES = GLOBAL_VARIABLES + [
     "cluster_name",
     "node_count",
-    "kubernetes_version"
+    "kubernetes_version",
 ]
 
 # dependencies/terraform-google-kubernetes
@@ -70,7 +69,7 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_region",
     "aws_instance_type",
     "aws_route53_zone_id",
-    "aws_iam_permissions_boundary"
+    "aws_iam_permissions_boundary",
 ] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-aws-dss
@@ -88,9 +87,7 @@ PROJECT_VARIABLES = {
     "../dependencies/terraform-aws-kubernetes": AWS_KUBERNETES_VARIABLES,
     "../dependencies/terraform-google-kubernetes": GOOGLE_KUBERNETES_VARIABLES,
     "../dependencies/terraform-commons-dss": COMMONS_DSS_VARIABLES,
-    "../../operations/ci/aws-1": list(
-        dict.fromkeys(AWS_MODULE_VARIABLES)
-    )
+    "../../operations/ci/aws-1": list(dict.fromkeys(AWS_MODULE_VARIABLES)),
 }
 
 
@@ -175,9 +172,11 @@ def comment(content: str) -> str:
     return commented_lines
 
 
-def get_variables_tf_content(variables: List[str], definitions: Dict[str, str]) -> str:
+def get_variables_gen_tf_content(
+    variables: List[str], definitions: Dict[str, str]
+) -> str:
     """
-    Generate the content of variables.tf (Terraform definitions) based
+    Generate the content of variables.gen.tf (Terraform definitions) based
     on the `variables` list. `variables` contains the variables names to
     include in the content. `definitions` contains the definitions of all
     available variables.
@@ -234,9 +233,9 @@ def write_files(definitions: Dict[str, str]):
     for path, variables in PROJECT_VARIABLES.items():
         project_name = path.split("/")[-1]
 
-        # Generate variables.tf definition
+        # Generate variables.gen.tf definition
         var_filename = join(path, GENERATED_VARIABLES_FILENAME)
-        content = get_variables_tf_content(variables, definitions)
+        content = get_variables_gen_tf_content(variables, definitions)
         write_file(var_filename, content)
 
         if is_example_project(path):
@@ -249,6 +248,73 @@ def write_files(definitions: Dict[str, str]):
             write_file(tfvars_md_filename, content)
 
 
+def read_file(file_path: str) -> str:
+    """
+    Reads a file and returns its content
+
+    Arguments:
+        file_path: the relative path of the file to be read from
+    Returns:
+        the content of the file as a str
+    """
+    with open(file_path, "r") as file:
+        content = file.read()
+    return content
+
+
+def diff_files(definitions: Dict[str, str]) -> bool:
+    """
+    Generates the `variables.gen.tf` file content in memory and diffs it
+    against the `variables.get.tf` files found on disk
+
+    Arguments:
+        definitions: a dict where the keys are the terraform variable names,
+        and the valuies are the content of that file.
+    Returns:
+        true iff the generated content and locally stored content are equal
+        string values
+    """
+    for path, variables in PROJECT_VARIABLES.items():
+        # Generate variables.gen.tf definition
+        var_filename = join(path, GENERATED_VARIABLES_FILENAME)
+        generated_content = get_variables_gen_tf_content(variables, definitions)
+
+        try:
+            actual_content = read_file(var_filename)
+        except Exception as e:
+            print(f"Error reading {var_filename}: {e}")
+            return False
+
+        if generated_content != actual_content:
+            return False
+
+    return True
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--lint",
+        action="store_true",
+        help="Evaluate the differences between the expected generated `variables.gen.tf` files\
+                and the ones stored locally without modifiying existing files or writing any\
+                results out to disk.\
+                Exits with code 0 on success and if there are no differences, else exits with code 1",
+    )
+    args = parser.parse_args()
+
     definitions = load_tf_definitions()
-    write_files(definitions)
+
+    if args.lint:
+        if not diff_files(definitions):
+            print(
+                "variables.py: generated content was NOT equal to local variables.gen.tf content"
+            )
+            sys.exit(1)
+        else:
+            print(
+                "variables.py: generated content was equal to local variables.gen.tf content"
+            )
+            sys.exit(0)
+    else:
+        write_files(definitions)
