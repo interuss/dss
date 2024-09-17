@@ -296,8 +296,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lint",
         action="store_true",
-        help="Evaluates the differences between the generated `variables.gen.tf` files and the ones\
-                stored locally without modifiying existing files or writing any\
+        help="Evaluate the differences between the expected generated `variables.gen.tf` files\
+                and the ones stored locally without modifiying existing files or writing any\
                 results out to disk.\
                 Exits with code 0 on success and if there are no differences, else exits with code 1",
     )
