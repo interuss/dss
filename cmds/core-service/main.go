@@ -181,7 +181,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	scdStore, err := scdc.NewStore(ctx, scdCrdb, logger)
+	scdStore, err := scdc.NewStore(ctx, scdCrdb)
 	if err != nil {
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"scd\" does not exist") {
