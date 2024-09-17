@@ -22,7 +22,7 @@ Terraform modules are provided for:
 
 1. [Services](#services) provides the tooling to deploy a DSS instance to a Kubernetes cluster.
    - [Helm Charts](services/helm-charts/dss)
-   - [Tanka](../build/deploy)
+   - [Tanka](services/tanka)
 
 1. [Operations](#operations) provides instructions to operate a deployed DSS instance.
    - [Pooling procedure](./operations/README.md#pooling-procedure)
