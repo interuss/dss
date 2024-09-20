@@ -99,6 +99,13 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 
+		// Early lock on the subscriptions covering the cells relevant to the OIR
+		// See issue #1002 for details.
+		err = r.LockSubscriptionsOnCells(ctx, old.Cells)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to acquire lock")
+		}
+
 		// Get the Subscription supporting the OperationalIntent, if one is defined
 		var previousSubscription *scdmodels.Subscription
 		if old.SubscriptionID != nil {
