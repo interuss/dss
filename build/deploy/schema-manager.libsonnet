@@ -16,7 +16,7 @@ local schema_dir = '/db-schemas';
             },
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
-              command: ['db-manager'],
+              command: ['db-manager', 'migrate'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
                 cockroach_port: metadata.cockroach.grpc_port,
@@ -42,7 +42,7 @@ local schema_dir = '/db-schemas';
             },
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
-              command: ['db-manager'],
+              command: ['db-manager', 'migrate'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
                 cockroach_port: metadata.cockroach.grpc_port,

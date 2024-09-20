@@ -36,6 +36,7 @@ spec:
             - --schemas_dir=/db-schemas/{{$service}}
           command:
             - db-manager
+            - migrate
           image: {{$image}}
           imagePullPolicy: IfNotPresent
           name: {{$service}}-schema-manager-{{$jobVersion}}

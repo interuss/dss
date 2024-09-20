@@ -40,11 +40,11 @@ docker container run -p 26257:26257 -p 8080:8080 --rm cockroachdb/cockroach:v24.
 Once an initialized CockroachDB cluster is available, the necessary databases within the CRDB cluster must be created/configured properly.  This can be accomplished with [migrate_local_db.sh](../../build/dev/migrate_local_db.sh), as documented in the [standalone instance documentation](../../build/dev/standalone_instance.md), when using the standard standalone development DSS instance, or it can be accomplished manually with commands similar to those below starting from the repo root folder:
 
 ```bash
-go run ./cmds/db-manager \
+go run ./cmds/db-manager migrate \
   --schemas_dir ./build/db_schemas/rid \
   --db_version latest \
   --cockroach_host localhost
-go run ./cmds/db-manager \
+go run ./cmds/db-manager migrate \
   --schemas_dir ./build/db_schemas/scd \
   --db_version latest \
   --cockroach_host localhost

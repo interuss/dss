@@ -1,10 +1,6 @@
-// Script for Database bootstrap deployment and migration
-
 package migration
 
 import (
-	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -14,8 +10,12 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	crdbflags "github.com/interuss/dss/pkg/cockroach/flags"
+
 	"github.com/interuss/stacktrace"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"golang.org/x/net/context"
 )
 
 type MigrationStep struct {
@@ -30,25 +30,34 @@ var (
 )
 
 var (
-	path      = flag.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
-	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
+	MigrationCmd = &cobra.Command{
+		Use:   "migrate",
+		Short: "Database bootstrap deployment and migration",
+		RunE:  migrate,
+	}
+	flags     = pflag.NewFlagSet("migrate", pflag.ExitOnError)
+	path      = flags.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
+	dbVersion = flags.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
 )
 
-func Migration() {
-	// Read and validate schemas_dir input
-	flag.Parse()
-	if *path == "" {
-		log.Panic("Must specify schemas_dir path")
-	}
-	dbName := filepath.Base(*path)
+func init() {
+	MigrationCmd.Flags().AddFlagSet(flags)
+	_ = MigrationCmd.MarkFlagRequired("schemas_dir")
+}
+
+func migrate(cmd *cobra.Command, _ []string) error {
+	var (
+		ctx    = cmd.Context()
+		dbName = filepath.Base(*path)
+	)
 
 	// Enumerate schema versions
 	steps, err := enumerateMigrationSteps(path)
 	if err != nil {
-		log.Panicf("Failed to read schema version migration definitions: %v", err)
+		return fmt.Errorf("failed to read schema version migration definitions: %w", err)
 	}
 	if len(steps) == 0 {
-		log.Panicf("No migration definitions found in schemas_dir=%s", *path)
+		return fmt.Errorf("no migration definitions found in schemas_dir=%s", *path)
 	}
 
 	// Determine target version
@@ -61,17 +70,17 @@ func Migration() {
 	} else {
 		targetVersion, err = semver.NewVersion(*dbVersion)
 		if err != nil {
-			log.Panicf("Failed to parse desired db_version: %v", err)
+			return fmt.Errorf("failed to parse desired db_version: %w", err)
 		}
 	}
 
 	// Connect to database server
-	connectParameters := flags.ConnectParameters()
+	connectParameters := crdbflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
-	crdb, err := cockroach.Dial(context.Background(), connectParameters)
+	crdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
-		log.Panicf("Failed to connect to database with %+v: %v", connectParameters, err)
+		return fmt.Errorf("failed to connect to database with %+v: %w", connectParameters, err)
 	}
 	defer func() {
 		crdb.Pool.Close()
@@ -79,42 +88,42 @@ func Migration() {
 
 	crdbVersion, err := crdb.GetServerVersion()
 	if err != nil {
-		log.Panicf("Unable to retrieve the version of the server %s:%d: %v", connectParameters.Host, connectParameters.Port, err)
+		return fmt.Errorf("unable to retrieve the version of the server %s:%d: %w", connectParameters.Host, connectParameters.Port, err)
 	}
 	log.Printf("CRDB server version: %s", crdbVersion)
 
 	// Make sure specified database exists
-	exists, err := doesDatabaseExist(crdb, dbName)
+	exists, err := doesDatabaseExist(ctx, crdb, dbName)
 	if err != nil {
-		log.Panicf("Failed to check whether database %s exists: %v", dbName, err)
+		return fmt.Errorf("failed to check whether database %s exists: %w", dbName, err)
 	}
 	if !exists && dbName == "rid" {
 		// In the special case of rid, the database was previously named defaultdb
 		log.Printf("Database %s does not exist; checking for older \"defaultdb\" database", dbName)
 		dbName = "defaultdb"
-		exists, err = doesDatabaseExist(crdb, dbName)
+		exists, err = doesDatabaseExist(ctx, crdb, dbName)
 		if err != nil {
-			log.Panicf("Failed to check whether old defaultdb database exists: %v", err)
+			return fmt.Errorf("failed to check whether old defaultdb database exists: %w", err)
 		}
 	}
 	if !exists {
 		log.Printf("Database %s does not exist; creating now", dbName)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
-		if _, err := crdb.Pool.Exec(context.Background(), createDB); err != nil {
-			log.Panicf("Failed to create new database %s: %v", dbName, err)
+		if _, err := crdb.Pool.Exec(ctx, createDB); err != nil {
+			return fmt.Errorf("failed to create new database %s: %v", dbName, err)
 		}
 	} else {
 		log.Printf("Database %s already exists; reading current state", dbName)
 	}
 
 	// Read current schema version of database
-	currentVersion, err := crdb.GetVersion(context.Background(), dbName)
+	currentVersion, err := crdb.GetVersion(ctx, dbName)
 	if err != nil {
-		log.Panicf("Failed to get current database version for %s: %v", dbName, err)
+		return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 	}
 	log.Printf("Initial %s database schema version is %v, target is %v", dbName, currentVersion, targetVersion)
 	if targetVersion == nil {
-		return
+		return nil
 	}
 
 	// Compute index of current version
@@ -148,7 +157,7 @@ func Migration() {
 		fullFilePath := filepath.Join(*path, sqlFile)
 		rawMigrationSQL, err := os.ReadFile(fullFilePath)
 		if err != nil {
-			log.Panicf("Failed to load SQL content from %s: %v", fullFilePath, err)
+			return fmt.Errorf("failed to load SQL content from %s: %e", fullFilePath, err)
 		}
 
 		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
@@ -160,8 +169,8 @@ func Migration() {
 		migrationSQL := sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 
 		// Execute migration step
-		if _, err := crdb.Pool.Exec(context.Background(), migrationSQL); err != nil {
-			log.Panicf("Failed to execute %s migration step %s: %v", dbName, fullFilePath, err)
+		if _, err := crdb.Pool.Exec(ctx, migrationSQL); err != nil {
+			return fmt.Errorf("failed to execute %s migration step %s: %w", dbName, fullFilePath, err)
 		}
 
 		// Update current state
@@ -173,18 +182,19 @@ func Migration() {
 			// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
 			dbName = "defaultdb"
 		}
-		actualVersion, err := crdb.GetVersion(context.Background(), dbName)
+		actualVersion, err := crdb.GetVersion(ctx, dbName)
 		if err != nil {
-			log.Panicf("Failed to get current database version for %s: %v", dbName, err)
+			return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 		}
 		if !actualVersion.Equal(*newVersion) {
-			log.Panicf("Migration %s should have migrated %s schema version %v to %v, but instead resulted in %v", fullFilePath, dbName, currentVersion, newVersion, currentVersion)
+			return fmt.Errorf("migration %s should have migrated %s schema version %v to %v, but instead resulted in %v", fullFilePath, dbName, currentVersion, newVersion, currentVersion)
 		}
 		currentVersion = actualVersion
 		currentStepIndex = newCurrentStepIndex
 	}
 
 	log.Printf("Final %s version: %v", dbName, currentVersion)
+	return nil
 }
 
 func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
@@ -235,14 +245,14 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 	return result, nil
 }
 
-func doesDatabaseExist(crdb *cockroach.DB, database string) (bool, error) {
+func doesDatabaseExist(ctx context.Context, crdb *cockroach.DB, database string) (bool, error) {
 	const checkDbQuery = `
 		SELECT EXISTS (
 			SELECT * FROM pg_database WHERE datname = $1
 		)`
 
 	var exists bool
-	if err := crdb.Pool.QueryRow(context.Background(), checkDbQuery, database).Scan(&exists); err != nil {
+	if err := crdb.Pool.QueryRow(ctx, checkDbQuery, database).Scan(&exists); err != nil {
 		return false, err
 	}
 
