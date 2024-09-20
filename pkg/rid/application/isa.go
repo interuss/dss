@@ -38,7 +38,7 @@ func (a *app) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Identific
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
-	return repo.GetISA(ctx, id)
+	return repo.GetISA(ctx, id, false)
 }
 
 // SearchISAs for ISA within the volume bounds.
@@ -64,7 +64,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 	)
 	// The following will automatically retry TXN retry errors.
 	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
-		old, err := repo.GetISA(ctx, id)
+		old, err := repo.GetISA(ctx, id, true)
 		switch {
 		case err != nil:
 			return stacktrace.Propagate(err, "Error getting ISA")
@@ -106,7 +106,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	// The following will automatically retry TXN retry errors.
 	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		// ensure it doesn't exist yet
-		old, err := repo.GetISA(ctx, isa.ID)
+		old, err := repo.GetISA(ctx, isa.ID, false)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error getting ISA")
 		}
@@ -141,7 +141,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
 		var err error
 
-		old, err := repo.GetISA(ctx, isa.ID)
+		old, err := repo.GetISA(ctx, isa.ID, true)
 		switch {
 		case err != nil:
 			return stacktrace.Propagate(err, "Error getting ISA")

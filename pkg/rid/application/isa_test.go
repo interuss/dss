@@ -31,7 +31,7 @@ type isaStore struct {
 	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
 }
 
-func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
 	if isa, ok := store.isas[id]; ok {
 		return isa, nil
 	}

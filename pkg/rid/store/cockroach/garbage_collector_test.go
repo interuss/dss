@@ -42,7 +42,7 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut)
 
-	ret, err := repo.GetISA(ctx, serviceArea.ID)
+	ret, err := repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
@@ -50,7 +50,7 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	err = gc.DeleteRIDExpiredRecords(ctx)
 	require.NoError(t, err)
 
-	ret, err = repo.GetISA(ctx, serviceArea.ID)
+	ret, err = repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.Nil(t, ret)
 }

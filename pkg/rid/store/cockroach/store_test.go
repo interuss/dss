@@ -116,7 +116,7 @@ func TestTxnRetrier(t *testing.T) {
 	repo, err := store.Interact(ctx)
 	require.NoError(t, err)
 
-	isa, err := repo.GetISA(ctx, serviceArea.ID)
+	isa, err := repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 

@@ -101,12 +101,13 @@ func (c *isaRepo) processOne(ctx context.Context, query string, args ...interfac
 
 // GetISA returns the isa identified by "id".
 // Returns nil, nil if not found
-func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (c *isaRepo) GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
 	var query = fmt.Sprintf(`
 		SELECT %s FROM
 			identification_service_areas
 		WHERE
-			id = $1`, isaFields)
+			id = $1
+        %s`, isaFields, dssql.ForUpdate(forUpdate))
 	uid, err := id.PgUUID()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")

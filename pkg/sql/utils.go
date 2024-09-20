@@ -26,3 +26,10 @@ func CellUnionToCellIdsWithValidation(cu s2.CellUnion) ([]int64, error) {
 	}
 	return pgCids, nil
 }
+
+func ForUpdate(forUpdate bool) string {
+	if forUpdate {
+		return "FOR UPDATE"
+	}
+	return ""
+}
