@@ -103,7 +103,7 @@ func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 		Id:              restapi.EntityID(o.ID.String()),
 		Ovn:             &ovn,
 		Manager:         o.Manager.String(),
-		Version:         int32(o.Version),
+		Version:         restapi.EntityVersion(o.Version),
 		UssBaseUrl:      restapi.OperationalIntentUssBaseURL(o.USSBaseURL),
 		SubscriptionId:  subID,
 		State:           o.State.ToRest(),

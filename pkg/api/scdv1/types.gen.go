@@ -4,11 +4,17 @@ package scdv1
 // String whose format matches a version-4 UUID according to RFC 4122.
 type UUIDv4Format string
 
+// String whose format matches a version-7 UUID according to RFC 9562.
+type UUIDv7Format string
+
 // Identifier for an Entity communicated through the DSS.  Formatted as a UUIDv4.
 type EntityID UUIDv4Format
 
 // A token associated with a particular UTM Entity+version created by the DSS upon creation or modification of an Entity reference and provided to the client creating or modifying the Entity reference.  The EntityOVN is stored privately by the DSS and then compared against entries in a Key provided to mutate the airspace.  The EntityOVN is also provided by the client whenever that client transmits the full information of the Entity (either via GET, or via a subscription notification).
 type EntityOVN string
+
+// Numeric version of this entity which increments upon each change in the entity, regardless of whether any field of the entity changes.  A USS with the details of this entity when it was at a particular version does not need to retrieve the details again until the version changes.
+type EntityVersion int32
 
 // Identifier for a subscription communicated through the DSS.  Formatted as a UUIDv4.
 type SubscriptionID UUIDv4Format
@@ -228,8 +234,7 @@ type OperationalIntentReference struct {
 
 	UssAvailability UssAvailabilityState `json:"uss_availability"`
 
-	// Numeric version of this operational intent which increments upon each change in the operational intent, regardless of whether any field of the operational intent reference changes.  A USS with the details of this operational intent when it was at a particular version does not need to retrieve the details again until the version changes.
-	Version int32 `json:"version"`
+	Version EntityVersion `json:"version"`
 
 	State OperationalIntentState `json:"state"`
 
@@ -269,6 +274,10 @@ type PutOperationalIntentReferenceParameters struct {
 
 	// If an existing subscription is not specified in `subscription_id`, and the operational intent is in the Activated, Nonconforming, or Contingent state, then this field must be populated.  When this field is populated, an implicit subscription will be created and associated with this operational intent, and will generally be deleted automatically upon the deletion of this operational intent.
 	NewSubscription *ImplicitSubscriptionParameters `json:"new_subscription,omitempty"`
+
+	// This optional field not part of the original F3548 standard API allows a USS to request a specific OVN when creating or updating an operational intent. When creating an operational intent, this enables a USS to immediately publish the operational intent details with the expected OVN. When updating an operational intent, this enables a USS to immediately make available this new version of the operational intent details if specifically requested by the remote USS. The USS must still wait for the DSS receipt to actually publish the new operational intent details. This allows USSs to obtain correct operational intent details even if the DSS takes a long time to respond and/or the USS processing  it.
+	// The requested suffix must be a UUIDv7 string containing a timestamp of the current time. If the suffix is invalid, and notably if the time is too far in the past or the future, the request will be rejected. If the suffix is valid, the DSS will set the OVN of the operational intent to be `{entityid}_{requested_ovn_suffix}`. If no suffix is set, the DSS will proceed as specified by the standard.
+	RequestedOvnSuffix *UUIDv7Format `json:"requested_ovn_suffix,omitempty"`
 }
 
 // Information necessary to create a subscription to serve a single operational intent's notification needs.
@@ -313,8 +322,7 @@ type ConstraintReference struct {
 
 	UssAvailability UssAvailabilityState `json:"uss_availability"`
 
-	// Numeric version of this constraint which increments upon each change in the constraint, regardless of whether any field of the constraint reference changes.  A USS with the details of this constraint when it was at a particular version does not need to retrieve the details again until the version changes.
-	Version int32 `json:"version"`
+	Version EntityVersion `json:"version"`
 
 	// Opaque version number of this constraint.  Populated only when the ConstraintReference is managed by the USS retrieving or providing it.  Not populated when the ConstraintReference is not managed by the USS retrieving or providing it (instead, the USS must obtain the OVN from the details retrieved from the managing USS).
 	Ovn *EntityOVN `json:"ovn,omitempty"`
