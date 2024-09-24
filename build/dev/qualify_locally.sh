@@ -37,7 +37,7 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	-w /app/monitoring/uss_qualifier \
 	-e AUTH_SPEC='DummyOAuth(http://oauth:8085/token,uss_qualifier)' \
 	-e AUTH_SPEC_2='DummyOAuth(http://oauth:8085/token,uss_qualifier_2)' \
-	interuss/monitoring:v0.9.0 \
+	interuss/monitoring:v0.9.1 \
     python main.py --config dss_probing_qualifier_config; then
 
     if [ "$CI" == "true" ]; then
