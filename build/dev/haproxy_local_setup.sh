@@ -128,7 +128,7 @@ docker run --rm --name rid-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox-default	\
 	local-interuss-dss-image \
-	/usr/bin/db-manager \
+	/usr/bin/db-manager migrate \
 	--schemas_dir db-schemas/rid \
 	--db_version "latest" \
 	--cockroach_host crdb
@@ -139,7 +139,7 @@ docker run --rm --name scd-db-manager \
 	--link dss-crdb-cluster-for-testing:crdb \
 	--network dss_sandbox-default	\
 	local-interuss-dss-image \
-	/usr/bin/db-manager \
+	/usr/bin/db-manager migrate \
 	--schemas_dir db-schemas/scd \
 	--db_version "latest" \
 	--cockroach_host crdb

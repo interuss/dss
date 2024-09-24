@@ -11,7 +11,7 @@ else
   sleep 3
 
   echo "Bootstrapping RID DB..."
-  /usr/bin/db-manager \
+  /usr/bin/db-manager migrate \
     --schemas_dir /db-schemas/rid \
     --db_version "latest" \
     --cockroach_host local-dss-crdb
