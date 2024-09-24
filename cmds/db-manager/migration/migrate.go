@@ -1,6 +1,6 @@
 // Script for Database bootstrap deployment and migration
 
-package main
+package migration
 
 import (
 	"context"
@@ -34,7 +34,7 @@ var (
 	dbVersion = flag.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
 )
 
-func main() {
+func Migration() {
 	// Read and validate schemas_dir input
 	flag.Parse()
 	if *path == "" {
