@@ -16,8 +16,8 @@ When a new database version is created, it needs to be targeted in a number of
 places:
 * Both .sql files in the appropriate folder in db_schemas when setting
   schema_versions.schema_version
-* [DSS main.jsonnet](../deploy/examples/minimum/main.jsonnet)
-* [Schema manager main.jsonnet](../deploy/examples/schema_manager/main.jsonnet)
+* [DSS main.jsonnet](../../deploy/services/tanka/examples/minimum/main.jsonnet)
+* [Schema manager main.jsonnet](../../deploy/services/tanka/examples/schema_manager/main.jsonnet)
 * /pkg/{rid|scd}/store/cockroach/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
 * /deploy/services/helm-charts/dss/templates/schema-manager.yaml
