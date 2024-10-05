@@ -1,3 +1,16 @@
+# Release versions
+
+Currently, InterUSS publishes two types of release versions: release candidates and stable versions. Creation of releases is based on Commiters' appreciation.
+
+Release candidates can be identified by their suffix `-rc*`. Those versions are published for early adopters.
+
+The source of stable versions is usually a release candidate. 
+
+Release notes can be found on the [releases page](https://github.com/interuss/dss/releases) of this repository. 
+
+To be promoted to stable, a release must be first tested on a DSS Pool composed by two DSS Instances hosted in two separate clouds. The verification is made by running the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) and the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) on both DSS Instances.
+Reports are attached to releases on the [releases page](https://github.com/interuss/dss/releases).
+
 # Release Management
 
 Releases of the DSS are based on git tags in the format `interuss/dss/v[0-9]+\.[0-9]+\.[0-9]+`, optionally suffixed with `-[0-9A-Za-z-.]+`.  This tag form follows the pattern `[owner]/[component]/[semantic version]`; see [semantic version](https://semver.org) for more information.
