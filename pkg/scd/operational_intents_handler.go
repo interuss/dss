@@ -322,7 +322,7 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 
-	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, &req.Auth, req.Entityid, "", req.Body)
+	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, time.Now(), &req.Auth, req.Entityid, "", req.Body)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -358,7 +358,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 
-	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, &req.Auth, req.Entityid, req.Ovn, req.Body)
+	respOK, respConflict, err := a.upsertOperationalIntentReference(ctx, time.Now(), &req.Auth, req.Entityid, req.Ovn, req.Body)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -384,6 +384,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 type validOIRParams struct {
 	id                   dssmodels.ID
 	ovn                  scdmodels.OVN
+	newOVN               scdmodels.OVN
 	state                scdmodels.OperationalIntentState
 	extents              []*dssmodels.Volume4D
 	uExtent              *dssmodels.Volume4D
@@ -411,7 +412,7 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 		ID:       vp.id,
 		Manager:  manager,
 		Version:  version,
-		OVN:      "", // TODO dss#1078: this field must be populated to support USSs setting OVNs in advance
+		OVN:      vp.newOVN, // non-empty only if the USS has requested an OVN
 		PastOVNs: pastOVNs,
 
 		StartTime:     vp.uExtent.StartTime,
@@ -430,6 +431,7 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
 func validateAndReturnUpsertParams(
+	now time.Time,
 	entityid restapi.EntityID,
 	ovn restapi.EntityOVN,
 	params *restapi.PutOperationalIntentReferenceParameters,
@@ -516,7 +518,7 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Missing time_end from extents")
 	}
 
-	if time.Now().After(*valid.uExtent.EndTime) {
+	if now.After(*valid.uExtent.EndTime) {
 		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
 	}
 
@@ -537,6 +539,13 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
 	valid.ovn = scdmodels.OVN(ovn)
+
+	if params.RequestedOvnSuffix != nil {
+		valid.newOVN, err = scdmodels.NewOVNFromUUIDv7Suffix(now, valid.id, string(*params.RequestedOvnSuffix))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Invalid requested OVN suffix")
+		}
+	}
 
 	// Check if a subscription is required for this request:
 	// OIRs in an accepted state do not need a subscription.
@@ -805,11 +814,11 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 
 // upsertOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
-func (a *Server) upsertOperationalIntentReference(ctx context.Context, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
+func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.Time, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
 	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
-	validParams, err := validateAndReturnUpsertParams(entityid, ovn, params, a.AllowHTTPBaseUrls)
+	validParams, err := validateAndReturnUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
 	}
