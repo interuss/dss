@@ -2,6 +2,8 @@ package repos
 
 import (
 	"context"
+	"time"
+
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -27,6 +29,10 @@ type OperationalIntent interface {
 	// GetDependentOperationalIntents returns IDs of all operations dependent on
 	// subscription identified by "subscriptionID".
 	GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
+
+	// ListExpiredOperationalIntents lists all operational intents older than the threshold.
+	// Their age is determined by their end time, or by their update time if they do not have an end time.
+	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error)
 }
 
 // Subscription abstracts subscription-specific interactions with the backing repository.
@@ -54,6 +60,10 @@ type Subscription interface {
 
 	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells.
 	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error
+
+	// ListExpiredSubscriptions lists all subscriptions older than the threshold.
+	// Their age is determined by their end time, or by their update time if they do not have an end time.
+	ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error)
 }
 
 type UssAvailability interface {
