@@ -92,7 +92,7 @@ func scdEvict(cmd *cobra.Command, _ []string) error {
 	if len(expiredOpIntents) == 0 && len(expiredSubs) == 0 {
 		log.Printf("no entity older than %s found", threshold.String())
 	} else if !*deleteExpired {
-		log.Printf("no entity was deleted, run the command again with the `-delete` flag to do so")
+		log.Printf("no entity was deleted, run the command again with the `--delete` flag to do so")
 	}
 	return nil
 }
