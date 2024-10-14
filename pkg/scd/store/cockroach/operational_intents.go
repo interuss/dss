@@ -169,10 +169,32 @@ func (s *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdm
 func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error {
 	var (
 		deleteOperationQuery = `
-			DELETE FROM
+			WITH deleted_oir AS (
+            DELETE FROM
 				scd_operations
 			WHERE
 				id = $1
+            RETURNING
+                id, subscription_id
+            ),
+            exists_and_is_implicit AS (
+                SELECT subscription_id
+                FROM deleted_oir
+                JOIN scd_subscriptions ON scd_subscriptions.id = deleted_oir.subscription_id
+                WHERE scd_subscriptions.implicit = true
+            ),
+            dependent_oirs AS ( -- NOTE: this sub-query will still return the OIR being deleted (!)
+                SELECT id
+                FROM scd_operations
+                WHERE subscription_id = (SELECT subscription_id FROM deleted_oir)
+            ),
+            deleted_subscription_id AS (
+                DELETE FROM scd_subscriptions
+                WHERE id = (SELECT subscription_id FROM exists_and_is_implicit)
+                AND (SELECT COUNT(*) FROM dependent_oirs) = 1 -- NOTE: see above, the OIR being removed is still counted here, hence a value of 1
+                RETURNING id
+            )
+            SELECT id FROM deleted_oir
 		`
 	)
 
@@ -180,13 +202,28 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	res, err := s.q.Exec(ctx, deleteOperationQuery, uid)
+	res, err := s.q.Query(ctx, deleteOperationQuery, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
 	}
+	defer res.Close()
 
-	if res.RowsAffected() == 0 {
-		return stacktrace.NewError("Could not delete Operation that does not exist")
+	// Check that the deleted OIR ID was returned:
+	var opID dssmodels.ID
+	if res.Next() {
+		err = res.Scan(&opID)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error scanning deleted Operation ID")
+		}
+	} else if resErr := res.Err(); resErr != nil {
+		// Note: typically, res.Next() will be false and res.Err() non-nil when the query fails
+		// because it collided with another query and the whole transaction needs to be retried.
+		// This situation is extremely likely to occur when the DSS is under concurrent load.
+		return stacktrace.Propagate(resErr, "Error in query: %s", deleteOperationQuery)
+	}
+
+	if opID == "" || opID != id {
+		return stacktrace.NewError("Could not delete Operation that does not exist. Delete: %s, returned opID: %s", id, opID)
 	}
 
 	return nil
@@ -196,13 +233,51 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
-			UPSERT INTO
-				scd_operations
-				(%s)
-			VALUES
-				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
-			RETURNING
-				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
+			WITH previous_implicit_sub AS (
+                -- get the current subscription id if:
+                --  - it exists
+                --  - it is implicit
+                --  - the OIR's subscription is being updated (ie, the new subscription id is different from the old one)
+                SELECT
+                    scd_subscriptions.id
+                FROM scd_operations
+                JOIN scd_subscriptions ON scd_operations.subscription_id = scd_subscriptions.id
+                WHERE
+                    scd_operations.id = $1
+                AND
+                    scd_subscriptions.implicit = true
+                AND
+                    -- in SQL, X != NULL will always be false:
+                    -- this condition needs to cover cases where the new subscription is undefined,
+                    -- so we add an explicit 'IS NULL' check.
+                    (scd_subscriptions.id != $9 OR $9 IS NULL)
+            ),
+            upserted_oir AS (
+                -- actual insertion/update statement
+                UPSERT INTO
+				    scd_operations
+				    (%s)
+			    VALUES
+				    ($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
+			    RETURNING
+				    %s
+            ),
+            dependent_oirs AS ( -- NOTE: this sub-query will still return the OIR being mutated (!)
+                SELECT id
+                FROM scd_operations
+                WHERE subscription_id = (SELECT id FROM previous_implicit_sub)
+            ),
+            deleted_subscription_id AS (
+                -- We are guaranteed to only delete something here if the OIR is being updated. Upon creation
+                -- previous_implicit_sub will be empty
+                DELETE FROM scd_subscriptions
+                WHERE id = (SELECT id FROM previous_implicit_sub)
+                AND (SELECT COUNT(*) FROM dependent_oirs) = 1 -- NOTE: see above, the OIR being updated is still counted here, hence a value of 1
+                RETURNING id
+            )
+            -- return the upserted OIR
+            SELECT * FROM upserted_oir
+            `, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
 	)
 
 	cids := make([]int64, len(operation.Cells))
