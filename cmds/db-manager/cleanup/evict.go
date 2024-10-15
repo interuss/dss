@@ -17,23 +17,23 @@ import (
 )
 
 var (
-	ScdEvictCmd = &cobra.Command{
-		Use:   "scd-evict",
-		Short: "List and evict SCD expired entities",
-		RunE:  scdEvict,
+	EvictCmd = &cobra.Command{
+		Use:   "evict",
+		Short: "List and evict expired entities",
+		RunE:  evict,
 	}
-	flags         = pflag.NewFlagSet("scd-evict", pflag.ExitOnError)
-	listOpIntents = flags.Bool("op_intents", true, "set this flag to true to list expired operational intents")
-	listScdSubs   = flags.Bool("scd_subs", true, "set this flag to true to list expired SCD subscriptions")
+	flags         = pflag.NewFlagSet("evict", pflag.ExitOnError)
+	listScdOirs   = flags.Bool("scd_oir", true, "set this flag to true to list expired SCD operational intents")
+	listScdSubs   = flags.Bool("scd_sub", true, "set this flag to true to list expired SCD subscriptions")
 	ttl           = flags.Duration("ttl", time.Hour*24*112, "time-to-live duration used for determining expiration, defaults to 2*56 days which should be a safe value in most cases")
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 )
 
 func init() {
-	ScdEvictCmd.Flags().AddFlagSet(flags)
+	EvictCmd.Flags().AddFlagSet(flags)
 }
 
-func scdEvict(cmd *cobra.Command, _ []string) error {
+func evict(cmd *cobra.Command, _ []string) error {
 	var (
 		ctx       = cmd.Context()
 		threshold = time.Now().Add(-*ttl)
@@ -49,7 +49,7 @@ func scdEvict(cmd *cobra.Command, _ []string) error {
 		expiredSubs      []*scdmodels.Subscription
 	)
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		if *listOpIntents {
+		if *listScdOirs {
 			expiredOpIntents, err = r.ListExpiredOperationalIntents(ctx, threshold)
 			if err != nil {
 				return fmt.Errorf("listing expired operational intents: %w", err)
@@ -103,7 +103,9 @@ func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 	connectParameters.DBName = scdc.DatabaseName
 	scdCrdb, err := cockroach.Dial(ctx, connectParameters)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database with %+v: %w", connectParameters, err)
+		logParams := connectParameters
+		logParams.Credentials.Password = "[REDACTED]"
+		return nil, fmt.Errorf("failed to connect to database with %+v: %w", logParams, err)
 	}
 
 	scdStore, err := scdc.NewStore(ctx, scdCrdb)
