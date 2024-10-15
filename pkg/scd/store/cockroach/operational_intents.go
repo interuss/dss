@@ -341,3 +341,29 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 
 	return dependentOps, nil
 }
+
+// ListExpiredOperationalIntents lists all operational intents older than the threshold.
+// Their age is determined by their end time, or by their last update time if they do not have an end time.
+func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
+	expiredOpIntentsQuery := fmt.Sprintf(`
+        SELECT
+            %s
+        FROM
+            scd_operations
+        WHERE
+            scd_operations.ends_at IS NOT NULL AND scd_operations.ends_at <= $1
+            OR
+            scd_operations.ends_at IS NULL AND scd_operations.updated_at <= $1 -- use last update time as reference if there is no end time
+        LIMIT $2`, operationFieldsWithPrefix)
+
+	result, err := s.fetchOperationalIntents(
+		ctx, s.q, expiredOpIntentsQuery,
+		threshold,
+		dssmodels.MaxResultLimit,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error fetching Operations")
+	}
+
+	return result, nil
+}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/interuss/dss/cmds/db-manager/cleanup"
 	"github.com/interuss/dss/cmds/db-manager/migration"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,7 @@ var (
 func init() {
 	DBManagerCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine) // enable support for flags not yet migrated to using pflag (e.g. crdb flags)
 	DBManagerCmd.AddCommand(migration.MigrationCmd)
+	DBManagerCmd.AddCommand(cleanup.EvictCmd)
 }
 
 func main() {
