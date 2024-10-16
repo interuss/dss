@@ -38,6 +38,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ctx       = cmd.Context()
 		threshold = time.Now().Add(-*ttl)
 	)
+	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
 
 	scdStore, err := getSCDStore(ctx)
 	if err != nil {
