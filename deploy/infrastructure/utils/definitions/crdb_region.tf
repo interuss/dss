@@ -9,4 +9,6 @@ variable "crdb_region" {
 
     Example: <us-east1>
   EOT
+
+  default = ""
 }
