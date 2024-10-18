@@ -6,6 +6,7 @@ resource "local_file" "tanka_config_main" {
     VAR_ENABLE_SCD               = var.enable_scd
     VAR_CRDB_HOSTNAME_SUFFIX     = var.crdb_hostname_suffix
     VAR_CRDB_LOCALITY            = var.crdb_locality
+    VAR_CRDB_REGION              = var.crdb_region
     VAR_CRDB_NODE_IPS            = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
     VAR_INGRESS_NAME             = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES      = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
