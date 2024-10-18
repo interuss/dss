@@ -30,4 +30,5 @@ should_init = true
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss_example"
 crdb_locality       = "interuss_dss-dev-w6a"
+crdb_region         = "europe-west6-a"
 crdb_external_nodes = []

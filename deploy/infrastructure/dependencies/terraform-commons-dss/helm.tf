@@ -2,6 +2,7 @@ locals {
   # Tanka defines itself the variable below. For helm, since we are using the official helm CRDB chart,
   # the following variable has to be provided here.
   helm_crdb_statefulset_name = "dss-cockroachdb"
+  locality_args = var.crdb_region != "" ? "region=${var.crdb_region},zone=${var.crdb_locality}" : "zone=${var.crdb_locality}"
 }
 
 resource "local_file" "helm_chart_values" {
@@ -17,13 +18,13 @@ resource "local_file" "helm_chart_values" {
         join         = var.crdb_external_nodes
         cluster-name = var.crdb_cluster_name
         single-node  = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
-        locality     = "zone=${var.crdb_locality}"
+        locality     = locals.locality_args
       }
 
       statefulset = {
         replicas = length(var.crdb_internal_nodes)
         args = [
-          "--locality-advertise-addr=zone=${var.crdb_locality}@$(hostname -f)",
+          "--locality-advertise-addr=${locals.locality_args}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.crdb_hostname_suffix}"
         ]
       }

@@ -26,6 +26,7 @@ should_init         = true
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss-ci"
 crdb_locality       = "interuss_dss-ci-aws-ue1"
+crdb_region         = "us-east-1"
 crdb_external_nodes = []
 
 aws_iam_permissions_boundary = "arn:aws:iam::301042233698:policy/GithubCIPermissionBoundaries20231130225039606500000001"
