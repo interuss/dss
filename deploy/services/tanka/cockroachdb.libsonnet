@@ -87,7 +87,7 @@ local volumes = import 'volumes.libsonnet';
               join: std.join(',', ['cockroachdb-0.cockroachdb'] + 
                 if metadata.single_cluster then [] else metadata.cockroach.JoinExisting),
               logtostderr: true,
-              locality: 'zone=' + metadata.cockroach.locality,
+              locality: if std.objectHas(metadata.cockroach, 'region') then std.join(',', ['region=' + metadata.cockroach.region, 'zone=' + metadata.cockroach.locality]) else 'zone=' + metadata.cockroach.locality,
               'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
