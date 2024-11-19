@@ -102,7 +102,7 @@ func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 	connectParameters := crdbflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := cockroach.Dial(ctx, connectParameters)
+	scdCrdb, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		logParams := connectParameters
 		logParams.Credentials.Password = "[REDACTED]"

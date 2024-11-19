@@ -65,7 +65,7 @@ const (
 	codeRetryable = stacktrace.ErrorCode(1)
 )
 
-func getDBStats(ctx context.Context, db *cockroach.DB, databaseName string) {
+func getDBStats(ctx context.Context, db *datastore.Datastore, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 	statsPtr := db.Pool.Stat()
 	stats := make(map[string]string)
@@ -109,7 +109,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
-	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
+	ridCrdb, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") {
@@ -123,7 +123,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		// try DBName of defaultdb for older versions.
 		ridCrdb.Pool.Close()
 		connectParameters.DBName = "defaultdb"
-		ridCrdb, err := cockroach.Dial(ctx, connectParameters)
+		ridCrdb, err := datastore.Dial(ctx, connectParameters)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 		}
@@ -176,7 +176,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := cockroach.Dial(ctx, connectParameters)
+	scdCrdb, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
