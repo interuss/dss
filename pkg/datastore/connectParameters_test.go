@@ -1,9 +1,28 @@
-package cockroach
+package datastore
 
 import (
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+// ConnectParametersFromMap constructs a ConnectParameters instance from m.
+func connectParametersFromMap(m map[string]string) ConnectParameters {
+	return ConnectParameters{
+		ApplicationName: m["application_name"],
+		DBName:          m["db_name"],
+		Host:            m["host"],
+		Port:            int(parseIntOrDefault(m["port"], 0)),
+		Credentials: Credentials{
+			Username: m["user"],
+		},
+		SSL: SSL{
+			Mode: m["ssl_mode"],
+			Dir:  m["ssl_dir"],
+		},
+		MaxOpenConns:       int(parseIntOrDefault(m["max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parseIntOrDefault(m["max_conn_idle_secs"], 40)),
+	}
+}
 
 func TestBuildDSN(t *testing.T) {
 	cases := []struct {
