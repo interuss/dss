@@ -30,8 +30,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
-	db, err := cockroach.Dial(ctx, connectParameters)
+func newStore(ctx context.Context, t *testing.T, connectParameters datastore.ConnectParameters) (*Store, error) {
+	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
 	return &Store{
