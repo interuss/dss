@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"

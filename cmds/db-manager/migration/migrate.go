@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/interuss/dss/pkg/cockroach"
-	crdbflags "github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	crdbflags "github.com/interuss/dss/pkg/datastore/flags"
 
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"

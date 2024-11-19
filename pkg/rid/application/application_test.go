@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"

@@ -3,7 +3,7 @@ package flags
 import (
 	"flag"
 
-	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/datastore"
 )
 
 var (

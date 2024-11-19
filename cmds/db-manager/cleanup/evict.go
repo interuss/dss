@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/interuss/dss/pkg/cockroach"
-	crdbflags "github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	crdbflags "github.com/interuss/dss/pkg/datastore/flags"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"

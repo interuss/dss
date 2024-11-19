@@ -3,12 +3,12 @@ package cockroach
 import (
 	"context"
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
-	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/stacktrace"

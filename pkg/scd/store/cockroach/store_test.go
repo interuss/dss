@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
