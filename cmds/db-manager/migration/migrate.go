@@ -15,7 +15,6 @@ import (
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"golang.org/x/net/context"
 )
 
 type MigrationStep struct {
@@ -78,22 +77,18 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	connectParameters := crdbflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
-	crdb, err := cockroach.Dial(ctx, connectParameters)
+	ds, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database with %+v: %w", connectParameters, err)
 	}
 	defer func() {
-		crdb.Pool.Close()
+		ds.Pool.Close()
 	}()
 
-	crdbVersion, err := crdb.GetServerVersion()
-	if err != nil {
-		return fmt.Errorf("unable to retrieve the version of the server %s:%d: %w", connectParameters.Host, connectParameters.Port, err)
-	}
-	log.Printf("CRDB server version: %s", crdbVersion)
+	log.Printf("CRDB server version: %s", ds.Version.String())
 
 	// Make sure specified database exists
-	exists, err := doesDatabaseExist(ctx, crdb, dbName)
+	exists, err := ds.DatabaseExists(ctx, dbName)
 	if err != nil {
 		return fmt.Errorf("failed to check whether database %s exists: %w", dbName, err)
 	}
@@ -101,7 +96,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		// In the special case of rid, the database was previously named defaultdb
 		log.Printf("Database %s does not exist; checking for older \"defaultdb\" database", dbName)
 		dbName = "defaultdb"
-		exists, err = doesDatabaseExist(ctx, crdb, dbName)
+		exists, err = ds.DatabaseExists(ctx, dbName)
 		if err != nil {
 			return fmt.Errorf("failed to check whether old defaultdb database exists: %w", err)
 		}
@@ -109,7 +104,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	if !exists {
 		log.Printf("Database %s does not exist; creating now", dbName)
 		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
-		if _, err := crdb.Pool.Exec(ctx, createDB); err != nil {
+		if _, err := ds.Pool.Exec(ctx, createDB); err != nil {
 			return fmt.Errorf("failed to create new database %s: %v", dbName, err)
 		}
 	} else {
@@ -117,7 +112,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Read current schema version of database
-	currentVersion, err := crdb.GetVersion(ctx, dbName)
+	currentVersion, err := ds.GetSchemaVersion(ctx, dbName)
 	if err != nil {
 		return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 	}
@@ -162,14 +157,14 @@ func migrate(cmd *cobra.Command, _ []string) error {
 
 		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
 		sessionConfigurationSQL := ""
-		if crdbVersion.Compare(*semver.New("22.2.0")) >= 0 {
+		if ds.Version.Version().Compare(*semver.New("22.2.0")) >= 0 {
 			sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
 		}
 
 		migrationSQL := sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 
 		// Execute migration step
-		if _, err := crdb.Pool.Exec(ctx, migrationSQL); err != nil {
+		if _, err := ds.Pool.Exec(ctx, migrationSQL); err != nil {
 			return fmt.Errorf("failed to execute %s migration step %s: %w", dbName, fullFilePath, err)
 		}
 
@@ -182,7 +177,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 			// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
 			dbName = "defaultdb"
 		}
-		actualVersion, err := crdb.GetVersion(ctx, dbName)
+		actualVersion, err := ds.GetSchemaVersion(ctx, dbName)
 		if err != nil {
 			return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 		}
@@ -243,18 +238,4 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 	}
 
 	return result, nil
-}
-
-func doesDatabaseExist(ctx context.Context, crdb *cockroach.DB, database string) (bool, error) {
-	const checkDbQuery = `
-		SELECT EXISTS (
-			SELECT * FROM pg_database WHERE datname = $1
-		)`
-
-	var exists bool
-	if err := crdb.Pool.QueryRow(ctx, checkDbQuery, database).Scan(&exists); err != nil {
-		return false, err
-	}
-
-	return exists, nil
 }
