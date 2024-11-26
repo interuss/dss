@@ -1,1 +1,1 @@
-ALTER TABLE events RESET (ttl);
+ALTER TABLE scd_subscriptions RESET (ttl);
