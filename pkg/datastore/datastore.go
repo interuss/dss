@@ -11,7 +11,7 @@ import (
 
 type Datastore struct {
 	Database
-	Version *version
+	Version *Version
 	Pool    *pgxpool.Pool
 }
 
@@ -60,13 +60,13 @@ func initDatastore(ctx context.Context, pool *pgxpool.Pool) (*Datastore, error) 
 		return nil, err
 	}
 
-	if version.IsCockroachDB() {
+	if version.Type == CockroachDB {
 		return &Datastore{Version: version, Pool: pool}, nil
 	}
-	return nil, stacktrace.NewError("%s is not implemented yet", version.dsType)
+	return nil, stacktrace.NewError("%s is not implemented yet", version.Type)
 }
 
-func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*version, error) {
+func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*Version, error) {
 	const versionDbQuery = `
       SELECT version();
     `
@@ -76,7 +76,7 @@ func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*version, error) {
 		return nil, stacktrace.Propagate(err, "Error querying datastore version")
 	}
 
-	return versionFromString(fullVersion)
+	return NewVersion(fullVersion)
 }
 
 func (ds *Datastore) CreateDatabase(ctx context.Context, dbName string) error {

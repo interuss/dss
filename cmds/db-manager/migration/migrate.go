@@ -157,7 +157,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 
 		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
 		sessionConfigurationSQL := ""
-		if ds.Version.Version().Compare(*semver.New("22.2.0")) >= 0 {
+		if ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
 			sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
 		}
 
