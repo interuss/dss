@@ -11,7 +11,7 @@ import (
 
 type Datastore struct {
 	Database
-	Version *Version
+	Version *version
 	Pool    *pgxpool.Pool
 }
 
@@ -66,7 +66,7 @@ func initDatastore(ctx context.Context, pool *pgxpool.Pool) (*Datastore, error) 
 	return nil, fmt.Errorf("%s is not implemented yet", version.dsType)
 }
 
-func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*Version, error) {
+func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*version, error) {
 	const versionDbQuery = `
       SELECT version();
     `

@@ -8,20 +8,20 @@ import (
 	"regexp"
 )
 
-type VersionRegex struct {
+type versionRegex struct {
 	Name         string
 	VersionRegex *regexp.Regexp
 }
 
-type Version struct {
+type version struct {
 	version *semver.Version
 	dsType  string
 }
 
-var cockroachDB = &VersionRegex{"cockroach", regexp.MustCompile(`v((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)}
-var yugabyte = &VersionRegex{"yugabyte", regexp.MustCompile(`-YB-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)}
+var cockroachDB = &versionRegex{"cockroach", regexp.MustCompile(`v((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)}
+var yugabyte = &versionRegex{"yugabyte", regexp.MustCompile(`-YB-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))`)}
 
-func (dt *VersionRegex) parseVersion(fullVersion string) (*semver.Version, error) {
+func (dt *versionRegex) parseVersion(fullVersion string) (*semver.Version, error) {
 	match := dt.VersionRegex.FindStringSubmatch(fullVersion)
 	if len(match) < 2 {
 		return nil, stacktrace.NewError("Unable to extract version for %s from %s using %s", dt.Name, fullVersion, dt.VersionRegex)
@@ -29,36 +29,32 @@ func (dt *VersionRegex) parseVersion(fullVersion string) (*semver.Version, error
 	return semver.NewVersion(match[1])
 }
 
-func versionFromString(fullVersion string) (*Version, error) {
-	version, err := cockroachDB.parseVersion(fullVersion)
+func versionFromString(fullVersion string) (*version, error) {
+	v, err := cockroachDB.parseVersion(fullVersion)
 	if err == nil {
-		return &Version{version, cockroachDB.Name}, nil
+		return &version{v, cockroachDB.Name}, nil
 	}
 
-	version, err2 := yugabyte.parseVersion(fullVersion)
+	v, err2 := yugabyte.parseVersion(fullVersion)
 	if err2 == nil {
-		return &Version{version, yugabyte.Name}, nil
+		return &version{v, yugabyte.Name}, nil
 	}
 
 	return nil, stacktrace.Propagate(multierr.Combine(err, err2), "Unable to extract datastore type and version")
 }
 
-func (m *Version) String() string {
+func (m *version) String() string {
 	return fmt.Sprintf("%s@%s", m.dsType, m.version.String())
 }
 
-func (m *Version) Version() *semver.Version {
+func (m *version) Version() *semver.Version {
 	return m.version
 }
 
-func (m *Version) DatastoreType() string {
-	return m.dsType
-}
-
-func (m *Version) IsCockroachDB() bool {
+func (m *version) IsCockroachDB() bool {
 	return m.dsType == cockroachDB.Name
 }
 
-func (m *Version) IsYugabyte() bool {
+func (m *version) IsYugabyte() bool {
 	return m.dsType == yugabyte.Name
 }
