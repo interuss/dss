@@ -63,7 +63,7 @@ func initDatastore(ctx context.Context, pool *pgxpool.Pool) (*Datastore, error) 
 	if version.IsCockroachDB() {
 		return &Datastore{Version: version, Pool: pool}, nil
 	}
-	return nil, fmt.Errorf("%s is not implemented yet", version.dsType)
+	return nil, stacktrace.NewError("%s is not implemented yet", version.dsType)
 }
 
 func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*version, error) {
@@ -82,7 +82,7 @@ func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*version, error) {
 func (ds *Datastore) CreateDatabase(ctx context.Context, dbName string) error {
 	createDB := fmt.Sprintf("CREATE DATABASE %s", dbName)
 	if _, err := ds.Pool.Exec(ctx, createDB); err != nil {
-		return fmt.Errorf("failed to create new database %s: %v", dbName, err)
+		return stacktrace.Propagate(err, "failed to create new database %s", dbName)
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func (ds *Datastore) DatabaseExists(ctx context.Context, dbName string) (bool, e
 
 	var exists bool
 	if err := ds.Pool.QueryRow(ctx, checkDbQuery, dbName).Scan(&exists); err != nil {
-		return false, err
+		return false, stacktrace.Propagate(err, "Error checking %s database existence", dbName)
 	}
 
 	return exists, nil
