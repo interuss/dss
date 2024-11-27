@@ -63,7 +63,7 @@ func initDatastore(ctx context.Context, pool *pgxpool.Pool) (*Datastore, error) 
 	if version.IsCockroachDB() {
 		return &Datastore{Version: version, Pool: pool}, nil
 	}
-	return nil, fmt.Errorf("%s is not implemented yet", version.dsName)
+	return nil, fmt.Errorf("%s is not implemented yet", version.dsType)
 }
 
 func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*Version, error) {
@@ -76,7 +76,7 @@ func fetchVersion(ctx context.Context, pool *pgxpool.Pool) (*Version, error) {
 		return nil, stacktrace.Propagate(err, "Error querying datastore version")
 	}
 
-	return VersionFromString(fullVersion)
+	return versionFromString(fullVersion)
 }
 
 func (ds *Datastore) CreateDatabase(ctx context.Context, dbName string) error {
