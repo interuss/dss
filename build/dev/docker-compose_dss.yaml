@@ -16,18 +16,21 @@ services:
     restart: always
     networks:
       - dss_sandbox_default_network
+    healthcheck:
+      test: curl -f 'http://localhost:8080/health?ready=1' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
 
   local-dss-rid-bootstrapper:
     build:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    volumes:
-      - local-dss-data:/var/local-dss-data
-      - $PWD/startup:/startup:ro
-    entrypoint: /startup/rid_bootstrapper.sh
+    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --cockroach_host local-dss-crdb
     depends_on:
-      - local-dss-crdb
+      local-dss-crdb:
+        condition: service_healthy
     networks:
       - dss_sandbox_default_network
 
@@ -36,12 +39,10 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    volumes:
-      - local-dss-data:/var/local-dss-data
-      - $PWD/startup:/startup:ro
-    entrypoint: /startup/scd_bootstrapper.sh
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --cockroach_host local-dss-crdb
     depends_on:
-      - local-dss-crdb
+      local-dss-crdb:
+        condition: service_healthy
     networks:
       - dss_sandbox_default_network
 
@@ -52,17 +53,23 @@ services:
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
-      - local-dss-data:/var/local-dss-data
-      - $PWD/startup:/startup:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"
       - "8082:8082"
     depends_on:
-      - local-dss-rid-bootstrapper
-      - local-dss-scd-bootstrapper
+      local-dss-rid-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-scd-bootstrapper:
+        condition: service_completed_successfully
     networks:
       - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://localhost/healthy' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
 
   local-dss-dummy-oauth:
     build:
@@ -74,6 +81,11 @@ services:
       - "8085:8085"
     networks:
       - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://localhost:8085/token?intended_audience=-&scope=-' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
 
 networks:
   dss_sandbox_default_network:

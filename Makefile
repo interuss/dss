@@ -142,7 +142,6 @@ restart-all: build-dss down-locally start-locally
 .PHONY: start-locally
 start-locally:
 	build/dev/run_locally.sh up -d
-	build/dev/wait_for_local_dss.sh
 
 .PHONY: probe-locally
 probe-locally:
