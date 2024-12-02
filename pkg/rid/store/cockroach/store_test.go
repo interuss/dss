@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -49,8 +49,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newStore(ctx context.Context, t *testing.T, connectParameters cockroach.ConnectParameters) (*Store, error) {
-	db, err := cockroach.Dial(ctx, connectParameters)
+func newStore(ctx context.Context, t *testing.T, connectParameters datastore.ConnectParameters) (*Store, error) {
+	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
 	return &Store{

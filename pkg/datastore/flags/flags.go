@@ -2,16 +2,15 @@ package flags
 
 import (
 	"flag"
-
-	"github.com/interuss/dss/pkg/cockroach"
+	"github.com/interuss/dss/pkg/datastore"
 )
 
 var (
-	connectParameters cockroach.ConnectParameters
+	connectParameters datastore.ConnectParameters
 )
 
 // ConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
-func ConnectParameters() cockroach.ConnectParameters {
+func ConnectParameters() datastore.ConnectParameters {
 	return connectParameters
 }
 

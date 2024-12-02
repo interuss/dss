@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/interuss/dss/pkg/cockroach"
-	"github.com/interuss/dss/pkg/cockroach/flags"
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/datastore/flags"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -62,7 +62,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 		connectParameters.DBName = "rid"
 	}
 	ridc.DefaultClock = fakeClock
-	ridCrdb, err := cockroach.Dial(ctx, connectParameters)
+	ridCrdb, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 	logger.Info("using cockroachDB.")
 
