@@ -61,19 +61,19 @@ func (cp ConnectParameters) BuildDSN() (string, error) {
 
 	u := cp.Credentials.Username
 	if u == "" {
-		return "", stacktrace.NewError("Missing crdb user")
+		return "", stacktrace.NewError("Missing datastore username")
 	}
 	dsnMap["user"] = u
 
 	h := cp.Host
 	if h == "" {
-		return "", stacktrace.NewError("Missing crdb hostname")
+		return "", stacktrace.NewError("Missing datastore hostname")
 	}
 	dsnMap["host"] = h
 
 	port := cp.Port
 	if port == 0 {
-		return "", stacktrace.NewError("Missing crdb port")
+		return "", stacktrace.NewError("Missing datastore port")
 	}
 	dsnMap["port"] = fmt.Sprintf("%d", port)
 
@@ -87,7 +87,7 @@ func (cp ConnectParameters) BuildDSN() (string, error) {
 
 	sslMode := cp.SSL.Mode
 	if sslMode == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_mode")
+		return "", stacktrace.NewError("Missing datastore ssl_mode")
 	}
 	dsnMap["sslmode"] = sslMode
 
@@ -99,7 +99,7 @@ func (cp ConnectParameters) BuildDSN() (string, error) {
 
 	dir := cp.SSL.Dir
 	if dir == "" {
-		return "", stacktrace.NewError("Missing crdb ssl_dir")
+		return "", stacktrace.NewError("Missing datastore ssl_dir")
 	}
 	dsnMap["sslrootcert"] = fmt.Sprintf("%s/ca.crt", dir)
 	dsnMap["sslcert"] = fmt.Sprintf("%s/client.%s.crt", dir, u)
