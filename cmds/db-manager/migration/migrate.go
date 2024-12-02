@@ -85,7 +85,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		ds.Pool.Close()
 	}()
 
-	log.Printf("CRDB server version: %s", ds.Version.String())
+	log.Printf("CRDB server version: %s", ds.Version.SemVer.String())
 
 	// Make sure specified database exists
 	exists, err := ds.DatabaseExists(ctx, dbName)

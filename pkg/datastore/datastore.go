@@ -10,15 +10,8 @@ import (
 )
 
 type Datastore struct {
-	Database
 	Version *Version
 	Pool    *pgxpool.Pool
-}
-
-type Database interface {
-	GetSchemaVersion(ctx context.Context, dbName string) (*semver.Version, error)
-	DatabaseExists(ctx context.Context, name string) (bool, error)
-	CreateDatabase(ctx context.Context, name string) error
 }
 
 var UnknownVersion = &semver.Version{}

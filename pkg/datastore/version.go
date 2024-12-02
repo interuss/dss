@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/multierr"
@@ -43,8 +42,4 @@ func NewVersion(fullVersion string) (*Version, error) {
 	}
 
 	return nil, stacktrace.Propagate(multierr.Combine(err, err2), "Unable to extract datastore type and version")
-}
-
-func (v *Version) String() string {
-	return fmt.Sprintf("%s@%s", v.Type, v.SemVer.String())
 }
