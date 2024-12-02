@@ -85,14 +85,19 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		ds.Pool.Close()
 	}()
 
-	log.Printf("CRDB server version: %s", ds.Version.SemVer.String())
+	log.Printf("Datastore server type and version: %s@%s", ds.Version.Type, ds.Version.SemVer.String())
+
+	var (
+		isCockroach = ds.Version.Type == datastore.CockroachDB
+		isYugabyte  = ds.Version.Type == datastore.Yugabyte
+	)
 
 	// Make sure specified database exists
 	exists, err := ds.DatabaseExists(ctx, dbName)
 	if err != nil {
 		return fmt.Errorf("failed to check whether database %s exists: %w", dbName, err)
 	}
-	if !exists && dbName == "rid" {
+	if isCockroach && !exists && dbName == "rid" {
 		// In the special case of rid, the database was previously named defaultdb
 		log.Printf("Database %s does not exist; checking for older \"defaultdb\" database", dbName)
 		dbName = "defaultdb"
@@ -103,12 +108,23 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	}
 	if !exists {
 		log.Printf("Database %s does not exist; creating now", dbName)
-		createDB := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)
+		createDB := fmt.Sprintf("CREATE DATABASE %s", dbName)
 		if _, err := ds.Pool.Exec(ctx, createDB); err != nil {
 			return fmt.Errorf("failed to create new database %s: %v", dbName, err)
 		}
 	} else {
 		log.Printf("Database %s already exists; reading current state", dbName)
+	}
+
+	if isYugabyte {
+		// Reconnect to proper database (Yugabyte does not support cross-database references)
+		connectParameters = crdbflags.ConnectParameters()
+		connectParameters.ApplicationName = "db-manager"
+		connectParameters.DBName = dbName
+		ds, err = datastore.Dial(ctx, connectParameters)
+		if err != nil {
+			return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
+		}
 	}
 
 	// Read current schema version of database
@@ -157,11 +173,20 @@ func migrate(cmd *cobra.Command, _ []string) error {
 
 		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
 		sessionConfigurationSQL := ""
-		if ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
+		if isCockroach && ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
 			sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
 		}
 
-		migrationSQL := sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
+		migrationSQL := ""
+		if isCockroach {
+			migrationSQL = sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
+		} else {
+			ds, err = datastore.Dial(ctx, connectParameters)
+			if err != nil {
+				return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
+			}
+			migrationSQL = sessionConfigurationSQL + string(rawMigrationSQL)
+		}
 
 		// Execute migration step
 		if _, err := ds.Pool.Exec(ctx, migrationSQL); err != nil {
@@ -169,13 +194,16 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Update current state
-		if dbName == "defaultdb" && newVersion.String() == "4.0.0" && newCurrentStepIndex > currentStepIndex {
-			// RID database changes from `defaultdb` to `rid` when moving up to 4.0.0
-			dbName = "rid"
-		}
-		if dbName == "rid" && currentVersion.String() == "4.0.0" && newCurrentStepIndex < currentStepIndex {
-			// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
-			dbName = "defaultdb"
+		if isCockroach {
+			// Update current state for CRDB
+			if dbName == "defaultdb" && newVersion.String() == "4.0.0" && newCurrentStepIndex > currentStepIndex {
+				// RID database changes from `defaultdb` to `rid` when moving up to 4.0.0
+				dbName = "rid"
+			}
+			if dbName == "rid" && currentVersion.String() == "4.0.0" && newCurrentStepIndex < currentStepIndex {
+				// RID database changes from `rid` to `defaultdb` when moving down from 4.0.0
+				dbName = "defaultdb"
+			}
 		}
 		actualVersion, err := ds.GetSchemaVersion(ctx, dbName)
 		if err != nil {

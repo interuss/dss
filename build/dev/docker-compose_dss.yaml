@@ -36,6 +36,32 @@ services:
       - dss_sandbox_default_network
     profiles: ["with-yugabyte"]
 
+  local-dss-rid-bootstrapper-ybdb:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: interuss-local/dss
+    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/rid --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
+    depends_on:
+      local-dss-crdb:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-yugabyte"]
+
+  local-dss-scd-bootstrapper-ybdb:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: interuss-local/dss
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/scd --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
+    depends_on:
+      local-dss-crdb:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-yugabyte"]
+
   local-dss-rid-bootstrapper:
     build:
       context: ../..

@@ -56,6 +56,9 @@ func initDatastore(ctx context.Context, pool *pgxpool.Pool) (*Datastore, error) 
 	if version.Type == CockroachDB {
 		return &Datastore{Version: version, Pool: pool}, nil
 	}
+	if version.Type == Yugabyte {
+		return &Datastore{Version: version, Pool: pool}, nil
+	}
 	return nil, stacktrace.NewError("%s is not implemented yet", version.Type)
 }
 
@@ -98,6 +101,9 @@ func (ds *Datastore) DatabaseExists(ctx context.Context, dbName string) (bool, e
 func (ds *Datastore) GetSchemaVersion(ctx context.Context, dbName string) (*semver.Version, error) {
 	if dbName == "" {
 		return nil, stacktrace.NewError("GetSchemaVersion was provided with an empty database name")
+	}
+	if ds.Version.Type == Yugabyte && dbName != ds.Pool.Config().ConnConfig.Database {
+		return nil, stacktrace.NewError("Yugabyte do not support switching databases with the same connection. Unable to retrieve schema version for database %s while connected to %s.", dbName, ds.Pool.Config().ConnConfig.Database)
 	}
 
 	var (
