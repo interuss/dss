@@ -141,6 +141,7 @@ restart-all: build-dss down-locally start-locally
 
 .PHONY: start-locally
 start-locally:
+	@test ${COMPOSE_PROFILES} || echo "\033[0;96mTo start Yugabyte datastore, set the docker compose profile to with-yugabyte. Example using env variable: export COMPOSE_PROFILES=with-yugabyte\033[0m"
 	build/dev/run_locally.sh up -d
 
 .PHONY: probe-locally
