@@ -3,8 +3,6 @@
 # This startup script is meant to be invoked from within a Docker container
 # started by docker-compose_dss.yaml, not on a local system.
 
-/startup/wait_for_bootstrapping.sh
-
 DEBUG_ON=${1:-0}
 
 if [ "$DEBUG_ON" = "1" ]; then
