@@ -164,19 +164,19 @@ func migrate(cmd *cobra.Command, _ []string) error {
 			return fmt.Errorf("failed to load SQL content from %s: %e", fullFilePath, err)
 		}
 
-		// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
-		sessionConfigurationSQL := ""
-		if isCockroach && ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
-			sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
-		}
-
 		migrationSQL := ""
 		if isCockroach {
+			// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
+			sessionConfigurationSQL := ""
+			if ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
+				sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
+			}
+
 			migrationSQL = sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
 		}
 		if isYugabyte {
 			// Migrations do not require database switch in opposite to CRDB.
-			migrationSQL = sessionConfigurationSQL + string(rawMigrationSQL)
+			migrationSQL = string(rawMigrationSQL)
 		}
 
 		// Execute migration step
