@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -73,13 +74,10 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Connect to database server
-	connectParameters := crdbflags.ConnectParameters()
-	connectParameters.ApplicationName = "db-manager"
-	connectParameters.DBName = "postgres" // Use an initial database that is known to always be present
-	ds, err := datastore.Dial(ctx, connectParameters)
+	sysDbName := "postgres" // Use an initial database that is known to always be present
+	ds, err := connectTo(ctx, sysDbName)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database with %+v: %w", connectParameters, err)
+		return fmt.Errorf("failed to connect to database %s: %w", sysDbName, err)
 	}
 	defer func() {
 		ds.Pool.Close()
@@ -116,15 +114,10 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		log.Printf("Database %s already exists; reading current state", dbName)
 	}
 
-	if isYugabyte {
-		// Reconnect to proper database (Yugabyte does not support cross-database references)
-		connectParameters = crdbflags.ConnectParameters()
-		connectParameters.ApplicationName = "db-manager"
-		connectParameters.DBName = dbName
-		ds, err = datastore.Dial(ctx, connectParameters)
-		if err != nil {
-			return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
-		}
+	// Reconnect to target database
+	ds, err = connectTo(ctx, dbName)
+	if err != nil {
+		return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
 	}
 
 	// Read current schema version of database
@@ -180,11 +173,9 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		migrationSQL := ""
 		if isCockroach {
 			migrationSQL = sessionConfigurationSQL + fmt.Sprintf("USE %s;\n", dbName) + string(rawMigrationSQL)
-		} else {
-			ds, err = datastore.Dial(ctx, connectParameters)
-			if err != nil {
-				return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
-			}
+		}
+		if isYugabyte {
+			// Migrations do not require database switch in opposite to CRDB.
 			migrationSQL = sessionConfigurationSQL + string(rawMigrationSQL)
 		}
 
@@ -218,6 +209,14 @@ func migrate(cmd *cobra.Command, _ []string) error {
 
 	log.Printf("Final %s version: %v", dbName, currentVersion)
 	return nil
+}
+
+func connectTo(ctx context.Context, dbName string) (*datastore.Datastore, error) {
+	// Connect to database server
+	connectParameters := crdbflags.ConnectParameters()
+	connectParameters.ApplicationName = "db-manager"
+	connectParameters.DBName = dbName
+	return datastore.Dial(ctx, connectParameters)
 }
 
 func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
