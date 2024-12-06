@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	// currentMajorSchemaVersion is the current major schema version.
-	currentMajorSchemaVersion = 4
+	// The current major schema version per datastore type.
+	currentCrdbMajorSchemaVersion     = 4
+	currentYugabyteMajorSchemaVersion = 1
 
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 	expiredDurationInMin = 30
@@ -91,8 +92,12 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if currentMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentMajorSchemaVersion)
+	if s.db.Version.Type == datastore.CockroachDB && currentCrdbMajorSchemaVersion != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentCrdbMajorSchemaVersion)
+	}
+
+	if s.db.Version.Type == datastore.Yugabyte && currentYugabyteMajorSchemaVersion != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentYugabyteMajorSchemaVersion)
 	}
 
 	return nil
