@@ -94,6 +94,8 @@ services:
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+    environment:
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES}
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"
