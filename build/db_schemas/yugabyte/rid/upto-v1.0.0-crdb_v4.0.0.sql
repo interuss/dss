@@ -1,4 +1,6 @@
--- This migration is equivalent to rid v4.0.0 schema for CockroachDB.
+-- This migration is equivalent to rid v4.0.0 schema for CockroachDB with the notable exception
+-- of the inverted index replaced by ybgin, which presents currently some limitations
+-- https://docs.yugabyte.com/preview/explore/ysql-language-features/indexes-constraints/gin/#limitations.
 
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY,
@@ -26,7 +28,7 @@ CREATE TABLE identification_service_areas (
     starts_at TIMESTAMPTZ,
     ends_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ NOT NULL,
-    cells BIGINT[],
+    cells BIGINT[] NOT NULL,
     writer TEXT,
     CHECK (starts_at IS NULL OR ends_at IS NULL OR starts_at < ends_at),
     CHECK (array_length(cells, 1) IS NOT NULL)

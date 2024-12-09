@@ -1,4 +1,6 @@
--- This migration is equivalent to scd v3.2.0 schema for CockroachDB.
+-- This migration is equivalent to scd v3.2.0 schema for CockroachDB with the notable exception
+-- of the inverted index replaced by ybgin, which presents currently some limitations
+-- https://docs.yugabyte.com/preview/explore/ysql-language-features/indexes-constraints/gin/#limitations.
 
 CREATE TABLE IF NOT EXISTS scd_subscriptions (
   id UUID PRIMARY KEY,
