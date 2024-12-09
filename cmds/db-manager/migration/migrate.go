@@ -115,13 +115,16 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Reconnect to target database
-	ds, err = connectTo(ctx, dbName)
+	ds2, err := connectTo(ctx, dbName)
 	if err != nil {
 		return fmt.Errorf("failed to reconnect to database %s: %w", dbName, err)
 	}
+	defer func() {
+		ds2.Pool.Close()
+	}()
 
 	// Read current schema version of database
-	currentVersion, err := ds.GetSchemaVersion(ctx, dbName)
+	currentVersion, err := ds2.GetSchemaVersion(ctx, dbName)
 	if err != nil {
 		return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 	}
@@ -168,7 +171,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		if isCockroach {
 			// Ensure SQL session has implicit transactions disabled for CRDB versions 22.2+
 			sessionConfigurationSQL := ""
-			if ds.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
+			if ds2.Version.SemVer.Compare(*semver.New("22.2.0")) >= 0 {
 				sessionConfigurationSQL = "SET enable_implicit_transaction_for_batch_statements = false;\n"
 			}
 
@@ -180,7 +183,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		}
 
 		// Execute migration step
-		if _, err := ds.Pool.Exec(ctx, migrationSQL); err != nil {
+		if _, err := ds2.Pool.Exec(ctx, migrationSQL); err != nil {
 			return fmt.Errorf("failed to execute %s migration step %s: %w", dbName, fullFilePath, err)
 		}
 
@@ -196,7 +199,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 				dbName = "defaultdb"
 			}
 		}
-		actualVersion, err := ds.GetSchemaVersion(ctx, dbName)
+		actualVersion, err := ds2.GetSchemaVersion(ctx, dbName)
 		if err != nil {
 			return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 		}
