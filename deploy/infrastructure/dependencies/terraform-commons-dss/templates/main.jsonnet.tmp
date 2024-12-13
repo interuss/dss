@@ -15,6 +15,7 @@ local metadata = metadataBase {
     image: '${VAR_CRDB_DOCKER_IMAGE_NAME}',
     hostnameSuffix: '${VAR_CRDB_HOSTNAME_SUFFIX}',
     locality: '${VAR_CRDB_LOCALITY}',
+    region: '${VAR_CRDB_REGION}',
     nodeIPs: [${VAR_CRDB_NODE_IPS}],
     shouldInit: ${VAR_SHOULD_INIT},
     JoinExisting: [${VAR_CRDB_EXTERNAL_NODES}],
