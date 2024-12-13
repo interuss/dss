@@ -169,10 +169,32 @@ func (s *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdm
 func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error {
 	var (
 		deleteOperationQuery = `
-			DELETE FROM
+			WITH deleted_oir AS (
+            DELETE FROM
 				scd_operations
 			WHERE
 				id = $1
+            RETURNING
+                id, subscription_id
+            ),
+            exists_and_is_implicit AS (
+                SELECT subscription_id
+                FROM deleted_oir
+                JOIN scd_subscriptions ON scd_subscriptions.id = deleted_oir.subscription_id
+                WHERE scd_subscriptions.implicit = true
+            ),
+            dependent_oirs AS ( -- NOTE: this sub-query will still return the OIR being deleted (!)
+                SELECT id
+                FROM scd_operations
+                WHERE subscription_id = (SELECT subscription_id FROM deleted_oir)
+            ),
+            deleted_subscription_id AS (
+                DELETE FROM scd_subscriptions
+                WHERE id = (SELECT subscription_id FROM exists_and_is_implicit)
+                AND (SELECT COUNT(*) FROM dependent_oirs) = 1 -- NOTE: see above, the OIR being removed is still counted here, hence a value of 1
+                RETURNING id
+            )
+            SELECT id FROM deleted_oir
 		`
 	)
 
@@ -180,13 +202,28 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	res, err := s.q.Exec(ctx, deleteOperationQuery, uid)
+	res, err := s.q.Query(ctx, deleteOperationQuery, uid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", deleteOperationQuery)
 	}
+	defer res.Close()
 
-	if res.RowsAffected() == 0 {
-		return stacktrace.NewError("Could not delete Operation that does not exist")
+	// Check that the deleted OIR ID was returned:
+	var opID dssmodels.ID
+	if res.Next() {
+		err = res.Scan(&opID)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error scanning deleted Operation ID")
+		}
+	} else if resErr := res.Err(); resErr != nil {
+		// Note: typically, res.Next() will be false and res.Err() non-nil when the query fails
+		// because it collided with another query and the whole transaction needs to be retried.
+		// This situation is extremely likely to occur when the DSS is under concurrent load.
+		return stacktrace.Propagate(resErr, "Error in query: %s", deleteOperationQuery)
+	}
+
+	if opID == "" || opID != id {
+		return stacktrace.NewError("Could not delete Operation that does not exist. Delete: %s, returned opID: %s", id, opID)
 	}
 
 	return nil
