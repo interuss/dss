@@ -8,16 +8,11 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	repos "github.com/interuss/dss/pkg/rid/repos"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 
-	"github.com/coreos/go-semver/semver"
 	"github.com/golang/geo/s2"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jonboulle/clockwork"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -25,32 +20,9 @@ const (
 	updateSubscriptionFields = "id, url, notification_index, cells, starts_at, ends_at, writer, updated_at"
 )
 
-func NewISASubscriptionRepo(ctx context.Context, db dssql.Queryable, dbVersion semver.Version, logger *zap.Logger, clock clockwork.Clock) repos.Subscription {
-	if dbVersion.Compare(v400) >= 0 {
-		return &subscriptionRepo{
-			Queryable: db,
-			logger:    logger,
-			clock:     clock,
-		}
-	}
-	return &subscriptionRepoV3{
-		Queryable: db,
-		logger:    logger,
-		clock:     clock,
-	}
-}
-
-// subscriptions is an implementation of the SubscriptionRepo for CRDB.
-type subscriptionRepo struct {
-	dssql.Queryable
-
-	clock  clockwork.Clock
-	logger *zap.Logger
-}
-
 // process a query that should return one or many subscriptions.
-func (c *subscriptionRepo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
-	rows, err := c.Query(ctx, query, args...)
+func (r *repo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
 	}
@@ -92,8 +64,8 @@ func (c *subscriptionRepo) process(ctx context.Context, query string, args ...in
 }
 
 // processOne processes a query that should return exactly a single subscription.
-func (c *subscriptionRepo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
-	subs, err := c.process(ctx, query, args...)
+func (r *repo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+	subs, err := r.process(ctx, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -109,7 +81,7 @@ func (c *subscriptionRepo) processOne(ctx context.Context, query string, args ..
 // MaxSubscriptionCountInCellsByOwner counts how many subscriptions the
 // owner has in each one of these cells, and returns the number of subscriptions
 // in the cell with the highest number of subscriptions.
-func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 	// TODO:steeling this query is expensive. The standard defines the max sub
 	// per "area", but area is loosely defined. Since we may not have to be so
 	// strict we could keep this count in memory, (or in some other storage).
@@ -130,7 +102,7 @@ func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Contex
       GROUP BY cell_id
     )`
 
-	row := c.QueryRow(ctx, query, owner, c.clock.Now(), dssql.CellUnionToCellIds(cells))
+	row := r.QueryRow(ctx, query, owner, r.clock.Now(), dssql.CellUnionToCellIds(cells))
 	var ret int
 	err := row.Scan(&ret)
 	return ret, stacktrace.Propagate(err, "Error scanning subscription count row")
@@ -138,7 +110,7 @@ func (c *subscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Contex
 
 // GetSubscription returns the subscription identified by "id".
 // Returns nil, nil if not found
-func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+func (r *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	// TODO(steeling) we should enforce startTime and endTime to not be null at the DB level.
 	var query = fmt.Sprintf(`
 		SELECT %s FROM subscriptions
@@ -147,12 +119,12 @@ func (c *subscriptionRepo) GetSubscription(ctx context.Context, id dssmodels.ID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, query, uid)
+	return r.processOne(ctx, query, uid)
 }
 
 // UpdateSubscription updates the Subscription.. not yet implemented.
 // Returns nil, nil if ID, version not found
-func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		updateQuery = fmt.Sprintf(`
 		UPDATE
@@ -173,7 +145,7 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, updateQuery,
+	return r.processOne(ctx, updateQuery,
 		id,
 		s.URL,
 		s.NotificationIndex,
@@ -186,7 +158,7 @@ func (c *subscriptionRepo) UpdateSubscription(ctx context.Context, s *ridmodels.
 
 // InsertSubscription inserts subscription into the store and returns
 // the resulting subscription including its ID.
-func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		insertQuery = fmt.Sprintf(`
 		INSERT INTO
@@ -208,7 +180,7 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, insertQuery,
+	return r.processOne(ctx, insertQuery,
 		id,
 		s.Owner,
 		s.URL,
@@ -222,7 +194,7 @@ func (c *subscriptionRepo) InsertSubscription(ctx context.Context, s *ridmodels.
 // DeleteSubscription deletes the subscription identified by ID.
 // It must be done in a txn and the version verified.
 // Returns nil, nil if ID, version not found
-func (c *subscriptionRepo) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 		DELETE FROM
@@ -236,11 +208,11 @@ func (c *subscriptionRepo) DeleteSubscription(ctx context.Context, s *ridmodels.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
 	}
-	return c.processOne(ctx, query, id, s.Version.ToTimestamp())
+	return r.processOne(ctx, query, id, s.Version.ToTimestamp())
 }
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
-func (c *subscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
 			SET notification_index = notification_index + 1
@@ -249,12 +221,12 @@ func (c *subscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, ce
 				AND ends_at >= $2
 			RETURNING %s`, subscriptionFields)
 
-	return c.process(
-		ctx, updateQuery, dssql.CellUnionToCellIds(cells), c.clock.Now())
+	return r.process(
+		ctx, updateQuery, dssql.CellUnionToCellIds(cells), r.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
-func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -272,11 +244,11 @@ func (c *subscriptionRepo) SearchSubscriptions(ctx context.Context, cells s2.Cel
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	return c.process(ctx, query, dssql.CellUnionToCellIds(cells), c.clock.Now(), dssmodels.MaxResultLimit)
+	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), r.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
-func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -296,13 +268,13 @@ func (c *subscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	return c.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, c.clock.Now(), dssmodels.MaxResultLimit)
+	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now(), dssmodels.MaxResultLimit)
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.
 // Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
 	writerQuery := "'" + writer + "'"
 	if len(writer) == 0 {
 		writerQuery = "'' OR writer = NULL"
@@ -320,5 +292,5 @@ func (c *subscriptionRepo) ListExpiredSubscriptions(ctx context.Context, writer 
 		(writer = %s)`, subscriptionFields, expiredDurationInMin, writerQuery)
 	)
 
-	return c.process(ctx, query)
+	return r.process(ctx, query)
 }
