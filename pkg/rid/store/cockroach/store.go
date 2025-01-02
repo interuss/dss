@@ -36,8 +36,6 @@ var (
 	// deadline is used
 	// TODO: use this in other function calls
 	DefaultTimeout = 10 * time.Second
-
-	v400 = *semver.New("4.0.0")
 )
 
 type repo struct {
