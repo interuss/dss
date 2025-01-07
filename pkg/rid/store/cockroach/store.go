@@ -100,10 +100,11 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
+	logger := logging.WithValuesFromContext(ctx, s.logger)
 	return &repo{
 		Queryable: s.db.Pool,
 		clock:     s.clock,
-		logger:    s.logger,
+		logger:    logger,
 	}, nil
 }
 
