@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	dssql "github.com/interuss/dss/pkg/sql"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
@@ -35,13 +36,12 @@ var (
 	// deadline is used
 	// TODO: use this in other function calls
 	DefaultTimeout = 10 * time.Second
-
-	v400 = *semver.New("4.0.0")
 )
 
 type repo struct {
-	repos.ISA
-	repos.Subscription
+	dssql.Queryable
+	clock  clockwork.Clock
+	logger *zap.Logger
 }
 
 // Store is an implementation of store.Store using Cockroach DB as its backend
@@ -101,14 +101,10 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
-	storeVersion, err := s.GetVersion(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error determining database RID schema version")
-	}
-
 	return &repo{
-		ISA:          NewISARepo(ctx, s.db.Pool, *storeVersion, logger),
-		Subscription: NewISASubscriptionRepo(ctx, s.db.Pool, *storeVersion, logger, s.clock),
+		Queryable: s.db.Pool,
+		clock:     s.clock,
+		logger:    logger,
 	}, nil
 }
 
@@ -125,16 +121,13 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 
-	storeVersion, err := s.GetVersion(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error determining database RID schema version")
-	}
 	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{
-			ISA:          NewISARepo(ctx, tx, *storeVersion, logger),
-			Subscription: NewISASubscriptionRepo(ctx, tx, *storeVersion, logger, s.clock),
+			Queryable: tx,
+			clock:     s.clock,
+			logger:    logger,
 		})
 	})
 }
