@@ -127,13 +127,38 @@ func (c *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.C
 func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*scdmodels.Constraint, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
-		UPSERT INTO
+		INSERT INTO
 		  scd_constraints
 		  (%s)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
+		ON CONFLICT (%s) DO UPDATE 
+		SET %s = $2,
+			%s = $3,
+			%s = $4,
+			%s = $5,
+			%s = $6,
+			%s = $7,
+			%s = $8,
+			%s = $9,
+			%s = transaction_timestamp()
+		WHERE scd_constraints.%s = $1
 		RETURNING
-			%s`, constraintFieldsWithoutPrefix, constraintFieldsWithPrefix)
+			%s`,
+			constraintFieldsWithoutPrefix,
+			constraintFieldsWithIndices[0],
+			constraintFieldsWithIndices[1],
+			constraintFieldsWithIndices[2],
+			constraintFieldsWithIndices[3],
+			constraintFieldsWithIndices[4],
+			constraintFieldsWithIndices[5],
+			constraintFieldsWithIndices[6],
+			constraintFieldsWithIndices[7],
+			constraintFieldsWithIndices[8],
+			constraintFieldsWithIndices[9],
+			constraintFieldsWithIndices[0],
+			constraintFieldsWithPrefix,
+		)
 	)
 
 	cids, err := dsssql.CellUnionToCellIdsWithValidation(s.Cells)
@@ -203,7 +228,8 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 				COALESCE(starts_at <= $3, true)
 			AND
 				COALESCE(ends_at >= $2, true)
-			LIMIT $4`, constraintFieldsWithoutPrefix)
+			LIMIT $4;
+			`, constraintFieldsWithoutPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever
