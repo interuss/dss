@@ -50,7 +50,7 @@ var (
 
 	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests         = flag.Bool("dump_requests", false, "Log HTTP request and response")
+	dumpRequests         = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
 	profServiceName      = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 	garbageCollectorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
 
