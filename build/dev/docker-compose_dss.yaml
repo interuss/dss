@@ -24,7 +24,8 @@ services:
 
   local-dss-ybdb:
     image: yugabytedb/yugabyte:2024.1.2.0-b77
-    command: bin/yugabyted start --background=false
+    # ysql_output_buffer_size needs to be increased to allow ysql to retry read restart errors. https://docs.yugabyte.com/preview/reference/configuration/yb-tserver/#ysql-output-buffer-size
+    command: bin/yugabyted start --background=false --tserver_flags="ysql_output_buffer_size=1048576"
     ports:
       - "7000:7000"
       - "9000:9000"
