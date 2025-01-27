@@ -126,7 +126,9 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 
-	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{
+		IsoLevel: pgx.Serializable,
+	}, func(tx pgx.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
 		return f(&repo{

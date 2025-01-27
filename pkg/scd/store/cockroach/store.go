@@ -89,7 +89,7 @@ func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 // Transact implements store.Transactor interface.
 func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
 			q:     tx,
 			clock: s.clock,
