@@ -24,7 +24,8 @@ services:
 
   local-dss-ybdb:
     image: yugabytedb/yugabyte:2024.1.2.0-b77
-    command: bin/yugabyted start --background=false
+    # ysql_output_buffer_size needs to be increased to allow ysql to retry read restart errors. https://docs.yugabyte.com/preview/reference/configuration/yb-tserver/#ysql-output-buffer-size
+    command: bin/yugabyted start --background=false --tserver_flags="ysql_output_buffer_size=1048576"
     ports:
       - "7000:7000"
       - "9000:9000"
@@ -35,6 +36,11 @@ services:
     networks:
       - dss_sandbox_default_network
     profiles: ["with-yugabyte"]
+    healthcheck:
+      test: ["CMD", "/home/yugabyte/postgres/bin/pg_isready", "-h", "local-dss-ybdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   local-dss-rid-bootstrapper-ybdb:
     build:
@@ -43,7 +49,7 @@ services:
     image: interuss-local/dss
     command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/rid --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
     depends_on:
-      local-dss-crdb:
+      local-dss-ybdb:
         condition: service_healthy
     networks:
       - dss_sandbox_default_network
@@ -56,7 +62,7 @@ services:
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/scd --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
     depends_on:
-      local-dss-crdb:
+      local-dss-ybdb:
         condition: service_healthy
     networks:
       - dss_sandbox_default_network
@@ -94,6 +100,8 @@ services:
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+    environment:
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES}
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"
@@ -103,6 +111,12 @@ services:
         condition: service_completed_successfully
       local-dss-scd-bootstrapper:
         condition: service_completed_successfully
+      local-dss-rid-bootstrapper-ybdb:
+        condition: service_completed_successfully
+        required: false
+      local-dss-scd-bootstrapper-ybdb:
+        condition: service_completed_successfully
+        required: false
     networks:
       - dss_sandbox_default_network
     healthcheck:
@@ -110,6 +124,7 @@ services:
       interval: 3m
       start_period: 30s
       start_interval: 5s
+    profiles: ["", "with-yugabyte"]
 
   local-dss-dummy-oauth:
     build:

@@ -42,11 +42,13 @@ func init() {
 func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
-		UPSERT INTO
+		INSERT INTO
 		scd_uss_availability
 		  (%s)
 		VALUES
 			($1, $2, transaction_timestamp())
+		ON CONFLICT (id) DO UPDATE
+			SET availability = $2, updated_at = transaction_timestamp()
 		RETURNING
 			%s`, availabilityFieldsWithoutPrefix, availabilityFieldsWithPrefix)
 	)
