@@ -132,29 +132,19 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		  (%s)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
-		ON CONFLICT (%s) DO UPDATE 
-		SET %s = $2,
-			%s = $3,
-			%s = $4,
-			%s = $5,
-			%s = $6,
-			%s = $7,
-			%s = $8,
-			%s = $9,
-			%s = transaction_timestamp()
-		RETURNING
-			%s`,
+		ON CONFLICT (id) DO UPDATE
+		SET owner = $2,
+			version = $3,
+			url = $4,
+			altitude_lower = $5,
+			altitude_upper = $6,
+			starts_at = $7,
+			ends_at = $8,
+			cells = $9,
+			updated_at = transaction_timestamp()
+		RETURNING %s
+		`,
 			constraintFieldsWithoutPrefix,
-			constraintFieldsWithIndices[0],
-			constraintFieldsWithIndices[1],
-			constraintFieldsWithIndices[2],
-			constraintFieldsWithIndices[3],
-			constraintFieldsWithIndices[4],
-			constraintFieldsWithIndices[5],
-			constraintFieldsWithIndices[6],
-			constraintFieldsWithIndices[7],
-			constraintFieldsWithIndices[8],
-			constraintFieldsWithIndices[9],
 			constraintFieldsWithPrefix,
 		)
 	)

@@ -201,37 +201,23 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 				(%s)
 			VALUES
 				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
-			ON CONFLICT (%s) DO UPDATE
-				SET %s = $2,
-					%s = $3,
-					%s = $4,
-					%s = $5,
-					%s = $6,
-					%s = $7,
-					%s = $8,
-					%s = $9,
-					%s = transaction_timestamp(),
-					%s = $10,
-					%s = $11,
-					%s = $12,
-					%s = $13
+			ON CONFLICT (id) DO UPDATE
+				SET owner = $2,
+					version = $3,
+					url = $4,
+					altitude_lower = $5,
+					altitude_upper = $6,
+					starts_at = $7,
+					ends_at = $8,
+					subscription_id = $9,
+					updated_at = transaction_timestamp(),
+					state = $10,
+					cells = $11,
+					uss_requested_ovn = $12,
+					past_ovns = $13
 				RETURNING
 					%s`,
 			operationFieldsWithoutPrefix,
-			operationFieldsWithIndices[0],
-			operationFieldsWithIndices[1],
-			operationFieldsWithIndices[2],
-			operationFieldsWithIndices[3],
-			operationFieldsWithIndices[4],
-			operationFieldsWithIndices[5],
-			operationFieldsWithIndices[6],
-			operationFieldsWithIndices[7],
-			operationFieldsWithIndices[8],
-			operationFieldsWithIndices[9],
-			operationFieldsWithIndices[10],
-			operationFieldsWithIndices[11],
-			operationFieldsWithIndices[12],
-			operationFieldsWithIndices[13],
 			operationFieldsWithPrefix,
 		)
 	)

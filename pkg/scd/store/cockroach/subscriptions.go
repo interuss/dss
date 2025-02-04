@@ -192,33 +192,21 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		  (%s)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, transaction_timestamp())
-		ON CONFLICT (%s) DO UPDATE
-			SET %s = $2,
-				%s = $3,
-				%s = $4,
-				%s = $5,
-				%s = $6,
-				%s = $7,
-				%s = $8,
-				%s = $9,
-				%s = $10,
-				%s = $11,
-				%s = transaction_timestamp()
+		ON CONFLICT (id) DO UPDATE
+			SET owner = $2,
+				version = $3,
+				url = $4,
+				notification_index = $5,
+				notify_for_operations = $6,
+				notify_for_constraints = $7,
+				implicit = $8,
+				starts_at = $9,
+				ends_at = $10,
+				cells = $11,
+				updated_at = transaction_timestamp()
 		RETURNING
 			%s`,
 			subscriptionFieldsWithoutPrefix,
-			subscriptionFieldsWithIndices[0],
-			subscriptionFieldsWithIndices[1],
-			subscriptionFieldsWithIndices[2],
-			subscriptionFieldsWithIndices[3],
-			subscriptionFieldsWithIndices[4],
-			subscriptionFieldsWithIndices[5],
-			subscriptionFieldsWithIndices[6],
-			subscriptionFieldsWithIndices[7],
-			subscriptionFieldsWithIndices[8],
-			subscriptionFieldsWithIndices[9],
-			subscriptionFieldsWithIndices[10],
-			subscriptionFieldsWithIndices[11],
 			subscriptionFieldsWithPrefix,
 		)
 	)
