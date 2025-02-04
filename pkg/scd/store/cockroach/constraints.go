@@ -142,7 +142,6 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 			%s = $8,
 			%s = $9,
 			%s = transaction_timestamp()
-		WHERE scd_constraints.%s = $1
 		RETURNING
 			%s`,
 			constraintFieldsWithoutPrefix,
@@ -156,7 +155,6 @@ func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 			constraintFieldsWithIndices[7],
 			constraintFieldsWithIndices[8],
 			constraintFieldsWithIndices[9],
-			constraintFieldsWithIndices[0],
 			constraintFieldsWithPrefix,
 		)
 	)
@@ -228,7 +226,7 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 				COALESCE(starts_at <= $3, true)
 			AND
 				COALESCE(ends_at >= $2, true)
-			LIMIT $4;
+			LIMIT $4
 			`, constraintFieldsWithoutPrefix)
 	)
 

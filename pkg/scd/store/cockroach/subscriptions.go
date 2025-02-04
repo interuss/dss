@@ -194,12 +194,12 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, transaction_timestamp())
 		ON CONFLICT (%s) DO UPDATE
 			SET %s = $2,
-				%s = $3::int,
+				%s = $3,
 				%s = $4,
-				%s = $5::int,
+				%s = $5,
 				%s = $6,
 				%s = $7,
-				%s = $8::bool,
+				%s = $8,
 				%s = $9,
 				%s = $10,
 				%s = $11,
