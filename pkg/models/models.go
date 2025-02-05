@@ -118,7 +118,7 @@ func VersionFromString(s string) (*Version, error) {
 		return nil, stacktrace.Propagate(err, "Error parsing version to integer")
 	}
 	if nanos > math.MaxInt64 {
-		return nil, stacktrace.NewError("Parsed value exceeds int64 range")
+		return nil, stacktrace.NewError("Parsed nanosecond timestamp value for version exceeds int64 range")
 	}
 	v.t = time.Unix(0, int64(nanos))
 	return v, nil
