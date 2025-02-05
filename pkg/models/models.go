@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgtype"
+	"math"
 )
 
 type (
@@ -115,6 +116,9 @@ func VersionFromString(s string) (*Version, error) {
 	nanos, err := strconv.ParseUint(string(s), versionBase, 64)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error parsing version to integer")
+	}
+	if nanos > math.MaxInt64 {
+		return nil, stacktrace.NewError("Parsed value exceeds int64 range")
 	}
 	v.t = time.Unix(0, int64(nanos))
 	return v, nil
