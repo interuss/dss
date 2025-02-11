@@ -127,13 +127,26 @@ func (c *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.C
 func (c *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*scdmodels.Constraint, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
-		UPSERT INTO
+		INSERT INTO
 		  scd_constraints
 		  (%s)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp())
-		RETURNING
-			%s`, constraintFieldsWithoutPrefix, constraintFieldsWithPrefix)
+		ON CONFLICT (id) DO UPDATE
+		SET owner = $2,
+			version = $3,
+			url = $4,
+			altitude_lower = $5,
+			altitude_upper = $6,
+			starts_at = $7,
+			ends_at = $8,
+			cells = $9,
+			updated_at = transaction_timestamp()
+		RETURNING %s
+		`,
+			constraintFieldsWithoutPrefix,
+			constraintFieldsWithPrefix,
+		)
 	)
 
 	cids, err := dsssql.CellUnionToCellIdsWithValidation(s.Cells)
@@ -203,7 +216,8 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 				COALESCE(starts_at <= $3, true)
 			AND
 				COALESCE(ends_at >= $2, true)
-			LIMIT $4`, constraintFieldsWithoutPrefix)
+			LIMIT $4
+			`, constraintFieldsWithoutPrefix)
 	)
 
 	// TODO: Lazily calculate & cache spatial covering so that it is only ever

@@ -196,13 +196,30 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
-			UPSERT INTO
+			INSERT INTO
 				scd_operations
 				(%s)
 			VALUES
 				($1, $2, $3, $4, $5, $6, $7, $8, $9, transaction_timestamp(), $10, $11, $12, $13)
-			RETURNING
-				%s`, operationFieldsWithoutPrefix, operationFieldsWithPrefix)
+			ON CONFLICT (id) DO UPDATE
+				SET owner = $2,
+					version = $3,
+					url = $4,
+					altitude_lower = $5,
+					altitude_upper = $6,
+					starts_at = $7,
+					ends_at = $8,
+					subscription_id = $9,
+					updated_at = transaction_timestamp(),
+					state = $10,
+					cells = $11,
+					uss_requested_ovn = $12,
+					past_ovns = $13
+				RETURNING
+					%s`,
+			operationFieldsWithoutPrefix,
+			operationFieldsWithPrefix,
+		)
 	)
 
 	cids := make([]int64, len(operation.Cells))

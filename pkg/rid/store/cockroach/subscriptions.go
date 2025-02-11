@@ -87,7 +87,7 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
 	// strict we could keep this count in memory, (or in some other storage).
 	var query = `
     SELECT
-      IFNULL(MAX(subscriptions_per_cell_id), 0)
+      COALESCE(MAX(subscriptions_per_cell_id), 0)
     FROM (
       SELECT
         COUNT(*) AS subscriptions_per_cell_id
@@ -96,11 +96,11 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
       	FROM subscriptions
       	WHERE owner = $1
       		AND ends_at >= $2
-      )
+      ) as q1
       WHERE
         cell_id = ANY($3)
       GROUP BY cell_id
-    )`
+    ) as q2`
 
 	row := r.QueryRow(ctx, query, owner, r.clock.Now(), dssql.CellUnionToCellIds(cells))
 	var ret int

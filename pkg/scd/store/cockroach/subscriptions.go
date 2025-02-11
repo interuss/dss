@@ -156,7 +156,7 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 			FROM
 				scd_subscriptions
 			WHERE
-				id = $1`, subscriptionFieldsWithPrefix)
+				id = $1::uuid`, subscriptionFieldsWithPrefix)
 	)
 	uid, err := id.PgUUID()
 	if err != nil {
@@ -185,15 +185,30 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 			FROM
 				scd_subscriptions
 			WHERE
-				id = $1
+				id = $1::uuid
 		)
-		UPSERT INTO
+		INSERT INTO
 		  scd_subscriptions
 		  (%s)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, transaction_timestamp())
+		ON CONFLICT (id) DO UPDATE
+			SET owner = $2,
+				version = $3,
+				url = $4,
+				notification_index = $5,
+				notify_for_operations = $6,
+				notify_for_constraints = $7,
+				implicit = $8,
+				starts_at = $9,
+				ends_at = $10,
+				cells = $11,
+				updated_at = transaction_timestamp()
 		RETURNING
-			%s`, subscriptionFieldsWithoutPrefix, subscriptionFieldsWithPrefix)
+			%s`,
+			subscriptionFieldsWithoutPrefix,
+			subscriptionFieldsWithPrefix,
+		)
 	)
 
 	cids := make([]int64, len(s.Cells))
