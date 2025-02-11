@@ -21,3 +21,10 @@ places:
 * /pkg/{rid|scd}/store/cockroach/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
 * /deploy/services/helm-charts/dss/templates/schema-manager.yaml
+
+## Yugabyte schema versions
+
+Versions 1.0.0 of the schemas reflect the latest versions of the crdb schemas. If 
+some adaptations are required during the development phase until the first release,
+changes should be done using version 1.0.1. This paragraph may be removed after the
+first release.
