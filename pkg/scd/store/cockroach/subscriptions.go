@@ -338,7 +338,7 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 			UPDATE scd_subscriptions
 			SET notification_index = notification_index + 1
 			WHERE id = ANY($1)
-			RETURNING notification_index`
+			RETURNING id, notification_index`
 
 	ids := make([]string, len(subscriptionIds))
 	for i, id := range subscriptionIds {
@@ -351,14 +351,15 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 	}
 	defer rows.Close()
 
-	var indices []int
+	indices := make(map[dssmodels.ID]int)
 	for rows.Next() {
+		var id string
 		var notificationIndex int
-		err := rows.Scan(&notificationIndex)
+		err := rows.Scan(&id, &notificationIndex)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning notification index row")
 		}
-		indices = append(indices, notificationIndex)
+		indices[dssmodels.ID(id)] = notificationIndex
 	}
 	if err := rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
@@ -370,7 +371,11 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 			len(subscriptionIds), len(indices))
 	}
 
-	return indices, nil
+	orderedIndices := make([]int, 0, len(indices))
+	for _, id := range subscriptionIds {
+		orderedIndices = append(orderedIndices, indices[id])
+	}
+	return orderedIndices, nil
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
