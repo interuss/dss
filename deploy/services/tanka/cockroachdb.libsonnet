@@ -94,7 +94,7 @@ local volumes = import 'volumes.libsonnet';
               'max-sql-memory': '25%',
             },
           },
-          terminationGracePeriodSeconds: 60,
+          terminationGracePeriodSeconds: 300,
         },
       },
       podManagementPolicy: 'Parallel',
