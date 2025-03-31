@@ -30,7 +30,7 @@ resource "aws_eks_node_group" "eks_node_group" {
   cluster_name           = aws_eks_cluster.kubernetes_cluster.name
   subnet_ids             = [data.aws_subnet.main_subnet.id] # Limit nodes to one subnet
   node_role_arn          = aws_iam_role.dss-cluster-node-group.arn
-  disk_size              = 10
+  disk_size              = var.kubernetes_version <= 1.28 ? 10 : 20
   node_group_name_prefix = aws_eks_cluster.kubernetes_cluster.name
   instance_types = [
     var.aws_instance_type

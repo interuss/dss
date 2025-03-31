@@ -15,6 +15,16 @@ resource "helm_release" "aws-load-balancer-controller" {
     value = var.cluster_name
   }
 
+  set {
+    name = "region"
+    value = var.aws_region
+  }
+
+  set {
+    name = "vpcId"
+    value = aws_eks_cluster.kubernetes_cluster.vpc_config[0].vpc_id
+  }
+
   depends_on = [
     aws_eks_cluster.kubernetes_cluster,
     aws_iam_role_policy_attachment.AWSLoadBalancerControllerPolicy,
