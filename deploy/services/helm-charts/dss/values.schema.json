@@ -5,6 +5,10 @@
       "description": "Cockroach DB related configuration",
       "type": "object",
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable CockroachDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+        },
         "image": {
           "type": "object",
           "properties": {
@@ -59,10 +63,7 @@
               },
               "additionalItems": true
             }
-          },
-          "required": [
-            "args"
-          ]
+          }
         },
         "storage": {
           "type": "object",
@@ -82,7 +83,21 @@
         "image",
         "fullnameOverride",
         "conf",
-        "statefulset"
+        "statefulset",
+        "enabled"
+      ]
+    },
+    "yugabyte": {
+      "description": "Yugabyte related configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable YugabyteDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+        }
+      },
+      "required": [
+        "enabled"
       ]
     },
     "loadBalancers": {
@@ -184,6 +199,7 @@
   },
   "required": [
     "cockroachdb",
+    "yugabyte",
     "loadBalancers",
     "dss",
     "global"
