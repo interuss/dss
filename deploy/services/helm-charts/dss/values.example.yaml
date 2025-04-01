@@ -2,6 +2,8 @@
 
 dss:
   image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
+  # When running local images in minikube, uncomment the following line
+  # imagePullPolicy: Never
   conf:
     pubKeys:
       - /test-certs/auth2.pem
@@ -11,6 +13,7 @@ dss:
     enableScd: true
 
 cockroachdb:
+  enabled: false
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
   image:
     tag: v24.1.3
@@ -23,7 +26,7 @@ cockroachdb:
 
   statefulset:
     replicas: 3 # Must match the number of .loadBalancers.cockroachdbNodes items.
-    args:
+    args:  # Remove this whole block for minikube
       - --locality-advertise-addr=zone=interuss-example-google-ew1@$(hostname -f)
       - --advertise-addr=${HOSTNAME##*-}.db.example.com
     updateStrategy:
@@ -33,6 +36,13 @@ cockroachdb:
   storage:
     persistentVolume:
       storageClass: standard
+
+yugabyte:
+  enabled: true
+  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+  Image:
+    tag: 2.25.1.0-b381
+  nameOverride: dss-yugabyte
 
 loadBalancers:
   cockroachdbNodes:
