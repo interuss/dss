@@ -302,6 +302,12 @@ a PR to that effect would be greatly appreciated.
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
         allowed.  However, any unique (among all other participating DSS
         instances) value is acceptable.
+    
+    1.  `VAR_CRDB_REGION`:Region of your DSS instance. Regions are a high-level abstraction
+        of a geographic region, and are meant to correspond directly to the region terminology
+        used by cloud providers. Each region is broken into multiple zones. Regions are used 
+        to achieve varying survival goals in the face of database failure. More info at 
+        https://www.cockroachlabs.com/docs/stable/multiregion-overview.
 
     1.  `VAR_CRDB_NODE_IPn`: IP address (**numeric**) of nth CRDB node (add more
         entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
