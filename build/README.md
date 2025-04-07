@@ -11,7 +11,7 @@ To run a local DSS instance for testing, evaluation, or development, see
 To create a local DSS instance with multi-node CRDB cluster, see [dev/mutli_node_local_dss.md](dev/mutli_node_local_dss.md).
 
 To create or join a pool consisting of multiple interoperable DSS instances, see
-[information on pooling](pooling.md).
+[information on pooling](../deploy/operations/pooling.md).
 
 ## Glossary
 
@@ -109,12 +109,14 @@ See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authent
 
 ## Deploying a DSS instance via Kubernetes
 
-This section discusses deploying a Kubernetes service, although you can deploy
+This section discusses deploying a Kubernetes service manually, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
 [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure. Consult the Kubernetes documentation for
 your chosen provider.
+
+To instead deploy infrastructure using terraform, see the [terraform infrastructure deployment page](../deploy/infrastructure/README.md).
 
 If you can augment this documentation with specifics for another cloud provider,
 a PR to that effect would be greatly appreciated.
@@ -451,7 +453,7 @@ a PR to that effect would be greatly appreciated.
 
 ## Pooling
 
-See [the pooling documentation](pooling.md).
+See [the pooling documentation](../deploy/operations/pooling.md).
 
 ## Tools
 
@@ -459,48 +461,7 @@ See [operations monitoring documentation](../deploy/operations/monitoring.md).
 
 ## Troubleshooting
 
-### Check if the CockroachDB service is exposed
-
-Unless specified otherwise in a deployment configuration, CockroachDB
-communicates on port 26257.  To check whether this port is open from Mac or
-Linux, e.g.: `nc -zvw3 0.db.dss.your-region.your-domain.com 26257`.  Or, search
-for a "port checker" web page/app.  Port 26257 will be open on a working
-CockroachDB node.
-
-A standard TLS diagnostic may also be run on this hostname:port combination and
-all results should be valid except Trust.  Certificates are signed by
-"Cockroach CA" which is not a generally-trusted CA, but this is ok.
-
-### Accessing a CockroachDB SQL terminal
-
-To interact with the CockroachDB database directly via SQL terminal:
-
-```
-kubectl \
-  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-  cockroachdb-0 -- \
-  ./cockroach sql --certs-dir=cockroach-certs/
-```
-
-### Using the CockroachDB web UI
-
-The CockroachDB web UI is not exposed publicly, but you can forward a port to
-your local machine using kubectl:
-
-#### Create a user account
-
-Pick a username and create an account:
-
-Access the [CockrachDB SQL terminal](#Accessing-a-CockroachDB-SQL-terminal) then create user with sql command
-
-    root@:26257/rid> CREATE USER foo WITH PASSWORD 'foobar';
-
-#### Access the web UI
-
-    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
-
-Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
-warning.
+See [Troubleshooting in `deploy/operations`](../deploy/operations/troubleshooting.md).
 
 ## Upgrading Database Schemas
 

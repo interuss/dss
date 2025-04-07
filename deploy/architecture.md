@@ -2,7 +2,7 @@
 
 ## Introduction
 
-See [introduction](../build/pooling.md#introduction)
+See [introduction](operations/pooling.md#introduction)
 
 ## Architecture
 
@@ -19,17 +19,17 @@ Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
 
 ### Terminology notes
 
-See [teminology notes](../build/pooling.md#terminology-notes).
+See [teminology notes](operations/pooling.md#terminology-notes).
 
 ## Pooling
 
 ### Objective
 
-See [Pooling Objective](../build/pooling.md#objective) and subsections.
+See [Pooling Objective](operations/pooling.md#objective) and subsections.
 
 ### Additional requirements
 
-See [Additional requirements](../build/pooling.md#additional-requirements).
+See [Additional requirements](operations/pooling.md#additional-requirements).
 
 ### Survivability
 
