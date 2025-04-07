@@ -289,7 +289,7 @@ a PR to that effect would be greatly appreciated.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
-    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until 
+    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
         DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
         From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
 
@@ -344,11 +344,11 @@ a PR to that effect would be greatly appreciated.
         without `build.sh`.
 
         -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
-            
+
     1.  `VAR_DOCKER_IMAGE_PULL_SECRET`: Secret name of the credentials to access
-        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require 
-        authentication to be pulled, then do not populate this instance and do not uncomment 
-        the line containing it. You can use the following command to store the credentials 
+        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require
+        authentication to be pulled, then do not populate this instance and do not uncomment
+        the line containing it. You can use the following command to store the credentials
         as kubernetes secret:
 
         > kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
@@ -389,10 +389,10 @@ a PR to that effect would be greatly appreciated.
 
     -   If you are only turning up a single DSS instance for development, you
         may optionally change `single_cluster` to `true`.
-    
-    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts) 
+
+    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts)
         can be applied to the DSS Ingress. This can be used to secure the TLS connection.
-        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and 
+        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and
         replace VAR_SSL_POLICY variable with its name. `RESTRICTED` profile is recommended.
         Leave it empty if not applicable.
 
@@ -502,48 +502,7 @@ You will need to change the values in the `prometheus` fields in your metadata t
 
 ## Troubleshooting
 
-### Check if the CockroachDB service is exposed
-
-Unless specified otherwise in a deployment configuration, CockroachDB
-communicates on port 26257.  To check whether this port is open from Mac or
-Linux, e.g.: `nc -zvw3 0.db.dss.your-region.your-domain.com 26257`.  Or, search
-for a "port checker" web page/app.  Port 26257 will be open on a working
-CockroachDB node.
-
-A standard TLS diagnostic may also be run on this hostname:port combination and
-all results should be valid except Trust.  Certificates are signed by
-"Cockroach CA" which is not a generally-trusted CA, but this is ok.
-
-### Accessing a CockroachDB SQL terminal
-
-To interact with the CockroachDB database directly via SQL terminal:
-
-```
-kubectl \
-  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-  cockroachdb-0 -- \
-  ./cockroach sql --certs-dir=cockroach-certs/
-```
-
-### Using the CockroachDB web UI
-
-The CockroachDB web UI is not exposed publicly, but you can forward a port to
-your local machine using kubectl:
-
-#### Create a user account
-
-Pick a username and create an account:
-
-Access the [CockrachDB SQL terminal](#Accessing-a-CockroachDB-SQL-terminal) then create user with sql command
-
-    root@:26257/rid> CREATE USER foo WITH PASSWORD 'foobar';
-
-#### Access the web UI
-
-    kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
-
-Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
-warning.
+See [Troubleshooting in `deploy/operations`](../deploy/operations/troubleshooting.md).
 
 ## Upgrading Database Schemas
 
