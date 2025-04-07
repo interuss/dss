@@ -1,14 +1,15 @@
 # DSS Deployment
 
-> This folder contains the increments toward the new deployment approach as described in #874.
-
 ## Introduction
 
-An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](../README.md#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](../README.md#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).  This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
 
-## Deployment options
+## Deployment layers
 
-This repository provides three layers of abstraction to deploy a DSS instance via Kubernetes.
+This repository provides three layers of abstraction to deploy and operate a DSS instance via Kubernetes.
+
+![Deployment layers](../assets/deployment_layers.png)
+
 As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
 However, you can do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.
 Review [InterUSS pooling requirements](./architecture.md#objective) and consult the Kubernetes documentation for your chosen provider.

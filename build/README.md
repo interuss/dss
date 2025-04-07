@@ -109,12 +109,14 @@ See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authent
 
 ## Deploying a DSS instance via Kubernetes
 
-This section discusses deploying a Kubernetes service, although you can deploy
+This section discusses deploying a Kubernetes service manually, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
 [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure. Consult the Kubernetes documentation for
 your chosen provider.
+
+To instead deploy infrastructure using terraform, see the [terraform infrastructure deployment page](../deploy/infrastructure/README.md).
 
 If you can augment this documentation with specifics for another cloud provider,
 a PR to that effect would be greatly appreciated.
@@ -471,10 +473,6 @@ While that command is running, open a browser and navigate to
 [http://localhost:3000](http://localhost:3000).  The default username is `admin`
 with a default password of `admin`.  Click the magnifying glass on the left side
 to select a dashboard to view.
-
-### Istio
-
-Istio has been removed from the standard deployment. See this [discussion](https://lists.interussplatform.org/g/dss/message/47) for more details.
 
 ### Prometheus Federation (Multi Cluster Monitoring)
 
