@@ -109,12 +109,14 @@ See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authent
 
 ## Deploying a DSS instance via Kubernetes
 
-This section discusses deploying a Kubernetes service, although you can deploy
+This section discusses deploying a Kubernetes service manually, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
 [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure. Consult the Kubernetes documentation for
 your chosen provider.
+
+To instead deploy infrastructure using terraform, see the [terraform infrastructure deployment page](../deploy/infrastructure/README.md).
 
 If you can augment this documentation with specifics for another cloud provider,
 a PR to that effect would be greatly appreciated.
@@ -289,7 +291,7 @@ a PR to that effect would be greatly appreciated.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
-    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until 
+    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
         DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
         From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
 
@@ -344,11 +346,11 @@ a PR to that effect would be greatly appreciated.
         without `build.sh`.
 
         -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
-            
+
     1.  `VAR_DOCKER_IMAGE_PULL_SECRET`: Secret name of the credentials to access
-        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require 
-        authentication to be pulled, then do not populate this instance and do not uncomment 
-        the line containing it. You can use the following command to store the credentials 
+        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require
+        authentication to be pulled, then do not populate this instance and do not uncomment
+        the line containing it. You can use the following command to store the credentials
         as kubernetes secret:
 
         > kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
@@ -389,10 +391,10 @@ a PR to that effect would be greatly appreciated.
 
     -   If you are only turning up a single DSS instance for development, you
         may optionally change `single_cluster` to `true`.
-    
-    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts) 
+
+    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts)
         can be applied to the DSS Ingress. This can be used to secure the TLS connection.
-        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and 
+        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and
         replace VAR_SSL_POLICY variable with its name. `RESTRICTED` profile is recommended.
         Leave it empty if not applicable.
 
@@ -471,10 +473,6 @@ While that command is running, open a browser and navigate to
 [http://localhost:3000](http://localhost:3000).  The default username is `admin`
 with a default password of `admin`.  Click the magnifying glass on the left side
 to select a dashboard to view.
-
-### Istio
-
-Istio has been removed from the standard deployment. See this [discussion](https://lists.interussplatform.org/g/dss/message/47) for more details.
 
 ### Prometheus Federation (Multi Cluster Monitoring)
 

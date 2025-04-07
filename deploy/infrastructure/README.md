@@ -1,6 +1,7 @@
 # Infrastructure
 
-As a phase in [DSS deployment](..), this folder contains the terraform modules required to prepare the infrastructure to host a DSS deployment.
+As a phase in [DSS deployment](..), this folder contains the terraform modules required to prepare the infrastructure to host a DSS deployment.  To deploy infrastructure manually (rather than terrform, as described here), see ["Deploying a DSS instance via Kubernetes"](../../build/README.md#deploying-a-dss-instance-via-kubernetes).
+
 See [Services](../README.md#services) to deploy the DSS once the infrastructure is ready.
 
 ## Modules
@@ -10,9 +11,9 @@ The [modules](modules) directory contains the terraform public modules required 
 - [terraform-google-dss](./modules/terraform-google-dss/README.md): Google Cloud Engine deployment
 
 ## Dependencies
-The [dependencies](dependencies) directory contains submodules used by the public modules described above. They are not expected to be 
+The [dependencies](dependencies) directory contains submodules used by the public modules described above. They are not expected to be
 used directly by users. Those submodules are the combination of the cloud specific dependencies `terraform-*-kubernetes`
-and `terraform-common-dss`. `terraform-common-dss` module aggregates and outputs the infrastructure configuration 
+and `terraform-common-dss`. `terraform-common-dss` module aggregates and outputs the infrastructure configuration
 which can be used as input to the `Services` deployment as shown in the diagram below.
 
 ![Infrastructure Modules](../../assets/generated/deploy_infrastructure_modules.png)
