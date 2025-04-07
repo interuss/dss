@@ -27,7 +27,7 @@ Terraform modules are provided for:
 
 1. [Operations](#operations) provides instructions to operate a deployed DSS instance.
    - [Pooling procedure](./operations/README.md#pooling-procedure)
-   - [Troubleshooting](./operations/README.md#troubleshooting)
+   - [Troubleshooting](./operations/troubleshooting.md)
 
 Depending on your level of expertise and your internal organizational practices, you should be able to use each layer independently or complementary.
 
