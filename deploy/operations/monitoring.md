@@ -6,6 +6,8 @@ Some of the tools from [the manual deployment documentation](../../build/README.
 
 ## Grafana / Prometheus
 
+Note: this monitoring stack is only currently brought up when deploying [services](../README.md#deployment-layers) with [tanka](../services/tanka/README.md).
+
 By default, an instance of Grafana and Prometheus are deployed along with the
 core DSS services; this combination allows you to view (Grafana) CRDB metrics
 (collected by Prometheus).  To view Grafana, first ensure that the appropriate
@@ -23,7 +25,7 @@ to select a dashboard to view.
 
 ## Prometheus Federation (Multi Cluster Monitoring)
 
-The DSS uses [Prometheus](https://prometheus.io/docs/introduction/overview/) to
+The DSS can use [Prometheus](https://prometheus.io/docs/introduction/overview/) to
 gather metrics from the binaries deployed with this project, by scraping
 formatted metrics from an application's endpoint.
 [Prometheus Federation](https://prometheus.io/docs/prometheus/latest/federation/)
