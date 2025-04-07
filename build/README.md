@@ -11,7 +11,7 @@ To run a local DSS instance for testing, evaluation, or development, see
 To create a local DSS instance with multi-node CRDB cluster, see [dev/mutli_node_local_dss.md](dev/mutli_node_local_dss.md).
 
 To create or join a pool consisting of multiple interoperable DSS instances, see
-[information on pooling](pooling.md).
+[information on pooling](../deploy/operations/pooling.md).
 
 ## Glossary
 
@@ -289,7 +289,7 @@ a PR to that effect would be greatly appreciated.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
-    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until 
+    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
         DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
         From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
 
@@ -344,11 +344,11 @@ a PR to that effect would be greatly appreciated.
         without `build.sh`.
 
         -   Note that `VAR_DOCKER_IMAGE_NAME` is used in two places.
-            
+
     1.  `VAR_DOCKER_IMAGE_PULL_SECRET`: Secret name of the credentials to access
-        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require 
-        authentication to be pulled, then do not populate this instance and do not uncomment 
-        the line containing it. You can use the following command to store the credentials 
+        the image registry. If the image specified in VAR_DOCKER_IMAGE_NAME does not require
+        authentication to be pulled, then do not populate this instance and do not uncomment
+        the line containing it. You can use the following command to store the credentials
         as kubernetes secret:
 
         > kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
@@ -389,10 +389,10 @@ a PR to that effect would be greatly appreciated.
 
     -   If you are only turning up a single DSS instance for development, you
         may optionally change `single_cluster` to `true`.
-    
-    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts) 
+
+    1.  `VAR_SSL_POLICY`: When deploying on Google Cloud, a [ssl policy](https://cloud.google.com/load-balancing/docs/ssl-policies-concepts)
         can be applied to the DSS Ingress. This can be used to secure the TLS connection.
-        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and 
+        Follow the [instructions](https://cloud.google.com/load-balancing/docs/use-ssl-policies) to create the Global SSL Policy and
         replace VAR_SSL_POLICY variable with its name. `RESTRICTED` profile is recommended.
         Leave it empty if not applicable.
 
@@ -451,7 +451,7 @@ a PR to that effect would be greatly appreciated.
 
 ## Pooling
 
-See [the pooling documentation](pooling.md).
+See [the pooling documentation](../deploy/operations/pooling.md).
 
 ## Tools
 
