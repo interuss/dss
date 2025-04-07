@@ -26,4 +26,4 @@ See [Leaving a pool](pooling.md#leaving-a-pool)
 
 ## Troubleshooting
 
-See [Troubleshooting](../../build/README.md#troubleshooting)
+See [Troubleshooting](troubleshooting.md)
