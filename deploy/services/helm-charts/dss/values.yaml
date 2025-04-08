@@ -1,5 +1,6 @@
 # Default configuration
 cockroachdb:
+  enabled: true
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
   image:
     repository: cockroachdb/cockroach
@@ -12,3 +13,10 @@ cockroachdb:
         enabled: false
   ingress:
     enabled: false
+
+yugabyte:
+  enabled: false
+  Image:
+    repository: yugabytedb/yugabyte
+
+  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
