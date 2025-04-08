@@ -137,13 +137,13 @@ repeated any number of times to add additional DSS instances, though 7 is the
 maximum recommended number of DSS instances for performance reasons.  The
 following diagram illustrates the pooling process for the first two instances:
 
-![DSS pooling for first two participants](../assets/generated/create_pool_2.png)
+![DSS pooling for first two participants](../../assets/generated/create_pool_2.png)
 
 The nth instance joins in almost the same way as the second instance; the
 diagram below illustrates action dependencies between the existing and joining
 DSS instances to allow the new instance to join the existing pool:
 
-![DSS pooling for nth participants](../assets/generated/create_pool_n.png)
+![DSS pooling for nth participants](../../assets/generated/create_pool_n.png)
 
 ### Establishing a pool with first instance
 The USS owning the first DSS instance should follow
