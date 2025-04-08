@@ -24,6 +24,10 @@ See [Joining an existing pool with new instance](pooling.md#joining-an-existing-
 
 See [Leaving a pool](pooling.md#leaving-a-pool)
 
+## Monitoring
+
+See [Monitoring](monitoring.md)
+
 ## Troubleshooting
 
 See [Troubleshooting](troubleshooting.md)
