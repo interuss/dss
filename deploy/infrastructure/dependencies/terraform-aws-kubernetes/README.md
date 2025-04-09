@@ -28,8 +28,8 @@ region. The following table summarizes current responsibilities for resource cre
 
 ### AWS Load Balancers and Kubernetes Services
 
-Load balancers are provisioned by the Kubernetes controller aws-load-balancer-controller v2.4
-with [Option B for IAM configuration](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/deploy/installation/#option-b-attach-iam-policies-to-nodes).
+Load balancers are provisioned by the Kubernetes controller aws-load-balancer-controller v2.12
+with [Option A for IAM configuration](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.12/deploy/installation/#option-a-recommended-iam-roles-for-service-accounts-irsa).
 
 Network Load Balancers map elastic IPs to Kubernetes Services (Load Balancer). Application Load Balancers (Ingress) do
 not support this feature at the moment, making impossible to anticipate DNS records inside the cluster.
