@@ -16,16 +16,16 @@ Review [InterUSS pooling requirements](./architecture.md#objective) and consult 
 
 The three layers are the following:
 
-1. [Infrastructure](#infrastructure) provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the [Pooling requirements](./architecture.md#objective).
+1. [Infrastructure](./infrastructure) provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the [Pooling requirements](./architecture.md#objective).
 Terraform modules are provided for:
    - [Amazon Web Services (EKS)](infrastructure/modules/terraform-aws-dss)
    - [Google (GKE)](infrastructure/modules/terraform-google-dss)
 
-1. [Services](#services) provides the tooling to deploy a DSS instance to a Kubernetes cluster.
+1. Services provides the tooling to deploy a DSS instance to a Kubernetes cluster.
    - [Helm Charts](services/helm-charts/dss)
    - [Tanka](services/tanka)
 
-1. [Operations](#operations) provides instructions to operate a deployed DSS instance.
+1. [Operations](./operations) provides instructions to operate a deployed DSS instance.
    - [Pooling procedure](./operations/README.md#pooling-procedure)
    - [Troubleshooting](./operations/troubleshooting.md)
 
