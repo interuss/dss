@@ -16,17 +16,17 @@ resource "helm_release" "aws-load-balancer-controller" {
   }
 
   set {
-    name = "region"
+    name  = "region"
     value = var.aws_region
   }
 
   set {
-    name = "vpcId"
+    name  = "vpcId"
     value = aws_subnet.dss[0].vpc_id
   }
 
   set {
-    name = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.AWSLoadBalancerControllerRole.arn
 
   }
