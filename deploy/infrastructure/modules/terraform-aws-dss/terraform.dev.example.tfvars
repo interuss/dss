@@ -13,7 +13,7 @@ crdb_hostname_suffix = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                 = "dss-dev-ew1"
-kubernetes_version           = 1.28
+kubernetes_version           = 1.32
 node_count                   = 3
 aws_instance_type            = "t3.medium"
 aws_kubernetes_storage_class = "gp2"
