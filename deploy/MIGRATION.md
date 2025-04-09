@@ -99,6 +99,16 @@ CockroachDB requires to upgrade one minor version at a time, therefore the follo
 
 Migrations of GKE clusters are managed using terraform.
 
+#### 1.28 to 1.32
+
+1. Change your `terraform.tfvars` to use `1.29` by adding or updating the `kubernetes_version` variable:
+   ```terraform
+   kubernetes_version = 1.29
+   ```
+1. Run `terraform apply`. This operation may take more than 30min.
+1. Monitor the upgrade of the nodes in the Google Cloud console.
+1. Repeat 1, 2 and 3 for versions `1.30`, `1.31` and `1.32`
+
 #### 1.27 to 1.28
 
 1. Change your `terraform.tfvars` to use `1.28` by adding or updating the `kubernetes_version` variable:
@@ -142,6 +152,18 @@ use the web console of AWS Elastic Kubernetes Service (EKS) to upgrade the clust
 Before proceeding, always check on the cluster page the *Upgrade Insights* tab which provides a report of the
 availability of Kubernetes resources in each version. The following sections omit this check if no resource is
 expected to be reported in the context of a standard deployment performed with the tools in this repository.
+
+#### 1.28 to 1.32
+
+1. Upgrade aws-load-balancer-controller helm chart on your cluster using `terraform apply`. Changes introduced by [PR #1167](https://github.com/interuss/dss/pull/1167).
+You can verify if the operation has succeeded by running `helm list -n kube-system`. The APP VERSION shall be `2.12`.
+1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
+1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
+1. Repeat steps 2 and 3 up to version 1.32.
+1. Change your `terraform.tfvars` to use `1.32` by adding or updating the `kubernetes_version` variable:
+   ```terraform
+   kubernetes_version = 1.32
+   ```
 
 #### 1.27 to 1.28
 
