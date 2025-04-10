@@ -1,10 +1,10 @@
 variable "kubernetes_version" {
   type        = string
   description = <<-EOT
-    Desired version of the Kubernetes cluster control plane and nodes.
+  Desired version of the Kubernetes cluster control plane and nodes.
 
-    Supported versions:
-      - 1.24
+  Supported versions:
+    - 1.24
   EOT
 
   validation {
