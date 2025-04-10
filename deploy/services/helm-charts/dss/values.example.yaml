@@ -2,6 +2,8 @@
 
 dss:
   image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
+  # When running local images in minikube, uncomment the following line
+  # imagePullPolicy: Never
   conf:
     pubKeys:
       - /test-certs/auth2.pem
@@ -23,7 +25,7 @@ cockroachdb:
 
   statefulset:
     replicas: 3 # Must match the number of .loadBalancers.cockroachdbNodes items.
-    args:
+    args:  # Remove this whole block for minikube
       - --locality-advertise-addr=zone=interuss-example-google-ew1@$(hostname -f)
       - --advertise-addr=${HOSTNAME##*-}.db.example.com
     updateStrategy:
