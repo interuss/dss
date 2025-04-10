@@ -1,9 +1,9 @@
 variable "kubernetes_namespace" {
   type        = string
   description = <<-EOT
-    Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
+  Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
 
-    Example: `default`
+  Example: `default`
   EOT
 
   default = "default"

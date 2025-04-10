@@ -1,10 +1,10 @@
 variable "node_count" {
   type        = number
   description = <<-EOT
-    Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
-    Currently, only single node or three nodes deployments are supported.
+  Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
+  Currently, only single node or three nodes deployments are supported.
 
-    Example: `3`
+  Example: `3`
   EOT
 
   validation {
