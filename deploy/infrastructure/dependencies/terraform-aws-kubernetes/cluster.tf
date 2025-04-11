@@ -17,7 +17,6 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
     aws_iam_role_policy_attachment.dss-cluster-service,
     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.AWSLoadBalancerControllerPolicy,
     aws_internet_gateway.dss,
     aws_eip.gateway,
     aws_eip.ip_crdb
