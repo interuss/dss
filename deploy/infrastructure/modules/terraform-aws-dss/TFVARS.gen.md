@@ -84,8 +84,7 @@ Currently, only single node or three nodes deployments are supported.</p>
                 <td><code>string</code></td>
                 <td></td>
                 <td><p>Desired version of the Kubernetes cluster control plane and nodes.</p>
-<p>Supported versions:
-- 1.24</p>
+<p>Supported versions: 1.24 to 1.32</p>
 </td>
             </tr><tr>
                 <td>aws_kubernetes_storage_class</td>
