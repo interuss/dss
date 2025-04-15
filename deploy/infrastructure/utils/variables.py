@@ -8,6 +8,7 @@ from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
 from typing import Dict, List, Tuple
 import hcl2
+import marko
 import argparse
 import sys
 
@@ -198,21 +199,51 @@ def get_tfvars_md_content(
 ) -> str:
     content = f"<!-- {GENERATED_COMMENT} -->\n\n"
     content += "# Terraform variables\n\n"
-    content += (
-        "The following sections describe the variables of this terraform module.\n\n"
-    )
 
     content += f"## {project_name}\n\n"
 
+    content += (
+        "The following table describes the variables of this terraform module.\n\n"
+    )
+
+    content += """
+    <table>
+        <thead>
+            <th>Variable name</th>
+            <th>Type</th>
+            <th>Default value</th>
+            <th>Description</th>
+        </thead>
+        <tbody>
+    """.strip()
+
+    def simplify_type(value_type):
+        return (
+            value_type.replace("({", "({<br/>")
+            .replace("})", "})<br/>")
+            .replace(",", ",<br/>")
+        )
+
     for v in variables:
         description, value_type, default_value = parse_definition(v, definitions[v])
-        content += f"### {v}\n\n"
-        content += f"*Type: `{value_type}`*\n\n"
-        content += (
-            f"**Default: {default_value}**\n\n" if default_value is not None else ""
+        formatted_value_type = f"<code>{simplify_type(value_type)}</code>"
+        formatted_default_value = (
+            f"<code>{default_value}</code>" if default_value is not None else ""
         )
-        tabbed_description = "\n".join([d.strip() for d in description.split("\n")])
-        content += f"{tabbed_description}\n\n\n"
+        formatted_description = marko.convert(description)
+        content += f"""
+            <tr>
+                <td>{v}</td>
+                <td>{formatted_value_type}</td>
+                <td>{formatted_default_value}</td>
+                <td>{formatted_description}</td>
+            </tr>
+        """.strip()
+
+    content += """
+        </tbody>
+    </table>
+    """.strip()
 
     if has_internal_vars:
         content += f"## Internal variables\n\n"
