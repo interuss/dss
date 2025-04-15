@@ -61,6 +61,7 @@ Leave empty to disable record creation.</p>
                 <td></td>
                 <td><p>The domain name suffix shared by all of your CockroachDB nodes.
 For instance, if your CRDB nodes were addressable at 0.db.example.com,
+<<<<<<< HEAD
 1.db.example.com and 2.db.example.com, then the value would be db.example.com.</p>
 <p>Example: db.example.com</p>
 </td>
@@ -91,6 +92,55 @@ Currently, only single node or three nodes deployments are supported.</p>
                 <td><code>string</code></td>
                 <td></td>
                 <td><p>AWS Elastic Kubernetes Service Storage Class to use for CockroachDB and Prometheus persistent volumes.
+=======
+1.db.example.com and 2.db.example.com, then the value would be db.example.com.
+
+Example: db.example.com
+
+
+### cluster_name
+
+*Type: `string`*
+
+Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+Example: `dss-che-1`
+
+
+### node_count
+
+*Type: `number`*
+
+Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
+Currently, only single node or three nodes deployments are supported.
+
+Example: `3`
+
+
+### kubernetes_version
+
+*Type: `string`*
+
+Desired version of the Kubernetes cluster control plane and nodes.
+
+Supported versions:
+- 1.24
+- 1.25
+- 1.26
+- 1.27
+- 1.28
+- 1.29
+- 1.30
+- 1.31
+- 1.32
+
+
+### aws_kubernetes_storage_class
+
+*Type: `string`*
+
+AWS Elastic Kubernetes Service Storage Class to use for CockroachDB and Prometheus persistent volumes.
+>>>>>>> 96cc6475 (Update templates and modules)
 See https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html for more details and
 available options.</p>
 <p>Example: <code>gp2</code></p>
