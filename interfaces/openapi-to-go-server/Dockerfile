@@ -1,6 +1,6 @@
 FROM python:3.7-alpine
 
-COPY --from=golang:1.14-alpine /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.22-alpine /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 ADD ./requirements.txt /app/requirements.txt

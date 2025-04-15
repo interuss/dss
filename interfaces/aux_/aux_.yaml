@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: DSS Auxiliary API
-  version: 1.0.0
+  version: 1.1.0
 
 components:
   schemas:
@@ -19,6 +19,59 @@ components:
         message:
           description: Human-readable message indicating what error occurred and/or why.
           type: string
+
+    DSSInstancesResponse:
+      type: object
+      properties:
+        dss_instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/DSSInstance'
+          default: []
+    DSSInstance:
+      type: object
+      properties:
+        instance_id:
+          description: Identity of this DSS instance participating in the pool (locality).
+          type: string
+        most_recent_heartbeat:
+          description: Most recent heartbeat registered for this DSS instance.
+          anyOf:
+          - $ref: '#/components/schemas/Heartbeat'
+      required:
+      - instance_id
+    Heartbeat:
+      type: object
+      properties:
+        timestamp:
+          description: Time at which heartbeat was registered.
+          type: string
+          format: date-time
+          example: '1985-04-12T23:20:50.52Z'
+        reporter:
+          description: Identity (via access token `sub` claim) of client reporting the heartbeat, or omitted if no client reported the heartbeat.
+          type: string
+          example: 'uss1'
+          default: ''
+        source:
+          description: Source/trigger of this heartbeat.
+          type: string
+          example: Startup
+        index:
+          description: Index of this heartbeat within the set of all heartbeats for this pool participant.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 1
+          default: 0
+        unique_value:
+          description: If specified, a sufficiently unique value to verify synchronization between DSS instances with additional certainty.  A UUIDv4 is recommended.
+          type: string
+          example: 9d531807-f3fa-435a-ad54-4bca01a5df43
+          default: ''
+      required:
+      - timestamp
+      - source
 
 paths:
   /aux/v1/version:
@@ -67,10 +120,43 @@ paths:
             - dss.read.identification_service_areas
         - Auth:
             - dss.write.identification_service_areas
+
+  /aux/v1/pool/dss_instances:
+    get:
+      summary: Queries the current information for DSS instances participating in the pool.
+      operationId: getDSSInstances
+      tags: [ dss ]
+      security:
+      - Auth:
+        - interuss.pool_status.read
+      responses:
+        '200':
+          description: The known DSS instances participating in the pool are successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DSSInstancesResponse'
+        '401':
+          description: >-
+            Bearer access token was not provided in Authorization header, token
+            could not be decoded, or token was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: >-
+            The access token was decoded successfully but did not include a
+            scope appropriate to this endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 security:
   - Auth:
       - dss.read.identification_service_areas
       - dss.write.identification_service_areas
+      - interuss.pool_status.read
 tags:
   - name: dss
     description: Endpoints exposed by the DSS server.
