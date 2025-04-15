@@ -58,7 +58,7 @@ spec:
           command:
             - core-service
           image: {{ $dss.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
           name: core-service
           ports:
             - containerPort: 8080
