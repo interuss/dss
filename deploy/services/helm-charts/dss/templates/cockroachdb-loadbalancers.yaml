@@ -1,5 +1,7 @@
 {{- $cloudProvider := $.Values.global.cloudProvider}}
 
+{{- if $.Values.cockroachdb.enabled }}
+
 # Node Gateways
 {{- range $i, $lb := .Values.loadBalancers.cockroachdbNodes }}
 ---
@@ -31,4 +33,5 @@ spec:
   selector:
     statefulset.kubernetes.io/pod-name: {{$.Release.Name}}-cockroachdb-{{$i}}
   type: LoadBalancer
+{{- end }}
 {{- end }}
