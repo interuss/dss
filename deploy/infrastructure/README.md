@@ -9,13 +9,20 @@ The [modules](modules) directory contains the terraform public modules required 
 - [terraform-aws-dss](./modules/terraform-aws-dss/README.md): Amazon Web Services deployment
 - [terraform-google-dss](./modules/terraform-google-dss/README.md): Google Cloud Engine deployment
 
+
 ## Dependencies
-The [dependencies](dependencies) directory contains submodules used by the public modules described above. They are not expected to be 
+The [dependencies](dependencies) directory contains submodules used by the public modules described above. They are not expected to be
 used directly by users. Those submodules are the combination of the cloud specific dependencies `terraform-*-kubernetes`
-and `terraform-common-dss`. `terraform-common-dss` module aggregates and outputs the infrastructure configuration 
+and `terraform-common-dss`. `terraform-common-dss` module aggregates and outputs the infrastructure configuration
 which can be used as input to the `Services` deployment as shown in the diagram below.
 
 ![Infrastructure Modules](../../assets/generated/deploy_infrastructure_modules.png)
+
+## Local
+
+The [local](local) directory contains various documentation that can be used to spawn a cluster locally.
+
+- [minikuke](./local/minikube/README.md): Minikube local deployment
 
 ## Utils
 This [utils folder](utils) contains scripts to help manage the terraform modules and dependencies. See the README in that folder for details.
