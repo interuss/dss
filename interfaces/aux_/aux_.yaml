@@ -64,6 +64,12 @@ components:
           minimum: 0
           example: 1
           default: 0
+        next_heartbeat_expected_before:
+          description: The time by which a new heartbeat should be registered for this DSS instance if the DSS instance operator's system is behaving correctly.
+          type: string
+          format: date-time
+          example: '1985-04-12T23:45:00Z'
+          default: ''
       required:
       - timestamp
       - source

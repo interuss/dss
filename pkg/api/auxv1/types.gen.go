@@ -35,4 +35,7 @@ type Heartbeat struct {
 
 	// Index of this heartbeat within the set of all heartbeats for this pool participant.
 	Index *int64 `json:"index,omitempty"`
+
+	// The time by which a new heartbeat should be registered for this DSS instance if the DSS instance operator's system is behaving correctly.
+	NextHeartbeatExpectedBefore *string `json:"next_heartbeat_expected_before,omitempty"`
 }
