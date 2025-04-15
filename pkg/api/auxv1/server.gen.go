@@ -111,6 +111,10 @@ func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r
 		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
+	if response.Response501 != nil {
+		api.WriteJSON(w, 501, response.Response501)
+		return
+	}
 	if response.Response500 != nil {
 		api.WriteJSON(w, 500, response.Response500)
 		return

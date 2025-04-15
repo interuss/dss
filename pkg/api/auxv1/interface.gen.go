@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
 	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
 	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
+	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
 	GetVersionSecurity                      = []api.AuthorizationOption{}
 	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{
@@ -72,6 +72,9 @@ type GetDSSInstancesResponseSet struct {
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
 	Response403 *ErrorResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
 
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody

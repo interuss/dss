@@ -147,6 +147,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 security:
   - Auth:
       - dss.read.identification_service_areas

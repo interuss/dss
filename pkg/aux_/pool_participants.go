@@ -14,6 +14,7 @@ func (a *Server) GetDSSInstances(ctx context.Context, req *restapi.GetDSSInstanc
 		return resp
 	}
 
-	// Pool participant storage is not yet implemented.
-	return restapi.GetDSSInstancesResponseSet{Response200: &restapi.DSSInstancesResponse{DssInstances: &[]restapi.DSSInstance{}}}
+	msg := "Pool participant storage is not yet implemented"
+
+	return restapi.GetDSSInstancesResponseSet{Response501: &restapi.ErrorResponse{Message: &msg}}
 }
