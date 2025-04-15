@@ -10,27 +10,27 @@ variable "google_project_name" {
 variable "google_zone" {
   type        = string
   description = <<-EOT
-    GCP zone hosting the kubernetes cluster
-    List of available zones: https://cloud.google.com/compute/docs/regions-zones#available
+  GCP zone hosting the kubernetes cluster
+  List of available zones: https://cloud.google.com/compute/docs/regions-zones#available
 
-    Example: `europe-west6-a`
+  Example: `europe-west6-a`
   EOT
 }
 
 variable "google_dns_managed_zone_name" {
   type        = string
   description = <<-EOT
-    GCP DNS zone name to automatically manage DNS entries.
+  GCP DNS zone name to automatically manage DNS entries.
 
-    Leave it empty to manage it manually.
+  Leave it empty to manage it manually.
   EOT
 }
 
 variable "google_machine_type" {
   type        = string
   description = <<-EOT
-    GCP machine type used for the Kubernetes node pool.
-    Example: `n2-standard-4` for production, `e2-medium` for development
+  GCP machine type used for the Kubernetes node pool.
+  Example: `n2-standard-4` for production, `e2-medium` for development
   EOT
 }
 
@@ -57,19 +57,19 @@ variable "crdb_hostname_suffix" {
 variable "cluster_name" {
   type        = string
   description = <<-EOT
-    Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+  Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
 
-    Example: `dss-che-1`
+  Example: `dss-che-1`
   EOT
 }
 
 variable "node_count" {
   type        = number
   description = <<-EOT
-    Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
-    Currently, only single node or three nodes deployments are supported.
+  Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
+  Currently, only single node or three nodes deployments are supported.
 
-    Example: `3`
+  Example: `3`
   EOT
 
   validation {
@@ -82,15 +82,14 @@ variable "node_count" {
 variable "kubernetes_version" {
   type        = string
   description = <<-EOT
-    Desired version of the Kubernetes cluster control plane and nodes.
+  Desired version of the Kubernetes cluster control plane and nodes.
 
-    Supported versions:
-      - 1.24
+  Supported versions: 1.24 to 1.32
   EOT
 
   validation {
-    condition     = contains(["1.24", "1.25", "1.26", "1.27", "1.28"], var.kubernetes_version)
-    error_message = "Supported versions: 1.24, 1.25, 1.26, 1.27 and 1.28"
+    condition     = contains(["1.24", "1.25", "1.26", "1.27", "1.28", "1.29", "1.30", "1.31", "1.32"], var.kubernetes_version)
+    error_message = "Supported versions: 1.24 to 1.32"
   }
 }
 

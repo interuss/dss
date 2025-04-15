@@ -59,10 +59,7 @@
               },
               "additionalItems": true
             }
-          },
-          "required": [
-            "args"
-          ]
+          }
         },
         "storage": {
           "type": "object",
@@ -175,7 +172,7 @@
       "type": "object",
       "properties": {
         "cloudProvider": {
-          "description": "Cloud provider identifier. `aws` or `google`",
+          "description": "Cloud provider identifier. `aws`, `google` or `minikube`",
           "type": "string"
         }
       },

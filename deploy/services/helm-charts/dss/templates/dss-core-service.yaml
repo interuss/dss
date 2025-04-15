@@ -52,13 +52,13 @@ spec:
             - --jwks_key_ids={{ $dss.conf.jwksKeyIds | join "," }}
             {{- end }}
             - --locality={{ .Values.cockroachdb.conf.locality }}
-            {{- if $dss.conf.pubKeys}}
+            {{- if $dss.conf.pubKeys }}
             - --public_key_files={{ $dss.conf.pubKeys | join "," }}
             {{- end }}
           command:
             - core-service
           image: {{ $dss.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
           name: core-service
           ports:
             - containerPort: 8080

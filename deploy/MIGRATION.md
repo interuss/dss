@@ -99,38 +99,19 @@ CockroachDB requires to upgrade one minor version at a time, therefore the follo
 
 Migrations of GKE clusters are managed using terraform.
 
-#### 1.27 to 1.28
+#### 1.24 to 1.32
 
-1. Change your `terraform.tfvars` to use `1.28` by adding or updating the `kubernetes_version` variable:
+For each intermediate version up to the target version (eg. if you upgrade from 1.27 to 1.30, apply thoses 
+instructions for 1.28, 1.29, 1.30), do:
+
+Change your terraform.tfvars to use <New version> by adding or updating the kubernetes_version variable:
+kubernetes_version = <New version>
+Run terraform apply. This operation may take more than 30min.
+Monitor the upgrade of the nodes in the Google Cloud console.
+
+1. Change your `terraform.tfvars` to use `<new version>` by adding or updating the `kubernetes_version` variable:
    ```terraform
-   kubernetes_version = 1.28
-   ```
-1. Run `terraform apply`. This operation may take more than 30min.
-1. Monitor the upgrade of the nodes in the Google Cloud console.
-
-#### 1.26 to 1.27
-
-1. Change your `terraform.tfvars` to use `1.27` by adding or updating the `kubernetes_version` variable:
-   ```terraform
-   kubernetes_version = 1.27
-   ```
-1. Run `terraform apply`. This operation may take more than 30min.
-1. Monitor the upgrade of the nodes in the Google Cloud console.
-
-#### 1.25 to 1.26
-
-1. Change your `terraform.tfvars` to use `1.26` by adding or updating the `kubernetes_version` variable:
-   ```terraform
-   kubernetes_version = 1.26
-   ```
-1. Run `terraform apply`
-1. Monitor the upgrade of the nodes in the Google Cloud console.
-
-#### 1.24 to 1.25
-
-1. Change your `terraform.tfvars` to use `1.25` by adding or updating the `kubernetes_version` variable:
-   ```terraform
-   kubernetes_version = 1.25
+   kubernetes_version = <new version>
    ```
 1. Run `terraform apply`. This operation may take more than 30min.
 1. Monitor the upgrade of the nodes in the Google Cloud console.
@@ -143,33 +124,22 @@ Before proceeding, always check on the cluster page the *Upgrade Insights* tab w
 availability of Kubernetes resources in each version. The following sections omit this check if no resource is
 expected to be reported in the context of a standard deployment performed with the tools in this repository.
 
-#### 1.27 to 1.28
+#### 1.25 to 1.32
 
+1. Before migrating to 1.29, upgrade aws-load-balancer-controller helm chart on your cluster using `terraform apply`. Changes introduced by [PR #1167](https://github.com/interuss/dss/pull/1167).
+You can verify if the operation has succeeded by running `helm list -n kube-system`. The APP VERSION shall be `2.12`.
+
+For each intermediate version up to the target version (eg. if you upgrade from 1.29 to 1.31, apply thoses
+instructions for 1.29, 1.30, 1.31), do:
 1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
 1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-1. Change your `terraform.tfvars` to use `1.28` by adding or updating the `kubernetes_version` variable:
-   ```terraform
-   kubernetes_version = 1.28
-   ```
-   
-#### 1.26 to 1.27
 
-1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
-1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-1. Change your `terraform.tfvars` to use `1.27` by adding or updating the `kubernetes_version` variable:
+To finalize the upgrade, change your `terraform.tfvars` to match the target version (ie 1.32) by adding or updating 
+the `kubernetes_version` variable:
    ```terraform
-   kubernetes_version = 1.27
+   kubernetes_version = 1.32
    ```
-   
-#### 1.25 to 1.26
 
-1. Upgrade the cluster (control plane) using the AWS console. It should take ~15 minutes.
-1. Update the *Node Group* in the *Compute* tab with *Rolling Update* strategy to upgrade the nodes using the AWS console.
-1. Change your `terraform.tfvars` to use `1.26` by adding or updating the `kubernetes_version` variable:
-   ```terraform
-   kubernetes_version = 1.26
-   ```
-   
 #### 1.24 to 1.25
 
 1. Check for deprecated resources:

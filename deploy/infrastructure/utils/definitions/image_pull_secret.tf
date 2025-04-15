@@ -1,6 +1,6 @@
 variable "image_pull_secret" {
   type        = string
-  description = <<EOT
+  description = <<-EOT
   Secret name of the credentials to access the image registry.
   If the image specified in `VAR_DOCKER_IMAGE_NAME` requires
   authentication, you can use the following command to store the credentials as secrets:
