@@ -17,7 +17,7 @@ type DSSInstancesResponse struct {
 
 type DSSInstance struct {
 	// Identity of this DSS instance participating in the pool (locality).
-	InstanceId string `json:"instance_id"`
+	Id string `json:"id"`
 
 	// Most recent heartbeat registered for this DSS instance.
 	MostRecentHeartbeat *Heartbeat `json:"most_recent_heartbeat,omitempty"`
@@ -35,7 +35,4 @@ type Heartbeat struct {
 
 	// Index of this heartbeat within the set of all heartbeats for this pool participant.
 	Index *int64 `json:"index,omitempty"`
-
-	// If specified, a sufficiently unique value to verify synchronization between DSS instances with additional certainty.  A UUIDv4 is recommended.
-	UniqueValue *string `json:"unique_value,omitempty"`
 }

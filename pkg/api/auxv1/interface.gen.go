@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
 	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
+	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	GetVersionSecurity                      = []api.AuthorizationOption{}
 	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{

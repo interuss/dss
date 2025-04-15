@@ -31,7 +31,7 @@ components:
     DSSInstance:
       type: object
       properties:
-        instance_id:
+        id:
           description: Identity of this DSS instance participating in the pool (locality).
           type: string
         most_recent_heartbeat:
@@ -39,7 +39,7 @@ components:
           anyOf:
           - $ref: '#/components/schemas/Heartbeat'
       required:
-      - instance_id
+      - id
     Heartbeat:
       type: object
       properties:
@@ -64,11 +64,6 @@ components:
           minimum: 0
           example: 1
           default: 0
-        unique_value:
-          description: If specified, a sufficiently unique value to verify synchronization between DSS instances with additional certainty.  A UUIDv4 is recommended.
-          type: string
-          example: 9d531807-f3fa-435a-ad54-4bca01a5df43
-          default: ''
       required:
       - timestamp
       - source
