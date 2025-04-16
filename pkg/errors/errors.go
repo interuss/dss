@@ -42,6 +42,9 @@ const (
 
 	// Unauthenticated is used when an OAuth token is invalid or not supplied.
 	Unauthenticated
+
+	// NotImplemented is used when a feature needed for the operation has not yet been implemented.
+	NotImplemented
 )
 
 func init() {
