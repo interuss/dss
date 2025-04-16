@@ -159,6 +159,6 @@ func (ds *Datastore) GetDSSAirspaceRepresentationID(ctx context.Context) (string
 		}
 		return darID, nil
 	} else {
-		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type")
+		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", ds.Version.Type)
 	}
 }
