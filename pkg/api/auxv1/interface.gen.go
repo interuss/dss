@@ -9,6 +9,7 @@ import (
 var (
 	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
 	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
+	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	GetVersionSecurity                      = []api.AuthorizationOption{}
 	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{
@@ -16,6 +17,11 @@ var (
 		},
 		{
 			"Auth": {DssWriteIdentificationServiceAreasScope},
+		},
+	}
+	GetDSSInstancesSecurity = []api.AuthorizationOption{
+		{
+			"Auth": {InterussPoolStatusReadScope},
 		},
 	}
 )
@@ -53,10 +59,34 @@ type ValidateOauthResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetDSSInstancesRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetDSSInstancesResponseSet struct {
+	// The known DSS instances participating in the pool are successfully returned.
+	Response200 *DSSInstancesResponse
+
+	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+	Response401 *ErrorResponse
+
+	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+	Response403 *ErrorResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Queries the version of the DSS.
 	GetVersion(ctx context.Context, req *GetVersionRequest) GetVersionResponseSet
 
 	// Validate Oauth token against the DSS.
 	ValidateOauth(ctx context.Context, req *ValidateOauthRequest) ValidateOauthResponseSet
+
+	// Queries the current information for DSS instances participating in the pool.
+	GetDSSInstances(ctx context.Context, req *GetDSSInstancesRequest) GetDSSInstancesResponseSet
 }

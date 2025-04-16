@@ -13,6 +13,17 @@ import (
 // Server implements auxv1.Implementation.
 type Server struct{}
 
+func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
+}
+
 // GetVersion returns information about the version of the server.
 func (a *Server) GetVersion(context.Context, *restapi.GetVersionRequest) restapi.GetVersionResponseSet {
 	return restapi.GetVersionResponseSet{Response200: &restapi.VersionResponse{
