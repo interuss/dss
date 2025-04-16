@@ -8,10 +8,10 @@ DEBUG_ON=${1:-0}
 # POSIX compliant test to check if with-yugabyte profile is enabled.
 if [ "${COMPOSE_PROFILES#*"with-yugabyte"}" != "${COMPOSE_PROFILES}" ]; then
   echo "Using Yugabyte"
-  DATASTORE_CONNECTION="-cockroach_host local-dss-ybdb -cockroach_user yugabyte --cockroach_port 5433"
+  DATASTORE_CONNECTION="-datastore_host local-dss-ybdb -datastore_user yugabyte --datastore_port 5433"
 else
   echo "Using CockroachDB"
-  DATASTORE_CONNECTION="-cockroach_host local-dss-crdb"
+  DATASTORE_CONNECTION="-datastore_host local-dss-crdb"
 fi
 
 if [ "$DEBUG_ON" = "1" ]; then

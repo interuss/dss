@@ -47,7 +47,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/rid --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
+    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/rid --db_version "latest" --datastore_host local-dss-ybdb --datastore_user yugabyte --datastore_port 5433
     depends_on:
       local-dss-ybdb:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/scd --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/scd --db_version "latest" --datastore_host local-dss-ybdb --datastore_user yugabyte --datastore_port 5433
     depends_on:
       local-dss-ybdb:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --cockroach_host local-dss-crdb
+    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
@@ -85,7 +85,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: interuss-local/dss
-    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --cockroach_host local-dss-crdb
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
