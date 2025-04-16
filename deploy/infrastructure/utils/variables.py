@@ -37,6 +37,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_image_tag",
     "crdb_cluster_name",
     "crdb_locality",
+    "crdb_region",
     "crdb_external_nodes",
     "kubernetes_namespace",
 ]
