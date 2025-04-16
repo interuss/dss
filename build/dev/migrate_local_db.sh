@@ -44,4 +44,4 @@ docker container run \
     interuss-local/dss \
          --schemas_dir /db-schemas/"${1}" \
          ${DBVERSION_FLAG} \
-         --cockroach_host local-dss-crdb || exit 1
+         --datastore_host local-dss-crdb || exit 1

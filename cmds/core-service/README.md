@@ -16,7 +16,7 @@ To run this executable directly on a local machine using Go rather than a Docker
 
 ```bash
 go run ./cmds/core-service \
-  -cockroach_host localhost \
+  -datastore_host localhost \
   -public_key_files build/test-certs/auth2.pem \
   -log_format console \
   -dump_requests \
@@ -43,9 +43,9 @@ Once an initialized CockroachDB cluster is available, the necessary databases wi
 go run ./cmds/db-manager migrate \
   --schemas_dir ./build/db_schemas/rid \
   --db_version latest \
-  --cockroach_host localhost
+  --datastore_host localhost
 go run ./cmds/db-manager migrate \
   --schemas_dir ./build/db_schemas/scd \
   --db_version latest \
-  --cockroach_host localhost
+  --datastore_host localhost
 ```

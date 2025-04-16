@@ -30,4 +30,4 @@ docker run --rm --name migration-testing-db-manager \
   local-db-manager \
   --schemas_dir db-schemas/"${db_name}" \
   --db_version "${version}" \
-  --cockroach_host crdb
+  --datastore_host crdb
