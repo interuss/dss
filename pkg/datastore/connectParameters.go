@@ -83,7 +83,10 @@ func (cp ConnectParameters) BuildDSN() (string, error) {
 	}
 	dsnMap["application_name"] = an
 
-	dsnMap["dbname"] = cp.DBName
+	dbn := cp.DBName
+	if dbn != "" {
+		dsnMap["dbname"] = dbn
+	}
 
 	sslMode := cp.SSL.Mode
 	if sslMode == "" {

@@ -16,7 +16,7 @@ func ConnectParameters() datastore.ConnectParameters {
 
 func init() {
 	flag.StringVar(&connectParameters.ApplicationName, "cockroach_application_name", "dss", "application name for tagging the connection to cockroach")
-	flag.StringVar(&connectParameters.DBName, "cockroach_db_name", "dss", "application name for tagging the connection to cockroach")
+	flag.StringVar(&connectParameters.DBName, "cockroach_db_name", "", "application name for tagging the connection to cockroach")
 	flag.StringVar(&connectParameters.Host, "cockroach_host", "", "cockroach host to connect to")
 	flag.IntVar(&connectParameters.Port, "cockroach_port", 26257, "cockroach port to connect to")
 	flag.StringVar(&connectParameters.SSL.Mode, "cockroach_ssl_mode", "disable", "cockroach sslmode")

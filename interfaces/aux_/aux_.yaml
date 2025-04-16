@@ -20,6 +20,16 @@ components:
           description: Human-readable message indicating what error occurred and/or why.
           type: string
 
+    PoolResponse:
+      type: object
+      properties:
+        dar_id:
+          description: >-
+            Identifier of the DSS Airspace Representation shared by the pool of DSS instances to which this DSS instance belongs.
+            Each DSS instance participating in the pool should indicate the same DAR ID as this ID describes the DAR shared by the pool.
+          type: string
+          default: ""
+
     DSSInstancesResponse:
       type: object
       properties:
@@ -122,6 +132,44 @@ paths:
         - Auth:
             - dss.write.identification_service_areas
 
+  /aux/v1/pool:
+    get:
+      summary: Queries the current information about the pool of DSS instances constituting the DSS Airspace Representation.
+      operationId: getPool
+      tags: [ dss ]
+      security:
+      - Auth:
+        - interuss.pool_status.read
+      responses:
+        '200':
+          description: The information is successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+        '401':
+          description: >-
+            Bearer access token was not provided in Authorization header, token
+            could not be decoded, or token was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: >-
+            The access token was decoded successfully but did not include a
+            scope appropriate to this endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /aux/v1/pool/dss_instances:
     get:
       summary: Queries the current information for DSS instances participating in the pool.

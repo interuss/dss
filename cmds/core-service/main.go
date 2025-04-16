@@ -106,6 +106,18 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
+func createAuxServer(ctx context.Context) (*aux.Server, error) {
+	connectParameters := flags.ConnectParameters()
+	datastore, err := datastore.Dial(ctx, connectParameters)
+	if err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to database for pool information store")
+		}
+		return nil, stacktrace.Propagate(err, "Failed to connect to pool information database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+	}
+	return &aux.Server{Datastore: datastore}, nil
+}
+
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
@@ -226,9 +238,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		ridV1Server        *rid_v1.Server
 		ridV2Server        *rid_v2.Server
 		scdV1Server        *scd.Server
-		auxV1Server        = &aux.Server{}
+		auxV1Server        *aux.Server
 		versioningV1Server = &versioning.Server{}
 	)
+
+	// Initialize aux
+	auxV1Server, err = createAuxServer(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create aux server")
+	}
 
 	// Initialize remote ID
 	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)

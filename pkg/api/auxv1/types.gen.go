@@ -11,6 +11,11 @@ type ErrorResponse struct {
 	Message *string `json:"message,omitempty"`
 }
 
+type PoolResponse struct {
+	// Identifier of the DSS Airspace Representation shared by the pool of DSS instances to which this DSS instance belongs. Each DSS instance participating in the pool should indicate the same DAR ID as this ID describes the DAR shared by the pool.
+	DarId *string `json:"dar_id,omitempty"`
+}
+
 type DSSInstancesResponse struct {
 	DssInstances *[]DSSInstance `json:"dss_instances,omitempty"`
 }

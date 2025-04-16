@@ -87,6 +87,41 @@ func (s *APIRouter) ValidateOauth(exp *regexp.Regexp, w http.ResponseWriter, r *
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) GetPool(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetPoolRequest
+
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetPoolSecurity)
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response := s.Implementation.GetPool(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response401 != nil {
+		api.WriteJSON(w, 401, response.Response401)
+		return
+	}
+	if response.Response403 != nil {
+		api.WriteJSON(w, 403, response.Response403)
+		return
+	}
+	if response.Response501 != nil {
+		api.WriteJSON(w, 501, response.Response501)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetDSSInstancesRequest
 
@@ -123,7 +158,7 @@ func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 3)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 4)}
 
 	pattern := regexp.MustCompile("^/aux/v1/version$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion}
@@ -131,8 +166,11 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/aux/v1/validate_oauth$")
 	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.ValidateOauth}
 
+	pattern = regexp.MustCompile("^/aux/v1/pool$")
+	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetPool}
+
 	pattern = regexp.MustCompile("^/aux/v1/pool/dss_instances$")
-	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetDSSInstances}
+	router.Routes[3] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetDSSInstances}
 
 	return router
 }
