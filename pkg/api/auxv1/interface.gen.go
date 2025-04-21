@@ -19,6 +19,11 @@ var (
 			"Auth": {DssWriteIdentificationServiceAreasScope},
 		},
 	}
+	GetPoolSecurity = []api.AuthorizationOption{
+		{
+			"Auth": {InterussPoolStatusReadScope},
+		},
+	}
 	GetDSSInstancesSecurity = []api.AuthorizationOption{
 		{
 			"Auth": {InterussPoolStatusReadScope},
@@ -59,6 +64,27 @@ type ValidateOauthResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetPoolRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetPoolResponseSet struct {
+	// The information is successfully returned.
+	Response200 *PoolResponse
+
+	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+	Response401 *ErrorResponse
+
+	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+	Response403 *ErrorResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type GetDSSInstancesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
@@ -86,6 +112,9 @@ type Implementation interface {
 
 	// Validate Oauth token against the DSS.
 	ValidateOauth(ctx context.Context, req *ValidateOauthRequest) ValidateOauthResponseSet
+
+	// Queries the current information about the pool of DSS instances constituting the DSS Airspace Representation.
+	GetPool(ctx context.Context, req *GetPoolRequest) GetPoolResponseSet
 
 	// Queries the current information for DSS instances participating in the pool.
 	GetDSSInstances(ctx context.Context, req *GetDSSInstancesRequest) GetDSSInstancesResponseSet
