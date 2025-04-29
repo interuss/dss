@@ -202,7 +202,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
     1. DSS instance operator executed InterUSS-unsupported manual commands directly to the database to change the access rights of database users used by DSS instances on a per-table basis
     2. SCD/RID tables not initialized
     3. SCD/RID tables corrupt or not at appropriate schema version
-7. The DSS instance connected to the pool is not the DSS instance the USS is using in the pool's environment
+7. The DSS instance connected to the pool is not used by the USS in the pool's environment
     1. USS specified the wrong DSS base URL in the rest of their system in the pool environment
         1. E.g., DSS instance at https://dss_x.uss.example.com is fully functional, connects to the DSS pool for environment X and is the base URL USS shares with other USSs, but the USS specifies https://dss_y.uss.example.com as the DSS instance for the rest of their system to use in environment X
     2. USS did not configure their system to use features (e.g., ASTM F3548-21 strategic coordination) requiring a DSS in the test of their system in the pool environment
@@ -218,13 +218,14 @@ _This list of failures and potential causes is not exhaustive in either respect.
     1. Database node container(s) run out of disk space
     2. Database node container(s) are shut down due to resource shortage
     3. System maintenance conducted improperly (for instance, multiple USSs bring down nodes contributing to the same range for maintenance simultaneously)
+12. Everything is working properly, but the system lacks the capacity to handle the volume of traffic
 
 ### Check detection capabilities
 
 <table>
     <tr>
         <th rowspan="2">Check</th>
-        <th colspan="11">Failure</th>
+        <th colspan="12">Failure</th>
     </tr>
     <tr>
         <th>1</th>
@@ -238,10 +239,12 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <th>9</th>
         <th>10</th>
         <th>11</th>
+        <th>12</th>
     </tr>
     <tr>
         <td>/healthy</td>
         <td>✅</td>
+        <td>❌</td>
         <td>❌</td>
         <td>❌</td>
         <td>❌</td>
@@ -266,6 +269,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
         <td>✅</td>
         <td>🔶</td>
+        <td>🔶</td>
     </tr>
     <tr>
         <td>DAR identity</td>
@@ -280,6 +284,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
         <td>❌</td>
         <td>🔶</td>
+        <td>🔶↓↓</td>
     </tr>
     <tr>
         <td>Per-USS heartbeat</td>
@@ -294,6 +299,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>✅</td>
         <td>❌</td>
         <td>🔶</td>
+        <td>🔶↓</td>
     </tr>
     <tr>
         <td>Nonce exchange</td>
@@ -308,6 +314,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>✅</td>
         <td>❌</td>
         <td>🔶</td>
+        <td>🔶↓</td>
     </tr>
     <tr>
         <td>DSS entity injection</td>
@@ -322,6 +329,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>✅</td>
         <td>✅</td>
         <td>🔶</td>
+        <td>🔶</td>
     </tr>
     <tr>
         <td>Database metrics</td>
@@ -335,6 +343,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
         <td>🔶</td>
         <td>❌</td>
+        <td>✅</td>
         <td>✅</td>
     </tr>
 </table>
