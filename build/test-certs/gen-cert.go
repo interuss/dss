@@ -67,4 +67,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pubKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pem.Encode(os.Stdout, &pem.Block{Type: "PUBLIC KEY", Bytes: pubKeyBytes})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
