@@ -28,6 +28,10 @@ See [Leaving a pool](pooling.md#leaving-a-pool)
 
 See [Monitoring](monitoring.md)
 
+## Pool monitoring
+
+See [Pool monitoring](./pool_monitoring.md)
+
 ## Troubleshooting
 
 See [Troubleshooting](troubleshooting.md)
