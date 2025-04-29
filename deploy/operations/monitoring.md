@@ -163,13 +163,13 @@ Certain metrics exposed by the underlying database software are monitored.
 
 #### Procedure
 
-Each USS queries metrics of underlying database software ([CRDB](https://www.cockroachlabs.com/docs/stable/metrics), [YugabyteDB](https://docs.yugabyte.com/preview/launch-and-manage/monitor-and-alert/metrics/)) using their database node(s), including:
-
-* Raft quorum availability
+Each USS queries metrics of underlying database software ([CRDB](https://www.cockroachlabs.com/docs/stable/metrics), [YugabyteDB](https://docs.yugabyte.com/preview/launch-and-manage/monitor-and-alert/metrics/)) using their database node(s).
 
 #### Alert criteria
 
 * Any Raft quorum unavailability
+* Resource usage within threshold of ceiling for resource (e.g., 90% of storage/memory/CPU on node in use)
+* Any SQL failures
 
 ## Failure detection capability
 
