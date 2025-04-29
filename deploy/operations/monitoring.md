@@ -224,7 +224,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
 
 <table>
     <tr>
-        <th rowspan="2">Check</th>
+        <th rowspan="2">Check (+readiness)</th>
         <th colspan="12">Failure</th>
     </tr>
     <tr>
@@ -242,7 +242,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <th>12</th>
     </tr>
     <tr>
-        <td>/healthy</td>
+        <td>🚀 /healthy</td>
         <td>✅</td>
         <td>❌</td>
         <td>❌</td>
@@ -257,7 +257,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
     </tr>
     <tr>
-        <td>Normal usage metrics</td>
+        <td>🛠️ Normal usage metrics</td>
         <td>✅</td>
         <td>✅</td>
         <td>❌</td>
@@ -272,7 +272,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>🔶</td>
     </tr>
     <tr>
-        <td>DAR identity</td>
+        <td>✅ DAR identity</td>
         <td>✅</td>
         <td>✅</td>
         <td>✅</td>
@@ -287,7 +287,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>🔶↓↓</td>
     </tr>
     <tr>
-        <td>Per-USS heartbeat</td>
+        <td>🚧 Per-USS heartbeat</td>
         <td>✅</td>
         <td>✅</td>
         <td>✅</td>
@@ -302,7 +302,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>🔶↓</td>
     </tr>
     <tr>
-        <td>Nonce exchange</td>
+        <td>🚧 Nonce exchange</td>
         <td>✅</td>
         <td>✅</td>
         <td>✅</td>
@@ -317,7 +317,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>🔶↓</td>
     </tr>
     <tr>
-        <td>DSS entity injection</td>
+        <td>🚀 DSS entity injection</td>
         <td>✅</td>
         <td>✅</td>
         <td>✅</td>
@@ -332,7 +332,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>🔶</td>
     </tr>
     <tr>
-        <td>Database metrics</td>
+        <td>🛠️ Database metrics</td>
         <td>❌</td>
         <td>🔶</td>
         <td>❌</td>
@@ -345,5 +345,28 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
         <td>✅</td>
         <td>✅</td>
+    </tr>
+</table>
+
+#### Legend
+
+<table>
+    <tr>
+        <td rowspan="4">Readiness</td>
+        <td>🚀</td><td>Released</td>
+        <td rowspan="4">Failure detection</td>
+        <td>✅</td><td>Detects failure</td>
+    </tr>
+    <tr>
+        <td>✅</td><td>Complete (not yet released)</td>
+        <td>🔶</td><td>May detect failure</td>
+    </tr>
+    <tr>
+        <td>🚧</td><td>Not complete</td>
+        <td>🔶↓</td><td>Might possibly detect failure</td>
+    </tr>
+    <tr>
+        <td>🛠️</td><td>Requires user involvement</td>
+        <td>❌</td><td>Does not detect failure</td>
     </tr>
 </table>
