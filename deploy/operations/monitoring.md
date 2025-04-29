@@ -67,11 +67,25 @@ For each expected DSS instance in the pool, query [`/healthy`](../../cmds/core-s
 
 * Any query failed or returned a code other than 200
 
-### DSS Airspace Representation identity check
+### Normal usage metrics
 
 #### Summary
 
-Checks whether a set of DSS instances indicate that they are using the same DSS Airspace Representation.
+Checks whether normal calls to USS's DSS instance generally succeed.
+
+#### Procedure
+
+USS notifies its monitoring system whenever a normal ASTM-API call to its DSS instance fails due to an error indicating a failed service like timeout, 5xx, 405, 408, 418, 451, and possibly others.
+
+#### Alert criteria
+
+* Number of failures per time period crosses threshold
+
+### DAR identity check
+
+#### Summary
+
+Checks whether a set of DSS instances indicate that they are using the same DSS Airspace Representation (DAR).
 
 #### Procedure
 
@@ -168,12 +182,14 @@ _This list of failures and potential causes is not exhaustive in either respect.
 1. DSS instance is not accepting incoming HTTPS requests
     1. Deployment not complete
     2. HTTP(S) ingress/certificates/routing/etc not configured correctly
+    3. DNS not configured correctly
 2. Database components of DSS instance are non-functional
     1. Database container not deployed correctly
     2. Database functionality failing
     3. Database software not behaving as expected
     4. Connectivity (e.g., username/password) between core-service and database not configured correctly
-    5. System quorum of database nodes not met
+    5. System-range quorum of database nodes not met
+    6. Trusted certificates for the pool not exchanged or configured correctly
 3. USS initializes a stand-alone DSS instance or connects to a different pool rather than joining the intended pool
     1. Database initialization parameter not set properly during deployment + nodes to join omitted
     2. Nodes to join + trusted certificates specified incorrectly
@@ -194,7 +210,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
     1. USS deploys their DSS instance differently than/separately from the rest of their system, and the rest-of-system deployment failed while the DSS instance deployment is unaffected
     2. A component in the rest of the USS's system failed
 9. Database software indicates success to the core-service client, but does not correctly synchronize data to other DSS instances
-    1. There is a critical bug in the database software
+    1. There is a critical bug in the database software (this would seem to be a product problem rather than a configuration problem)
 10. Aux API works but SCD/RID API does not work or is disabled
     1. DSS instance configuration does not enable SCD/RID APIs as needed
     2. SCD/RID endpoint routing does not work (though other routing does work)
@@ -238,7 +254,21 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
     </tr>
     <tr>
-        <td>DSS Airspace Representation identity</td>
+        <td>Normal usage metrics</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+        <td>❌</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+        <td>🔶</td>
+        <td>❌</td>
+        <td>✅</td>
+        <td>🔶</td>
+    </tr>
+    <tr>
+        <td>DAR identity</td>
         <td>✅</td>
         <td>✅</td>
         <td>✅</td>
@@ -261,7 +291,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
         <td>❌</td>
         <td>🔶</td>
         <td>🔶</td>
-        <td>❌</td>
+        <td>✅</td>
         <td>❌</td>
         <td>🔶</td>
     </tr>
