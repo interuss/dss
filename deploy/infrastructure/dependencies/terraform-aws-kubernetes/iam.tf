@@ -81,21 +81,46 @@ resource "aws_iam_role" "AmazonEKS_EBS_CSI_DriverRole" {
   permissions_boundary = var.aws_iam_permissions_boundary
 }
 
+// Load Balancer
+resource "aws_iam_role" "AWSLoadBalancerControllerRole" {
+  name = "${var.cluster_name}-AWSLoadBalancerControllerServiceAccount"
+
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Federated" : format("arn:aws:iam::${local.aws_account_id}:%s", replace(local.aws_cluster_oidc_issuer, "https://", "oidc-provider/")),
+        },
+        "Action" : "sts:AssumeRoleWithWebIdentity",
+        "Condition" : {
+          "StringEquals" : {
+            format("%s:aud", replace(local.aws_cluster_oidc_issuer, "https://", "")) : "sts.amazonaws.com",
+            format("%s:sub", replace(local.aws_cluster_oidc_issuer, "https://", "")) : "system:serviceaccount:kube-system:aws-load-balancer-controller"
+          }
+        }
+      }
+    ]
+  })
+
+  permissions_boundary = var.aws_iam_permissions_boundary
+}
+
 // Policies
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerPolicy" {
   name = "${var.cluster_name}-AWSLoadBalancerControllerPolicy"
 
-  # Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
-  # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
+  # Template: https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.12.0/docs/install/iam_policy.json
   policy = file("${path.module}/AWSLoadBalancerControllerPolicy.json")
 }
 
 // Attachments
 
-resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerPolicy" {
+resource "aws_iam_role_policy_attachment" "AWSLoadBalancerControllerRole" {
   policy_arn = aws_iam_policy.AWSLoadBalancerControllerPolicy.arn
-  role       = aws_iam_role.dss-cluster-node-group.name
+  role       = aws_iam_role.AWSLoadBalancerControllerRole.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
@@ -112,7 +137,6 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.dss-cluster-node-group.name
 }
-
 
 resource "aws_iam_role_policy_attachment" "AmazonEKS_EBS_CSI_DriverRole" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"

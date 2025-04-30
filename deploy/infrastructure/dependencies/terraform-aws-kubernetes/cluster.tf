@@ -17,7 +17,6 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
     aws_iam_role_policy_attachment.dss-cluster-service,
     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.AWSLoadBalancerControllerPolicy,
     aws_internet_gateway.dss,
     aws_eip.gateway,
     aws_eip.ip_crdb
@@ -30,7 +29,6 @@ resource "aws_eks_node_group" "eks_node_group" {
   cluster_name           = aws_eks_cluster.kubernetes_cluster.name
   subnet_ids             = [data.aws_subnet.main_subnet.id] # Limit nodes to one subnet
   node_role_arn          = aws_iam_role.dss-cluster-node-group.arn
-  disk_size              = 10
   node_group_name_prefix = aws_eks_cluster.kubernetes_cluster.name
   instance_types = [
     var.aws_instance_type

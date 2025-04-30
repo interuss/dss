@@ -5,285 +5,240 @@
 
 # Terraform variables
 
-The following sections describe the variables of this terraform module.
-
 ## terraform-google-dss
 
-### google_project_name
+The following table describes the variables of this terraform module.
 
-*Type: `string`*
-
-Name of the GCP project hosting the future cluster
-
-
-### google_zone
-
-*Type: `string`*
-
-GCP zone hosting the kubernetes cluster
-List of available zones: https://cloud.google.com/compute/docs/regions-zones#available
-
-Example: `europe-west6-a`
-
-
-### google_dns_managed_zone_name
-
-*Type: `string`*
-
-GCP DNS zone name to automatically manage DNS entries.
-
-Leave it empty to manage it manually.
-
-
-### google_machine_type
-
-*Type: `string`*
-
-GCP machine type used for the Kubernetes node pool.
-Example: `n2-standard-4` for production, `e2-medium` for development
-
-
-### app_hostname
-
-*Type: `string`*
-
-Fully-qualified domain name of your HTTPS Gateway ingress endpoint.
-
-Example: `dss.example.com`
-
-
-### crdb_hostname_suffix
-
-*Type: `string`*
-
-The domain name suffix shared by all of your CockroachDB nodes.
+<table>
+        <thead>
+            <th>Variable name</th>
+            <th>Type</th>
+            <th>Default value</th>
+            <th>Description</th>
+        </thead>
+        <tbody><tr>
+                <td>google_project_name</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Name of the GCP project hosting the future cluster</p>
+</td>
+            </tr><tr>
+                <td>google_zone</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>GCP zone hosting the kubernetes cluster
+List of available zones: https://cloud.google.com/compute/docs/regions-zones#available</p>
+<p>Example: <code>europe-west6-a</code></p>
+</td>
+            </tr><tr>
+                <td>google_dns_managed_zone_name</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>GCP DNS zone name to automatically manage DNS entries.</p>
+<p>Leave it empty to manage it manually.</p>
+</td>
+            </tr><tr>
+                <td>google_machine_type</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>GCP machine type used for the Kubernetes node pool.
+Example: <code>n2-standard-4</code> for production, <code>e2-medium</code> for development</p>
+</td>
+            </tr><tr>
+                <td>app_hostname</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Fully-qualified domain name of your HTTPS Gateway ingress endpoint.</p>
+<p>Example: <code>dss.example.com</code></p>
+</td>
+            </tr><tr>
+                <td>crdb_hostname_suffix</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>The domain name suffix shared by all of your CockroachDB nodes.
 For instance, if your CRDB nodes were addressable at 0.db.example.com,
-1.db.example.com and 2.db.example.com, then the value would be db.example.com.
-
-Example: db.example.com
-
-
-### cluster_name
-
-*Type: `string`*
-
-Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
-
-Example: `dss-che-1`
-
-
-### node_count
-
-*Type: `number`*
-
-Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
-Currently, only single node or three nodes deployments are supported.
-
-Example: `3`
-
-
-### kubernetes_version
-
-*Type: `string`*
-
-Desired version of the Kubernetes cluster control plane and nodes.
-
-Supported versions:
-- 1.24
-
-
-### google_kubernetes_storage_class
-
-*Type: `string`*
-
-GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
+1.db.example.com and 2.db.example.com, then the value would be db.example.com.</p>
+<p>Example: db.example.com</p>
+</td>
+            </tr><tr>
+                <td>cluster_name</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)</p>
+<p>Example: <code>dss-che-1</code></p>
+</td>
+            </tr><tr>
+                <td>node_count</td>
+                <td><code>number</code></td>
+                <td></td>
+                <td><p>Number of Kubernetes nodes which should correspond to the desired CockroachDB nodes.
+Currently, only single node or three nodes deployments are supported.</p>
+<p>Example: <code>3</code></p>
+</td>
+            </tr><tr>
+                <td>kubernetes_version</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Desired version of the Kubernetes cluster control plane and nodes.</p>
+<p>Supported versions: 1.24 to 1.32</p>
+</td>
+            </tr><tr>
+                <td>google_kubernetes_storage_class</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
 See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
-available options.
-
-Example: `standard`
-
-
-### image
-
-*Type: `string`*
-
-URL of the DSS docker image.
-
-Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags
-See [/build/README.md](../../../../build/README.md#docker-images) Docker images section to learn
-how to build and publish your own image.
-
-Example: `docker.io/interuss/dss:latest` or `docker.io/interuss/dss:v0.14.0`
-
-
-### image_pull_secret
-
-*Type: `string`*
-
-**Default: ""**
-
-Secret name of the credentials to access the image registry.
-If the image specified in `VAR_DOCKER_IMAGE_NAME` requires
-authentication, you can use the following command to store the credentials as secrets:
-
-> kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET \
---docker-server=DOCKER_REGISTRY_SERVER \
---docker-username=DOCKER_USER \
---docker-password=DOCKER_PASSWORD \
---docker-email=DOCKER_EMAIL
-
-Replace `VAR_DOCKER_IMAGE_PULL_SECRET` with the secret name (for instance: `private-registry-credentials`).
-For docker hub private repository, use `docker.io` as `DOCKER_REGISTRY_SERVER` and an
-[access token](https://hub.docker.com/settings/security) as `DOCKER_PASSWORD`.
-
-Example: docker-registry
-
-
-### authorization
-
-*Type: `object({'public_key_pem_path': '${optional(string)}', 'jwks': "${optional(object({'endpoint': '${string}', 'key_id': '${string}'}))}"})`*
-
-One of `public_key_pem_path` or `jwks` should be provided but not both.
-
-- public_key_pem_path
+available options.</p>
+<p>Example: <code>standard</code></p>
+</td>
+            </tr><tr>
+                <td>image</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>URL of the DSS docker image.</p>
+<p>Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags
+See <a href="../../../../build/README.md#docker-images">/build/README.md</a> Docker images section to learn
+how to build and publish your own image.</p>
+<p>Example: <code>docker.io/interuss/dss:latest</code> or <code>docker.io/interuss/dss:v0.14.0</code></p>
+</td>
+            </tr><tr>
+                <td>image_pull_secret</td>
+                <td><code>string</code></td>
+                <td><code>""</code></td>
+                <td><p>Secret name of the credentials to access the image registry.
+If the image specified in <code>VAR_DOCKER_IMAGE_NAME</code> requires
+authentication, you can use the following command to store the credentials as secrets:</p>
+<blockquote>
+<p>kubectl create secret -n VAR_NAMESPACE docker-registry VAR_DOCKER_IMAGE_PULL_SECRET <br />
+--docker-server=DOCKER_REGISTRY_SERVER <br />
+--docker-username=DOCKER_USER <br />
+--docker-password=DOCKER_PASSWORD <br />
+--docker-email=DOCKER_EMAIL</p>
+</blockquote>
+<p>Replace <code>VAR_DOCKER_IMAGE_PULL_SECRET</code> with the secret name (for instance: <code>private-registry-credentials</code>).
+For docker hub private repository, use <code>docker.io</code> as <code>DOCKER_REGISTRY_SERVER</code> and an
+<a href="https://hub.docker.com/settings/security">access token</a> as <code>DOCKER_PASSWORD</code>.</p>
+<p>Example: docker-registry</p>
+</td>
+            </tr><tr>
+                <td>authorization</td>
+                <td><code>object({<br/>'public_key_pem_path': '${optional(string)}',<br/> 'jwks': "${optional(object({<br/>'endpoint': '${string}',<br/> 'key_id': '${string}'})<br/>)}"})<br/></code></td>
+                <td></td>
+                <td><p>One of <code>public_key_pem_path</code> or <code>jwks</code> should be provided but not both.</p>
+<ul>
+<li>
+<p>public_key_pem_path
 If providing the access token public key via JWKS, do not provide this parameter.
 If providing a .pem file directly as the public key to validate incoming access tokens, specify the name
 of this .pem file here as /public-certs/YOUR-KEY-NAME.pem replacing YOUR-KEY-NAME as appropriate. For instance,
 if using the provided us-demo.pem, use the path /public-certs/us-demo.pem. Note that your .pem file should be built
-in the docker image or mounted manually.
-
-Example 1 (dummy auth):
-```
-{
-public_key_pem_path = "/test-certs/auth2.pem"
+in the docker image or mounted manually.</p>
+<p>Example 1 (dummy auth):</p>
+<pre><code>{
+  public_key_pem_path = &quot;/test-certs/auth2.pem&quot;
 }
-```
-Example 2:
-```
-{
-public_key_pem_path = "/jwt-public-certs/us-demo.pem"
+</code></pre>
+<p>Example 2:</p>
+<pre><code>{
+  public_key_pem_path = &quot;/jwt-public-certs/us-demo.pem&quot;
 }
-```
-
-- jwks
-If providing a .pem file directly as the public key to validate incoming access tokens, do not provide this parameter.
-- endpoint
+</code></pre>
+</li>
+<li>
+<p>jwks
+If providing a .pem file directly as the public key to validate incoming access tokens, do not provide this parameter.</p>
+<ul>
+<li>endpoint
 If providing the access token public key via JWKS, specify the JWKS endpoint here.
-Example: https://auth.example.com/.well-known/jwks.json
-- key_id:
+Example: https://auth.example.com/.well-known/jwks.json</li>
+<li>key_id:
 If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
-Example:
-```
-{
-jwks = {
-endpoint = "https://auth.example.com/.well-known/jwks.json"
-key_id = "9C6DF78B-77A7-4E89-8990-E654841A7826"
+Example:</li>
+</ul>
+<pre><code>{
+  jwks = {
+    endpoint = &quot;https://auth.example.com/.well-known/jwks.json&quot;
+    key_id = &quot;9C6DF78B-77A7-4E89-8990-E654841A7826&quot;
+  }
 }
-}
-```
-
-
-### enable_scd
-
-*Type: `bool`*
-
-**Default: true**
-
-Set this boolean true to enable ASTM strategic conflict detection functionality
-
-
-### should_init
-
-*Type: `bool`*
-
-**Default: none**
-
-Set to false if joining an existing pool, true if creating the first DSS instance
+</code></pre>
+</li>
+</ul>
+</td>
+            </tr><tr>
+                <td>enable_scd</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this boolean true to enable ASTM strategic conflict detection functionality</p>
+</td>
+            </tr><tr>
+                <td>should_init</td>
+                <td><code>bool</code></td>
+                <td><code>none</code></td>
+                <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,
-and prevent you from joining an existing pool.
-
-Example: `true`
-
-
-### desired_rid_db_version
-
-*Type: `string`*
-
-**Default: "latest"**
-
-Desired RID DB schema version.
-Use `latest` to use the latest schema version.
-
-Example: `4.0.0`
-
-
-### desired_scd_db_version
-
-*Type: `string`*
-
-**Default: "latest"**
-
-Desired SCD DB schema version.
-Use `latest` to use the latest schema version.
-
-Example: `3.1.0`
-
-
-### crdb_image_tag
-
-*Type: `string`*
-
-Version tag of the CockroachDB image.
+and prevent you from joining an existing pool.</p>
+<p>Example: <code>true</code></p>
+</td>
+            </tr><tr>
+                <td>desired_rid_db_version</td>
+                <td><code>string</code></td>
+                <td><code>"latest"</code></td>
+                <td><p>Desired RID DB schema version.
+Use <code>latest</code> to use the latest schema version.</p>
+<p>Example: <code>4.0.0</code></p>
+</td>
+            </tr><tr>
+                <td>desired_scd_db_version</td>
+                <td><code>string</code></td>
+                <td><code>"latest"</code></td>
+                <td><p>Desired SCD DB schema version.
+Use <code>latest</code> to use the latest schema version.</p>
+<p>Example: <code>3.1.0</code></p>
+</td>
+            </tr><tr>
+                <td>crdb_image_tag</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Version tag of the CockroachDB image.
 Until v.16, the recommended CockroachDB version is v21.2.7.
-From v.17, the recommended CockroachDB version is v24.1.3.
-
-Example: v24.1.3
-
-
-### crdb_cluster_name
-
-*Type: `string`*
-
-A string that specifies a CRDB cluster name. This is used together to ensure that all newly created
+From v.17, the recommended CockroachDB version is v24.1.3.</p>
+<p>Example: v24.1.3</p>
+</td>
+            </tr><tr>
+                <td>crdb_cluster_name</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>A string that specifies a CRDB cluster name. This is used together to ensure that all newly created
 nodes join the intended cluster when you are running multiple clusters.
 The CRDB cluster is automatically given a randomly-generated name if an empty string is provided.
 The CRDB cluster name must be 6-20 characters in length, and can include lowercase letters, numbers,
-and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.
-
-At the moment, this variable is only used for helm charts deployments.
-
-Example: interuss_us_production
-
-
-### crdb_locality
-
-*Type: `string`*
-
-Unique name for your DSS instance. Currently, we recommend "<ORG_NAME>_<CLUSTER_NAME>",
+and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.</p>
+<p>At the moment, this variable is only used for helm charts deployments.</p>
+<p>Example: interuss_us_production</p>
+</td>
+            </tr><tr>
+                <td>crdb_locality</td>
+                <td><code>string</code></td>
+                <td></td>
+                <td><p>Unique name for your DSS instance. Currently, we recommend &quot;&lt;ORG_NAME&gt;_&lt;CLUSTER_NAME&gt;&quot;,
 and the = character is not allowed. However, any unique (among all other participating
-DSS instances) value is acceptable.
-
-Example: <ORGNAME_CLUSTER_NAME>
-
-
-### crdb_external_nodes
-
-*Type: `list(string)`*
-
-**Default: []**
-
-Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.
-Example: ["0.db.dss.example.com", "1.db.dss.example.com", "2.db.dss.example.com"]
-
-
-### kubernetes_namespace
-
-*Type: `string`*
-
-**Default: "default"**
-
-Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
-
-Example: `default`
-
-
+DSS instances) value is acceptable.</p>
+<p>Example: &lt;ORGNAME_CLUSTER_NAME&gt;</p>
+</td>
+            </tr><tr>
+                <td>crdb_external_nodes</td>
+                <td><code>list(string)</code></td>
+                <td><code>[]</code></td>
+                <td><p>Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.
+Example: [&quot;0.db.dss.example.com&quot;, &quot;1.db.dss.example.com&quot;, &quot;2.db.dss.example.com&quot;]</p>
+</td>
+            </tr><tr>
+                <td>kubernetes_namespace</td>
+                <td><code>string</code></td>
+                <td><code>"default"</code></td>
+                <td><p>Namespace where to deploy Kubernetes resources. Only default is supported at the moment.</p>
+<p>Example: <code>default</code></p>
+</td>
+            </tr></tbody>
+    </table>

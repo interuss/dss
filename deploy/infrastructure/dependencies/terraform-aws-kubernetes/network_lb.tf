@@ -4,7 +4,7 @@ resource "helm_release" "aws-load-balancer-controller" {
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
   name       = "aws-load-balancer-controller"
-  version    = "1.9.0"
+  version    = "1.12.0"
 
   namespace = "kube-system"
 
@@ -15,9 +15,25 @@ resource "helm_release" "aws-load-balancer-controller" {
     value = var.cluster_name
   }
 
+  set {
+    name  = "region"
+    value = var.aws_region
+  }
+
+  set {
+    name  = "vpcId"
+    value = aws_subnet.dss[0].vpc_id
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.AWSLoadBalancerControllerRole.arn
+
+  }
+
   depends_on = [
     aws_eks_cluster.kubernetes_cluster,
-    aws_iam_role_policy_attachment.AWSLoadBalancerControllerPolicy,
+    aws_iam_role_policy_attachment.AWSLoadBalancerControllerRole,
     aws_eks_node_group.eks_node_group
   ]
 }

@@ -1,6 +1,6 @@
 variable "image" {
   type        = string
-  description = <<EOT
+  description = <<-EOT
   URL of the DSS docker image.
 
   Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags
