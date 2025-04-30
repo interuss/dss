@@ -87,14 +87,25 @@ USS notifies its monitoring system whenever a normal ASTM-API call to its DSS in
 
 Checks whether a set of DSS instances indicate that they are using the same DSS Airspace Representation (DAR).
 
-#### Procedure
+#### Procedure, Option 1
 
 For each expected DSS instance in the pool, query [`/aux/v1/pool`](../../interfaces/aux_) and collect `dar_id`
 
-#### Alert criteria
+#### Alert criteria, Option 1
 
 * Any query failed
 * Any collected `dar_id` value is different from any other collected `dar_id` value
+
+#### Procedure, Option 2
+
+Prior to ongoing operations, exchange the expected DAR ID for the environment among all DSS operators.
+
+On an ongoing basis, query [`/aux/v1/pool`](../../interfaces/aux_) on DSS operator's DSS instance and collect `dar_id`
+
+#### Alert criteria, Option 2
+
+* Query failed
+* Collected `dar_id` differs from expected DAR ID for the environment
 
 ### Per-USS heartbeat check
 
