@@ -183,12 +183,10 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 // * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
-	switch {
-	case vol4.SpatialVolume == nil:
+	if vol4.SpatialVolume == nil {
 		return nil, geo.ErrMissingSpatialVolume
-	default:
-		return vol4.SpatialVolume.CalculateCovering()
 	}
+	return vol4.SpatialVolume.CalculateCovering()
 }
 
 // CalculateCovering returns the spatial covering of vol3, or one of:
@@ -197,12 +195,10 @@ func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 // * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
-	switch {
-	case vol3.Footprint == nil:
+	if vol3.Footprint == nil {
 		return nil, geo.ErrMissingFootprint
-	default:
-		return vol3.Footprint.CalculateCovering()
 	}
+	return vol3.Footprint.CalculateCovering()
 }
 
 // CalculateCovering returns the result of invoking gf, with possible errors:

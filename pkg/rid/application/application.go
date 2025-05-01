@@ -11,10 +11,10 @@ var DefaultClock = clockwork.NewRealClock()
 
 // app contains all of the per-entity Applications.
 type app struct {
-	// TODO: don't fully embed the repos once we reduce the complexity in the store.
+	// TODO: reduce the complexity in the store.
 	// Right now it's "coincidence" that the repo has the same signatures as the App interface
 	// but we will want to simplify the repos and add the complexity here.
-	store.Store
+	store  store.Store
 	clock  clockwork.Clock
 	logger *zap.Logger
 }
@@ -28,7 +28,7 @@ type App interface {
 // with the given store.
 func NewFromTransactor(store store.Store, logger *zap.Logger) App {
 	return &app{
-		Store:  store,
+		store:  store,
 		clock:  DefaultClock,
 		logger: logger,
 	}

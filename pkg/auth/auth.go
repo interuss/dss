@@ -90,7 +90,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error retrieving JWKS at %s", req.URL))
+		return nil, stacktrace.Propagate(err, "Error retrieving JWKS at %s", req.URL)
 	}
 	defer resp.Body.Close()
 
