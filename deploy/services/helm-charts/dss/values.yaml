@@ -16,7 +16,28 @@ cockroachdb:
 
 yugabyte:
   enabled: false
+  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+
   Image:
     repository: yugabytedb/yugabyte
 
-  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+  isMultiAz: true
+
+  gflags:
+    master:
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
+    tserver:
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
+
+  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+
+  tls:
+    enabled: true
+    nodeToNode: true
+    clientToServer: true
+    insecure: false
+    provided: true
