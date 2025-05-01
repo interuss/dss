@@ -365,7 +365,7 @@ _This list of failures and potential causes is not exhaustive in either respect.
     <tr>
         <td rowspan="4">Readiness</td>
         <td>🚀</td><td>Released</td>
-        <td rowspan="4">Failure detection</td>
+        <td rowspan="5">Failure detection</td>
         <td>✅</td><td>Detects failure</td>
     </tr>
     <tr>
@@ -374,10 +374,14 @@ _This list of failures and potential causes is not exhaustive in either respect.
     </tr>
     <tr>
         <td>🚧</td><td>Not complete</td>
-        <td>🔶↓</td><td>Might possibly detect failure</td>
+        <td>🔶↓</td><td>Might rarely detect failure</td>
     </tr>
     <tr>
         <td>🛠️</td><td>Requires user involvement</td>
+        <td>🔶↓↓</td><td>Might very rarely detect failure</td>
+    </tr>
+    <tr>
+        <td colspan="3"></td>
         <td>❌</td><td>Does not detect failure</td>
     </tr>
 </table>
