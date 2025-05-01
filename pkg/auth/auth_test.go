@@ -82,11 +82,11 @@ func TestRSAAuthInterceptor(t *testing.T) {
 	noTokenReq := &http.Request{Header: make(http.Header)}
 	noTokenReq.Header.Set("Authorization", "Bearer ")
 
-	key, err := rsa.GenerateKey(rand.Reader, 512)
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
 	}
-	badKey, err := rsa.GenerateKey(rand.Reader, 512)
+	badKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
 	}

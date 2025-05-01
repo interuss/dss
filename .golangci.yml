@@ -1,0 +1,25 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+formatters:
+    enable:
+        - gofmt
+    exclusions:
+        paths:
+            - build/workspace
+            - '.*\.gen\.go'
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - rowserrcheck
+    - misspell
+    - staticcheck
+    - govet
+  exclusions:
+      paths:
+          - build/workspace
+          - '.*\.gen\.go'

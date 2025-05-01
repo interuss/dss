@@ -24,7 +24,7 @@ const (
 func (r *repo) fetchISAs(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, fmt.Sprintf("Error in query: %s", query))
+		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 	defer rows.Close()
 

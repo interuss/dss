@@ -7,7 +7,6 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
-	geoerr "github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv2 "github.com/interuss/dss/pkg/rid/models/api/v2"
@@ -83,7 +82,7 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 	}
 	cu, err := geo.AreaToCellIDs(string(*req.Area))
 	if err != nil {
-		if errors.Is(err, geoerr.ErrAreaTooLarge) {
+		if errors.Is(err, geo.ErrAreaTooLarge) {
 			return restapi.SearchSubscriptionsResponseSet{Response413: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid area"))}}
 		}
