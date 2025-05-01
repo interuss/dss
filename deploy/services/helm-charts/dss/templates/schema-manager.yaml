@@ -46,6 +46,8 @@ spec:
             - --schemas_dir=/db-schemas/{{$service}}
 {{ else }}
             - --schemas_dir=/db-schemas/yugabyte/{{$service}}
+            - --cockroach_ssl_dir=/opt/yugabyte-certs/
+            - --cockroach_ssl_mode=verify-full
 {{ end }}
             - --db_version={{$schemaVersion}}
           command:
@@ -57,12 +59,12 @@ spec:
           stdin: false
           tty: false
           volumeMounts:
-            {{- include "ca-certs:volumeMount" . | nindent 12 }}
-            {{- include "client-certs:volumeMount" . | nindent 12 }}
+            {{- include "ca-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "client-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
       imagePullSecrets: []
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 30
       volumes:
-        {{- include "ca-certs:volume" . | nindent 8 }}
-        {{- include "client-certs:volume" . | nindent 8 }}
+        {{- include "ca-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "client-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
 {{- end -}}

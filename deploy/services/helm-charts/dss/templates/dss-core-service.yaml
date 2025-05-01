@@ -51,6 +51,9 @@ spec:
             - --cockroach_ssl_dir=/cockroach/cockroach-certs
             - --cockroach_ssl_mode=verify-full
             - --locality={{ .Values.cockroachdb.conf.locality }}
+{{ else }}
+            - --cockroach_ssl_dir=/opt/yugabyte-certs
+            - --cockroach_ssl_mode=verify-full
 {{ end }}
             - --dump_requests=true
             - --enable_scd={{$dss.enableScd | default true}}
@@ -80,12 +83,12 @@ spec:
           stdin: false
           tty: false
           volumeMounts:
-            {{- include "ca-certs:volumeMount" . | nindent 12 }}
-            {{- include "client-certs:volumeMount" . | nindent 12 }}
-            {{- include "public-certs:volumeMount" . | nindent 12 }}
+            {{- include "ca-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "client-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "public-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
       imagePullSecrets: []
       terminationGracePeriodSeconds: 30
       volumes:
-        {{- include "ca-certs:volume" . | nindent 8 }}
-        {{- include "client-certs:volume" . | nindent 8 }}
-        {{- include "public-certs:volume" . | nindent 8 }}
+        {{- include "ca-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "client-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "public-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
