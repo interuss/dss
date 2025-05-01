@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import itertools
-import glob
 import os
 import shutil
 import subprocess

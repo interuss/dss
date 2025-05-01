@@ -50,6 +50,6 @@ yugabyte
 {{ if .cockroachdb }}
     - "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host {{.databaseHost}} --port \"{{.databasePort}}\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ else }}
-    - "ysqlsh  --host {{.databaseHost}} --port \"{{.databasePort}}\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
+    - "ysqlsh  --host {{.databaseHost}} --port \"{{.databasePort}}\" \"sslmode=require\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ end }}
 {{- end -}}
