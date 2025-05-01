@@ -1,3 +1,4 @@
 build/workspace
 !build/workspace/.gitkeep
 **/.terraform
+**/coverdata

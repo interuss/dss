@@ -5,6 +5,10 @@
 # /usr/bin/core-service or /usr/bin/db-manager).
 
 FROM golang:1.24-alpine AS build
+
+ARG EXTRA_GO_INSTALL_FLAGS=""
+ENV EXTRA_GO_INSTALL_FLAGS=${EXTRA_GO_INSTALL_FLAGS}
+
 RUN apk add build-base
 RUN apk add git bash make
 RUN mkdir /app
