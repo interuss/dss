@@ -2,10 +2,10 @@
 - name: ca-certs
   secret:
     defaultMode: 256
-    secretName: {{ if .cockroachdb }}cockroachdb.ca.crt{{ else }}yugabyte-tls-client-cert{{ end }}
+    secretName: {{ if .cockroachdbEnabled }}cockroachdb.ca.crt{{ else }}yugabyte-tls-client-cert{{ end }}
 {{- end -}}
 {{- define "ca-certs:volumeMount" -}}
-{{ if .cockroachdb }}
+{{ if .cockroachdbEnabled }}
 - mountPath: /cockroach/cockroach-certs/ca.crt
   name: ca-certs
   subPath: ca.crt
@@ -19,10 +19,10 @@
 - name: client-certs
   secret:
     defaultMode: 256
-    secretName: {{ if .cockroachdb }}cockroachdb.client.root{{ else }}yugabyte-tls-client-cert{{ end }}
+    secretName: {{ if .cockroachdbEnabled }}cockroachdb.client.root{{ else }}yugabyte-tls-client-cert{{ end }}
 {{- end -}}
 {{- define "client-certs:volumeMount" -}}
-{{ if .cockroachdb }}
+{{ if .cockroachdbEnabled }}
 - mountPath: /cockroach/cockroach-certs/client.root.crt
   name: client-certs
   subPath: client.root.crt
