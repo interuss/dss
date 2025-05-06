@@ -359,7 +359,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 				version *dssmodels.Version
 			)
 
-			repo, err := app.Store.Interact(ctx)
+			repo, err := app.store.Interact(ctx)
 			require.NoError(t, err)
 
 			// Insert a pre-existing subscription to simulate updating from something.

@@ -134,7 +134,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Compute index of current version
-	var currentStepIndex int = -1
+	var currentStepIndex = -1
 	for i, version := range steps {
 		if version.version == *currentVersion {
 			currentStepIndex = i
@@ -238,12 +238,13 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 				v := *semver.New(match[2])
 				step := steps[v]
 				step.version = v
-				if match[1] == "upto" {
+				switch match[1] {
+				case "upto":
 					step.upToFile = file.Name()
-				} else if match[1] == "downfrom" {
+				case "downfrom":
 					step.downFromFile = file.Name()
-				} else {
-					return make([]MigrationStep, 0), fmt.Errorf("Unexpected migration step prefix: %s", match[1])
+				default:
+					return make([]MigrationStep, 0), fmt.Errorf("unexpected migration step prefix: %s", match[1])
 				}
 				steps[v] = step
 			}

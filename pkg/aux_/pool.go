@@ -17,7 +17,7 @@ func (a *Server) GetPool(ctx context.Context, req *restapi.GetPoolRequest) resta
 		return resp
 	}
 
-	darID, err := a.Datastore.GetDSSAirspaceRepresentationID(ctx)
+	darID, err := a.GetDSSAirspaceRepresentationID(ctx)
 
 	if err == nil {
 		resp.Response200 = &restapi.PoolResponse{DarId: &darID}

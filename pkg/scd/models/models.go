@@ -44,9 +44,9 @@ func NewOVNFromTime(t time.Time, salt string) OVN {
 	ovn := base64.StdEncoding.EncodeToString(
 		sum[:],
 	)
-	ovn = strings.Replace(ovn, "+", "-", -1)
-	ovn = strings.Replace(ovn, "/", ".", -1)
-	ovn = strings.Replace(ovn, "=", "_", -1)
+	ovn = strings.ReplaceAll(ovn, "+", "-")
+	ovn = strings.ReplaceAll(ovn, "/", ".")
+	ovn = strings.ReplaceAll(ovn, "=", "_")
 	return OVN(ovn)
 }
 
