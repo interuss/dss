@@ -47,7 +47,7 @@ yugabyte
   command:
     - sh
     - -c
-{{ if .cockroachdb }}
+{{ if .cockroachdbEnabled }}
     - "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host {{.datastoreHost}} --port \"{{.datastorePort}}\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ else }}
     - "ysqlsh  --host {{.datastoreHost}} --port \"{{.datastorePort}}\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"

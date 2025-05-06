@@ -10,8 +10,8 @@
 {{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
 {{- end -}}
 
-{{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdb" .Values.cockroachdb.enabled ) -}}
-{{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdb" .Values.cockroachdb.enabled ) -}}
+{{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
+{{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 
 ---
 apiVersion: apps/v1
