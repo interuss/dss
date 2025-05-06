@@ -1,4 +1,4 @@
-{{- define "databaseImage" -}}
+{{- define "datastoreImage" -}}
 {{- if $.Values.cockroachdb.enabled -}}
 {{ (printf "%s:%s" $.Values.cockroachdb.image.repository $.Values.cockroachdb.image.tag) }}
 {{- else -}}
@@ -6,7 +6,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "databasePort" -}}
+{{- define "datastorePort" -}}
 {{- if $.Values.cockroachdb.enabled -}}
 26257
 {{- else -}}
@@ -14,7 +14,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "databaseUser" -}}
+{{- define "datastoreUser" -}}
 {{- if $.Values.cockroachdb.enabled -}}
 root
 {{- else -}}
@@ -23,7 +23,7 @@ yugabyte
 {{- end -}}
 
 
-{{- define "databaseHost" -}}
+{{- define "datastoreHost" -}}
 {{- if $.Values.cockroachdb.enabled -}}
 {{- printf "%s-public.default" $.Values.cockroachdb.fullnameOverride -}}
 {{- else -}}
@@ -38,9 +38,9 @@ yugabyte
 {{- end -}}
 
 {{- define "init-container-wait-for-schema" -}}
-{{/*For some reason, calling the template databaseImage fails here.*/}}
+{{/*For some reason, calling the template datastoreImage fails here.*/}}
 - name: wait-for-schema-{{.schemaName}}
-  image: {{.databaseImage}}
+  image: {{.datastoreImage}}
   volumeMounts:
     {{- include "ca-certs:volumeMount" . | nindent 4 }}
     {{- include "client-certs:volumeMount" . | nindent 4 }}
@@ -48,8 +48,8 @@ yugabyte
     - sh
     - -c
 {{ if .cockroachdb }}
-    - "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host {{.databaseHost}} --port \"{{.databasePort}}\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '{{.schemaName}}';\" | grep {{.schemaName}}"
+    - "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host {{.datastoreHost}} --port \"{{.datastorePort}}\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ else }}
-    - "ysqlsh  --host {{.databaseHost}} --port \"{{.databasePort}}\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
+    - "ysqlsh  --host {{.datastoreHost}} --port \"{{.datastorePort}}\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ end }}
 {{- end -}}
