@@ -84,12 +84,12 @@ spec:
           stdin: false
           tty: false
           volumeMounts:
-            {{- include "ca-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
-            {{- include "client-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
-            {{- include "public-certs:volumeMount" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+            {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
       imagePullSecrets: []
       terminationGracePeriodSeconds: 30
       volumes:
-        {{- include "ca-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
-        {{- include "client-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
-        {{- include "public-certs:volume" (dict "cockroachdb" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
+        {{- include "public-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
