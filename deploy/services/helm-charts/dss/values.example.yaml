@@ -13,7 +13,7 @@ dss:
     enableScd: true
 
 cockroachdb:
-  enabled: false
+  enabled: true
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
   image:
     tag: v24.1.3
@@ -38,7 +38,7 @@ cockroachdb:
       storageClass: standard
 
 yugabyte:
-  enabled: true
+  enabled: false
   # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
   Image:
     tag: 2.25.1.0-b381

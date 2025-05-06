@@ -1,14 +1,14 @@
 {{- $image := .Values.dss.image }}
-{{- $databaseHost :=  (include "databaseHost" .) -}}
-{{- $databasePort :=  (include "databasePort" .) -}}
-{{- $databaseUser :=  (include "databaseUser" .) -}}
+{{- $datastoreHost :=  (include "datastoreHost" .) -}}
+{{- $datastorePort :=  (include "datastorePort" .) -}}
+{{- $datastoreUser :=  (include "datastoreUser" .) -}}
 {{- $jobVersion := .Release.Revision -}} {{/* Jobs template definition is immutable, using the revision in the name forces the job to be recreated at each helm upgrade. */}}
 
-{{- $waitForDatabase := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $databaseHost)) -}}
+{{- $waitForDatastore := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $datastoreHost)) -}}
 {{- $schemas := dict "rid" "4.0.0" "scd" "3.2.0" }}
 
 {{- if .Values.yugabyte.enabled }}
-{{- $waitForDatabase = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $databaseHost)) -}}
+{{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
 {{- $schemas = dict "rid" "1.0.1" "scd" "1.0.1" }}
 {{- end -}}
 
@@ -33,13 +33,13 @@ spec:
         name: {{$service}}-schema-manager-{{$jobVersion}}
     spec:
       initContainers:
-        {{- $waitForDatabase | nindent 8 }}
+        {{- $waitForDatastore | nindent 8 }}
       containers:
         - args:
             - migrate
-            - --cockroach_host={{ $databaseHost }}
-            - --cockroach_port={{ $databasePort }}
-            - --cockroach_user={{ $databaseUser }}
+            - --cockroach_host={{ $datastoreHost }}
+            - --cockroach_port={{ $datastorePort }}
+            - --cockroach_user={{ $datastoreUser }}
 {{ if $.Values.cockroachdb.enabled }}
             - --cockroach_ssl_dir=/cockroach/cockroach-certs
             - --cockroach_ssl_mode=verify-full
