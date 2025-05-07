@@ -65,7 +65,6 @@ spec:
             {{- if $dss.conf.jwksKeyIds }}
             - --jwks_key_ids={{ $dss.conf.jwksKeyIds | join "," }}
             {{- end }}
-            - --locality={{ .Values.cockroachdb.conf.locality }}
             {{- if $dss.conf.pubKeys }}
             - --public_key_files={{ $dss.conf.pubKeys | join "," }}
             {{- end }}

@@ -34,7 +34,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	} else {
-		if !(connectParameters.DBName == "rid" || connectParameters.DBName == "scd") {
+		if connectParameters.DBName != "rid" && connectParameters.DBName != "scd" {
 			connectParameters.DBName = "rid"
 		}
 	}

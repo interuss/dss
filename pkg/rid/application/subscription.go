@@ -39,7 +39,7 @@ type SubscriptionApp interface {
 }
 
 func (a *app) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	repo, err := a.Store.Interact(ctx)
+	repo, err := a.store.Interact(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
@@ -47,7 +47,7 @@ func (a *app) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.
 }
 
 func (a *app) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
-	repo, err := a.Store.Interact(ctx)
+	repo, err := a.store.Interact(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
@@ -60,7 +60,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		return nil, stacktrace.Propagate(err, "Unable to adjust time range")
 	}
 	var sub *ridmodels.Subscription
-	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
+	err := a.store.Transact(ctx, func(repo repos.Repository) error {
 
 		// ensure it doesn't exist yet
 		old, err := repo.GetSubscription(ctx, s.ID)
@@ -98,7 +98,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var sub *ridmodels.Subscription
 
-	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
+	err := a.store.Transact(ctx, func(repo repos.Repository) error {
 		old, err := repo.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
@@ -145,7 +145,7 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	var ret *ridmodels.Subscription
-	err := a.Store.Transact(ctx, func(repo repos.Repository) error {
+	err := a.store.Transact(ctx, func(repo repos.Repository) error {
 		var err error
 		old, err := repo.GetSubscription(ctx, id)
 		switch {
