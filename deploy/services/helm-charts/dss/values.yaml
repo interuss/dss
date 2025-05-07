@@ -1,5 +1,6 @@
 # Default configuration
 cockroachdb:
+  enabled: true
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
   image:
     repository: cockroachdb/cockroach
@@ -12,3 +13,33 @@ cockroachdb:
         enabled: false
   ingress:
     enabled: false
+
+yugabyte:
+  enabled: false
+  Image:
+    repository: yugabytedb/yugabyte
+
+  isMultiAz: true
+  # multicluster:
+  #   createServicePerPod: true
+
+  gflags:
+    master:
+      placement_cloud: "dss"
+      placement_region: "uss-1"
+      placement_zone: "zone"
+    tserver:
+      placement_cloud: "dss"
+      placement_region: "uss-1"
+      placement_zone: "zone"
+
+  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+
+  tls:
+    enabled: true
+    nodeToNode: true
+    clientToServer: true
+    insecure: false
+    provided: true
+
+  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
