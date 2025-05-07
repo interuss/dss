@@ -65,6 +65,8 @@ build/cockroachdb.yaml
 build/values.yaml
 build/dss.yaml
 
+deploy/operations/certificates-management/workspace/
+
 temp
 
 # Django stuff:
