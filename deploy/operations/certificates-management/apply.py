@@ -22,21 +22,21 @@ def do_apply(cluster):
     except subprocess.CalledProcessError:  # We do assume everything else works
         l.debug(f"Namespace {cluster.namespace} already exists")
 
-    for secret in ["yb-master-yugabyte-tls-cert", "yb-tserver-yugabyte-tls-cert", "yugabyte-tls-client-cert", "dss.public.certs"]:
+    for secret_name in ["yb-master-yugabyte-tls-cert", "yb-tserver-yugabyte-tls-cert", "yugabyte-tls-client-cert", "dss.public.certs"]:
 
         try:
             subprocess.check_call(
-                ["kubectl", "delete", "secret", secret, "--namespace", cluster.namespace, "--context", cluster.cluster_context],
+                ["kubectl", "delete", "secret", secret_name, "--namespace", cluster.namespace, "--context", cluster.cluster_context],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
 
-            l.info(f"Deleted old secret '{secret}'")
+            l.info(f"Deleted old secret '{secret_name}'")
 
         except subprocess.CalledProcessError:  # We do assume everything else works
-            l.debug(f"Secret '{secret}' not present on the cluster")
+            l.debug(f"Secret '{secret_name}' not present on the cluster")
 
-    for secret, folder in [
+    for secret_name, folder in [
         ("yb-master-yugabyte-tls-cert", cluster.master_certs_dir),
         ("yb-tserver-yugabyte-tls-cert", cluster.tserver_certs_dir),
         ("yugabyte-tls-client-cert", cluster.client_certs_dir),
@@ -44,9 +44,9 @@ def do_apply(cluster):
     ]:
 
         subprocess.check_call(
-            ["kubectl", "create", "secret", "generic", secret, "--namespace", cluster.namespace, "--context", cluster.cluster_context, "--from-file", folder],
+            ["kubectl", "create", "secret", "generic", secret_name, "--namespace", cluster.namespace, "--context", cluster.cluster_context, "--from-file", folder],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-        l.info(f"Created secret '{secret}'")
+        l.info(f"Created secret '{secret_name}'")
