@@ -94,7 +94,7 @@ Examples:
 ### `remove-pool-ca`
 
 Remove the CA certificate(s) of another(s) USS in the pool of trusted certificates.
-Unknown certificates are not remove again.
+Unknown certificates are not removed again.
 
 You can set the file with certificate(s) with `--ca-file`, use stdin or use `--ca-serial` to specify the serial / name of the certificate you want to remove.
 
