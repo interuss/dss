@@ -8,3 +8,8 @@ dependencies:
   - name: cockroachdb
     repository: https://charts.cockroachdb.com/
     version: 10.0.7
+    condition: cockroachdb.enabled
+  - name: yugabyte
+    repository: https://charts.yugabyte.com/
+    version: 2.25.1
+    condition: yugabyte.enabled
