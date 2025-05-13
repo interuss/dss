@@ -67,6 +67,8 @@ jobs:
       run: make qualify-locally
     - name: Bring down local DSS instance
       run: make down-locally
+    - name: Collect coverage data
+      run: make coverage-report-go
 
   dss-tests-with-yugabyte:
     name: DSS tests with Yugabyte
