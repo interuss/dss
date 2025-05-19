@@ -60,6 +60,7 @@ test_result
 # Generated configs
 build/generated/
 build/workspace/
+build/workspace-yugabyte/
 build/cockroachdb.yaml
 build/values.yaml
 build/dss.yaml
