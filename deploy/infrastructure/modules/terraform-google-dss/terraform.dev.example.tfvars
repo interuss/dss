@@ -19,7 +19,7 @@ google_machine_type             = "e2-medium"
 google_kubernetes_storage_class = "standard"
 
 # DSS configuration
-image             = "latest"
+image             = "docker.io/interuss/dss:latest"
 image_pull_secret = ""
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
@@ -28,6 +28,6 @@ should_init = true
 
 # CockroachDB
 crdb_image_tag      = "v24.1.3"
-crdb_cluster_name   = "interuss_example"
+crdb_cluster_name   = "interuss-example"
 crdb_locality       = "interuss_dss-dev-w6a"
 crdb_external_nodes = []
