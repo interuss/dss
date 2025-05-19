@@ -219,7 +219,7 @@ The CRDB cluster is automatically given a randomly-generated name if an empty st
 The CRDB cluster name must be 6-20 characters in length, and can include lowercase letters, numbers,
 and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.</p>
 <p>At the moment, this variable is only used for helm charts deployments.</p>
-<p>Example: interuss_us_production</p>
+<p>Example: interuss-us-production</p>
 </td>
             </tr><tr>
                 <td>crdb_locality</td>

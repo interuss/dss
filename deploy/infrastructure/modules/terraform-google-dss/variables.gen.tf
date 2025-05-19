@@ -266,7 +266,7 @@ variable "crdb_cluster_name" {
 
   At the moment, this variable is only used for helm charts deployments.
 
-  Example: interuss_us_production
+  Example: interuss-us-production
   EOT
 }
 
