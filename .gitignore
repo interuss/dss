@@ -132,3 +132,5 @@ go
 
 # terraform
 .terraform*
+
+**/coverdata
