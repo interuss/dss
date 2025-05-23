@@ -35,6 +35,10 @@
               "description": "Name of CockroachDB cluster",
               "type": "string"
             },
+            "cockroachDbLoadbalancerName": {
+              "description": "In AWS, used to name the load balancer. This must be overridden to run multiple DSS instances in a single region.",
+              "type": "string"
+            },
             "join": {
               "description": "List of already-existing CockroachDB instances. If empty, the chart will automatically discover the internal nodes. If set to join a DSS Region and other DSS instance, please add the addresses of the statefulset's pod as well.",
               "type": "array",
@@ -154,6 +158,10 @@
         "image": {
           "type": "string",
           "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
+        },
+        "gatewayId": {
+          "type": "string",
+          "description": "Unique identifier of the DSS Gateway. In AWS, this is used to name the load balancer and must be overridden to run multiple DSS instances in a single region."
         },
         "conf": {
           "type": "object",

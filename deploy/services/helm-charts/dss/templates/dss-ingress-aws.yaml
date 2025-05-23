@@ -1,4 +1,5 @@
 {{- $cloudProvider := $.Values.global.cloudProvider}}
+{{- $gatewayId := default "dss-gateway-external" $.Values.dss.gatewayId }}
 {{- if eq $cloudProvider "aws" }}
 {{/*
 AWS application load balancer Ingress do not support elastic ip assignment yet. Therefore, the
@@ -13,7 +14,7 @@ metadata:
     {{- include (printf "%s-ingress-dss-gateway-annotations" $cloudProvider)
       (merge .
         (dict
-          "name" "dss-gateway-external"
+          "name" ($gatewayId | trunc 63)
           "cloudProvider" $cloudProvider
         )
       ) | nindent 4

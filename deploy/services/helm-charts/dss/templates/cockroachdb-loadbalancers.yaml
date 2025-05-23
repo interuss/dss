@@ -1,4 +1,5 @@
 {{- $cloudProvider := $.Values.global.cloudProvider}}
+{{- $cockroachDbLoadbalancerName := default "cockroach-db-external-node" $.Values.cockroachdb.conf.cockroachDbLoadbalancerName }}
 
 {{- if $.Values.cockroachdb.enabled }}
 
@@ -12,7 +13,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
       (dict
-        "name" (printf "%s-%s" "cockroach-db-external-node" ( $i | toString) )
+        "name" (printf "%s-%s" ( $i | toString) $cockroachDbLoadbalancerName | trunc 31)
         "ip" $lb.ip
         "subnet" $lb.subnet
         "cloudProvider" $cloudProvider
