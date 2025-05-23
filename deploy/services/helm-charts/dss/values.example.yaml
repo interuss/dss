@@ -4,6 +4,8 @@ dss:
   image: docker.io/interuss/dss:v0.15.0 # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
   # When running local images in minikube, uncomment the following line
   # imagePullPolicy: Never
+  # Unique identifier for the AWS networking component
+#  gatewayId: 6f1e5814-
   conf:
     pubKeys:
       - /test-certs/auth2.pem
@@ -20,6 +22,8 @@ cockroachdb:
   fullnameOverride: dss-cockroachdb
   conf:
     join: []
+    # Used to generate a unique identifier for the AWS networking component
+    # crdbNodeSuffix: dallas
     cluster-name: interuss-example
     single-node: false
     locality: zone=interuss-example-google-ew1
