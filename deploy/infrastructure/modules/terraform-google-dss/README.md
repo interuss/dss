@@ -1,6 +1,6 @@
 # terraform-google-dss
 
-This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates 
+This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates
 the tanka files to deploy a DSS instance.
 
 ## Getting started
@@ -12,7 +12,7 @@ Download & install the following tools to your workstation:
 2. Install tools from [Prerequisites](../../../../build/README.md)
 3. Install provider specific tools:
     1. [Google Cloud Engine](./README.md#google-cloud-engine)
-    
+
 #### Google Cloud Engine
 
 1. Install and initialize [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
@@ -41,7 +41,7 @@ Download & install the following tools to your workstation:
 6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or 
+9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or
 handled by terraform depending on the cloud provider. See [DNS](DNS.md) for details.
 
 ## Deployment of the DSS services
@@ -54,8 +54,13 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
-4. Deploy the certificates using `./apply-certs.sh`.
+3. If using CockroachDB:
+    1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
+    1. Deploy the certificates using `./apply-certs.sh`.
+4. If using Yugabyte:
+    1. Generate the certificates using `./dss-certs.sh init`
+    1. If joining a cluster, check `dss-certs.sh`'s [help](../../../operations/certificates-management/README.md) to add others CA in your pool and share your CA with others pools members.
+    1. Deploy the certificates using `./dss-certs.sh apply`.
 5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 6. Wait for services to initialize:
     - On Google Cloud, the highest-latency operation is provisioning of the HTTPS certificate which generally takes 10-45 minutes. To track this progress:
@@ -71,4 +76,4 @@ It contains scripts to operate the cluster and setup the services.
 
 To delete all resources, run `terraform destroy`. Note that this operation can't be reverted and all data will be lost.
 
-For Google Cloud Engine, make sure to manually clean up the persistent storage: https://console.cloud.google.com/compute/disks 
+For Google Cloud Engine, make sure to manually clean up the persistent storage: https://console.cloud.google.com/compute/disks

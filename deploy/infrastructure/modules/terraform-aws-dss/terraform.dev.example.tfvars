@@ -9,7 +9,7 @@ aws_route53_zone_id = "Z01551234567890123456"
 
 # Hostnames
 app_hostname         = "dss.interuss.example.com"
-crdb_hostname_suffix = "db.interuss.example.com"
+db_hostname_suffix = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                 = "dss-dev-ew1"
@@ -23,10 +23,19 @@ image = "docker.io/interuss/dss:latest"
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
-should_init = true
+
+# Datastore
+datastore_type = "cockroachdb"
 
 # CockroachDB
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss_example"
 crdb_locality       = "interuss_dss-aws-ew1"
 crdb_external_nodes = []
+should_init = true
+
+# Yugabyte
+yugabyte_region = "aws-uss-1"
+yugabyte_zone = "aws-uss-1"
+yugabyte_light_resources = false
+yugabyte_external_nodes = []

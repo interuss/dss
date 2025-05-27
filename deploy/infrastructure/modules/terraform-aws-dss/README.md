@@ -1,6 +1,6 @@
 # terraform-aws-dss
 
-This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS) 
+This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS)
 and generates the tanka files to deploy a DSS instance.
 
 
@@ -15,7 +15,7 @@ Download & install the following tools to your workstation:
 3. Install provider specific tools:
     1. [Amazon Web Services](./README.md#amazon-web-services)
 
-    
+
 #### Amazon Web Services
 
 1. Install and initialize [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions).
@@ -25,7 +25,7 @@ Download & install the following tools to your workstation:
    1. We recommend to create an AWS_PROFILE using for instance `aws configure --profile aws-interuss-dss`
       Before running `terraform` commands, run once in your shell: `export AWS_PROFILE=aws-interuss-dss`
       Other methods are described here: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
-   
+
 
 ### Deployment of the Kubernetes cluster
 
@@ -54,8 +54,13 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
-4. Deploy the certificates using `./apply-certs.sh`.
+3. If using CockroachDB:
+    1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
+    1. Deploy the certificates using `./apply-certs.sh`.
+4. If using Yugabyte:
+    1. Generate the certificates using `./dss-certs.sh init`
+    1. If joining a cluster, check `dss-certs.sh`'s [help](../../../operations/certificates-management/README.md) to add others CA in your pool and share your CA with others pools members.
+    1. Deploy the certificates using `./dss-certs.sh apply`.
 5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 6. Wait for services to initialize:
     - On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:
@@ -68,6 +73,6 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Note that the following operations can't be reverted and all data will be lost.
 2. To delete all resources, run `tk delete .` in the workspace folder.
-3. Make sure that all [load balancers](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:) and [target groups](https://eu-west-1.console.aws.amazon.com/ec2/home#TargetGroups:) have been deleted from the AWS region before next step.  
+3. Make sure that all [load balancers](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:) and [target groups](https://eu-west-1.console.aws.amazon.com/ec2/home#TargetGroups:) have been deleted from the AWS region before next step.
 4. `terraform destroy` in your infrastructure folder.
-5. On the [EBS page](https://eu-west-1.console.aws.amazon.com/ec2/home#Volumes:), make sure to manually clean up the persistent storage. Note that the correct AWS region shall be selected.   
+5. On the [EBS page](https://eu-west-1.console.aws.amazon.com/ec2/home#Volumes:), make sure to manually clean up the persistent storage. Note that the correct AWS region shall be selected.

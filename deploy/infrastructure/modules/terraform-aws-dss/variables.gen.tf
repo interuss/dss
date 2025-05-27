@@ -54,16 +54,34 @@ variable "app_hostname" {
   EOT
 }
 
-variable "crdb_hostname_suffix" {
+variable "db_hostname_suffix" {
   type        = string
   description = <<-EOT
-  The domain name suffix shared by all of your CockroachDB nodes.
-  For instance, if your CRDB nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com, then the value would be db.example.com.
+  The domain name suffix shared by all of your databases nodes.
+  For instance, if your database nodes were addressable at 0.db.example.com,
+  1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
 
   Example: db.example.com
   EOT
 }
+
+
+variable "datastore_type" {
+  type        = string
+  description = <<-EOT
+  Type of datastore used
+
+  Supported technologies: cockroachdb, yugabyte
+  EOT
+
+  validation {
+    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte"
+  }
+
+  default = "cockroachdb"
+}
+
 
 variable "cluster_name" {
   type        = string
@@ -226,9 +244,12 @@ variable "should_init" {
   for a pool. When set true, this can initialize the data directories on your cluster,
   and prevent you from joining an existing pool.
 
+  Only used for CockroachDB with Tanka
+
   Example: `true`
   EOT
 }
+
 
 variable "desired_rid_db_version" {
   type        = string
@@ -318,4 +339,63 @@ variable "kubernetes_namespace" {
     error_message = "Only default namespace is supported at the moment"
   }
 }
+
+variable "yugabyte_cloud" {
+  type        = string
+  description = <<-EOT
+  Cloud of yugabyte instances, used for partionning.
+
+  Should be set to dss unless you're doing advanced partitionning.
+  EOT
+
+  default = "dss"
+}
+
+
+variable "yugabyte_region" {
+  type        = string
+  description = <<-EOT
+  Region of yugabyte instances, used for partionning.
+
+  Should be different from others USS in a cluster.
+  EOT
+
+  default = "uss-1"
+}
+
+
+variable "yugabyte_zone" {
+  type        = string
+  description = <<-EOT
+  Zone of yugabyte instances, used for partionning.
+
+  Should be set to zone unless you're doing advanced partitionning.
+  EOT
+
+  default = "zone"
+}
+
+
+variable "yugabyte_light_resources" {
+  type        = bool
+  description = <<-EOT
+  Enable light resources reservation for yugabyte instances.
+
+  Useful for a dev cluster when you don't want to overload your kubernetes cluster.
+  EOT
+
+  default = false
+}
+
+
+variable "yugabyte_external_nodes" {
+  type        = list(string)
+  description = <<-EOT
+  Fully-qualified domain name of existing yugabyte master nodes outside of the cluster if you are joining an existing pool.
+  Example: ["0.master.db.dss.example.com", "1.master.db.dss.example.com", "2.master.db.dss.example.com"]
+  EOT
+  default     = []
+}
+
+
 

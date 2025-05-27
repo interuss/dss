@@ -56,13 +56,20 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>crdb_hostname_suffix</td>
+                <td>db_hostname_suffix</td>
                 <td><code>string</code></td>
                 <td></td>
-                <td><p>The domain name suffix shared by all of your CockroachDB nodes.
-For instance, if your CRDB nodes were addressable at 0.db.example.com,
-1.db.example.com and 2.db.example.com, then the value would be db.example.com.</p>
+                <td><p>The domain name suffix shared by all of your databases nodes.
+For instance, if your database nodes were addressable at 0.db.example.com,
+1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.</p>
 <p>Example: db.example.com</p>
+</td>
+            </tr><tr>
+                <td>datastore_type</td>
+                <td><code>string</code></td>
+                <td><code>"cockroachdb"</code></td>
+                <td><p>Type of datastore used</p>
+<p>Supported technologies: cockroachdb, yugabyte</p>
 </td>
             </tr><tr>
                 <td>cluster_name</td>
@@ -182,6 +189,7 @@ Example:</li>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,
 and prevent you from joining an existing pool.</p>
+<p>Only used for CockroachDB with Tanka</p>
 <p>Example: <code>true</code></p>
 </td>
             </tr><tr>
@@ -243,6 +251,41 @@ Example: [&quot;0.db.dss.example.com&quot;, &quot;1.db.dss.example.com&quot;, &q
                 <td><code>"default"</code></td>
                 <td><p>Namespace where to deploy Kubernetes resources. Only default is supported at the moment.</p>
 <p>Example: <code>default</code></p>
+</td>
+            </tr><tr>
+                <td>yugabyte_cloud</td>
+                <td><code>string</code></td>
+                <td><code>"dss"</code></td>
+                <td><p>Cloud of yugabyte instances, used for partionning.</p>
+<p>Should be set to dss unless you're doing advanced partitionning.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_region</td>
+                <td><code>string</code></td>
+                <td><code>"uss-1"</code></td>
+                <td><p>Region of yugabyte instances, used for partionning.</p>
+<p>Should be different from others USS in a cluster.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_zone</td>
+                <td><code>string</code></td>
+                <td><code>"zone"</code></td>
+                <td><p>Zone of yugabyte instances, used for partionning.</p>
+<p>Should be set to zone unless you're doing advanced partitionning.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_light_resources</td>
+                <td><code>bool</code></td>
+                <td><code>false</code></td>
+                <td><p>Enable light resources reservation for yugabyte instances.</p>
+<p>Useful for a dev cluster when you don't want to overload your kubernetes cluster.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_external_nodes</td>
+                <td><code>list(string)</code></td>
+                <td><code>[]</code></td>
+                <td><p>Fully-qualified domain name of existing yugabyte master nodes outside of the cluster if you are joining an existing pool.
+Example: [&quot;0.master.db.dss.example.com&quot;, &quot;1.master.db.dss.example.com&quot;, &quot;2.master.db.dss.example.com&quot;]</p>
 </td>
             </tr></tbody>
     </table>
