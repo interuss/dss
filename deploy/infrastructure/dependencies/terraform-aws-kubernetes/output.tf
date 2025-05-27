@@ -30,8 +30,40 @@ output "crdb_nodes" {
   ]
 }
 
+output "yugabyte_masters_nodes" {
+  value = [
+    for i in aws_eip.ip_yugabyte_masters : {
+      ip  = i.allocation_id
+      dns = i.tags.ExpectedDNS
+    }
+  ]
+  depends_on = [
+    aws_eip.ip_yugabyte_masters
+  ]
+}
+
+output "yugabyte_tservers_nodes" {
+  value = [
+    for i in aws_eip.ip_yugabyte_tservers : {
+      ip  = i.allocation_id
+      dns = i.tags.ExpectedDNS
+    }
+  ]
+  depends_on = [
+    aws_eip.ip_yugabyte_tservers
+  ]
+}
+
 output "crdb_addresses" {
   value = [for i in aws_eip.ip_crdb[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
+}
+
+output "yugabyte_masters_addresses" {
+  value = [for i in aws_eip.ip_yugabyte_masters[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
+}
+
+output "yugabyte_tservers_addresses" {
+  value = [for i in aws_eip.ip_yugabyte_tservers[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
 }
 
 output "gateway_address" {
