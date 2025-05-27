@@ -23,7 +23,7 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix"]
+GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix", "datastore_type"]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
@@ -39,6 +39,11 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_locality",
     "crdb_external_nodes",
     "kubernetes_namespace",
+    "yugabyte_cloud",
+    "yugabyte_region",
+    "yugabyte_zone",
+    "yugabyte_light_resources",
+    "yugabyte_external_nodes",
 ]
 
 # dependencies/terraform-*-kubernetes

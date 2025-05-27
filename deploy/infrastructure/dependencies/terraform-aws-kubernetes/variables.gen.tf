@@ -65,6 +65,23 @@ variable "crdb_hostname_suffix" {
   EOT
 }
 
+variable "datastore_type" {
+  type        = string
+  description = <<-EOT
+  Type of datastore used
+
+  Supported technologies: cockroachdb, yugabyte
+  EOT
+
+  validation {
+    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte"
+  }
+
+  default = "cockroachdb"
+}
+
+
 variable "cluster_name" {
   type        = string
   description = <<-EOT

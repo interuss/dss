@@ -6,7 +6,7 @@ locals {
 
 resource "local_file" "helm_chart_values" {
   filename = "${local.workspace_location}/helm_values.yml"
-  content = yamlencode({
+  content = var.datastore_type == "cockroachdb" ? yamlencode({
     cockroachdb = {
       image = {
         tag = var.crdb_image_tag
@@ -69,5 +69,133 @@ resource "local_file" "helm_chart_values" {
     global = {
       cloudProvider = var.kubernetes_cloud_provider_name
     }
-  })
+}) : yamlencode({
+    cockroachdb = {
+      enabled = false
+      image = {
+        tag = "dummy"
+      }
+      fullnameOverride = "dummy"
+      conf = {
+        cluster-name = "dummy"
+        locality = "dummy"
+      }
+      statefulset = {}
+    }
+    yugabyte = {
+      enabled = true
+      Image = {
+        tag = "2.25.2.0-b359"
+      }
+      nameOverride = "dss-yugabyte"
+
+      resource = var.yugabyte_light_resources ? {
+        master = {
+          requests = {
+            cpu = "0.1"
+            memory = "0.5G"
+          }
+        }
+        tserver = {
+          requests = {
+            cpu = "0.1"
+            memory = "0.5G"
+          }
+        }
+      } : {}
+      enableLoadBalancer = false
+
+      master = {
+        extraEnv = [{
+          name = "HOSTNAMENO"
+          valueFrom =  {
+            fieldRef = {
+              fieldPath = "metadata.labels['apps.kubernetes.io/pod-index']"
+            }
+          }
+        }]
+        serverBroadcastAddress: "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
+        rpcBindAddress: "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
+        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+      }
+
+      tserver = {
+        extraEnv = [{
+          name = "HOSTNAMENO"
+          valueFrom =  {
+            fieldRef = {
+              fieldPath = "metadata.labels['apps.kubernetes.io/pod-index']"
+            }
+          }
+        }]
+        serverBroadcastAddress: "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
+        rpcBindAddress: "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
+        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+      }
+
+      gflags = {
+        master = {
+          placement_cloud: var.yugabyte_cloud
+          placement_region: var.yugabyte_region
+          placement_zone: var.yugabyte_zone
+          use_private_ip: "zone"
+        }
+        tserver = {
+          placement_cloud: var.yugabyte_cloud
+          placement_region: var.yugabyte_region
+          placement_zone: var.yugabyte_zone
+          use_private_ip: "zone"
+        }
+      }
+
+      isMultiAz = true
+      masterAddresses = join(",", ["0.master.${var.crdb_hostname_suffix},1.master.${var.crdb_hostname_suffix},2.master.${var.crdb_hostname_suffix}", join(",", var.yugabyte_external_nodes)])
+    }
+
+    loadBalancers = {
+      cockroachdbNodes = []
+
+      yugabyteMasterNodes = [
+        for ip in var.yugabyte_internal_masters_nodes[*].ip :
+        {
+          ip     = ip
+          subnet = var.workload_subnet
+        }
+      ]
+
+      yugabyteTserverNodes = [
+        for ip in var.yugabyte_internal_tservers_nodes[*].ip :
+        {
+          ip     = ip
+          subnet = var.workload_subnet
+        }
+      ]
+
+      dssGateway = {
+        ip        = var.ip_gateway
+        subnet    = var.workload_subnet
+        certName  = var.gateway_cert_name
+        sslPolicy = var.ssl_policy
+      }
+    }
+
+    dss = {
+      image = var.image
+
+      conf = {
+        pubKeys = [
+          "/test-certs/auth2.pem"
+        ]
+        jwksEndpoint = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds   = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname     = var.app_hostname
+        enableScd    = var.enable_scd
+      }
+    }
+
+    global = {
+      cloudProvider = var.kubernetes_cloud_provider_name
+    }
+})
+
 }
