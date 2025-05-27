@@ -24,7 +24,7 @@ resource "local_file" "dss_certs" {
   content = templatefile("${path.module}/templates/dss-certs.sh.tmp", {
     cluster_context      = var.kubernetes_context_name
     namespace            = var.kubernetes_namespace
-    crdb_hostname_suffix = var.crdb_hostname_suffix
+    db_hostname_suffix = var.db_hostname_suffix
   })
   filename = "${local.workspace_location}/dss-certs.sh"
 }

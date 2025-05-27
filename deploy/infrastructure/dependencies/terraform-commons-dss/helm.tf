@@ -24,7 +24,7 @@ resource "local_file" "helm_chart_values" {
         replicas = length(var.crdb_internal_nodes)
         args = [
           "--locality-advertise-addr=zone=${var.crdb_locality}@$(hostname -f)",
-          "--advertise-addr=$${HOSTNAME##*-}.${var.crdb_hostname_suffix}"
+          "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
       }
 
@@ -127,9 +127,9 @@ resource "local_file" "helm_chart_values" {
             }
           }
         }]
-        serverBroadcastAddress: "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
-        rpcBindAddress: "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
-        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+        serverBroadcastAddress: "$${HOSTNAMENO}.master.${var.db_hostname_suffix}"
+        rpcBindAddress: "$${HOSTNAMENO}.master.${var.db_hostname_suffix}"
+        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.master.${var.db_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
       }
 
       tserver = {
@@ -141,9 +141,9 @@ resource "local_file" "helm_chart_values" {
             }
           }
         }]
-        serverBroadcastAddress: "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
-        rpcBindAddress: "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
-        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+        serverBroadcastAddress: "$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}"
+        rpcBindAddress: "$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}"
+        preCommands: "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
       }
 
       gflags = {
@@ -162,7 +162,7 @@ resource "local_file" "helm_chart_values" {
       }
 
       isMultiAz = true
-      masterAddresses = join(",", ["0.master.${var.crdb_hostname_suffix},1.master.${var.crdb_hostname_suffix},2.master.${var.crdb_hostname_suffix}", join(",", var.yugabyte_external_nodes)])
+      masterAddresses = join(",", ["0.master.${var.db_hostname_suffix},1.master.${var.db_hostname_suffix},2.master.${var.db_hostname_suffix}", join(",", var.yugabyte_external_nodes)])
     }
 
     loadBalancers = {

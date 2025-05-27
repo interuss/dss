@@ -56,12 +56,12 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>crdb_hostname_suffix</td>
+                <td>db_hostname_suffix</td>
                 <td><code>string</code></td>
                 <td></td>
-                <td><p>The domain name suffix shared by all of your CockroachDB nodes.
-For instance, if your CRDB nodes were addressable at 0.db.example.com,
-1.db.example.com and 2.db.example.com, then the value would be db.example.com.</p>
+                <td><p>The domain name suffix shared by all of your databases nodes.
+For instance, if your database nodes were addressable at 0.db.example.com,
+1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.</p>
 <p>Example: db.example.com</p>
 </td>
             </tr><tr>
@@ -189,6 +189,7 @@ Example:</li>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,
 and prevent you from joining an existing pool.</p>
+<p>Only used for CockroachDB with Tanka</p>
 <p>Example: <code>true</code></p>
 </td>
             </tr><tr>

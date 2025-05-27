@@ -4,7 +4,7 @@ module "terraform-google-kubernetes" {
   cluster_name                 = var.cluster_name
   google_zone                  = var.google_zone
   app_hostname                 = var.app_hostname
-  crdb_hostname_suffix         = var.crdb_hostname_suffix
+  db_hostname_suffix         = var.db_hostname_suffix
   datastore_type               = var.datastore_type
   google_dns_managed_zone_name = var.google_dns_managed_zone_name
   google_machine_type          = var.google_machine_type
@@ -22,7 +22,7 @@ module "terraform-commons-dss" {
   app_hostname                     = var.app_hostname
   crdb_image_tag                   = var.crdb_image_tag
   crdb_cluster_name                = var.crdb_cluster_name
-  crdb_hostname_suffix             = var.crdb_hostname_suffix
+  db_hostname_suffix             = var.db_hostname_suffix
   datastore_type                   = var.datastore_type
   should_init                      = var.should_init
   authorization                    = var.authorization

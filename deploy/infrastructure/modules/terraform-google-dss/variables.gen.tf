@@ -43,16 +43,17 @@ variable "app_hostname" {
   EOT
 }
 
-variable "crdb_hostname_suffix" {
+variable "db_hostname_suffix" {
   type        = string
   description = <<-EOT
-  The domain name suffix shared by all of your CockroachDB nodes.
-  For instance, if your CRDB nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com, then the value would be db.example.com.
+  The domain name suffix shared by all of your databases nodes.
+  For instance, if your database nodes were addressable at 0.db.example.com,
+  1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
 
   Example: db.example.com
   EOT
 }
+
 
 variable "datastore_type" {
   type        = string
@@ -232,9 +233,12 @@ variable "should_init" {
   for a pool. When set true, this can initialize the data directories on your cluster,
   and prevent you from joining an existing pool.
 
+  Only used for CockroachDB with Tanka
+
   Example: `true`
   EOT
 }
+
 
 variable "desired_rid_db_version" {
   type        = string

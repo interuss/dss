@@ -23,7 +23,7 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix", "datastore_type"]
+GLOBAL_VARIABLES = ["app_hostname", "db_hostname_suffix", "datastore_type"]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [

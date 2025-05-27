@@ -128,4 +128,3 @@ Delete the resources: `kubectl delete -f test-app.yml`.
 1. Delete all created resources from the cluster (eg. clean up test as described in the previous section.)
 2. Make sure all load balancers and target groups have been removed.
 3. Run `terraform destroy`.
-
