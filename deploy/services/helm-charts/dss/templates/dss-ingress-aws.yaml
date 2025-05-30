@@ -14,7 +14,7 @@ metadata:
     {{- include (printf "%s-ingress-dss-gateway-annotations" $cloudProvider)
       (merge .
         (dict
-          "name" ($gatewayId | trunc 63)
+          "name" ($gatewayId)
           "cloudProvider" $cloudProvider
         )
       ) | nindent 4

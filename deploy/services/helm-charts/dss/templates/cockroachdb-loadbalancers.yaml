@@ -13,7 +13,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
       (dict
-        "name" (printf "%s-%s" ( $i | toString) $cockroachDbLoadbalancerName | trunc 31)
+        "name" (printf "%s-%s" $cockroachDbLoadbalancerName ( $i | toString))
         "ip" $lb.ip
         "subnet" $lb.subnet
         "cloudProvider" $cloudProvider
@@ -21,13 +21,13 @@ metadata:
     }}
   labels:
     app: cockroachdb
-    name: cockroach-db-external-node-{{$i}}
-  name: cockroach-db-external-node-{{$i}}
+    name: {{$cockroachDbLoadbalancerName}}-{{$i}}
+  name: {{$cockroachDbLoadbalancerName}}-{{$i}}
   namespace: default
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
   ports:
-    - name: cockroach-db-external-node-{{$i}}
+    - name: {{$cockroachDbLoadbalancerName}}-{{$i}}
       port: 26257
       targetPort: 26257
   publishNotReadyAddresses: true

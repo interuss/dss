@@ -35,10 +35,6 @@
               "description": "Name of CockroachDB cluster",
               "type": "string"
             },
-            "cockroachDbLoadbalancerName": {
-              "description": "In AWS, used to name the load balancer. This must be overridden to run multiple DSS instances in a single region.",
-              "type": "string"
-            },
             "join": {
               "description": "List of already-existing CockroachDB instances. If empty, the chart will automatically discover the internal nodes. If set to join a DSS Region and other DSS instance, please add the addresses of the statefulset's pod as well.",
               "type": "array",
@@ -108,6 +104,11 @@
       "description": "Load balancers configuration",
       "type": "object",
       "properties": {
+        "cockroachDbLoadBalancerId": {
+            "description": "Optional and AWS only: Load balancer name of this Cockroach DB node. This must be overridden to run multiple DSS instances in a single region. (default: cockroach-db-external-node-X where X is the index of this node)",
+            "type": "string",
+            "maxLength": 28
+        },
         "cockroachdbNodes": {
           "type": "array",
           "items": {
@@ -129,6 +130,11 @@
         "dssGateway": {
           "type": "object",
           "properties": {
+            "loadBalancerId": {
+                "type": "string",
+                "description": "Optional and AWS only: Load balancer name of the DSS Gateway. This must be overridden to run multiple DSS instances in a single region. (default: cockroach-db-external-node-X where X is the index)",
+                "maxLength": 62
+            },
             "ip": {
               "description": "Public ip or cloud resource name.",
               "type": "string"
@@ -158,10 +164,6 @@
         "image": {
           "type": "string",
           "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
-        },
-        "gatewayId": {
-          "type": "string",
-          "description": "Unique identifier of the DSS Gateway. In AWS, this is used to name the load balancer and must be overridden to run multiple DSS instances in a single region."
         },
         "conf": {
           "type": "object",
