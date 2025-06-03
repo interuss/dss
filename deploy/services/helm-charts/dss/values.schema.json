@@ -184,6 +184,24 @@
             ]
           }
         },
+        "yugabyteMasterNodes": {
+          "type": "array",
+          "items": {
+            "properties": {
+              "ip": {
+                "description": "Public ip or cloud resource name.",
+                "type": "string"
+              },
+              "subnet": {
+                "description": "Optional: Subnet of the public ip for AWS only",
+                "type": "string"
+              }
+            },
+            "required": [
+              "ip"
+            ]
+          }
+        },
         "dssGateway": {
           "type": "object",
           "properties": {

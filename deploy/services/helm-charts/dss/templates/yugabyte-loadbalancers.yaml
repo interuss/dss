@@ -1,0 +1,92 @@
+{{- $cloudProvider := $.Values.global.cloudProvider}}
+
+{{- if $.Values.yugabyte.enabled }}
+
+# Master nodes Gateways
+{{- range $i, $lb := .Values.loadBalancers.yugabyteMasterNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
+      (dict
+        "name" (printf "%s-%s" "yugabyte-db-master-external-node" ( $i | toString) )
+        "ip" $lb.ip
+        "subnet" $lb.subnet
+        "cloudProvider" $cloudProvider
+      ) | nindent 4
+    }}
+  labels:
+    app: yugabyte
+    name: yugabyte-db-master-external-node-{{$i}}
+  name: yugabyte-db-master-external-node-{{$i}}
+spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
+  ports:
+    - name: yugabyte-master-db-external-node-{{$i}}
+      port: 7100
+      targetPort: 7100
+    - name: yugabyte-master-ui-external-node-{{$i}}
+      port: 7000
+      targetPort: 7000
+    - name: yugabyte-master-ui2-external-node-{{$i}}
+      port: 9000
+      targetPort: 9000
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: yb-master-{{$i}}
+  type: LoadBalancer
+{{- end }}
+
+# Tserver nodes Gateways
+{{- range $i, $lb := .Values.loadBalancers.yugabyteTserverNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
+      (dict
+        "name" (printf "%s-%s" " yugabyte-db-tserver-external-node" ( $i | toString) )
+        "ip" $lb.ip
+        "subnet" $lb.subnet
+        "cloudProvider" $cloudProvider
+      ) | nindent 4
+    }}
+  labels:
+    app: yugabyte
+    name: yugabyte-db-tserver-external-node-{{$i}}
+  name: yugabyte-db-tserver-external-node-{{$i}}
+spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
+  ports:
+    - name: yugabyte-tserver-db-external-node-{{$i}}
+      port: 9100
+      targetPort: 9100
+    - name: yugabyte-tserver-ui-external-node-{{$i}}
+      port: 9000
+      targetPort: 9000
+    - name: yugabyte-tserver-ui2-external-node-{{$i}}
+      port: 7000
+      targetPort: 7000
+    - name: yugabyte-tserver-ycql-external-node-{{$i}}
+      port: 9042
+      targetPort: 9042
+    - name: yugabyte-tserver-ysql-external-node-{{$i}}
+      port: 5433
+      targetPort: 5433
+    - name: yugabyte-tserver-metrics-external-node-{{$i}}
+      port: 13000
+      targetPort: 13000
+    - name: yugabyte-tserver-metrics-2-external-node-{{$i}}
+      port: 12000
+      targetPort: 12000
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: yb-tserver-{{$i}}
+  type: LoadBalancer
+{{- end }}
+{{- end }}
