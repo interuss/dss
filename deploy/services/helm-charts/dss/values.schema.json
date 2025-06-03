@@ -94,11 +94,73 @@
         "enabled": {
           "type": "boolean",
           "description": "Enable YugabyteDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+        },
+        "gflags": {
+          "type": "object",
+          "properties": {
+            "master": {
+              "type": "object",
+              "properties": {
+                "placement_cloud": {
+                  "type": "string",
+                  "description": "Name of the cloud where instances are deployed, in a recommended deployment should be set to 'dss'"
+                },
+                "placement_region": {
+                  "type": "string",
+                  "description": "Name of the region where instances are deployed, in a recommended deployment should be set to your organization's name"
+                },
+                "placement_zone": {
+                  "type": "string",
+                  "description": "Name of the zone where instances are deployed, in a recommended deployment should be set to 'zone'"
+                }
+              },
+              "required": [
+                "placement_cloud",
+                "placement_region",
+                "placement_zone"
+              ],
+              "additionalItems": true
+            },
+            "tserver": {
+              "type": "object",
+              "properties": {
+                "placement_cloud": {
+                  "type": "string",
+                  "description": "Name of the cloud where instances are deployed, in a recommended deployment should be set to 'dss'"
+                },
+                "placement_region": {
+                  "type": "string",
+                  "description": "Name of the region where instances are deployed, in a recommended deployment should be set to your organization's name"
+                },
+                "placement_zone": {
+                  "type": "string",
+                  "description": "Name of the zone where instances are deployed, in a recommended deployment should be set to 'zone'"
+                }
+              },
+              "required": [
+                "placement_cloud",
+                "placement_region",
+                "placement_zone"
+              ],
+              "additionalItems": true
+            }
+          },
+          "required": [
+            "master",
+            "tserver"
+          ],
+          "additionalItems": true
+        },
+        "masterAddresses": {
+          "type": "string",
+          "description": "A comma-separated list of master addresses to use. For a local cluster, you can omit it to use the default values, if you join an existing cluster you need to set it the list of public addresses of all master yugabyte nodes"
         }
       },
       "required": [
-        "enabled"
-      ]
+        "enabled",
+        "gflags"
+      ],
+      "additionalItems": true
     },
     "loadBalancers": {
       "description": "Load balancers configuration",

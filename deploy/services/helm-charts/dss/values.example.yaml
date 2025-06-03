@@ -40,9 +40,19 @@ cockroachdb:
 yugabyte:
   enabled: false
   # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
-  Image:
-    tag: 2.25.1.0-b381
-  nameOverride: dss-yugabyte
+
+  gflags:
+    master:
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
+    tserver:
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
+
+  # If you join a yugabyte cluster, set the masterAddresses there
+  # masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
 
 loadBalancers:
   cockroachdbNodes:

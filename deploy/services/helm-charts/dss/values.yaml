@@ -16,7 +16,21 @@ cockroachdb:
 
 yugabyte:
   enabled: false
+  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+
   Image:
     repository: yugabytedb/yugabyte
+    tag: 2.25.1.0-b381
 
-  # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+  nameOverride: dss-yugabyte
+
+  isMultiAz: true
+
+  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+
+  tls:
+    enabled: true
+    nodeToNode: true
+    clientToServer: true
+    insecure: false
+    provided: true
