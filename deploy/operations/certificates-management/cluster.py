@@ -6,12 +6,13 @@ from utils import slugify
 class Cluster(object):
     """Represent an instance of a cluster, expose paths"""
 
-    def __init__(self, name, cluster_context, namespace, organization, nodes_count):
+    def __init__(self, name, cluster_context, namespace, organization, nodes_count, nodes_public_address):
         self._name = name
         self.cluster_context = cluster_context
         self.namespace = namespace
         self.organization = organization
         self.nodes_count = nodes_count
+        self.nodes_public_address = nodes_public_address
 
     @property
     def name(self):
@@ -113,6 +114,9 @@ class Cluster(object):
         short_name = self.get_node_short_name(node_type, node_id)
         return f"{short_name}.{self.namespace}.svc.cluster.local"
 
+    def get_node_public_address(self, node_type, node_id):
+        return self.nodes_public_address.replace("<ID>", str(node_id)).replace("<TYPE>", node_type)
+
     def get_node_cert_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
         full_name = self.get_node_full_name(node_type, node_id)
@@ -122,6 +126,18 @@ class Cluster(object):
         folder = getattr(self, f"{node_type}_certs_dir")
         full_name = self.get_node_full_name(node_type, node_id)
         return f"{folder}/node.{full_name}.key"
+
+    def get_node_cert_second_file(self, node_type, node_id):
+        folder = getattr(self, f"{node_type}_certs_dir")
+        address = self.get_node_public_address(node_type, node_id)
+        if address:
+            return f"{folder}/node.{address}.crt"
+
+    def get_node_key_second_file(self, node_type, node_id):
+        folder = getattr(self, f"{node_type}_certs_dir")
+        address = self.get_node_public_address(node_type, node_id)
+        if address:
+            return f"{folder}/node.{address}.key"
 
     def get_node_csr_file(self, node_type, node_id):
         full_name = self.get_node_full_name(node_type, node_id)

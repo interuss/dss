@@ -65,6 +65,13 @@ For instance, if your CRDB nodes were addressable at 0.db.example.com,
 <p>Example: db.example.com</p>
 </td>
             </tr><tr>
+                <td>datastore_type</td>
+                <td><code>string</code></td>
+                <td><code>"cockroachdb"</code></td>
+                <td><p>Type of datastore used</p>
+<p>Supported technologies: cockroachdb, yugabyte</p>
+</td>
+            </tr><tr>
                 <td>cluster_name</td>
                 <td><code>string</code></td>
                 <td></td>
@@ -243,6 +250,41 @@ Example: [&quot;0.db.dss.example.com&quot;, &quot;1.db.dss.example.com&quot;, &q
                 <td><code>"default"</code></td>
                 <td><p>Namespace where to deploy Kubernetes resources. Only default is supported at the moment.</p>
 <p>Example: <code>default</code></p>
+</td>
+            </tr><tr>
+                <td>yugabyte_cloud</td>
+                <td><code>string</code></td>
+                <td><code>"dss"</code></td>
+                <td><p>Cloud of yugabyte instances, used for partionning.</p>
+<p>Should be set to dss unless you're doing advanced partitionning.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_region</td>
+                <td><code>string</code></td>
+                <td><code>"uss-1"</code></td>
+                <td><p>Region of yugabyte instances, used for partionning.</p>
+<p>Should be different from others USS in a cluster.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_zone</td>
+                <td><code>string</code></td>
+                <td><code>"zone"</code></td>
+                <td><p>Zone of yugabyte instances, used for partionning.</p>
+<p>Should be set to zone unless you're doing advanced partitionning.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_light_resources</td>
+                <td><code>bool</code></td>
+                <td><code>false</code></td>
+                <td><p>Enable light resources reservation for yugabyte instances.</p>
+<p>Useful for a dev cluster when you don't want to overload your kubernetes cluster.</p>
+</td>
+            </tr><tr>
+                <td>yugabyte_external_nodes</td>
+                <td><code>list(string)</code></td>
+                <td><code>[]</code></td>
+                <td><p>Fully-qualified domain name of existing yugabyte master nodes outside of the cluster if you are joining an existing pool.
+Example: [&quot;0.master.db.dss.example.com&quot;, &quot;1.master.db.dss.example.com&quot;, &quot;2.master.db.dss.example.com&quot;]</p>
 </td>
             </tr></tbody>
     </table>

@@ -1,6 +1,8 @@
 
 locals {
   crdb_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_crdb[*] : i.tags.ExpectedDNS => i.public_ip }
+  yugabyte_master_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte_masters[*] : i.tags.ExpectedDNS => i.public_ip }
+  yugabyte_tserver_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte_tservers[*] : i.tags.ExpectedDNS => i.public_ip }
 }
 
 
@@ -30,6 +32,28 @@ resource "aws_route53_record" "app_hostname" {
 # Crdb nodes DNS
 resource "aws_route53_record" "crdb_hostname" {
   for_each = local.crdb_hostnames
+
+  zone_id = var.aws_route53_zone_id
+  name    = each.key
+  type    = "A"
+  ttl     = 300
+  records = [each.value]
+}
+
+# Yugabyte master nodes DNS
+resource "aws_route53_record" "yugabyte_master_hostnames" {
+  for_each = local.yugabyte_master_hostnames
+
+  zone_id = var.aws_route53_zone_id
+  name    = each.key
+  type    = "A"
+  ttl     = 300
+  records = [each.value]
+}
+
+# Yugabyte tserver nodes DNS
+resource "aws_route53_record" "yugabyte_tserver_hostnames" {
+  for_each = local.yugabyte_tserver_hostnames
 
   zone_id = var.aws_route53_zone_id
   name    = each.key

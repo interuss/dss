@@ -22,6 +22,23 @@ variable "crdb_hostname_suffix" {
   EOT
 }
 
+variable "datastore_type" {
+  type        = string
+  description = <<-EOT
+  Type of datastore used
+
+  Supported technologies: cockroachdb, yugabyte
+  EOT
+
+  validation {
+    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte"
+  }
+
+  default = "cockroachdb"
+}
+
+
 variable "image" {
   type        = string
   description = <<-EOT
@@ -224,4 +241,63 @@ variable "kubernetes_namespace" {
     error_message = "Only default namespace is supported at the moment"
   }
 }
+
+variable "yugabyte_cloud" {
+  type        = string
+  description = <<-EOT
+  Cloud of yugabyte instances, used for partionning.
+
+  Should be set to dss unless you're doing advanced partitionning.
+  EOT
+
+  default = "dss"
+}
+
+
+variable "yugabyte_region" {
+  type        = string
+  description = <<-EOT
+  Region of yugabyte instances, used for partionning.
+
+  Should be different from others USS in a cluster.
+  EOT
+
+  default = "uss-1"
+}
+
+
+variable "yugabyte_zone" {
+  type        = string
+  description = <<-EOT
+  Zone of yugabyte instances, used for partionning.
+
+  Should be set to zone unless you're doing advanced partitionning.
+  EOT
+
+  default = "zone"
+}
+
+
+variable "yugabyte_light_resources" {
+  type        = bool
+  description = <<-EOT
+  Enable light resources reservation for yugabyte instances.
+
+  Useful for a dev cluster when you don't want to overload your kubernetes cluster.
+  EOT
+
+  default = false
+}
+
+
+variable "yugabyte_external_nodes" {
+  type        = list(string)
+  description = <<-EOT
+  Fully-qualified domain name of existing yugabyte master nodes outside of the cluster if you are joining an existing pool.
+  Example: ["0.master.db.dss.example.com", "1.master.db.dss.example.com", "2.master.db.dss.example.com"]
+  EOT
+  default     = []
+}
+
+
 

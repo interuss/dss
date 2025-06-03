@@ -22,7 +22,7 @@ metadata:
   name: {{.Release.Name}}-core-service
 spec:
   minReadySeconds: 30
-  replicas: {{ len .Values.loadBalancers.cockroachdbNodes }}
+  replicas: {{ if $.Values.cockroachdb.enabled -}}{{ len .Values.loadBalancers.cockroachdbNodes }}{{- else -}}{{ len .Values.loadBalancers.yugabyteMasterNodes }}{{- end }}
   selector:
     matchLabels:
       app: {{.Release.Name}}-core-service

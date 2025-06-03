@@ -29,6 +29,22 @@ variable "crdb_internal_nodes" {
   description = "List of the IP addresses and related dns for the Cockroach DB nodes"
 }
 
+variable "yugabyte_internal_masters_nodes" {
+  type = list(object({
+    dns = string
+    ip  = string
+  }))
+  description = "List of the IP addresses and related dns for the Yugabyte DB master nodes"
+}
+
+variable "yugabyte_internal_tservers_nodes" {
+  type = list(object({
+    dns = string
+    ip  = string
+  }))
+  description = "List of the IP addresses and related dns for the Yugabyte DB tserver nodes"
+}
+
 variable "ip_gateway" {
   type        = string
   description = "IP of the gateway used by the DSS service"
