@@ -96,12 +96,20 @@ services:
     build:
       context: ../..
       dockerfile: Dockerfile
+      args:
+          # Enable coverage tracking on local builds. Note GOCOVERDIR
+          # must be set at runtime to an existing and writeable directory
+          # for coverage data to be written upon exit.
+          EXTRA_GO_INSTALL_FLAGS: "-cover"
     image: interuss-local/dss
     volumes:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - $PWD/startup/coverdata:/startup/coverdata:rw  # we will save coverage info here
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+      # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
+      GOCOVERDIR: "/startup/coverdata"
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"

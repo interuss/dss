@@ -29,10 +29,11 @@ if [ "$DEBUG_ON" = "1" ]; then
   -allow_http_base_urls
 else
   echo "Debug Mode: off"
-
+  # Use exec so docker-compose's SIGTERM is forwarded to the binary
   # Linter is disabled to properly unwrap $DATASTORE_CONNECTION.
   # shellcheck disable=SC2086
-  /usr/bin/core-service ${DATASTORE_CONNECTION} \
+  exec /usr/bin/core-service \
+  ${DATASTORE_CONNECTION} \
   -public_key_files /var/test-certs/auth2.pem \
   -log_format console \
   -dump_requests \

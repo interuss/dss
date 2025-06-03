@@ -16,6 +16,9 @@ BUILD_LDFLAGS := -X github.com/interuss/dss/pkg/build.time=$(shell date -u '+%Y-
 VERSION_LDFLAGS := -X github.com/interuss/dss/pkg/version.tag=$(DSS_VERSION_TAG) -X github.com/interuss/dss/pkg/version.commit=$(COMMIT)
 LDFLAGS := $(BUILD_LDFLAGS) $(VERSION_LDFLAGS)
 
+# Where test coverage data will be written to
+COVERDATA_DIR := $(shell pwd)/build/dev/startup/coverdata
+
 ifeq ($(OS),Windows_NT)
   detected_OS := Windows
 else
@@ -24,7 +27,7 @@ endif
 
 .PHONY: interuss
 interuss:
-	go install -ldflags "$(LDFLAGS)" ./cmds/...
+	go install $(EXTRA_GO_INSTALL_FLAGS) -ldflags "$(LDFLAGS)" ./cmds/...
 
 go-mod-download: go.mod
 	go mod download
@@ -103,11 +106,11 @@ dummy_oauth_api: openapi-to-go-server
 # ---
 
 .PHONY: check-dss
-check-dss: evaluate-tanka test-go-units test-go-units-crdb build-dss test-e2e
+check-dss: evaluate-tanka test-go-units test-go-units-crdb test-e2e
 
 .PHONY: test-go-units
 test-go-units:
-	go test -ldflags "$(LDFLAGS)" -count=1 -v ./pkg/... ./cmds/...
+	go test -cover -ldflags "$(LDFLAGS)" -count=1 -v ./pkg/... ./cmds/... -coverpkg=./... -test.gocoverdir=$(COVERDATA_DIR)
 
 .PHONY: test-go-units-crdb
 test-go-units-crdb: cleanup-test-go-units-crdb
@@ -115,9 +118,9 @@ test-go-units-crdb: cleanup-test-go-units-crdb
 	@until [ -n "`docker logs dss-crdb-for-testing | grep 'nodeID'`" ]; do echo "Waiting for CRDB to be ready"; sleep 3; done;
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/rid --db_version latest --cockroach_host localhost
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/scd --db_version latest --cockroach_host localhost
-	go test -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
-	go test -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid
-	go test -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd
+	go test -cover -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd -test.gocoverdir=$(COVERDATA_DIR)
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
@@ -130,7 +133,6 @@ cleanup-test-go-units-crdb:
 build-dss:
 	build/dev/run_locally.sh build
 
-.PHONY: test-e2e
 test-e2e: down-locally build-dss start-locally probe-locally collect-local-logs down-locally
 
 tag:
@@ -155,6 +157,34 @@ qualify-locally:
 .PHONY: collect-local-logs
 collect-local-logs:
 	docker logs dss_sandbox-local-dss-core-service-1 2> core-service-for-testing.log
+
+.PHONY: clean-coverage-data
+clean-coverage-data:
+	rm -f $(COVERDATA_DIR)/*
+	rm -f coverage.out
+	rm -f go-coverage.html
+	rm -f coverage.lcov
+	rm -rf lcov-coverage
+
+.PHONY: coverage-report-go
+coverage-report-go:
+	go tool covdata textfmt -i=$(COVERDATA_DIR) -o=coverage.out
+	go tool cover -html coverage.out -o go-coverage.html
+
+.PHONY: coverage-report-lcov
+coverage-report-lcov: coverage-report-go
+	gcov2lcov -infile coverage.out -outfile coverage.lcov
+	genhtml coverage.lcov -o lcov-coverage/
+
+.PHONY: collect-coverage
+collect-coverage:
+	# Issuing make commands explicitly, as we need to repeat 'down-locally'
+	make clean-coverage-data down-locally
+	make test-go-units test-go-units-crdb
+	make start-locally
+	make probe-locally qualify-locally
+	make down-locally
+	make coverage-report-go
 
 .PHONY: stop-locally
 stop-locally:
