@@ -1,5 +1,6 @@
 
 resource "local_file" "make_certs" {
+  count = var.datastore_type == "cockroachdb" ? 1 : 0
   content = templatefile("${path.module}/templates/make-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
@@ -10,11 +11,23 @@ resource "local_file" "make_certs" {
 }
 
 resource "local_file" "apply_certs" {
+  count = var.datastore_type == "cockroachdb" ? 1 : 0
   content = templatefile("${path.module}/templates/apply-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
   })
   filename = "${local.workspace_location}/apply-certs.sh"
+}
+
+resource "local_file" "dss_certs" {
+  count = var.datastore_type == "yugabyte" ? 1 : 0
+  content = templatefile("${path.module}/templates/dss-certs.sh.tmp", {
+    cluster_context      = var.kubernetes_context_name
+    namespace            = var.kubernetes_namespace
+    crdb_hostname_suffix = var.crdb_hostname_suffix
+    node_count           = var.node_count
+  })
+  filename = "${local.workspace_location}/dss-certs.sh"
 }
 
 resource "local_file" "get_credentials" {
