@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -152,13 +153,42 @@ func (ds *Datastore) GetSchemaVersion(ctx context.Context, dbName string) (*semv
 
 // GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the Datastore represents.
 func (ds *Datastore) GetDSSAirspaceRepresentationID(ctx context.Context) (string, error) {
-	if ds.Version.Type == CockroachDB {
+	switch ds.Version.Type {
+	case CockroachDB:
 		var darID string
 		if err := ds.Pool.QueryRow(ctx, "SELECT crdb_internal.cluster_id()").Scan(&darID); err != nil {
 			return darID, stacktrace.Propagate(err, "Error getting CockroachDB cluster ID")
 		}
 		return darID, nil
-	} else {
+	case Yugabyte:
+
+		hash := sha256.New()
+
+		rows, err := ds.Pool.Query(ctx, "SELECT uuid FROM yb_servers() ORDER BY uuid DESC")
+		if err != nil {
+			return "", stacktrace.Propagate(err, "Error getting Yugabyte nodes IDs")
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+
+			var uuid string
+
+			err := rows.Scan(
+				&uuid,
+			)
+			if err != nil {
+				return "", stacktrace.Propagate(err, "Error scanning Yugabyte node ID")
+			}
+
+			hash.Write([]byte(uuid))
+		}
+
+		hashResult := hash.Sum(nil)
+
+		return fmt.Sprintf("%x", hashResult), nil
+
+	default:
 		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", ds.Version.Type)
 	}
 }
