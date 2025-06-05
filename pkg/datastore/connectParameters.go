@@ -2,10 +2,11 @@ package datastore
 
 import (
 	"fmt"
-	"github.com/interuss/stacktrace"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/interuss/stacktrace"
 )
 
 type (
@@ -104,9 +105,29 @@ func (cp ConnectParameters) BuildDSN() (string, error) {
 	if dir == "" {
 		return "", stacktrace.NewError("Missing datastore ssl_dir")
 	}
-	dsnMap["sslrootcert"] = fmt.Sprintf("%s/ca.crt", dir)
+	dsnMap["sslrootcert"] = cp.GetCAFile()
 	dsnMap["sslcert"] = fmt.Sprintf("%s/client.%s.crt", dir, u)
 	dsnMap["sslkey"] = fmt.Sprintf("%s/client.%s.key", dir, u)
 
 	return formatDSN(dsnMap), nil
+}
+
+// Return the CA file to use
+func (cp ConnectParameters) GetCAFile() string {
+
+	if cp.SSL.Mode == "disable" || cp.SSL.Dir == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/ca.crt", cp.SSL.Dir)
+}
+
+// Return the instance CA file to use
+func (cp ConnectParameters) GetInstanceCAFile() string {
+
+	if cp.SSL.Mode == "disable" || cp.SSL.Dir == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/ca-instance.crt", cp.SSL.Dir)
 }

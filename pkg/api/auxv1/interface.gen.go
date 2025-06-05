@@ -7,9 +7,9 @@ import (
 )
 
 var (
+	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
 	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
-	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	GetVersionSecurity                      = []api.AuthorizationOption{}
 	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{
@@ -29,6 +29,8 @@ var (
 			"Auth": {InterussPoolStatusReadScope},
 		},
 	}
+	GetAcceptedCAsSecurity = []api.AuthorizationOption{}
+	GetInstanceCAsSecurity = []api.AuthorizationOption{}
 )
 
 type GetVersionRequest struct {
@@ -106,6 +108,36 @@ type GetDSSInstancesResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetAcceptedCAsRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetAcceptedCAsResponseSet struct {
+	// The information is successfully returned.
+	Response200 *CAsResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
+type GetInstanceCAsRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetInstanceCAsResponseSet struct {
+	// The information is successfully returned.
+	Response200 *CAsResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Queries the version of the DSS.
 	GetVersion(ctx context.Context, req *GetVersionRequest) GetVersionResponseSet
@@ -118,4 +150,10 @@ type Implementation interface {
 
 	// Queries the current information for DSS instances participating in the pool.
 	GetDSSInstances(ctx context.Context, req *GetDSSInstancesRequest) GetDSSInstancesResponseSet
+
+	// Current certificates of certificate authorities (CAs) that this DSS instance accepts as legitimate signers of node certificates for the pool of DSS instances constituting the DSS Airspace Representation.
+	GetAcceptedCAs(ctx context.Context, req *GetAcceptedCAsRequest) GetAcceptedCAsResponseSet
+
+	// Current certificates of certificate authorities (CAs) that signed the node certificates for this DSS instance. May return more that one certificate (e.g. for rotations).  Other DSS instances in the pool should accept node certificates signed by these CAs.
+	GetInstanceCAs(ctx context.Context, req *GetInstanceCAsRequest) GetInstanceCAsResponseSet
 }

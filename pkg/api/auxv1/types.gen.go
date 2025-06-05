@@ -44,3 +44,8 @@ type Heartbeat struct {
 	// The time by which a new heartbeat should be registered for this DSS instance if the DSS instance operator's system is behaving correctly.
 	NextHeartbeatExpectedBefore *string `json:"next_heartbeat_expected_before,omitempty"`
 }
+
+type CAsResponse struct {
+	// A list of certificates, each in PEM format.
+	Cas *[]string `json:"CAs,omitempty"`
+}

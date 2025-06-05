@@ -8,10 +8,10 @@ import (
 
 var (
 	UtmAvailabilityArbitrationScope          = api.RequiredScope("utm.availability_arbitration")
-	UtmStrategicCoordinationScope            = api.RequiredScope("utm.strategic_coordination")
-	UtmConstraintManagementScope             = api.RequiredScope("utm.constraint_management")
-	UtmConformanceMonitoringSaScope          = api.RequiredScope("utm.conformance_monitoring_sa")
 	UtmConstraintProcessingScope             = api.RequiredScope("utm.constraint_processing")
+	UtmConstraintManagementScope             = api.RequiredScope("utm.constraint_management")
+	UtmStrategicCoordinationScope            = api.RequiredScope("utm.strategic_coordination")
+	UtmConformanceMonitoringSaScope          = api.RequiredScope("utm.conformance_monitoring_sa")
 	QueryOperationalIntentReferencesSecurity = []api.AuthorizationOption{
 		{
 			"Authority": {UtmStrategicCoordinationScope},
