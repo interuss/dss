@@ -13,6 +13,9 @@
 - mountPath: /opt/yugabyte-certs/ca.crt
   name: ca-certs
   subPath: root.crt
+- mountPath: /opt/yugabyte-certs/ca-instance.crt
+  name: ca-certs
+  subPath: ca-instance.crt
 {{- end -}}
 {{- end -}}
 {{- define "client-certs:volume" -}}

@@ -84,6 +84,15 @@ components:
       - timestamp
       - source
 
+    CAsResponse:
+      type: object
+      properties:
+        CAs:
+          description: A list of certificates, each in PEM format.
+          type: array
+          items:
+            type: string
+
 paths:
   /aux/v1/version:
     get:
@@ -201,6 +210,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /aux/v1/configuration/accepted_ca_certs:
+    get:
+      summary: Current certificates of certificate authorities (CAs) that this DSS instance accepts as legitimate signers of node certificates for the pool of DSS instances constituting the DSS Airspace Representation.
+      operationId: getAcceptedCAs
+      tags: [ dss ]
+      responses:
+        '200':
+          description: The information is successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CAsResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /aux/v1/configuration/ca_certs:
+    get:
+      summary: Current certificates of certificate authorities (CAs) that signed the node certificates for this DSS instance. May return more that one certificate (e.g. for rotations).  Other DSS instances in the pool should accept node certificates signed by these CAs.
+      operationId: getInstanceCAs
+      tags: [ dss ]
+      responses:
+        '200':
+          description: The information is successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CAsResponse'
         '501':
           description: >-
             The server has not implemented this operation.

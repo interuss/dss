@@ -52,6 +52,10 @@ class Cluster(object):
         return os.path.join(self.client_certs_dir, "root.crt")
 
     @property
+    def client_instance_ca(self):
+        return os.path.join(self.client_certs_dir, "ca-instance.crt")
+
+    @property
     def master_certs_dir(self):
         return os.path.join(self.directory, "masters")
 
