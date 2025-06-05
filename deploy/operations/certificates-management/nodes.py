@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import sys
+import shutil
 
 from utils import get_cert_display_name
 
@@ -15,6 +16,7 @@ def generate_node_config(cluster, node_type, node_id):
     full_name_without_group = cluster.get_node_full_name_without_group(
         node_type, node_id
     )
+    public_address = cluster.get_node_public_address(node_type, node_id)
 
     with open(cluster.get_node_conf_file(node_type, node_id), "w") as f:
         f.write(
@@ -28,9 +30,9 @@ commonName = {full_name}
 
 # Multiple subject alternative names (SANs) such as IP Address,
 # DNS Name, Email, URI, and so on, can be specified under this section
-[ req_ext]
+[ req_ext ]
 subjectAltName = @alt_names
-[alt_names]
+[ alt_names ]
 DNS.1 = {short_name}
 DNS.2 = {full_name}
 DNS.3 = {short_name_group}
@@ -41,6 +43,10 @@ DNS.7 = yb-{node_type}s.{cluster.namespace}.svc.cluster.local
 """
         )
 
+        if public_address:
+            f.write(f"""DNS.8 = {public_address}
+""")
+
     l.info(f"Created {node_type} #{node_id} configuration file")
 
 
@@ -48,15 +54,22 @@ def generate_node_key(cluster, node_type, node_id):
 
     l.debug(f"Generating {node_type} #{node_id} private key")
 
+    file = cluster.get_node_key_file(node_type, node_id)
+
     subprocess.check_call(
         [
             "openssl",
             "genrsa",
             "-out",
-            cluster.get_node_key_file(node_type, node_id),
+            file,
             "4096",
         ]
     )
+
+    second_file = cluster.get_node_key_second_file(node_type, node_id)
+
+    if second_file:
+        shutil.copy(file, second_file)
 
     l.info(f"Generated {node_type} #{node_id} private key")
 
@@ -87,6 +100,8 @@ def generate_node_cert(cluster, node_type, node_id):
 
     l.debug(f"Generating {node_type} #{node_id} certificate")
 
+    file = cluster.get_node_cert_file(node_type, node_id)
+
     subprocess.check_call(
         [
             "openssl",
@@ -100,7 +115,7 @@ def generate_node_cert(cluster, node_type, node_id):
             "-policy",
             "my_policy",
             "-out",
-            cluster.get_node_cert_file(node_type, node_id),
+            file,
             "-outdir",
             getattr(cluster, f"{node_type}_certs_dir"),
             "-in",
@@ -110,10 +125,17 @@ def generate_node_cert(cluster, node_type, node_id):
             "-batch",
             "-extfile",
             cluster.get_node_conf_file(node_type, node_id),
+            "-extensions",
+            "req_ext",
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+    second_file = cluster.get_node_cert_second_file(node_type, node_id)
+
+    if second_file:
+        shutil.copy(file, second_file)
 
     name = get_cert_display_name(cluster.get_node_cert_file(node_type, node_id))
 

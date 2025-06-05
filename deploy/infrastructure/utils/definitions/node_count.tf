@@ -8,7 +8,7 @@ variable "node_count" {
   EOT
 
   validation {
-    condition     = contains([1, 3], var.node_count)
-    error_message = "Currently, only 1 node or 3 nodes deployments are supported."
+    condition     = (var.datastore_type == "cockroach" && contains([1, 3], var.node_count)) || (var.datastore_type == "yugabyte" && var.node_count > 0)
+    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte, you need to have at least one node."
   }
 }

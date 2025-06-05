@@ -49,6 +49,12 @@ def parse_args():
         help="Number of yugabyte nodes in the cluster, default to 3",
     )
     parser.add_argument(
+        "--nodes-public-address",
+        metavar="NODES_PUBLIC_ADDRESS",
+        default="",
+        help="Public node address. Use <ID> to indicate id of the node (0, 1, ...), <TYPE> for the type (tserver, masters). Example: '<ID>.<TYPE>.db.interuss.example'",
+    )
+    parser.add_argument(
         "--ca-file",
         metavar="CA_FILE",
         default="-",
@@ -103,6 +109,7 @@ def main():
         args.namespace,
         args.organization,
         args.nodes_count,
+        args.nodes_public_address,
     )
 
     def read_input():

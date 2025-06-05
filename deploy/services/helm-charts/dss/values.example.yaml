@@ -62,6 +62,13 @@ loadBalancers:
 #      subnet: subnet-xxx # for aws only
     - ip: 192.168.0.23
 #      subnet: subnet-xxx # for aws only
+  yugabyteMasterNodes:
+    - ip: 192.168.0.31
+#      subnet: subnet-xxx # for aws only
+    - ip: 192.168.0.32
+#      subnet: subnet-xxx # for aws only
+    - ip: 192.168.0.33
+#      subnet: subnet-xxx # for aws only
   dssGateway:
     ip: 192.168.0.10
 #    subnet: subnet-xxx # for aws only

@@ -54,14 +54,22 @@ variable "crdb_hostname_suffix" {
   EOT
 }
 
-variable "cluster_name" {
+variable "datastore_type" {
   type        = string
   description = <<-EOT
-  Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+  Type of datastore used
 
-  Example: `dss-che-1`
+  Supported technologies: cockroachdb, yugabyte
   EOT
+
+  validation {
+    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte"
+  }
+
+  default = "cockroachdb"
 }
+
 
 variable "node_count" {
   type        = number
@@ -73,11 +81,20 @@ variable "node_count" {
   EOT
 
   validation {
-    condition     = contains([1, 3], var.node_count)
-    error_message = "Currently, only 1 node or 3 nodes deployments are supported."
+    condition     = (var.datastore_type == "cockroach" && contains([1, 3], var.node_count)) || (var.datastore_type == "yugabyte" && var.node_count > 0)
+    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte, you need to have at least one node."
   }
 }
 
+
+variable "cluster_name" {
+  type        = string
+  description = <<-EOT
+  Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)
+
+  Example: `dss-che-1`
+  EOT
+}
 
 variable "kubernetes_version" {
   type        = string
