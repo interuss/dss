@@ -69,6 +69,12 @@ jobs:
       run: make down-locally
     - name: Collect coverage data
       run: make coverage-report-go
+    - name: Save coverage data
+      if: startsWith(github.ref, 'refs/heads/master')
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-data
+        path: coverage.out
 
   dss-tests-with-yugabyte:
     name: DSS tests with Yugabyte
