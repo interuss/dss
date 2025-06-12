@@ -47,6 +47,7 @@ var (
 	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
 	timeout           = flag.Duration("server timeout", 10*time.Second, "Default timeout for server calls")
 	locality          = flag.String("locality", "", "self-identification string of this DSS instance")
+	publicEndpoint    = flag.String("public_endpoint", "", "Public endpoint to access this DSS instance. Must be an absolute URI")
 
 	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
 	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
