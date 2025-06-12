@@ -48,4 +48,8 @@ go run ./cmds/db-manager migrate \
   --schemas_dir ./build/db_schemas/scd \
   --db_version latest \
   --cockroach_host localhost
+go run ./cmds/db-manager migrate \
+  --schemas_dir ./build/db_schemas/aux_ \
+  --db_version latest \
+  --cockroach_host localhost
 ```

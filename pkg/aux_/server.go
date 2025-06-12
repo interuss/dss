@@ -5,7 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
-	"github.com/interuss/dss/pkg/datastore"
+	auxstore "github.com/interuss/dss/pkg/aux_/store"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/interuss/dss/pkg/version"
@@ -14,7 +14,7 @@ import (
 
 // Server implements auxv1.Implementation.
 type Server struct {
-	*datastore.Datastore
+	Store auxstore.Store
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {
