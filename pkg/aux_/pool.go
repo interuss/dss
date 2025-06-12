@@ -17,7 +17,13 @@ func (a *Server) GetPool(ctx context.Context, req *restapi.GetPoolRequest) resta
 		return resp
 	}
 
-	darID, err := a.GetDSSAirspaceRepresentationID(ctx)
+	repo, err := a.Store.Interact(ctx)
+	if err != nil {
+		resp.Response500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with the store"))}
+		return resp
+	}
+
+	darID, err := repo.GetDSSAirspaceRepresentationID(ctx)
 
 	if err == nil {
 		resp.Response200 = &restapi.PoolResponse{DarId: &darID}

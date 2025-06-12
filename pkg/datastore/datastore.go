@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -148,17 +147,4 @@ func (ds *Datastore) GetSchemaVersion(ctx context.Context, dbName string) (*semv
 	}
 
 	return semver.NewVersion(dbVersion)
-}
-
-// GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the Datastore represents.
-func (ds *Datastore) GetDSSAirspaceRepresentationID(ctx context.Context) (string, error) {
-	if ds.Version.Type == CockroachDB {
-		var darID string
-		if err := ds.Pool.QueryRow(ctx, "SELECT crdb_internal.cluster_id()").Scan(&darID); err != nil {
-			return darID, stacktrace.Propagate(err, "Error getting CockroachDB cluster ID")
-		}
-		return darID, nil
-	} else {
-		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", ds.Version.Type)
-	}
 }

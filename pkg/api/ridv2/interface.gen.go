@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	RidServiceProviderScope                  = api.RequiredScope("rid.service_provider")
 	RidDisplayProviderScope                  = api.RequiredScope("rid.display_provider")
+	RidServiceProviderScope                  = api.RequiredScope("rid.service_provider")
 	SearchIdentificationServiceAreasSecurity = []api.AuthorizationOption{
 		{
 			"Authority": {RidDisplayProviderScope},

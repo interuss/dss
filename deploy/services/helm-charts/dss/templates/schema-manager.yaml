@@ -5,11 +5,11 @@
 {{- $jobVersion := .Release.Revision -}} {{/* Jobs template definition is immutable, using the revision in the name forces the job to be recreated at each helm upgrade. */}}
 
 {{- $waitForDatastore := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $datastoreHost)) -}}
-{{- $schemas := dict "rid" "4.0.0" "scd" "3.2.0" }}
+{{- $schemas := dict "rid" "4.0.0" "scd" "3.2.0" "aux" "1.0.0" }}
 
 {{- if .Values.yugabyte.enabled }}
 {{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
-{{- $schemas = dict "rid" "1.0.1" "scd" "1.0.1" }}
+{{- $schemas = dict "rid" "1.0.1" "scd" "1.0.1" "aux_" "1.0.0" }}
 {{- end -}}
 
 {{- range $service, $schemaVersion := $schemas }}

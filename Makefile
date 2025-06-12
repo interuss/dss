@@ -118,9 +118,11 @@ test-go-units-crdb: cleanup-test-go-units-crdb
 	@until [ -n "`docker logs dss-crdb-for-testing | grep 'nodeID'`" ]; do echo "Waiting for CRDB to be ready"; sleep 3; done;
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/rid --db_version latest --cockroach_host localhost
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/scd --db_version latest --cockroach_host localhost
+	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/aux_ --db_version latest --cockroach_host localhost
 	go test -cover -count=1 -v ./pkg/rid/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid -test.gocoverdir=$(COVERDATA_DIR)
 	go test -cover -count=1 -v ./pkg/rid/application --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name rid -test.gocoverdir=$(COVERDATA_DIR)
 	go test -cover -count=1 -v ./pkg/scd/store/cockroach --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name scd -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/aux_/store/datastore --cockroach_host localhost --cockroach_port 26257 --cockroach_ssl_mode disable --cockroach_user root --cockroach_db_name aux -test.gocoverdir=$(COVERDATA_DIR)
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 

@@ -68,6 +68,19 @@ services:
       - dss_sandbox_default_network
     profiles: ["with-yugabyte"]
 
+  local-dss-aux-bootstrapper-ybdb:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: interuss-local/dss
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/aux_ --db_version "latest" --cockroach_host local-dss-ybdb --cockroach_user yugabyte --cockroach_port 5433
+    depends_on:
+      local-dss-ybdb:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-yugabyte"]
+
   local-dss-rid-bootstrapper:
     build:
       context: ../..
@@ -86,6 +99,18 @@ services:
       dockerfile: Dockerfile
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --cockroach_host local-dss-crdb
+    depends_on:
+      local-dss-crdb:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+
+  local-dss-aux-bootstrapper:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: interuss-local/dss
+    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/aux_ --db_version "latest" --cockroach_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
@@ -119,10 +144,15 @@ services:
         condition: service_completed_successfully
       local-dss-scd-bootstrapper:
         condition: service_completed_successfully
+      local-dss-aux-bootstrapper:
+        condition: service_completed_successfully
       local-dss-rid-bootstrapper-ybdb:
         condition: service_completed_successfully
         required: false
       local-dss-scd-bootstrapper-ybdb:
+        condition: service_completed_successfully
+        required: false
+      local-dss-aux-bootstrapper-ybdb:
         condition: service_completed_successfully
         required: false
     networks:

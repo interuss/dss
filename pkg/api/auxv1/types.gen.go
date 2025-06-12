@@ -24,6 +24,9 @@ type DSSInstance struct {
 	// Identity of this DSS instance participating in the pool (locality).
 	Id string `json:"id"`
 
+	// Public endpoint of this DSS instance
+	PublicEndpoint *string `json:"public_endpoint,omitempty"`
+
 	// Most recent heartbeat registered for this DSS instance.
 	MostRecentHeartbeat *Heartbeat `json:"most_recent_heartbeat,omitempty"`
 }
