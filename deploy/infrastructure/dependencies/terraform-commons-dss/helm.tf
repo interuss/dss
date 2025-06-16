@@ -5,7 +5,7 @@ locals {
 
   # This pre command is used bellow in yugabyte deployements to make the local ip pointing to the public hostname we want to use, until https://github.com/yugabyte/yugabyte-db/issues/27367 is fixed
   yugabyte_precommand_prefix = "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}."
-  yugabyte_precommand_sufix  = ".${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+  yugabyte_precommand_suffix  = ".${var.crdb_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
 }
 
 resource "local_file" "helm_chart_values" {
@@ -114,7 +114,7 @@ resource "local_file" "helm_chart_values" {
         serverBroadcastAddress : "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
         rpcBindAddress : "$${HOSTNAMENO}.master.${var.crdb_hostname_suffix}"
         advanced = {
-          preCommands : "${local.yugabyte_precommand_prefix}master${local.yugabyte_precommand_sufix}"
+          preCommands : "${local.yugabyte_precommand_prefix}master${local.yugabyte_precommand_suffix}"
         }
       }
 
@@ -130,7 +130,7 @@ resource "local_file" "helm_chart_values" {
         serverBroadcastAddress : "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
         rpcBindAddress : "$${HOSTNAMENO}.tserver.${var.crdb_hostname_suffix}"
         advanced = {
-          preCommands : "${local.yugabyte_precommand_prefix}tserver${local.yugabyte_precommand_sufix}"
+          preCommands : "${local.yugabyte_precommand_prefix}tserver${local.yugabyte_precommand_suffix}"
         }
       }
 
