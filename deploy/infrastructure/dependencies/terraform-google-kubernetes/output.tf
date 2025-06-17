@@ -2,6 +2,14 @@ output "crdb_addresses" {
   value = [for a in google_compute_address.ip_crdb[*] : { expected_dns : a.description, address : a.address }]
 }
 
+output "yugabyte_masters_addresses" {
+  value = [for a in google_compute_address.ip_yugabyte_masters[*] : { expected_dns : a.description, address : a.address }]
+}
+
+output "yugabyte_tservers_addresses" {
+  value = [for a in google_compute_address.ip_yugabyte_tservers[*] : { expected_dns : a.description, address : a.address }]
+}
+
 output "gateway_address" {
   value = {
     expected_dns : google_compute_global_address.ip_gateway.description,
@@ -36,6 +44,24 @@ output "ssl_policy" {
 output "crdb_nodes" {
   value = [
     for i in google_compute_address.ip_crdb : {
+      ip  = i.address
+      dns = i.description
+    }
+  ]
+}
+
+output "yugabyte_masters_nodes" {
+  value = [
+    for i in google_compute_address.ip_yugabyte_masters : {
+      ip  = i.address
+      dns = i.description
+    }
+  ]
+}
+
+output "yugabyte_tservers_nodes" {
+  value = [
+    for i in google_compute_address.ip_yugabyte_tservers : {
       ip  = i.address
       dns = i.description
     }
