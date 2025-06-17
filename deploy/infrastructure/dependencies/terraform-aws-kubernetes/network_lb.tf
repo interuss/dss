@@ -73,12 +73,36 @@ resource "aws_eip" "gateway" {
 
 # Public Elastic IPs for the crdb instances
 resource "aws_eip" "ip_crdb" {
-  count = var.node_count
+  count = var.datastore_type == "cockroachdb" ? var.node_count : 0
   vpc   = true
 
   tags = {
     Name = format("%s-ip-crdb%v", var.cluster_name, count.index)
     # Preserve mapping between ips and hostnames
     ExpectedDNS = format("%s.%s", count.index, var.crdb_hostname_suffix)
+  }
+}
+
+# Public Elastic IPs for the yubagybte master instances
+resource "aws_eip" "ip_yugabyte_masters" {
+  count = var.datastore_type == "yugabyte" ? var.node_count : 0
+  vpc   = true
+
+  tags = {
+    Name = format("%s-ip-yugabyte-master%v", var.cluster_name, count.index)
+    # Preserve mapping between ips and hostnames
+    ExpectedDNS = format("%s.master.%s", count.index, var.crdb_hostname_suffix)
+  }
+}
+
+# Public Elastic IPs for the yubagybte tserver instances
+resource "aws_eip" "ip_yugabyte_tservers" {
+  count = var.datastore_type == "yugabyte" ? var.node_count : 0
+  vpc   = true
+
+  tags = {
+    Name = format("%s-ip-yugabyte-tserver%v", var.cluster_name, count.index)
+    # Preserve mapping between ips and hostnames
+    ExpectedDNS = format("%s.tserver.%s", count.index, var.crdb_hostname_suffix)
   }
 }
