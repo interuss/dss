@@ -2,6 +2,14 @@ output "crdb_addresses" {
   value = module.terraform-aws-kubernetes.crdb_addresses
 }
 
+output "yugabyte_masters_addresses" {
+  value = module.terraform-aws-kubernetes.yugabyte_masters_addresses
+}
+
+output "yugabyte_tservers_addresses" {
+  value = module.terraform-aws-kubernetes.yugabyte_tservers_addresses
+}
+
 output "gateway_address" {
   value = module.terraform-aws-kubernetes.gateway_address
 }

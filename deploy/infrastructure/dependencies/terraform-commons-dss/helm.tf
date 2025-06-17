@@ -102,6 +102,19 @@ resource "local_file" "helm_chart_values" {
         totalMasters = length(var.yugabyte_external_nodes) + var.node_count
       }
 
+      storage = {
+        master = {
+          storageClass = var.kubernetes_storage_class
+        }
+        tserver = {
+          storageClass = var.kubernetes_storage_class
+        }
+      }
+
+      preflight = {
+        skipUlimit = true
+      }
+
       master = {
         extraEnv = [{
           name = "HOSTNAMENO"

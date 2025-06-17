@@ -12,7 +12,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
       (dict
-        "name" (printf "%s-%s" "yugabyte-db-master-external-node" ( $i | toString) )
+        "name" (printf "%s-%s" "ybdb-master-ext" ( $i | toString) )
         "ip" $lb.ip
         "subnet" $lb.subnet
         "cloudProvider" $cloudProvider
@@ -20,18 +20,18 @@ metadata:
     }}
   labels:
     app: yugabyte
-    name: yugabyte-db-master-external-node-{{$i}}
-  name: yugabyte-db-master-external-node-{{$i}}
+    name: ybdb-master-ext-{{$i}}
+  name: ybdb-master-ext-{{$i}}
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
   ports:
-    - name: yugabyte-master-db-external-node-{{$i}}
+    - name: yugabyte-master-db-ext-{{$i}}
       port: 7100
       targetPort: 7100
-    - name: yugabyte-master-ui-external-node-{{$i}}
+    - name: yugabyte-master-ui-ext-{{$i}}
       port: 7000
       targetPort: 7000
-    - name: yugabyte-master-ui2-external-node-{{$i}}
+    - name: yugabyte-master-ui2-ext-{{$i}}
       port: 9000
       targetPort: 9000
   publishNotReadyAddresses: true
@@ -50,7 +50,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
       (dict
-        "name" (printf "%s-%s" " yugabyte-db-tserver-external-node" ( $i | toString) )
+        "name" (printf "%s-%s" " ybdb-tserver-ext" ( $i | toString) )
         "ip" $lb.ip
         "subnet" $lb.subnet
         "cloudProvider" $cloudProvider
@@ -58,30 +58,30 @@ metadata:
     }}
   labels:
     app: yugabyte
-    name: yugabyte-db-tserver-external-node-{{$i}}
-  name: yugabyte-db-tserver-external-node-{{$i}}
+    name: yuga-tserver-ext-{{$i}}
+  name: yuga-tserver-ext-{{$i}}
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
   ports:
-    - name: yugabyte-tserver-db-external-node-{{$i}}
+    - name: yugabyte-tserver-db-ext-{{$i}}
       port: 9100
       targetPort: 9100
-    - name: yugabyte-tserver-ui-external-node-{{$i}}
+    - name: yugabyte-tserver-ui-ext-{{$i}}
       port: 9000
       targetPort: 9000
-    - name: yugabyte-tserver-ui2-external-node-{{$i}}
+    - name: yugabyte-tserver-ui2-ext-{{$i}}
       port: 7000
       targetPort: 7000
-    - name: yugabyte-tserver-ycql-external-node-{{$i}}
+    - name: yugabyte-tserver-ycql-ext-{{$i}}
       port: 9042
       targetPort: 9042
-    - name: yugabyte-tserver-ysql-external-node-{{$i}}
+    - name: yugabyte-tserver-ysql-ext-{{$i}}
       port: 5433
       targetPort: 5433
-    - name: yugabyte-tserver-metrics-external-node-{{$i}}
+    - name: yugabyte-tserver-metrics-ext-{{$i}}
       port: 13000
       targetPort: 13000
-    - name: yugabyte-tserver-metrics-2-external-node-{{$i}}
+    - name: yugabyte-tserver-metrics-2-ext-{{$i}}
       port: 12000
       targetPort: 12000
   publishNotReadyAddresses: true
