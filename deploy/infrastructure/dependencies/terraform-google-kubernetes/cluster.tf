@@ -57,7 +57,7 @@ resource "google_compute_address" "ip_crdb" {
   region = local.region
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.%s", count.index, var.crdb_hostname_suffix)
+  description = format("%s.%s", count.index, var.db_hostname_suffix)
 }
 
 # Static IP addresses for yugabyte instances
@@ -67,7 +67,7 @@ resource "google_compute_address" "ip_yugabyte_masters" {
   region = local.region
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.master.%s", count.index, var.crdb_hostname_suffix)
+  description = format("%s.master.%s", count.index, var.db_hostname_suffix)
 }
 
 resource "google_compute_address" "ip_yugabyte_tservers" {
@@ -76,7 +76,7 @@ resource "google_compute_address" "ip_yugabyte_tservers" {
   region = local.region
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.tserver.%s", count.index, var.crdb_hostname_suffix)
+  description = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
 }
 
 locals {

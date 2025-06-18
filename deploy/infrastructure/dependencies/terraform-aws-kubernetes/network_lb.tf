@@ -79,7 +79,7 @@ resource "aws_eip" "ip_crdb" {
   tags = {
     Name = format("%s-ip-crdb%v", var.cluster_name, count.index)
     # Preserve mapping between ips and hostnames
-    ExpectedDNS = format("%s.%s", count.index, var.crdb_hostname_suffix)
+    ExpectedDNS = format("%s.%s", count.index, var.db_hostname_suffix)
   }
 }
 
@@ -91,7 +91,7 @@ resource "aws_eip" "ip_yugabyte_masters" {
   tags = {
     Name = format("%s-ip-yugabyte-master%v", var.cluster_name, count.index)
     # Preserve mapping between ips and hostnames
-    ExpectedDNS = format("%s.master.%s", count.index, var.crdb_hostname_suffix)
+    ExpectedDNS = format("%s.master.%s", count.index, var.db_hostname_suffix)
   }
 }
 
@@ -103,6 +103,6 @@ resource "aws_eip" "ip_yugabyte_tservers" {
   tags = {
     Name = format("%s-ip-yugabyte-tserver%v", var.cluster_name, count.index)
     # Preserve mapping between ips and hostnames
-    ExpectedDNS = format("%s.tserver.%s", count.index, var.crdb_hostname_suffix)
+    ExpectedDNS = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
   }
 }
