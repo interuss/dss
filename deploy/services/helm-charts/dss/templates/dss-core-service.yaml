@@ -44,6 +44,7 @@ spec:
         - args:
             - --accepted_jwt_audiences={{$dss.conf.hostname}}
             - --addr=:8080
+            - --public_endpoint=https://{{$dss.conf.hostname}}
             - --cockroach_host={{ $datastoreHost }}
             - --cockroach_port={{ $datastorePort }}
             - --cockroach_user={{ $datastoreUser }}
