@@ -152,8 +152,7 @@
         }
       },
       "required": [
-        "enabled",
-        "gflags"
+        "enabled"
       ],
       "additionalItems": true
     },
