@@ -75,13 +75,32 @@ func (r *repo) GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, er
 
 // GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the Datastore represents.
 func (r *repo) GetDSSAirspaceRepresentationID(ctx context.Context) (string, error) {
-	if r.version.Type == datastore.CockroachDB {
+	switch r.version.Type {
+	case datastore.CockroachDB:
 		var darID string
 		if err := r.QueryRow(ctx, "SELECT crdb_internal.cluster_id()").Scan(&darID); err != nil {
 			return darID, stacktrace.Propagate(err, "Error getting CockroachDB cluster ID")
 		}
 		return darID, nil
-	} else {
+	case datastore.Yugabyte:
+
+		var darID string
+
+		var count string
+		if err := r.QueryRow(ctx, "SELECT COUNT(DISTINCT universe_uuid) from yb_servers();").Scan(&count); err != nil {
+			return darID, stacktrace.Propagate(err, "Error getting universe_uuid from Yugabyte. Are you using a version >= 2.25.2.0?")
+		}
+
+		if count != "1" {
+			return darID, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "Found multiple universe_uuid in yugabyte reporting, this configuration is not supported.")
+		}
+
+		if err := r.QueryRow(ctx, "SELECT DISTINCT universe_uuid FROM yb_servers() LIMIT 1").Scan(&darID); err != nil {
+			return darID, stacktrace.Propagate(err, "Error getting universe_uuid from Yugabyte. Are you using a version >= 2.25.2.0?")
+		}
+		return darID, nil
+
+	default:
 		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", r.version.Type)
 	}
 }

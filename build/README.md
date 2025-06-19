@@ -209,7 +209,7 @@ a PR to that effect would be greatly appreciated.
        to create DNS entries for the static IP addresses created above.  To list
        the IP addresses, use `gcloud compute addresses list`.
 
-1.  Use [`make-certs.py` script](./make-certs.py) to create certificates for
+1.  (Only if you use CockroachDB) Use [`make-certs.py` script](./make-certs.py) to create certificates for
     the CockroachDB nodes in this DSS instance:
 
         ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
@@ -243,6 +243,8 @@ a PR to that effect would be greatly appreciated.
         the rest of the instances, such that ca.crt is the same across all
         instances.
 
+1.  (Only if you use Yugabyte) Use [`dss-certs.py` script](../deploy/operations/certificates-management/README.md) to create certificates for the Yugabyte nodes in this DSS instance.
+
 1.  If joining an existing DSS pool, share ca.crt with the DSS instance(s) you
     are trying to join, and have them apply the new ca.crt, which now contains
     both your instance's and the original instance's public certs, to enable
@@ -251,14 +253,28 @@ a PR to that effect would be greatly appreciated.
     actions below.  While they are performing those actions, you may continue
     with the instructions.
 
-    1. Overwrite its existing ca.crt with the new ca.crt provided by the DSS
-       instance joining the pool.
-    1. Upload the new ca.crt to its cluster using
-       `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
-    1. Restart their CockroachDB pods to recognize the updated ca.crt:
-       `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
-    1. Inform you when their CockroachDB pods have finished restarting
-       (typically around 10 minutes)
+    1. If you use CockroachDB:
+
+        1. Overwrite its existing ca.crt with the new ca.crt provided by the DSS
+        instance joining the pool.
+        1. Upload the new ca.crt to its cluster using
+        `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE`
+        1. Restart their CockroachDB pods to recognize the updated ca.crt:
+        `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+        1. Inform you when their CockroachDB pods have finished restarting
+        (typically around 10 minutes)
+
+    1. If you use Yugabyte
+
+        1. Share your CA with `./dss-certs.py get-ca`
+        1. Add others CAs of the pool with `./dss-certs.py add-pool-ca`
+        1. Upload the new CAs to its cluster using
+        `./dss-certs.py apply`
+        1. Restart their Yugabyte pods to recognize the updated ca.crt:
+        `kubectl rollout restart statefulset/yb-master --namespace $NAMESPACE`
+        `kubectl rollout restart statefulset/yb-tserver --namespace $NAMESPACE`
+        1. Inform you when their Yugabyte pods have finished restarting
+        (typically around 10 minutes)
 
 1.  Ensure the Docker images are built according to the instructions in the
     [previous section](#docker-images).
