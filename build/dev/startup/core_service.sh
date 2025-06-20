@@ -26,7 +26,9 @@ if [ "$DEBUG_ON" = "1" ]; then
   -addr :8082 \
   -accepted_jwt_audiences localhost,host.docker.internal,local-dss-core-service,dss_sandbox-local-dss-core-service-1,core-service \
   -enable_scd \
-  -allow_http_base_urls
+  -allow_http_base_urls \
+  -locality local_dev \
+  -public_endpoint http://127.0.0.1:8082
 else
   echo "Debug Mode: off"
   # Use exec so docker-compose's SIGTERM is forwarded to the binary
@@ -40,5 +42,7 @@ else
   -addr :8082 \
   -accepted_jwt_audiences localhost,host.docker.internal,local-dss-core-service,dss_sandbox-local-dss-core-service-1,core-service \
   -enable_scd \
-  -allow_http_base_urls
+  -allow_http_base_urls \
+  -locality local_dev \
+  -public_endpoint http://127.0.0.1:8082
 fi

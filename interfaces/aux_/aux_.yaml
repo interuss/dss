@@ -44,6 +44,9 @@ components:
         id:
           description: Identity of this DSS instance participating in the pool (locality).
           type: string
+        public_endpoint:
+          description: Public endpoint of this DSS instance
+          type: string
         most_recent_heartbeat:
           description: Most recent heartbeat registered for this DSS instance.
           anyOf:

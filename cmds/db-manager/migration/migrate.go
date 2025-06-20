@@ -46,10 +46,16 @@ func init() {
 }
 
 func migrate(cmd *cobra.Command, _ []string) error {
+
 	var (
 		ctx    = cmd.Context()
 		dbName = filepath.Base(*path)
 	)
+
+	// Handle special 'aux' folder
+	if dbName == "aux_" {
+		dbName = "aux"
+	}
 
 	// Enumerate schema versions
 	steps, err := enumerateMigrationSteps(path)

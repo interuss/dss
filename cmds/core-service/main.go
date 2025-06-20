@@ -23,6 +23,7 @@ import (
 	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
+	auxc "github.com/interuss/dss/pkg/aux_/store/datastore"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags" // Force command line flag registration
@@ -107,8 +108,9 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context) (*aux.Server, error) {
+func createAuxServer(ctx context.Context, locality string, publicEndpoint string, logger *zap.Logger) (*aux.Server, error) {
 	connectParameters := flags.ConnectParameters()
+	connectParameters.DBName = "aux"
 	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
@@ -116,7 +118,29 @@ func createAuxServer(ctx context.Context) (*aux.Server, error) {
 		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to pool information database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
-	return &aux.Server{Datastore: datastore}, nil
+
+	auxStore, err := auxc.NewStore(ctx, datastore, connectParameters.DBName, logger)
+	if err != nil {
+		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"aux\" does not exist") {
+			datastore.Pool.Close()
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for strategic conflict detection store")
+		}
+		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
+	}
+
+	repo, err := auxStore.Interact(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+	}
+
+	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
+	}
+
+	return &aux.Server{Store: auxStore}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
@@ -244,7 +268,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	)
 
 	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx)
+	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}

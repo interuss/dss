@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -148,36 +147,4 @@ func (ds *Datastore) GetSchemaVersion(ctx context.Context, dbName string) (*semv
 	}
 
 	return semver.NewVersion(dbVersion)
-}
-
-// GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the Datastore represents.
-func (ds *Datastore) GetDSSAirspaceRepresentationID(ctx context.Context) (string, error) {
-	switch ds.Version.Type {
-	case CockroachDB:
-		var darID string
-		if err := ds.Pool.QueryRow(ctx, "SELECT crdb_internal.cluster_id()").Scan(&darID); err != nil {
-			return darID, stacktrace.Propagate(err, "Error getting CockroachDB cluster ID")
-		}
-		return darID, nil
-	case Yugabyte:
-
-		var darID string
-
-		var count string
-		if err := ds.Pool.QueryRow(ctx, "SELECT COUNT(DISTINCT universe_uuid) from yb_servers();").Scan(&count); err != nil {
-			return darID, stacktrace.Propagate(err, "Error getting universe_uuid from Yugabyte. Are you using a version >= 2.25.2.0?")
-		}
-
-		if count != "1" {
-			return darID, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "Found multiple universe_uuid in yugabyte reporting, this configuration is not supported.")
-		}
-
-		if err := ds.Pool.QueryRow(ctx, "SELECT DISTINCT universe_uuid FROM yb_servers() LIMIT 1").Scan(&darID); err != nil {
-			return darID, stacktrace.Propagate(err, "Error getting universe_uuid from Yugabyte. Are you using a version >= 2.25.2.0?")
-		}
-		return darID, nil
-
-	default:
-		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", ds.Version.Type)
-	}
 }
