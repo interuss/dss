@@ -3,7 +3,7 @@ module "terraform-aws-kubernetes" {
   cluster_name                 = var.cluster_name
   aws_region                   = var.aws_region
   app_hostname                 = var.app_hostname
-  crdb_hostname_suffix         = var.crdb_hostname_suffix
+  db_hostname_suffix           = var.db_hostname_suffix
   datastore_type               = var.datastore_type
   aws_instance_type            = var.aws_instance_type
   aws_route53_zone_id          = var.aws_route53_zone_id
@@ -23,7 +23,7 @@ module "terraform-commons-dss" {
   app_hostname                     = var.app_hostname
   crdb_image_tag                   = var.crdb_image_tag
   crdb_cluster_name                = var.crdb_cluster_name
-  crdb_hostname_suffix             = var.crdb_hostname_suffix
+  db_hostname_suffix               = var.db_hostname_suffix
   datastore_type                   = var.datastore_type
   should_init                      = var.should_init
   authorization                    = var.authorization

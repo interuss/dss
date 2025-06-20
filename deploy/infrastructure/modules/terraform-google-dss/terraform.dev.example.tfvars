@@ -9,7 +9,7 @@ google_zone         = "europe-west6-a"
 # DNS
 google_dns_managed_zone_name = "interuss-example-com"
 app_hostname                 = "dss.interuss.example.com"
-crdb_hostname_suffix         = "db.interuss.example.com"
+db_hostname_suffix           = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                    = "dss-dev-w6a"

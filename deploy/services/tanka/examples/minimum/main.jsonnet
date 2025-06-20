@@ -13,7 +13,7 @@ local metadata = metadataBase {
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   cockroach+: {
     image: 'VAR_CRDB_DOCKER_IMAGE_NAME',
-    hostnameSuffix: 'VAR_CRDB_HOSTNAME_SUFFIX',
+    hostnameSuffix: 'VAR_DB_HOSTNAME_SUFFIX',
     locality: 'VAR_CRDB_LOCALITY',
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
     shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
