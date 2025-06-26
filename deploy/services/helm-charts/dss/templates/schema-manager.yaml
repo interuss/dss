@@ -13,13 +13,14 @@
 {{- end -}}
 
 {{- range $service, $schemaVersion := $schemas }}
+{{- $serviceClean := $service | replace "_" "" }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    name: {{$service}}-schema-manager-{{$jobVersion}}
-  name: {{$service}}-schema-manager-{{$jobVersion}}
+    name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
+  name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
   namespace: default
 spec:
   completions: 1
@@ -30,7 +31,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
       labels:
-        name: {{$service}}-schema-manager-{{$jobVersion}}
+        name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
     spec:
       initContainers:
         {{- $waitForDatastore | nindent 8 }}
@@ -43,9 +44,9 @@ spec:
 {{ if $.Values.cockroachdb.enabled }}
             - --cockroach_ssl_dir=/cockroach/cockroach-certs
             - --cockroach_ssl_mode=verify-full
-            - --schemas_dir=/db-schemas/{{$service}}
+            - --schemas_dir=/db-schemas/{{ $service }}
 {{ else }}
-            - --schemas_dir=/db-schemas/yugabyte/{{$service}}
+            - --schemas_dir=/db-schemas/yugabyte/{{ $service  }}
             - --cockroach_ssl_dir=/opt/yugabyte-certs/
             - --cockroach_ssl_mode=verify-full
 {{ end }}
@@ -55,7 +56,7 @@ spec:
             - migrate
           image: {{$image}}
           imagePullPolicy: IfNotPresent
-          name: {{$service}}-schema-manager-{{$jobVersion}}
+          name: {{ $service | replace "_" "" }}-schema-manager-{{$jobVersion}}
           stdin: false
           tty: false
           volumeMounts:
