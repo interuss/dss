@@ -1,10 +1,13 @@
 variable "crdb_hostname_suffix" {
   type        = string
+  default     = ""
   description = <<-EOT
-  The domain name suffix shared by all of your CockroachDB nodes.
-  For instance, if your CRDB nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com, then the value would be db.example.com.
+  This variable has been renamed to db_hostname_suffix and is left to warn users about migration.
 
-  Example: db.example.com
   EOT
+
+  validation {
+    condition     = var.crdb_hostname_suffix == ""
+    error_message = "crdb_hostname_suffix value is not supported anymore. Use `db_hostname_suffix` for similar behavior."
+  }
 }

@@ -311,10 +311,10 @@ a PR to that effect would be greatly appreciated.
         DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
         From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
 
-    1.  `VAR_CRDB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
+    1.  `VAR_DB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
         CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
         `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then
-        VAR_CRDB_HOSTNAME_SUFFIX would be `db.example.com`.
+        VAR_DB_HOSTNAME_SUFFIX would be `db.example.com`.
 
     1.  `VAR_CRDB_LOCALITY`: Unique name for your DSS instance.  Currently, we
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not

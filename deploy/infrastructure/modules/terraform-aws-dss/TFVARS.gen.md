@@ -56,13 +56,13 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>crdb_hostname_suffix</td>
+                <td>db_hostname_suffix</td>
                 <td><code>string</code></td>
                 <td></td>
-                <td><p>The domain name suffix shared by all of your CockroachDB nodes.
-For instance, if your CRDB nodes were addressable at 0.db.example.com,
-1.db.example.com and 2.db.example.com, then the value would be db.example.com.</p>
-<p>Example: db.example.com</p>
+                <td><p>The domain name suffix shared by all of your databases nodes.
+For instance, if your database nodes were addressable at 0.db.example.com,
+1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
+Example: db.example.com</p>
 </td>
             </tr><tr>
                 <td>datastore_type</td>
@@ -101,6 +101,12 @@ Currently, only single node or three nodes deployments are supported.</p>
 See https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html for more details and
 available options.</p>
 <p>Example: <code>gp2</code></p>
+</td>
+            </tr><tr>
+                <td>crdb_hostname_suffix</td>
+                <td><code>string</code></td>
+                <td><code>""</code></td>
+                <td><p>This variable has been renamed to db_hostname_suffix and is left to warn users about migration.</p>
 </td>
             </tr><tr>
                 <td>image</td>

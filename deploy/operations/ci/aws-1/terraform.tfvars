@@ -7,8 +7,8 @@ aws_region = "us-east-1"
 aws_route53_zone_id = "Z03377073HUSGB4L9FKEK"
 
 # Hostnames
-app_hostname         = "dss.ci.aws-interuss.uspace.dev"
-crdb_hostname_suffix = "db.ci.aws-interuss.uspace.dev"
+app_hostname       = "dss.ci.aws-interuss.uspace.dev"
+db_hostname_suffix = "db.ci.aws-interuss.uspace.dev"
 
 # Kubernetes configuration
 kubernetes_version           = 1.32

@@ -4,7 +4,7 @@ resource "local_file" "tanka_config_main" {
     VAR_NAMESPACE                = var.kubernetes_namespace
     VAR_CLUSTER_CONTEXT          = var.kubernetes_context_name
     VAR_ENABLE_SCD               = var.enable_scd
-    VAR_CRDB_HOSTNAME_SUFFIX     = var.crdb_hostname_suffix
+    VAR_DB_HOSTNAME_SUFFIX       = var.db_hostname_suffix
     VAR_CRDB_LOCALITY            = var.crdb_locality
     VAR_CRDB_NODE_IPS            = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
     VAR_INGRESS_NAME             = var.ip_gateway

@@ -14,4 +14,4 @@ else
 fi
 cd "$BASEDIR/../../../deploy/operations/certificates-management/" || exit 1
 
-./dss-certs.py --name ${cluster_context} --organization default_orga --cluster-context ${cluster_context} --nodes-public-address "<ID>.<TYPE>.${crdb_hostname_suffix}" --namespace ${namespace} --nodes-count ${node_count} "$@"
+./dss-certs.py --name ${cluster_context} --organization default_orga --cluster-context ${cluster_context} --nodes-public-address "<ID>.<TYPE>.${db_hostname_suffix}" --namespace ${namespace} --nodes-count ${node_count} "$@"
