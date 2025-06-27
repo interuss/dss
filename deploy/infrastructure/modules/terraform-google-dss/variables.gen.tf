@@ -43,16 +43,16 @@ variable "app_hostname" {
   EOT
 }
 
-variable "crdb_hostname_suffix" {
+variable "db_hostname_suffix" {
   type        = string
   description = <<-EOT
-  The domain name suffix shared by all of your CockroachDB nodes.
-  For instance, if your CRDB nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com, then the value would be db.example.com.
-
+  The domain name suffix shared by all of your databases nodes.
+  For instance, if your database nodes were addressable at 0.db.example.com,
+  1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
   Example: db.example.com
   EOT
 }
+
 
 variable "datastore_type" {
   type        = string
@@ -121,6 +121,21 @@ variable "google_kubernetes_storage_class" {
   Example: `standard`
   EOT
 }
+
+variable "crdb_hostname_suffix" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  This variable has been renamed to db_hostname_suffix and is left to warn users about migration.
+
+  EOT
+
+  validation {
+    condition     = var.crdb_hostname_suffix == ""
+    error_message = "crdb_hostname_suffix value is not supported anymore. Use `db_hostname_suffix` for similar behavior."
+  }
+}
+
 
 variable "image" {
   type        = string
@@ -237,6 +252,7 @@ variable "should_init" {
   Example: `true`
   EOT
 }
+
 
 variable "desired_rid_db_version" {
   type        = string

@@ -22,10 +22,10 @@ resource "local_file" "apply_certs" {
 resource "local_file" "dss_certs" {
   count = var.datastore_type == "yugabyte" ? 1 : 0
   content = templatefile("${path.module}/templates/dss-certs.sh.tmp", {
-    cluster_context      = var.kubernetes_context_name
-    namespace            = var.kubernetes_namespace
-    crdb_hostname_suffix = var.crdb_hostname_suffix
-    node_count           = var.node_count
+    cluster_context    = var.kubernetes_context_name
+    namespace          = var.kubernetes_namespace
+    db_hostname_suffix = var.db_hostname_suffix
+    node_count         = var.node_count
   })
   filename = "${local.workspace_location}/dss-certs.sh"
 }

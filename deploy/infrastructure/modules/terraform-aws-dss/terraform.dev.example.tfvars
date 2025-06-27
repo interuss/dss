@@ -8,8 +8,8 @@ aws_region = "eu-west-1"
 aws_route53_zone_id = "Z01551234567890123456"
 
 # Hostnames
-app_hostname         = "dss.interuss.example.com"
-crdb_hostname_suffix = "db.interuss.example.com"
+app_hostname       = "dss.interuss.example.com"
+db_hostname_suffix = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                 = "dss-dev-ew1"

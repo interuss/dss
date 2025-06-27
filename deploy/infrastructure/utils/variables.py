@@ -23,7 +23,7 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = ["app_hostname", "crdb_hostname_suffix", "datastore_type", "node_count"]
+GLOBAL_VARIABLES = ["app_hostname", "db_hostname_suffix", "datastore_type", "node_count"]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
@@ -65,6 +65,7 @@ GOOGLE_MODULE_VARIABLES = (
     GOOGLE_KUBERNETES_VARIABLES
     + [
         "google_kubernetes_storage_class",
+        "crdb_hostname_suffix",
     ]
     + COMMONS_DSS_VARIABLES
 )
@@ -79,7 +80,10 @@ AWS_KUBERNETES_VARIABLES = [
 
 # modules/terraform-aws-dss
 AWS_MODULE_VARIABLES = (
-    AWS_KUBERNETES_VARIABLES + ["aws_kubernetes_storage_class"] + COMMONS_DSS_VARIABLES
+    AWS_KUBERNETES_VARIABLES + [
+        "aws_kubernetes_storage_class",
+        "crdb_hostname_suffix",
+    ] + COMMONS_DSS_VARIABLES
 )
 
 PROJECT_VARIABLES = {
