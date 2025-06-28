@@ -60,7 +60,7 @@ output "app_hostname_cert_arn" {
 # At the moment, worker nodes will be deployed in the same subnet, so only one elastic ip is required.
 resource "aws_eip" "gateway" {
   domain = "vpc"
-  count = 1
+  count  = 1
 
   tags = {
     Name = format("%s-ip-gateway", var.cluster_name)
@@ -71,7 +71,7 @@ resource "aws_eip" "gateway" {
 
 # Public Elastic IPs for the crdb instances
 resource "aws_eip" "ip_crdb" {
-  count = var.datastore_type == "cockroachdb" ? var.node_count : 0
+  count  = var.datastore_type == "cockroachdb" ? var.node_count : 0
   domain = "vpc"
 
   tags = {
@@ -83,7 +83,7 @@ resource "aws_eip" "ip_crdb" {
 
 # Public Elastic IPs for the yubagybte master instances
 resource "aws_eip" "ip_yugabyte_masters" {
-  count = var.datastore_type == "yugabyte" ? var.node_count : 0
+  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
   domain = "vpc"
 
   tags = {
@@ -95,7 +95,7 @@ resource "aws_eip" "ip_yugabyte_masters" {
 
 # Public Elastic IPs for the yubagybte tserver instances
 resource "aws_eip" "ip_yugabyte_tservers" {
-  count = var.datastore_type == "yugabyte" ? var.node_count : 0
+  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
   domain = "vpc"
 
   tags = {
