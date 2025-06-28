@@ -10,26 +10,24 @@ resource "helm_release" "aws-load-balancer-controller" {
 
   wait = true
 
-  set {
-    name  = "clusterName"
-    value = var.cluster_name
-  }
-
-  set {
-    name  = "region"
-    value = var.aws_region
-  }
-
-  set {
-    name  = "vpcId"
-    value = aws_subnet.dss[0].vpc_id
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.AWSLoadBalancerControllerRole.arn
-
-  }
+  set = [
+    {
+      name  = "clusterName"
+      value = var.cluster_name
+    },
+    {
+      name  = "region"
+      value = var.aws_region
+    },
+    {
+      name  = "vpcId"
+      value = aws_subnet.dss[0].vpc_id
+    },
+    {
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = aws_iam_role.AWSLoadBalancerControllerRole.arn
+    }
+  ]
 
   depends_on = [
     aws_eks_cluster.kubernetes_cluster,
@@ -61,8 +59,8 @@ output "app_hostname_cert_arn" {
 # Public Elastic IP for the gateway (1 per subnet)
 # At the moment, worker nodes will be deployed in the same subnet, so only one elastic ip is required.
 resource "aws_eip" "gateway" {
-  vpc   = true
-  count = 1
+  domain = "vpc"
+  count  = 1
 
   tags = {
     Name = format("%s-ip-gateway", var.cluster_name)
@@ -73,8 +71,8 @@ resource "aws_eip" "gateway" {
 
 # Public Elastic IPs for the crdb instances
 resource "aws_eip" "ip_crdb" {
-  count = var.datastore_type == "cockroachdb" ? var.node_count : 0
-  vpc   = true
+  count  = var.datastore_type == "cockroachdb" ? var.node_count : 0
+  domain = "vpc"
 
   tags = {
     Name = format("%s-ip-crdb%v", var.cluster_name, count.index)
@@ -85,8 +83,8 @@ resource "aws_eip" "ip_crdb" {
 
 # Public Elastic IPs for the yubagybte master instances
 resource "aws_eip" "ip_yugabyte_masters" {
-  count = var.datastore_type == "yugabyte" ? var.node_count : 0
-  vpc   = true
+  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
+  domain = "vpc"
 
   tags = {
     Name = format("%s-ip-yugabyte-master%v", var.cluster_name, count.index)
@@ -97,8 +95,8 @@ resource "aws_eip" "ip_yugabyte_masters" {
 
 # Public Elastic IPs for the yubagybte tserver instances
 resource "aws_eip" "ip_yugabyte_tservers" {
-  count = var.datastore_type == "yugabyte" ? var.node_count : 0
-  vpc   = true
+  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
+  domain = "vpc"
 
   tags = {
     Name = format("%s-ip-yugabyte-tserver%v", var.cluster_name, count.index)
