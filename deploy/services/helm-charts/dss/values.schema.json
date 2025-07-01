@@ -274,7 +274,7 @@
             },
             "publicEndpoint": {
               "type": "string",
-              "description": "Public endpoint of the dss. Example: https://dss.example.com. Only for dss version >= 0.20.0, otherwise left this value empty."
+              "description": "Public endpoint of the dss. Example: https://dss.example.com. Only for dss version >= 0.21.0, otherwise left this value empty."
             }
           },
           "required": ["hostname"]
