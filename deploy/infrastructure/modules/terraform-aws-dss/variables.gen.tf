@@ -317,7 +317,7 @@ variable "crdb_cluster_name" {
 }
 
 
-variable "crdb_locality" {
+variable "locality" {
   type        = string
   description = <<-EOT
   Unique name for your DSS instance. Currently, we recommend "<ORG_NAME>_<CLUSTER_NAME>",
@@ -326,7 +326,13 @@ variable "crdb_locality" {
 
   Example: <ORGNAME_CLUSTER_NAME>
   EOT
+
+  validation {
+    condition     = var.locality != ""
+    error_message = "Locality value must be set"
+  }
 }
+
 
 variable "crdb_external_nodes" {
   type        = list(string)

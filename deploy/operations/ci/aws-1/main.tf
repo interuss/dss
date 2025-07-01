@@ -20,7 +20,7 @@ module "terraform-aws-dss" {
   crdb_image_tag               = var.crdb_image_tag
   crdb_cluster_name            = var.crdb_cluster_name
   db_hostname_suffix           = var.db_hostname_suffix
-  crdb_locality                = var.crdb_locality
+  locality                     = var.locality
   crdb_external_nodes          = var.crdb_external_nodes
   image                        = var.image
   kubernetes_version           = var.kubernetes_version
