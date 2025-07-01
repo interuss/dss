@@ -63,10 +63,11 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds   = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname     = var.app_hostname
-        enableScd    = var.enable_scd
+        jwksEndpoint   = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds     = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname       = var.app_hostname
+        publicEndpoint = "https://${var.app_hostname}"
+        enableScd      = var.enable_scd
       }
     }
 
@@ -201,10 +202,11 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds   = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname     = var.app_hostname
-        enableScd    = var.enable_scd
+        jwksEndpoint   = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds     = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname       = var.app_hostname
+        publicEndpoint = "https://${var.app_hostname}"
+        enableScd      = var.enable_scd
       }
     }
 

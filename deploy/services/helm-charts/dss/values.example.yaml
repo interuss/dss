@@ -10,6 +10,7 @@ dss:
     jwksEndpoint: ''
     jwksKeyIds: []
     hostname: dss.example.com
+    publicEndpoint: https://dss.example.com
     enableScd: true
 
 cockroachdb:
