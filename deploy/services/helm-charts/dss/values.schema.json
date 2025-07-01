@@ -271,6 +271,10 @@
             "hostname": {
               "type": "string",
               "description": "Public hostname of the dss. Example: dss.example.com"
+            },
+            "publicEndpoint": {
+              "type": "string",
+              "description": "Public endpoint of the dss. Example: https://dss.example.com. Only for dss version >= 0.21.0, otherwise left this value empty."
             }
           },
           "required": ["hostname"]
