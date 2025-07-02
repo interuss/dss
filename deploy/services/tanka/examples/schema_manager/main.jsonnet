@@ -18,6 +18,7 @@ local metadata = metadataBase {
     image: 'VAR_DOCKER_IMAGE_NAME',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.2.0',
+    desired_aux_db_version: '1.0.0',
   },
 };
 

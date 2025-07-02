@@ -26,7 +26,7 @@ module "terraform-commons-dss" {
   datastore_type                   = var.datastore_type
   should_init                      = var.should_init
   authorization                    = var.authorization
-  crdb_locality                    = var.crdb_locality
+  locality                         = var.locality
   image_pull_secret                = var.image_pull_secret
   crdb_external_nodes              = var.crdb_external_nodes
   yugabyte_cloud                   = var.yugabyte_cloud
