@@ -26,6 +26,7 @@ local metadata = metadataBase {
     image: 'docker.io/interuss-local/dss:latest',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.2.0',
+    desired_aux_db_version: '1.0.0',
   },
 };
 

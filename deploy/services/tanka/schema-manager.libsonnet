@@ -60,5 +60,32 @@ local schema_dir = '/db-schemas';
         },
       },
     } else null,
+    AuxSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'aux-schema-manager') {
+      spec+: {
+        template+: {
+          spec+: {
+            volumes_: {
+              client_certs: volumes.volumes.client_certs,
+              ca_certs: volumes.volumes.ca_certs,
+            },
+            soloContainer:: base.Container('aux-schema-manager') {
+              image: metadata.schema_manager.image,
+              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
+              command: ['db-manager', 'migrate'],
+              args_:: {
+                cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
+                cockroach_port: metadata.cockroach.grpc_port,
+                cockroach_ssl_mode: 'verify-full',
+                cockroach_user: 'root',
+                cockroach_ssl_dir: '/cockroach/cockroach-certs',
+                db_version: metadata.schema_manager.desired_aux_db_version,
+                schemas_dir: schema_dir + '/aux_',
+              },
+              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
+            },
+          },
+        },
+      },
+    } else null,
   },
 }
