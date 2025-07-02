@@ -190,6 +190,15 @@ local util = import 'util.libsonnet';
 
   Job(metadata, name): $._Object('batch/v1', 'Job', metadata, name) {
     local job = self,
+    local hash = std.md5(std.toString(self.spec.template.spec)),
+    local uniqueName = name + '-' + hash,
+
+    metadata+: {
+        name: uniqueName,
+      labels: {
+        name: std.join('-', std.split(uniqueName, ':')),
+      },
+    },
 
     spec: {
       template: {

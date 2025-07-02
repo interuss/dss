@@ -6,6 +6,7 @@
   },
   "spec": {
     "apiServer": "VAR_API_SERVER",
-    "namespace": "VAR_NAMESPACE"
+    "namespace": "VAR_NAMESPACE",
+    "injectLabels": true
   }
 }
