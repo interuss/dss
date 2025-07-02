@@ -20,6 +20,7 @@ local metadata = metadataBase {
     image: 'docker.io/interuss-local/dss:latest',
     pubKeys: ['/test-certs/auth2.pem'],
     hostname: 'local',
+    publicEndpoint: 'http://127.0.0.1:8888',
     dumpRequests: false,
   },
   schema_manager+: {
