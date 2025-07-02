@@ -92,7 +92,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
             volumes: volumes.backendVolumes,
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
-              imagePullPolicy: 'Always',
+              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               ports: [
                 {
                   containerPort: metadata.backend.port,
