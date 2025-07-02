@@ -15,9 +15,15 @@ local awsCockroachLB(metadata, name, ip) = base.AWSLoadBalancer(metadata, name, 
   app:: 'cockroachdb',
 };
 
+local minikubeCockroachLB(metadata, name, ip) = base.Service(metadata, name) {
+  port:: metadata.cockroach.grpc_port,
+  app:: 'cockroachdb',
+};
+
 local cockroachLB(metadata, name, ip) =
     if metadata.cloud_provider == "google" then googleCockroachLB(metadata, name, ip)
-    else if metadata.cloud_provider == "aws" then awsCockroachLB(metadata, name, ip);
+    else if metadata.cloud_provider == "aws" then awsCockroachLB(metadata, name, ip)
+    else if metadata.cloud_provider == "minikube" then minikubeCockroachLB(metadata, name, ip);
 
 {
   all(metadata): {

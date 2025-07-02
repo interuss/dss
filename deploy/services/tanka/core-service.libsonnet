@@ -92,7 +92,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
             volumes: volumes.backendVolumes,
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
-              imagePullPolicy: 'Always',
+              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               ports: [
                 {
                   containerPort: metadata.backend.port,
@@ -117,7 +117,9 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 accepted_jwt_audiences: metadata.backend.hostname,
                 locality: metadata.cockroach.locality,
                 enable_scd: metadata.enableScd,
-              },
+              } + if metadata.backend.publicEndpoint != '' then {
+                public_endpoint: metadata.backend.publicEndpoint,
+              } else {},
               readinessProbe: {
                 httpGet: {
                   path: '/healthy',

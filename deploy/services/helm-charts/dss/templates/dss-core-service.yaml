@@ -47,13 +47,13 @@ spec:
 {{ if $dss.conf.publicEndpoint }}
             - --public_endpoint={{$dss.conf.publicEndpoint}}
 {{ end }}
+            - --locality={{$dss.conf.locality}}
             - --cockroach_host={{ $datastoreHost }}
             - --cockroach_port={{ $datastorePort }}
             - --cockroach_user={{ $datastoreUser }}
 {{ if $.Values.cockroachdb.enabled }}
             - --cockroach_ssl_dir=/cockroach/cockroach-certs
             - --cockroach_ssl_mode=verify-full
-            - --locality={{ .Values.cockroachdb.conf.locality }}
 {{ else }}
             - --cockroach_ssl_dir=/opt/yugabyte-certs
             - --cockroach_ssl_mode=verify-full

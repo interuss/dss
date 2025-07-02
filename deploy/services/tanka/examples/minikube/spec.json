@@ -2,11 +2,11 @@
   "apiVersion": "tanka.dev/v1alpha1",
   "kind": "Environment",
   "metadata": {
-    "name": "minimum_example"
+    "name": "minikube"
   },
   "spec": {
-    "apiServer": "VAR_API_SERVER",
-    "namespace": "VAR_NAMESPACE",
+    "apiServer": "https://192.168.49.2:8443",
+    "namespace": "default",
     "injectLabels": true
   }
 }
