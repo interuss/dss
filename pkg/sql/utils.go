@@ -19,16 +19,12 @@ func CellUnionToCellIds(cu s2.CellUnion) []int64 {
 }
 
 func CellUnionToCellIdsWithValidation(cu s2.CellUnion) ([]int64, error) {
-	pgCids := make([]int64, len(cu))
-	for i, cell := range cu {
+	for _, cell := range cu {
 		if err := geo.ValidateCell(cell); err != nil {
 			return nil, stacktrace.Propagate(err, "Error validating cell")
 		}
-		pgCids[i] = int64(cell)
 	}
-	// Sort the cell IDs for optimisation purpose (see https://github.com/interuss/dss/issues/814)
-	slices.Sort(pgCids)
-	return pgCids, nil
+	return CellUnionToCellIds(cu), nil
 }
 
 func ForUpdate(forUpdate bool) string {
