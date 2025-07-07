@@ -41,6 +41,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     prometheus: prometheus.all(metadata),
     grafana: grafana.all(metadata),
     alertmanager: if metadata.alert.enable == true then alertmanager.all(metadata),
-    schema_manager: if metadata.cockroach.shouldInit == true then schema_manager.all(metadata) else {},
+    schema_manager: if metadata.cockroach.shouldInit == true || metadata.schema_manager.enable then schema_manager.all(metadata) else {},
   },
 }

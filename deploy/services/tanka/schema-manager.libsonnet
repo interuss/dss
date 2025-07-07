@@ -5,8 +5,7 @@ local schema_dir = '/db-schemas';
 
 {
   all(metadata): {
-    assert metadata.cockroach.shouldInit == true && metadata.cockroach.JoinExisting == [] : "If shouldInit is True, JoinExisiting should be empty",
-    RIDSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'rid-schema-manager') {
+    RIDSchemaManager: if metadata.cockroach.shouldInit || metadata.schema_manager.enable then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
           spec+: {
@@ -33,7 +32,7 @@ local schema_dir = '/db-schemas';
         },
       },
     } else null,
-    SCDSchemaManager: if metadata.cockroach.shouldInit && metadata.enableScd then base.Job(metadata, 'scd-schema-manager') {
+    SCDSchemaManager: if (metadata.cockroach.shouldInit || metadata.schema_manager.enable) && metadata.enableScd then base.Job(metadata, 'scd-schema-manager') {
       spec+: {
         template+: {
           spec+: {
@@ -60,7 +59,7 @@ local schema_dir = '/db-schemas';
         },
       },
     } else null,
-    AuxSchemaManager: if metadata.cockroach.shouldInit then base.Job(metadata, 'aux-schema-manager') {
+    AuxSchemaManager: if metadata.cockroach.shouldInit || metadata.schema_manager.enable then base.Job(metadata, 'aux-schema-manager') {
       spec+: {
         template+: {
           spec+: {

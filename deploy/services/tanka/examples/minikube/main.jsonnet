@@ -24,6 +24,7 @@ local metadata = metadataBase {
     dumpRequests: false,
   },
   schema_manager+: {
+    enable: true,
     image: 'docker.io/interuss-local/dss:latest',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.2.0',

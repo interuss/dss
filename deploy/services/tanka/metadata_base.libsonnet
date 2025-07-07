@@ -58,6 +58,12 @@
     custom_rules: [],  // An array of Prometheus recording rules, each of which is an object with "record" and "expr" properties.
     custom_args: [], // An array of strings to pass as commandline arguments to Prometheus.
   },
+  schema_manager: {
+    enable: false, // NB: Automatically enabled if should_init is set to true.
+    image: error 'must specify image',
+    desired_rid_db_version: '4.0.0',
+    desired_scd_db_version: '3.2.0',
+  },
   image_pull_secret: '',
   subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
 }

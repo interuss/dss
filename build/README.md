@@ -417,6 +417,9 @@ a PR to that effect would be greatly appreciated.
         replace VAR_SSL_POLICY variable with its name. `RESTRICTED` profile is recommended.
         Leave it empty if not applicable.
 
+    1.  `VAR_ENABLE_SCHEMA_MANAGER`: Set this to true to enable the schema manager jobs.
+        It is required to perform schema upgrades. Note that it is automatically enabled when `VAR_SHOULD_INIT` is true.
+
 1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:
 
