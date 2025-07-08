@@ -67,7 +67,7 @@ v1:
                     specification: {}
                 kentland_planning_area:
                     dependencies: {}
-                    resource_type: resources.astm.f3548.v21.PlanningAreaResource
+                    resource_type: resources.PlanningAreaResource
                     specification:
                         base_url: https://uss_qualifier.test.utm/dummy_base_url
                         volume:
@@ -150,6 +150,7 @@ v1:
                             - base_url: http://core-service:8082
                               has_private_address: true
                               participant_id: uss1
+                              supports_ovn_request: true
                               user_participant_ids:
                                   - mock_uss
                 second_utm_auth:
