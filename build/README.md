@@ -316,7 +316,7 @@ a PR to that effect would be greatly appreciated.
         `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then
         VAR_DB_HOSTNAME_SUFFIX would be `db.example.com`.
 
-    1.  `VAR_CRDB_LOCALITY`: Unique name for your DSS instance.  Currently, we
+    1.  `VAR_LOCALITY`: Unique name for your DSS instance.  Currently, we
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
         allowed.  However, any unique (among all other participating DSS
         instances) value is acceptable.

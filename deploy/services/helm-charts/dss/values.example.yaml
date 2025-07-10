@@ -12,6 +12,7 @@ dss:
     hostname: dss.example.com
     publicEndpoint: https://dss.example.com
     enableScd: true
+    locality: zone=interuss-example-google-ew1
 
 cockroachdb:
   enabled: true
@@ -23,7 +24,6 @@ cockroachdb:
     join: []
     cluster-name: interuss-example
     single-node: false
-    locality: zone=interuss-example-google-ew1
 
   statefulset:
     replicas: 3 # Must match the number of .loadBalancers.cockroachdbNodes items.
