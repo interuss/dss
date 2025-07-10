@@ -36,7 +36,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "desired_scd_db_version",
     "crdb_image_tag",
     "crdb_cluster_name",
-    "crdb_locality",
+    "locality",
     "crdb_external_nodes",
     "kubernetes_namespace",
     "yugabyte_cloud",
@@ -66,6 +66,7 @@ GOOGLE_MODULE_VARIABLES = (
     + [
         "google_kubernetes_storage_class",
         "crdb_hostname_suffix",
+        "crdb_locality",
     ]
     + COMMONS_DSS_VARIABLES
 )
@@ -83,6 +84,7 @@ AWS_MODULE_VARIABLES = (
     AWS_KUBERNETES_VARIABLES + [
         "aws_kubernetes_storage_class",
         "crdb_hostname_suffix",
+        "crdb_locality",
     ] + COMMONS_DSS_VARIABLES
 )
 

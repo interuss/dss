@@ -27,7 +27,7 @@ module "terraform-commons-dss" {
   datastore_type                   = var.datastore_type
   should_init                      = var.should_init
   authorization                    = var.authorization
-  crdb_locality                    = var.crdb_locality
+  locality                         = var.locality
   crdb_external_nodes              = var.crdb_external_nodes
   node_count                       = var.node_count
   yugabyte_cloud                   = var.yugabyte_cloud

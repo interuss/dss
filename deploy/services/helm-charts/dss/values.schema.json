@@ -40,15 +40,10 @@
               "items": {
                 "type": "string"
               }
-            },
-            "locality": {
-              "description": "Locality attribute for this deployment. Example: zone=example",
-              "type": "string"
             }
           },
           "required": [
-            "cluster-name",
-            "locality"
+            "cluster-name"
           ]
         },
         "statefulset": {
@@ -275,9 +270,13 @@
             "publicEndpoint": {
               "type": "string",
               "description": "Public endpoint of the dss. Example: https://dss.example.com. Only for dss version >= 0.21.0, otherwise left this value empty."
+            },
+            "locality": {
+              "description": "Locality attribute for this deployment. Example: zone=example",
+              "type": "string"
             }
           },
-          "required": ["hostname"]
+          "required": ["hostname", "locality"]
         }
       },
       "required": ["image", "conf"]

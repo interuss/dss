@@ -105,6 +105,12 @@ available options.</p>
                 <td><p>This variable has been renamed to db_hostname_suffix and is left to warn users about migration.</p>
 </td>
             </tr><tr>
+                <td>crdb_locality</td>
+                <td><code>string</code></td>
+                <td><code>""</code></td>
+                <td><p>This variable has been renamed to locality and is left to warn users about migration.</p>
+</td>
+            </tr><tr>
                 <td>image</td>
                 <td><code>string</code></td>
                 <td></td>
@@ -232,7 +238,7 @@ and dashes (but no leading or trailing dashes). A cluster's name cannot be edite
 <p>Example: interuss-us-production</p>
 </td>
             </tr><tr>
-                <td>crdb_locality</td>
+                <td>locality</td>
                 <td><code>string</code></td>
                 <td></td>
                 <td><p>Unique name for your DSS instance. Currently, we recommend &quot;&lt;ORG_NAME&gt;_&lt;CLUSTER_NAME&gt;&quot;,
