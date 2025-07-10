@@ -27,6 +27,7 @@ local metadata = metadataBase {
     jwksEndpoint: 'VAR_JWKS_ENDPOINT',
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
     hostname: 'VAR_APP_HOSTNAME',
+    publicEndpoint: 'VAR_PUBLIC_ENDPOINT',
     dumpRequests: false,
     sslPolicy: 'VAR_SSL_POLICY'
   },

@@ -381,6 +381,9 @@ a PR to that effect would be greatly appreciated.
     1.  `VAR_APP_HOSTNAME`: Fully-qualified domain name of your Core Service
         ingress endpoint.  For example, `dss.example.com`.
 
+    1.  `VAR_PUBLIC_ENDPOINT`: URL to publicly access your Core Service
+        ingress endpoint.  For example, `https://dss.example.com`. Only for versions >=0.21.
+
     1.  `VAR_PUBLIC_KEY_PEM_PATH`: If providing a .pem file directly as the
         public key to validate incoming access tokens, specify the name of this
         .pem file here as `/jwt-public-certs/YOUR-KEY-NAME.pem` replacing
