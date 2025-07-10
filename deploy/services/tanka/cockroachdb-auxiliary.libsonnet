@@ -27,6 +27,7 @@ local cockroachLB(metadata, name, ip) =
 
 {
   all(metadata): {
+    assert !metadata.cockroach.shouldInit || (metadata.cockroach.shouldInit && metadata.cockroach.JoinExisting == []) : "If shouldInit is True, JoinExisiting should be empty",
     CockroachInit: if metadata.cockroach.shouldInit then base.Job(metadata, 'init') {
       spec+: {
         template+: {

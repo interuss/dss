@@ -15,6 +15,7 @@ local metadata = metadataBase {
     JoinExisting: [], // <-- This must be set to empty
   },
   schema_manager+: {
+    enable: true, // <-- this boolean value is VAR_ENABLE_SCHEMA_MANAGER
     image: 'VAR_DOCKER_IMAGE_NAME',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.2.0',
