@@ -1,10 +1,13 @@
 variable "crdb_locality" {
   type        = string
+  default     = ""
   description = <<-EOT
-  Unique name for your DSS instance. Currently, we recommend "<ORG_NAME>_<CLUSTER_NAME>",
-  and the = character is not allowed. However, any unique (among all other participating
-  DSS instances) value is acceptable.
+  This variable has been renamed to locality and is left to warn users about migration.
 
-  Example: <ORGNAME_CLUSTER_NAME>
   EOT
+
+  validation {
+    condition     = var.crdb_locality == ""
+    error_message = "crdb_locality value is not supported anymore. Use `locality` for similar behavior."
+  }
 }

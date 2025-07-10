@@ -137,6 +137,21 @@ variable "crdb_hostname_suffix" {
 }
 
 
+variable "crdb_locality" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  This variable has been renamed to locality and is left to warn users about migration.
+
+  EOT
+
+  validation {
+    condition     = var.crdb_locality == ""
+    error_message = "crdb_locality value is not supported anymore. Use `locality` for similar behavior."
+  }
+}
+
+
 variable "image" {
   type        = string
   description = <<-EOT
@@ -306,7 +321,7 @@ variable "crdb_cluster_name" {
 }
 
 
-variable "crdb_locality" {
+variable "locality" {
   type        = string
   description = <<-EOT
   Unique name for your DSS instance. Currently, we recommend "<ORG_NAME>_<CLUSTER_NAME>",
@@ -315,7 +330,13 @@ variable "crdb_locality" {
 
   Example: <ORGNAME_CLUSTER_NAME>
   EOT
+
+  validation {
+    condition     = var.locality != ""
+    error_message = "Locality value must be set"
+  }
 }
+
 
 variable "crdb_external_nodes" {
   type        = list(string)
