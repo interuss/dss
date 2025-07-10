@@ -11,13 +11,20 @@ local metadata = metadataBase {
   clusterName: 'VAR_CLUSTER_CONTEXT',
   single_cluster: false,
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
+  datastore: 'VAR_DATASTORE',
+  locality: 'VAR_LOCALITY',
   cockroach+: {
     image: 'VAR_CRDB_DOCKER_IMAGE_NAME',
     hostnameSuffix: 'VAR_DB_HOSTNAME_SUFFIX',
-    locality: 'VAR_LOCALITY',
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
     shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
     JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
+    storageClass: 'VAR_STORAGE_CLASS',
+  },
+  yugabyte+: {  // TODO: This part is not documented yet
+    image: 'VAR_YUGABYTE_DOCKER_IMAGE_NAME',
+    masterNodeIPs: ['VAR_YUGABYTE_MASTER_IP1', 'VAR_YUGABYTE_MASTER_IP2', 'VAR_YUGABYTE_MASTER_IP3'],
+    tserverNodeIPs: ['VAR_YUGABYTE_TSERVER_IP1', 'VAR_YUGABYTE_TSERVER_IP2', 'VAR_YUGABYTE_TSERVER_IP3'],
     storageClass: 'VAR_STORAGE_CLASS',
   },
   backend+: {

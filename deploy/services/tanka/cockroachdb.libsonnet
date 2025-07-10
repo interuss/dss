@@ -3,7 +3,7 @@ local util = import 'util.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
 {
-  StatefulSet(metadata): base.StatefulSet(metadata, 'cockroachdb') {
+  StatefulSet(metadata): if metadata.datastore == 'cockroachdb' then base.StatefulSet(metadata, 'cockroachdb') {
     metadata+: {
       namespace: metadata.namespace,
     },
@@ -87,8 +87,8 @@ local volumes = import 'volumes.libsonnet';
               join: std.join(',', ['cockroachdb-0.cockroachdb'] +
                 if metadata.single_cluster then [] else metadata.cockroach.JoinExisting),
               logtostderr: true,
-              locality: 'zone=' + metadata.cockroach.locality,
-              'locality-advertise-addr': 'zone=' + metadata.cockroach.locality + '@$(hostname -f)',
+              locality: 'zone=' + metadata.locality,
+              'locality-advertise-addr': 'zone=' + metadata.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
               cache: '25%',
               'max-sql-memory': '25%',
@@ -117,5 +117,5 @@ local volumes = import 'volumes.libsonnet';
         },
       ],
     },
-  },
+  } else {}
 }

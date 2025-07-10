@@ -9,10 +9,17 @@ local metadata = metadataBase {
   clusterName: 'dss-local-cluster',
   single_cluster: true,
   enableScd: true,
+  datastore: 'yugabyte',
+  locality: 'minikube',
   cockroach+: {
     image: 'cockroachdb/cockroach:v24.1.3',
-    locality: 'minikube',
     nodeIPs: ['', '', ''],
+    shouldInit: true,
+  },
+  yugabyte+: {
+    image: '',
+    masterNodeIPs: ['', '', ''],
+    tserverNodeIPs: ['', '', ''],
     shouldInit: true,
   },
   backend+: {

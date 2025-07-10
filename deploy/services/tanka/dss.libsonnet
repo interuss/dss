@@ -1,5 +1,7 @@
 local cockroachAuxiliary = import 'cockroachdb-auxiliary.libsonnet';
 local cockroachdb = import 'cockroachdb.libsonnet';
+local yugabyteAuxiliary = import 'yugabyte-auxiliary.libsonnet';
+local yugabyte = import 'yugabyte.libsonnet';
 local backend = import 'core-service.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
@@ -35,8 +37,10 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     },
     pspRB: if metadata.PSP.roleBinding then RoleBinding(metadata),
 
-    sset: cockroachdb.StatefulSet(metadata),
-    auxiliary: cockroachAuxiliary.all(metadata),
+    crdb_sset: cockroachdb.StatefulSet(metadata),
+    crdb_auxiliary: cockroachAuxiliary.all(metadata),
+    yugabyte_sset: yugabyte.all(metadata),
+    yugabyte_auxiliary: yugabyteAuxiliary.all(metadata),
     backend: backend.all(metadata),
     prometheus: prometheus.all(metadata),
     grafana: grafana.all(metadata),
