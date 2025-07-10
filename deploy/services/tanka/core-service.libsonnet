@@ -117,7 +117,9 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 accepted_jwt_audiences: metadata.backend.hostname,
                 locality: metadata.cockroach.locality,
                 enable_scd: metadata.enableScd,
-              },
+              } + if metadata.backend.publicEndpoint != '' then {
+                public_endpoint: metadata.backend.publicEndpoint,
+              } else {},
               readinessProbe: {
                 httpGet: {
                   path: '/healthy',
