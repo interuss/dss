@@ -16,6 +16,7 @@ local schema_dir = '/db-schemas';
             },
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
+              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               command: ['db-manager', 'migrate'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
@@ -42,6 +43,7 @@ local schema_dir = '/db-schemas';
             },
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
+              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               command: ['db-manager', 'migrate'],
               args_:: {
                 cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,

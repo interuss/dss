@@ -1,5 +1,5 @@
 {
-  cloud_provider: 'google', // Either google or aws
+  cloud_provider: 'google', // Either google, aws or minikube
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
   release: 'config',

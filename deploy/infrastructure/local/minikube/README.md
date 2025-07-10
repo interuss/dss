@@ -47,6 +47,8 @@ Follow the instructions in the [README](../../../services/helm-charts/dss/README
 * Use the `global.cloudProvider` setting with the value `minikube` and deploy the charts on the `dss-local-cluster` kubernetes context.
 * To access the service, find the external IP using the `kubectl get services dss-dss-gateway` command. The port 80, without HTTPs is used.
 
+You may also use the tanka files to deploy the service. An example configuration is provided [there](../../../services/tanka/examples/minikube/).
+
 ## Clean up
 
 To delete all resources, run `minikube delete -p dss-local-cluster`.  Note that this operation can't be reverted and all data will be lost.
