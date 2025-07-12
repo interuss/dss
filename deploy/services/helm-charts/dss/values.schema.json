@@ -155,6 +155,11 @@
       "description": "Load balancers configuration",
       "type": "object",
       "properties": {
+        "cockroachDbLoadBalancerId": {
+            "description": "Optional and AWS only: Load balancer name of this Cockroach DB node. This must be overridden to run multiple DSS instances in a single region. (default: cockroach-db-external-node-X where X is the index of this node)",
+            "type": "string",
+            "maxLength": 28
+        },
         "cockroachdbNodes": {
           "type": "array",
           "items": {
@@ -212,6 +217,11 @@
         "dssGateway": {
           "type": "object",
           "properties": {
+            "loadBalancerId": {
+                "type": "string",
+                "description": "Optional and AWS only: Load balancer name of the DSS Gateway. This must be overridden to run multiple DSS instances in a single region. (default: cockroach-db-external-node-X where X is the index)",
+                "maxLength": 62
+            },
             "ip": {
               "description": "Public ip or cloud resource name.",
               "type": "string"
