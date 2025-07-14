@@ -107,6 +107,20 @@ endpoint.
 
 See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication.
 
+### Verify signature of prebuilt InterUSS Docker images
+
+The prebuilt docker images are signed using [sigstore](https://www.sigstore.dev/).
+The identity of the CI workflow, attested by GitHub, is used so sign the images.
+
+The signature may be verified by using [cosign](https://github.com/sigstore/cosign):
+```shell
+docker pull "docker.io/interuss/dss:latest"
+cosign verify "docker.io/interuss/dss:latest" \
+  --certificate-identity-regexp="https://github.com/interuss/dss/.github/workflows/dss-publish.yml@refs/*" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+```
+Adapt the version specified if required.
+
 ## Deploying a DSS instance via Kubernetes
 
 This section discusses deploying a Kubernetes service manually, although you can deploy

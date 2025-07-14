@@ -6,21 +6,29 @@
 
 name: Publish DSS image to Docker Registry (on new release tag)
 on:
-  push:
-    tags:
-      # To modify to trigger the job for fork's releases
-      # Note: GitHub's filter pattern capabilities are limited[1], so this
-      # pattern matches more often than it should.  A more correct regex would
-      # be the one found in scripts/tag.sh.
-      # [1] https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
-      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
+  pull_request: # TODO: added for testing purposes, remove me before merging
+# TODO: commented out for testing purposes, restore me before merging
+#  push:
+#    tags:
+#      # To modify to trigger the job for fork's releases
+#      # Note: GitHub's filter pattern capabilities are limited[1], so this
+#      # pattern matches more often than it should.  A more correct regex would
+#      # be the one found in scripts/tag.sh.
+#      # [1] https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+#      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
 jobs:
   docker-hub-push:
     name: DSS Build and Push to Docker Hub
     runs-on: ubuntu-latest
     # To modify to enable the job for forked repository
     if: github.repository == 'interuss/dss'
+    permissions:
+        id-token: write # needed for signing the images with GitHub OIDC Token
+
     steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.9.1
+
       - name: Job information
         run: |
           echo "Job information"
@@ -29,6 +37,7 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref }}"
           docker images
+          cosign version
 
       - name: Checkout
         uses: actions/checkout@v2
@@ -42,9 +51,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push image
+      - name: Build, push and sign image
         env:
           DOCKER_URL: ${{ secrets.DOCKER_URL }}
-          DOCKER_UPDATE_LATEST: true
+          DOCKER_UPDATE_LATEST: false # TODO: changed for testing purposes, revert me to 'true' before merging
+          DOCKER_SIGN: true
+          CERT_IDENTITY: https://github.com/${{ github.workflow_ref }}
+          CERT_ISSUER: https://token.actions.githubusercontent.com
         run: |
           build/build.sh
