@@ -8,8 +8,9 @@ import (
 
 var (
 	DssReadIdentificationServiceAreasScope  = api.RequiredScope("dss.read.identification_service_areas")
-	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
 	DssWriteIdentificationServiceAreasScope = api.RequiredScope("dss.write.identification_service_areas")
+	InterussPoolStatusReadScope             = api.RequiredScope("interuss.pool_status.read")
+	InterussPoolStatusHeartbeatWriteScope   = api.RequiredScope("interuss.pool_status.heartbeat.write")
 	GetVersionSecurity                      = []api.AuthorizationOption{}
 	ValidateOauthSecurity                   = []api.AuthorizationOption{
 		{
@@ -27,6 +28,11 @@ var (
 	GetDSSInstancesSecurity = []api.AuthorizationOption{
 		{
 			"Auth": {InterussPoolStatusReadScope},
+		},
+	}
+	PutDSSInstancesHeartbeatSecurity = []api.AuthorizationOption{
+		{
+			"Auth": {InterussPoolStatusHeartbeatWriteScope},
 		},
 	}
 	GetAcceptedCAsSecurity = []api.AuthorizationOption{}
@@ -108,6 +114,39 @@ type GetDSSInstancesResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type PutDSSInstancesHeartbeatRequest struct {
+	// The source of the timestamp
+	Source *string
+
+	// Override the timestamp value of the heartbeat. If not set, will use the current time. RFC 3339 format.
+	Timestamp *string
+
+	// Set the time before the next heartbeat is expected. RFC 3339 format.
+	NextHeartbeatExpectedBefore *string
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type PutDSSInstancesHeartbeatResponseSet struct {
+	// The heartbeat have been recorded. The known DSS instances participating in the pool are successfully returned.
+	Response201 *DSSInstancesResponse
+
+	// The request was not properly formed or the parameters are invalid
+	Response400 *ErrorResponse
+
+	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+	Response401 *ErrorResponse
+
+	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+	Response403 *ErrorResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type GetAcceptedCAsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
@@ -150,6 +189,9 @@ type Implementation interface {
 
 	// Queries the current information for DSS instances participating in the pool.
 	GetDSSInstances(ctx context.Context, req *GetDSSInstancesRequest) GetDSSInstancesResponseSet
+
+	// Record a new heartbeat from the DSS instance
+	PutDSSInstancesHeartbeat(ctx context.Context, req *PutDSSInstancesHeartbeatRequest) PutDSSInstancesHeartbeatResponseSet
 
 	// Current certificates of certificate authorities (CAs) that this DSS instance accepts as legitimate signers of node certificates for the pool of DSS instances constituting the DSS Airspace Representation.
 	GetAcceptedCAs(ctx context.Context, req *GetAcceptedCAsRequest) GetAcceptedCAsResponseSet
