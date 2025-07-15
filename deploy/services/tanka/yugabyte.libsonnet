@@ -4,6 +4,10 @@ local volumes = import 'volumes.libsonnet';
 
 {
   all(metadata): if metadata.datastore == 'yugabyte' then {
+    local precommand_prefix = "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"",
+    local precommand_suffix = "\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\",
+    local master_precommand = if metadata.yugabyte.fix_27367_issue then precommand_prefix + metadata.yugabyte.master.server_broadcast_addresses + precommand_suffix else "",
+    local tserver_precommand = if metadata.yugabyte.fix_27367_issue then precommand_prefix + metadata.yugabyte.tserver.server_broadcast_addresses + precommand_suffix else "",
     Master: base.StatefulSet(metadata, 'yb-master') {
       metadata+: {
         namespace: metadata.namespace,
@@ -82,12 +86,12 @@ local volumes = import 'volumes.libsonnet';
                 image: metadata.yugabyte.image,
                 resources: {
                   limits: {
-                    cpu: 2,
-                    memory: "2Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
+                    memory: if metadata.yugabyte.light_resources then "0.5G" else "2Gi",
                   },
                   requests: {
-                    cpu: 2,
-                    memory: "2Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
+                    memory: if metadata.yugabyte.light_resources then "0.5G" else "2Gi",
                   },
                 },
                 ports: [{
@@ -112,6 +116,13 @@ local volumes = import 'volumes.libsonnet';
                   valueFrom: {
                     fieldRef: {
                       fieldPath: "metadata.name",
+                    },
+                  },
+                }, {
+                  name: 'HOSTNAMENO',
+                  valueFrom: {
+                    fieldRef: {
+                      fieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
                     },
                   },
                 }, {
@@ -174,9 +185,7 @@ local volumes = import 'volumes.libsonnet';
                   "/bin/bash",
                   "-c",
                   |||
-                  if [ -f /home/yugabyte/tools/k8s_preflight.py ]; then
-                    /home/yugabyte/tools/k8s_preflight.py all
-                  fi && \
+                  %s
                   echo "disk check at: $(date)" \
                     | tee "/mnt/disk0/disk.check" "/mnt/disk1/disk.check" \
                     && sync "/mnt/disk0/disk.check" "/mnt/disk1/disk.check" && \
@@ -210,7 +219,7 @@ local volumes = import 'volumes.libsonnet';
                   envsubst < /opt/master/conf/server.conf.template > /tmp/yugabyte/master/conf/server.conf && \
                   exec ${k8s_parent} /home/yugabyte/bin/yb-master \
                     --flagfile /tmp/yugabyte/master/conf/server.conf
-                |||,
+                ||| % [ master_precommand ],
                 ],
                 volumeMounts: [{
                   name: "master-gflags",
@@ -404,12 +413,12 @@ local volumes = import 'volumes.libsonnet';
                 image: metadata.yugabyte.image,
                 resources: {
                   limits: {
-                    cpu: 2,
-                    memory: "4Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
+                    memory: if metadata.yugabyte.light_resources then "0.5G" else "4Gi",
                   },
                   requests: {
-                    cpu: 2,
-                    memory: "4Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
+                    memory: if metadata.yugabyte.light_resources then "0.5G" else "4Gi",
                   },
                 },
                 ports: [{
@@ -452,6 +461,13 @@ local volumes = import 'volumes.libsonnet';
                   valueFrom: {
                     fieldRef: {
                       fieldPath: "metadata.name",
+                    },
+                  },
+                }, {
+                  name: 'HOSTNAMENO',
+                  valueFrom: {
+                    fieldRef: {
+                      fieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
                     },
                   },
                 }, {
@@ -517,9 +533,7 @@ local volumes = import 'volumes.libsonnet';
                   "/bin/bash",
                   "-c",
                   |||
-                  if [ -f /home/yugabyte/tools/k8s_preflight.py ]; then
-                    /home/yugabyte/tools/k8s_preflight.py all
-                  fi && \
+                  %s
                   echo "disk check at: $(date)" \
                     | tee "/mnt/disk0/disk.check" "/mnt/disk1/disk.check" \
                     && sync "/mnt/disk0/disk.check" "/mnt/disk1/disk.check" && \
@@ -567,7 +581,7 @@ local volumes = import 'volumes.libsonnet';
                     envsubst < /opt/tserver/conf/server.conf.template > /tmp/yugabyte/tserver/conf/server.conf && \
                     exec ${k8s_parent} /home/yugabyte/bin/yb-tserver \
                       --flagfile /tmp/yugabyte/tserver/conf/server.conf
-                |||,
+                ||| % [ tserver_precommand ],
                 ],
                 volumeMounts: [{
                   name: "tserver-tmp",
@@ -620,7 +634,7 @@ local volumes = import 'volumes.libsonnet';
                   subPath: "yb-data",
                 }, {
                   name: "datadir0",
-                  mountPath: "/home/yugabyte/cores",
+                  mountPath: "/var/yugabyte/cores",
                   subPath: "cores",
                 }],
               },
