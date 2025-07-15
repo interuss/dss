@@ -220,6 +220,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /aux/v1/pool/dss_instances/heartbeat:
+    put:
+      summary: Record a new heartbeat from the DSS instance
+      operationId: putDSSInstancesHeartbeat
+      tags: [ dss ]
+      security:
+      - Auth:
+        - interuss.pool_status.heartbeat.write
+      parameters:
+      - name: source
+        in: query
+        required: true
+        description: The source of the timestamp
+        schema:
+          type: string
+      - name: timestamp
+        in: query
+        required: false
+        description: Override the timestamp value of the heartbeat. If not set, will use the current time. RFC 3339 format.
+        schema:
+          type: string
+          format: date-time
+      - name: next_heartbeat_expected_before
+        in: query
+        required: false
+        description: Set the time before the next heartbeat is expected. RFC 3339 format.
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '201':
+          description: The heartbeat have been recorded. The known DSS instances participating in the pool are successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DSSInstancesResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: >-
+            The request was not properly formed or the parameters are invalid
+        '401':
+          description: >-
+            Bearer access token was not provided in Authorization header, token
+            could not be decoded, or token was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: >-
+            The access token was decoded successfully but did not include a
+            scope appropriate to this endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /aux/v1/configuration/accepted_ca_certs:
     get:
       summary: Current certificates of certificate authorities (CAs) that this DSS instance accepts as legitimate signers of node certificates for the pool of DSS instances constituting the DSS Airspace Representation.
@@ -263,6 +329,7 @@ security:
       - dss.read.identification_service_areas
       - dss.write.identification_service_areas
       - interuss.pool_status.read
+      - interuss.pool_status.heartbeat.write
 tags:
   - name: dss
     description: Endpoints exposed by the DSS server.

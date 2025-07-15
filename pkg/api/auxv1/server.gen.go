@@ -157,6 +157,61 @@ func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) PutDSSInstancesHeartbeat(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req PutDSSInstancesHeartbeatRequest
+
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, PutDSSInstancesHeartbeatSecurity)
+
+	// Copy query parameters
+	query := r.URL.Query()
+	// TODO: Change to query.Has after Go 1.17
+	if query.Get("source") != "" {
+		v := query.Get("source")
+		req.Source = &v
+	}
+	if query.Get("timestamp") != "" {
+		v := query.Get("timestamp")
+		req.Timestamp = &v
+	}
+	if query.Get("next_heartbeat_expected_before") != "" {
+		v := query.Get("next_heartbeat_expected_before")
+		req.NextHeartbeatExpectedBefore = &v
+	}
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response := s.Implementation.PutDSSInstancesHeartbeat(ctx, &req)
+
+	// Write response to client
+	if response.Response201 != nil {
+		api.WriteJSON(w, 201, response.Response201)
+		return
+	}
+	if response.Response400 != nil {
+		api.WriteJSON(w, 400, response.Response400)
+		return
+	}
+	if response.Response401 != nil {
+		api.WriteJSON(w, 401, response.Response401)
+		return
+	}
+	if response.Response403 != nil {
+		api.WriteJSON(w, 403, response.Response403)
+		return
+	}
+	if response.Response501 != nil {
+		api.WriteJSON(w, 501, response.Response501)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func (s *APIRouter) GetAcceptedCAs(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetAcceptedCAsRequest
 
@@ -212,7 +267,7 @@ func (s *APIRouter) GetInstanceCAs(exp *regexp.Regexp, w http.ResponseWriter, r 
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 6)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 7)}
 
 	pattern := regexp.MustCompile("^/aux/v1/version$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion}
@@ -226,11 +281,14 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/aux/v1/pool/dss_instances$")
 	router.Routes[3] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetDSSInstances}
 
+	pattern = regexp.MustCompile("^/aux/v1/pool/dss_instances/heartbeat$")
+	router.Routes[4] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutDSSInstancesHeartbeat}
+
 	pattern = regexp.MustCompile("^/aux/v1/configuration/accepted_ca_certs$")
-	router.Routes[4] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetAcceptedCAs}
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetAcceptedCAs}
 
 	pattern = regexp.MustCompile("^/aux/v1/configuration/ca_certs$")
-	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs}
 
 	return router
 }

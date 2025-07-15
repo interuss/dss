@@ -18,6 +18,8 @@ type DSSMetadata interface {
 	SaveOwnMetadata(ctx context.Context, locality string, publicEndpoint string) error
 	// GetDSSMetadata returns all DSS metadata of pool participants
 	GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, error)
+	// Record a new Timestamp
+	RecordHeartbeat(ctx context.Context, hearthbeat auxmodels.Heartbeat) error
 }
 
 // Repository aggregates all SCD-specific repo interfaces.

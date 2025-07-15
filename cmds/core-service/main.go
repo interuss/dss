@@ -140,7 +140,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore}, nil
+	return &aux.Server{Store: auxStore, Locality: locality}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
