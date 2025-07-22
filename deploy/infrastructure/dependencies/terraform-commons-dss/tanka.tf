@@ -28,6 +28,7 @@ resource "local_file" "tanka_config_main" {
     VAR_JWKS_KEY_ID                   = var.authorization.jwks != null ? var.authorization.jwks.key_id : ""
     VAR_DESIRED_RID_DB_VERSION        = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION        = local.scd_db_schema
+    VAR_DESIRED_AUX_DB_VERSION        = local.aux_db_schema
     VAR_SHOULD_INIT                   = var.should_init
     VAR_DOCKER_IMAGE_PULL_SECRET      = var.image_pull_secret != null ? var.image_pull_secret : ""
     VAR_CLOUD_PROVIDER                = var.kubernetes_cloud_provider_name

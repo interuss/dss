@@ -62,6 +62,7 @@ local metadata = metadataBase {
     image: '${VAR_DOCKER_IMAGE_NAME}',
     desired_rid_db_version: '${VAR_DESIRED_RID_DB_VERSION}',
     desired_scd_db_version: '${VAR_DESIRED_SCD_DB_VERSION}',
+    desired_aux_db_version: '${VAR_DESIRED_AUX_DB_VERSION}',
   },
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',

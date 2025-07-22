@@ -217,6 +217,14 @@ Use <code>latest</code> to use the latest schema version.</p>
 <p>Example: <code>3.1.0</code></p>
 </td>
             </tr><tr>
+                <td>desired_aux_db_version</td>
+                <td><code>string</code></td>
+                <td><code>"latest"</code></td>
+                <td><p>Desired AUX DB schema version.
+Use <code>latest</code> to use the latest schema version.</p>
+<p>Example: <code>3.1.0</code></p>
+</td>
+            </tr><tr>
                 <td>crdb_image_tag</td>
                 <td><code>string</code></td>
                 <td></td>
