@@ -11,14 +11,37 @@ local metadata = metadataBase {
   clusterName: '${VAR_CLUSTER_CONTEXT}',
   single_cluster: false,
   enableScd: ${VAR_ENABLE_SCD}, // <-- This boolean value is VAR_ENABLE_SCD
+  datastore: '${VAR_DATASTORE}',
+  locality: '${VAR_LOCALITY}',
   cockroach+: {
     image: '${VAR_CRDB_DOCKER_IMAGE_NAME}',
     hostnameSuffix: '${VAR_DB_HOSTNAME_SUFFIX}',
-    locality: '${VAR_LOCALITY}',
     nodeIPs: [${VAR_CRDB_NODE_IPS}],
     shouldInit: ${VAR_SHOULD_INIT},
     JoinExisting: [${VAR_CRDB_EXTERNAL_NODES}],
     storageClass: '${VAR_STORAGE_CLASS}',
+  },
+  yugabyte+: {
+    image: '${VAR_YUGABYTE_DOCKER_IMAGE_NAME}',
+    masterNodeIPs: [${VAR_YUGABYTE_MASTER_NODE_IPS}],
+    tserverNodeIPs: [${VAR_YUGABYTE_TSERVER_NODE_IPS}],
+    masterAddresses: [${VAR_YUGABYTE_MASTER_ADDRESSES}],
+    master: {
+      rpc_bind_addresses: '${VAR_YUGABYTE_MASTER_BIND_ADDRESS}',
+      server_broadcast_addresses: '${VAR_YUGABYTE_MASTER_BIND_ADDRESS}',
+    },
+    tserver: {
+      rpc_bind_addresses: '${VAR_YUGABYTE_TSERVER_BIND_ADDRESS}',
+      server_broadcast_addresses: '${VAR_YUGABYTE_TSERVER_BIND_ADDRESS}',
+    },
+    placement: {
+      cloud: '${VAR_YUGABYTE_CLOUD}',
+      region: '${VAR_YUGABYTE_REGION}',
+      zone: '${VAR_YUGABYTE_ZONE}',
+    },
+    storageClass: '${VAR_STORAGE_CLASS}',
+    fix_27367_issue: true,
+    light_resources: true, // TODO Need to be an option
   },
   backend+: {
     ipName: '${VAR_INGRESS_NAME}',
@@ -30,10 +53,12 @@ local metadata = metadataBase {
     jwksEndpoint: '${VAR_JWKS_ENDPOINT}',
     jwksKeyIds: ['${VAR_JWKS_KEY_ID}'],
     hostname: '${VAR_APP_HOSTNAME}',
+    publicEndpoint: 'https://${VAR_APP_HOSTNAME}',
     dumpRequests: false,
     sslPolicy: '${VAR_SSL_POLICY}'
   },
   schema_manager+: {
+    enable: true,
     image: '${VAR_DOCKER_IMAGE_NAME}',
     desired_rid_db_version: '${VAR_DESIRED_RID_DB_VERSION}',
     desired_scd_db_version: '${VAR_DESIRED_SCD_DB_VERSION}',

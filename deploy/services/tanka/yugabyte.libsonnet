@@ -4,6 +4,8 @@ local volumes = import 'volumes.libsonnet';
 
 {
   all(metadata): if metadata.datastore == 'yugabyte' then {
+
+    # Thoses pre commands are used in yugabyte deployments to make the local ip pointing to the public hostname we want to use, until https://github.com/yugabyte/yugabyte-db/issues/27367 is fixed
     local precommand_prefix = "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"",
     local precommand_suffix = "\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\",
     local master_precommand = if metadata.yugabyte.fix_27367_issue then precommand_prefix + metadata.yugabyte.master.server_broadcast_addresses + precommand_suffix else "",
@@ -87,11 +89,11 @@ local volumes = import 'volumes.libsonnet';
                 resources: {
                   limits: {
                     cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5G" else "2Gi",
+                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "2Gi",
                   },
                   requests: {
                     cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5G" else "2Gi",
+                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "2Gi",
                   },
                 },
                 ports: [{
@@ -414,11 +416,11 @@ local volumes = import 'volumes.libsonnet';
                 resources: {
                   limits: {
                     cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5G" else "4Gi",
+                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "4Gi",
                   },
                   requests: {
                     cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5G" else "4Gi",
+                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "4Gi",
                   },
                 },
                 ports: [{
