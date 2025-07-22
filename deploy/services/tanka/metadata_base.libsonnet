@@ -26,7 +26,17 @@
     storageClass: 'standard',
     masterNodeIPs: [],
     tserverNodeIPs: [],
-    masterAddresses: ["yb-master-0.yb-masters.default.svc.cluster.local:7100", "yb-master-1.yb-masters.default.svc.cluster.local:7100", "yb-master-2.yb-masters.default.svc.cluster.local:7100"],
+    masterAddresses: ["yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100", "yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100", "yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"],
+    master: {
+      rpc_bind_addresses: "${HOSTNAME}.yb-masters.${NAMESPACE}.svc.cluster.local",
+      server_broadcast_addresses: "${HOSTNAME}.yb-masters.${NAMESPACE}.svc.cluster.local:7100",
+    },
+    tserver: {
+      rpc_bind_addresses: "${HOSTNAME}.yb-tservers.${NAMESPACE}.svc.cluster.local",
+      server_broadcast_addresses: "${HOSTNAME}.yb-tservers.${NAMESPACE}.svc.cluster.local:9100",
+    },
+    fix_27367_issue: false,
+    light_resources: false,
     placement: {
       cloud: error 'must specify placement cloud',
       region: error 'must specify placement region',
@@ -46,6 +56,7 @@
     jwksEndpoint: '',
     jwksKeyIds: [],
     hostname: error 'must specify hostname',
+    publicEndpoint: '',
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
     sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
@@ -77,6 +88,7 @@
     image: error 'must specify image',
     desired_rid_db_version: '4.0.0',
     desired_scd_db_version: '3.2.0',
+    desired_aux_db_version: '1.0.0',
   },
   image_pull_secret: '',
   subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips

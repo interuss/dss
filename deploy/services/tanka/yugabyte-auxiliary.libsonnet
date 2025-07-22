@@ -34,7 +34,7 @@ local yugabyteLB(metadata, name, ip) =
           "server.conf.template": |||
             --fs_data_dirs=/mnt/disk0,/mnt/disk1
             --master_addresses=%s
-            --replication_factor=3
+            --replication_factor=%s
             --enable_ysql=true
             --certs_dir=/opt/certs/yugabyte
             --use_node_to_node_encryption=true
@@ -47,15 +47,19 @@ local yugabyteLB(metadata, name, ip) =
             --num_cpus=2
             --max_log_size=256
             --undefok=num_cpus,enable_ysql
-            --rpc_bind_addresses=${HOSTNAME}.yb-masters.${NAMESPACE}.svc.cluster.local
-            --server_broadcast_addresses=${HOSTNAME}.yb-masters.${NAMESPACE}.svc.cluster.local:7100
+            --rpc_bind_addresses=%s
+            --server_broadcast_addresses=%s
             --webserver_interface=0.0.0.0
             --default_memory_limit_to_ram_ratio=0.85
             --placement_cloud=%s
             --placement_region=%s
             --placement_zone=%s
+            --use_private_ip=zone
           ||| % [
             std.join(",", metadata.yugabyte.masterAddresses),
+            std.length(metadata.yugabyte.masterAddresses),
+            metadata.yugabyte.master.rpc_bind_addresses,
+            metadata.yugabyte.master.server_broadcast_addresses,
             metadata.yugabyte.placement.cloud,
             metadata.yugabyte.placement.region,
             metadata.yugabyte.placement.zone,
@@ -73,6 +77,7 @@ local yugabyteLB(metadata, name, ip) =
             --allow_insecure_connections=false
             --use_client_to_server_encryption=true
             --certs_for_client_dir=/opt/certs/yugabyte
+            --cert_node_filename=${HOSTNAME}.yb-tservers.${NAMESPACE}.svc.cluster.local
             --enable_ysql=true
             --pgsql_proxy_bind_address=0.0.0.0:5433
             --tserver_enable_metrics_snapshotter=true
@@ -86,14 +91,17 @@ local yugabyteLB(metadata, name, ip) =
             --undefok=num_cpus,enable_ysql
             --use_node_hostname_for_local_tserver=true
             --cql_proxy_bind_address=0.0.0.0:9042
-            --rpc_bind_addresses=${HOSTNAME}.yb-tservers.${NAMESPACE}.svc.cluster.local
-            --server_broadcast_addresses=${HOSTNAME}.yb-tservers.${NAMESPACE}.svc.cluster.local:9100
+            --rpc_bind_addresses=%s
+            --server_broadcast_addresses=%s
             --webserver_interface=0.0.0.0
             --placement_cloud=%s
             --placement_region=%s
             --placement_zone=%s
+            --use_private_ip=zone
           ||| % [
             std.join(",", metadata.yugabyte.masterAddresses),
+            metadata.yugabyte.tserver.rpc_bind_addresses,
+            metadata.yugabyte.tserver.server_broadcast_addresses,
             metadata.yugabyte.placement.cloud,
             metadata.yugabyte.placement.region,
             metadata.yugabyte.placement.zone,
