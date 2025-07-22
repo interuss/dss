@@ -26,6 +26,12 @@
     storageClass: 'standard',
     masterNodeIPs: [],
     tserverNodeIPs: [],
+    masterAddresses: ["yb-master-0.yb-masters.default.svc.cluster.local:7100", "yb-master-1.yb-masters.default.svc.cluster.local:7100", "yb-master-2.yb-masters.default.svc.cluster.local:7100"],
+    placement: {
+      cloud: error 'must specify placement cloud',
+      region: error 'must specify placement region',
+      zone: error 'must specify placement zone',
+    },
   },
   PSP: {
     roleRef: '',

@@ -277,5 +277,8 @@ local util = import 'util.libsonnet';
     spec+: {
       sslPolicy: sslPolicy
     }
-  }
+  },
+
+  Secret(metadata, name): $._Object('v1', 'Secret', metadata, name) {
+  },
 }

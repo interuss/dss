@@ -1,5 +1,6 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
+local datastoreparameters = import 'datastoreparameters.libsonnet';
 
 local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 'gateway', [metadata.backend.ipName], metadata.subnet, metadata.backend.certName) {
   app:: 'core-service',
@@ -89,7 +90,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
       spec+: {
         template+: {
           spec+: {
-            volumes: volumes.backendVolumes,
+            volumes: volumes.all(metadata).backendVolumes,
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
@@ -99,16 +100,11 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                   name: 'http',
                 },
               ],
-              volumeMounts: volumes.backendMounts,
+              volumeMounts: volumes.all(metadata).backendMounts,
               command: ['core-service'],
               args_:: {
                 addr: ':' + metadata.backend.port,
                 gcp_prof_service_name: metadata.backend.prof_grpc_name,
-                cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
-                cockroach_port: metadata.cockroach.grpc_port,
-                cockroach_ssl_mode: 'verify-full',
-                cockroach_user: 'root',
-                cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 garbage_collector_spec: '@every 30m',
                 public_key_files: std.join(",", metadata.backend.pubKeys),
                 jwks_endpoint: metadata.backend.jwksEndpoint,
@@ -117,7 +113,8 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 accepted_jwt_audiences: metadata.backend.hostname,
                 locality: metadata.locality,
                 enable_scd: metadata.enableScd,
-              } + if metadata.backend.publicEndpoint != '' then {
+              } + datastoreparameters.all(metadata)
+              + if metadata.backend.publicEndpoint != '' then {
                 public_endpoint: metadata.backend.publicEndpoint,
               } else {},
               readinessProbe: {
