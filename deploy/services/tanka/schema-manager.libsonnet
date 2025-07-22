@@ -1,32 +1,25 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
-
-local schema_dir = '/db-schemas';
+local datastoreparameters = import 'datastoreparameters.libsonnet';
 
 {
   all(metadata): {
+    local schema_dir = if metadata.datastore == "cockroachdb" then '/db-schemas' else '/db-schemas/yugabyte',
+
     RIDSchemaManager: if metadata.cockroach.shouldInit || metadata.schema_manager.enable then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
           spec+: {
-            volumes_: {
-              client_certs: volumes.volumes.client_certs,
-              ca_certs: volumes.volumes.ca_certs,
-            },
+            volumes: volumes.all(metadata).schemaVolumes,
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               command: ['db-manager', 'migrate'],
               args_:: {
-                cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
-                cockroach_port: metadata.cockroach.grpc_port,
-                cockroach_ssl_mode: 'verify-full',
-                cockroach_user: 'root',
-                cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_rid_db_version,
                 schemas_dir: schema_dir + '/rid',
-              },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
+              } + datastoreparameters.all(metadata),
+              volumeMounts: volumes.all(metadata).schemaMounts,
             },
           },
         },
@@ -36,24 +29,16 @@ local schema_dir = '/db-schemas';
       spec+: {
         template+: {
           spec+: {
-            volumes_: {
-              client_certs: volumes.volumes.client_certs,
-              ca_certs: volumes.volumes.ca_certs,
-            },
+            volumes: volumes.all(metadata).schemaVolumes,
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               command: ['db-manager', 'migrate'],
               args_:: {
-                cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
-                cockroach_port: metadata.cockroach.grpc_port,
-                cockroach_ssl_mode: 'verify-full',
-                cockroach_user: 'root',
-                cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_scd_db_version,
                 schemas_dir: schema_dir + '/scd',
-              },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
+              } + datastoreparameters.all(metadata),
+              volumeMounts: volumes.all(metadata).schemaMounts,
             },
           },
         },
@@ -63,24 +48,16 @@ local schema_dir = '/db-schemas';
       spec+: {
         template+: {
           spec+: {
-            volumes_: {
-              client_certs: volumes.volumes.client_certs,
-              ca_certs: volumes.volumes.ca_certs,
-            },
+            volumes: volumes.all(metadata).schemaVolumes,
             soloContainer:: base.Container('aux-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               command: ['db-manager', 'migrate'],
               args_:: {
-                cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
-                cockroach_port: metadata.cockroach.grpc_port,
-                cockroach_ssl_mode: 'verify-full',
-                cockroach_user: 'root',
-                cockroach_ssl_dir: '/cockroach/cockroach-certs',
                 db_version: metadata.schema_manager.desired_aux_db_version,
                 schemas_dir: schema_dir + '/aux_',
-              },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
+              } + datastoreparameters.all(metadata),
+              volumeMounts: volumes.all(metadata).schemaMounts,
             },
           },
         },

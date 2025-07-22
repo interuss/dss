@@ -12,7 +12,7 @@ local volumes = import 'volumes.libsonnet';
       template+: {
         spec+: {
           serviceAccountName: 'cockroachdb',
-          volumes: volumes.cockroachVolumes,
+          volumes: volumes.all(metadata).cockroachVolumes,
           affinity: {
             podAntiAffinity: {
               preferredDuringSchedulingIgnoredDuringExecution: [
@@ -38,7 +38,7 @@ local volumes = import 'volumes.libsonnet';
           },
           soloContainer:: base.Container('cockroachdb') {
             image: metadata.cockroach.image,
-            volumeMounts: volumes.cockroachMounts,
+            volumeMounts: volumes.all(metadata).cockroachMounts,
             ports: [
               {
                 name: 'cockroach',

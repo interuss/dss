@@ -17,10 +17,14 @@ local metadata = metadataBase {
     shouldInit: true,
   },
   yugabyte+: {
-    image: '',
+    image: 'yugabytedb/yugabyte:2.25.1.0-b381',
     masterNodeIPs: ['', '', ''],
     tserverNodeIPs: ['', '', ''],
-    shouldInit: true,
+    placement: {
+      cloud: 'cloud-1',
+      region: 'uss-1',
+      zone: 'zone-1',
+    },
   },
   backend+: {
     ipName: 'VAR_INGRESS_NAME',
@@ -33,8 +37,8 @@ local metadata = metadataBase {
   schema_manager+: {
     enable: true,
     image: 'docker.io/interuss-local/dss:latest',
-    desired_rid_db_version: '4.0.0',
-    desired_scd_db_version: '3.2.0',
+    desired_rid_db_version: '1.0.1',
+    desired_scd_db_version: '1.0.1',
     desired_aux_db_version: '1.0.0',
   },
 };

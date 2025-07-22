@@ -34,8 +34,8 @@ local cockroachLB(metadata, name, ip) =
         template+: {
           spec+: {
             volumes_: {
-              client_certs: volumes.volumes.client_certs,
-              ca_certs: volumes.volumes.ca_certs,
+              client_certs: volumes.all(metadata).volumes.client_certs,
+              ca_certs: volumes.all(metadata).volumes.ca_certs,
             },
             serviceAccountName: 'cockroachdb',
             soloContainer:: base.Container('cluster-init') {
@@ -45,7 +45,7 @@ local cockroachLB(metadata, name, ip) =
                 'certs-dir': '/cockroach/cockroach-certs',
                 host: 'cockroachdb-0.cockroachdb.' + metadata.namespace,
               },
-              volumeMounts: volumes.mounts.caCert + volumes.mounts.clientCert,
+              volumeMounts: volumes.all(metadata).mounts.caCert + volumes.all(metadata).mounts.clientCert,
             },
           },
         },
