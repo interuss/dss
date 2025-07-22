@@ -34,6 +34,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "should_init",
     "desired_rid_db_version",
     "desired_scd_db_version",
+    "desired_aux_db_version",
     "crdb_image_tag",
     "crdb_cluster_name",
     "locality",
