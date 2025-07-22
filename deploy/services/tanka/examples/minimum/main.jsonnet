@@ -21,11 +21,27 @@ local metadata = metadataBase {
     JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
     storageClass: 'VAR_STORAGE_CLASS',
   },
-  yugabyte+: {  // TODO: This part is not documented yet
+  yugabyte+: {
     image: 'VAR_YUGABYTE_DOCKER_IMAGE_NAME',
+    storageClass: 'VAR_STORAGE_CLASS',
     masterNodeIPs: ['VAR_YUGABYTE_MASTER_IP1', 'VAR_YUGABYTE_MASTER_IP2', 'VAR_YUGABYTE_MASTER_IP3'],
     tserverNodeIPs: ['VAR_YUGABYTE_TSERVER_IP1', 'VAR_YUGABYTE_TSERVER_IP2', 'VAR_YUGABYTE_TSERVER_IP3'],
-    storageClass: 'VAR_STORAGE_CLASS',
+    masterAddresses: ['VAR_YUGABYTE_MASTER_ADDRESS1', 'VAR_YUGABYTE_MASTER_ADDRESS2', 'VAR_YUGABYTE_MASTER_ADDRESS3'],
+    master: {
+      rpc_bind_addresses: "VAR_YUGABYTE_MASTER_RPC_BIND_ADDRESSES",
+      server_broadcast_addresses: "VAR_YUGABYTE_MASTER_SERVER_BROADCAST_ADDRESSES",
+    },
+    tserver: {
+      rpc_bind_addresses: "VAR_YUGABYTE_TSERVER_RPC_BIND_ADDRESSES",
+      server_broadcast_addresses: "VAR_YUGABYTE_TSERVER_SERVER_BROADCAST_ADDRESSES",
+    },
+    fix_27367_issue: false, // <- This boolean value is VAR_YUGABYTE_FIX_27367_ISSUE
+    light_resources: false, // <- This boolean value is VAR_YUGABYTE_LIGHT_RESOURCES
+    placement: {
+      cloud: 'VAR_YUGABYTE_PLACEMENT_CLOUD',
+      region: 'VAR_YUGABYTE_PLACEMENT_REGION',
+      zone: 'VAR_YUGABYTE_PLACEMENT_ZONE',
+    },
   },
   backend+: {
     ipName: 'VAR_INGRESS_NAME',

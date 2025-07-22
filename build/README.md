@@ -307,21 +307,21 @@ a PR to that effect would be greatly appreciated.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
-    1.  `VAR_DATASTORE`: Datastore to use. Can be set to 'cockroachdb' or 'yugabyte'.
-
-    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
-        DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
-        From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
+    1.  `VAR_LOCALITY`: Unique name for your DSS instance.  Currently, we
+        recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
+        allowed.  However, any unique (among all other participating DSS
+        instances) value is acceptable.
 
     1.  `VAR_DB_HOSTNAME_SUFFIX`: The domain name suffix shared by all of your
         CockroachDB nodes.  For instance, if your CRDB nodes were addressable at
         `0.db.example.com`, `1.db.example.com`, and `2.db.example.com`, then
         VAR_DB_HOSTNAME_SUFFIX would be `db.example.com`.
 
-    1.  `VAR_LOCALITY`: Unique name for your DSS instance.  Currently, we
-        recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
-        allowed.  However, any unique (among all other participating DSS
-        instances) value is acceptable.
+    1.  `VAR_DATASTORE`: Datastore to use. Can be set to 'cockroachdb' or 'yugabyte'.
+
+    1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
+        DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
+        From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.
 
     1.  `VAR_CRDB_NODE_IPn`: IP address (**numeric**) of nth CRDB node (add more
         entries if you have more than 3 CRDB nodes).  Example: `1.1.1.1`
@@ -344,10 +344,70 @@ a PR to that effect would be greatly appreciated.
           pool, including newly joined instances. See CockroachDB's note on the
           [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
 
-    1.  `VAR_STORAGE_CLASS`: Kubernetes Storage Class to use for CockroachDB and
-        Prometheus volumes. You can check your cluster's possible values with
-        `kubectl get storageclass`. If you're not sure, each cloud provider has
-        some default storage classes that should work:
+    1.  `VAR_YUGABYTE_DOCKER_IMAGE_NAME`: Docker image of Yugabyte db pods.
+        Shall be set to at least `yugabytedb/yugabyte:2.25.1.0-b381`
+
+    1.  `VAR_YUGABYTE_MASTER_IPn`: IP address (**numeric**) of nth Yugabyte
+        master node (add more entries if you have more than 3 nodes).
+        Example: `1.1.1.1`
+
+    1.  `VAR_YUGABYTE_TSERVER_IPn`: IP address (**numeric**) of nth Yugabyte
+        tserver node (add more entries if you have more than 3 nodes).
+        Example: `1.1.1.1`
+
+    1.  `VAR_YUGABYTE_MASTER_ADDRESSn`: List of addresses of Yugabyte master
+        nodes in the DSS pool. Must be accessible from all master/tserver nodes
+        and identical in a cluster. Example: `["0.master.db.uss1.example.com", "1.master.db.uss1.example.com", "3.master.db.uss1.example.com", "0.master.db.uss2.example.com", "1.master.db.uss2.example.com", "3.master.db.uss2.example.com"]`
+        You may remove this setting if you only have a simple 3-nodes local cluster.
+
+    1.  `VAR_YUGABYTE_MASTER_RPC_BIND_ADDRESSES`: Bind address for yugabyte
+        master node. May use `${HOSTNAME}`, `${NAMESPACE}` or `${HOSTNAMENO}`
+        to use respectively hostname, namespace or number of the node.
+        Example: `${HOSTNAMENO}.master.db.uss1.example.com`
+        You may remove this setting if you only have a simple 3-nodes local cluster.
+
+    1.  `VAR_YUGABYTE_MASTER_BROADCAST_ADDRESSES`: Broadcast address for yugabyte
+        master node. May use `${HOSTNAME}`, `${NAMESPACE}` or `${HOSTNAMENO}`
+        to use respectively hostname, namespace or number of the node.
+        Example: `${HOSTNAMENO}.master.db.uss1.example.com:7100`
+        You may remove this setting if you only have a simple 3-nodes local cluster.
+
+    1.  `VAR_YUGABYTE_TSERVER_RPC_BIND_ADDRESSES`: Bind address for yugabyte
+        tserver node. May use `${HOSTNAME}`, `${NAMESPACE}` or `${HOSTNAMENO}`
+        to use respectively hostname, namespace or number of the node.
+        Example: `${HOSTNAMENO}.tserver.db.uss1.example.com`
+        You may remove this setting if you only have a simple 3-nodes local cluster.
+
+    1.  `VAR_YUGABYTE_TSERVER_BROADCAST_ADDRESSES`: Broadcast address for yugabyte
+        tserver node. May use `${HOSTNAME}`, `${NAMESPACE}` or `${HOSTNAMENO}`
+        to use respectively hostname, namespace or number of the node.
+        Example: `${HOSTNAMENO}.tserver.db.uss1.example.com:9100`
+        You may remove this setting if you only have a simple 3-nodes local cluster.
+
+    1.  `VAR_YUGABYTE_FIX_27367_ISSUE`: Fix issue [27367](https://github.com/yugabyte/yugabyte-db/issues/27367)
+        To make the fix working, RPC bind and broadcast addresses must be set to
+        the same, public value on where the master / tserver node is accessible.
+
+    1.  `VAR_YUGABYTE_LIGHT_RESOURCES`: Use light resources in term of CPU/Memory
+        for Yugabyte nodes. You may use that for development purposes, to deploy
+        a Yugabyte in a small cluster to save costs and resources.
+
+    1.  `VAR_YUGABYTE_PLACEMENT_CLOUD`: Yugabyte placement's cloud value, for
+        master and tserver nodes.
+        Example: `cloud-1`
+
+    1.  `VAR_YUGABYTE_PLACEMENT_REGION`: Yugabyte placement's region value, for
+        master and tserver nodes.
+        Example: `uss-1`
+
+    1.  `VAR_YUGABYTE_PLACEMENT_ZONE`: Yugabyte placement's zone value, for
+        master and tserver nodes.
+        Example: `zone-1`
+
+    1.  `VAR_STORAGE_CLASS`: Kubernetes Storage Class to use for CockroachDB,
+        Yugabyte and Prometheus volumes. You can check your cluster's possible
+        values with `kubectl get storageclass`. If you're not sure, each cloud
+        provider has some default storage classes that should work:
           - Google Cloud: `standard`
           - Azure: `default`
           - AWS: `gp2`
@@ -421,6 +481,7 @@ a PR to that effect would be greatly appreciated.
 
     1.  `VAR_ENABLE_SCHEMA_MANAGER`: Set this to true to enable the schema manager jobs.
         It is required to perform schema upgrades. Note that it is automatically enabled when `VAR_SHOULD_INIT` is true.
+
 
 1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:
