@@ -108,7 +108,7 @@ local util = import 'util.libsonnet';
 
       minReadySeconds: 30,
 
-      replicas: std.length(metadata.cockroach.nodeIPs),
+      replicas: std.length(if metadata.datastore == 'cockroachdb' then metadata.cockroach.nodeIPs else metadata.yugabyte.masterNodeIPs),
       assert self.replicas >= 1,
     },
   },
@@ -183,7 +183,7 @@ local util = import 'util.libsonnet';
         for kv in util.objectItems(self.volumeClaimTemplates_)
       ],
 
-      replicas: std.length(metadata.cockroach.nodeIPs),
+      replicas: std.length(if metadata.datastore == 'cockroachdb' then metadata.cockroach.nodeIPs else metadata.yugabyte.masterNodeIPs),
       assert self.replicas >= 1,
     },
   },

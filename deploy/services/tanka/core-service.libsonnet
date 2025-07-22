@@ -115,7 +115,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 jwks_key_ids: std.join(",", metadata.backend.jwksKeyIds),
                 dump_requests: metadata.backend.dumpRequests,
                 accepted_jwt_audiences: metadata.backend.hostname,
-                locality: metadata.cockroach.locality,
+                locality: metadata.locality,
                 enable_scd: metadata.enableScd,
               } + if metadata.backend.publicEndpoint != '' then {
                 public_endpoint: metadata.backend.publicEndpoint,

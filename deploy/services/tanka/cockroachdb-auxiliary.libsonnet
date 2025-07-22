@@ -1,6 +1,7 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 
+
 local googleCockroachLB(metadata, name, ip) = base.Service(metadata, name) {
   port:: metadata.cockroach.grpc_port,
   app:: 'cockroachdb',
@@ -24,10 +25,10 @@ local cockroachLB(metadata, name, ip) =
     if metadata.cloud_provider == "google" then googleCockroachLB(metadata, name, ip)
     else if metadata.cloud_provider == "aws" then awsCockroachLB(metadata, name, ip)
     else if metadata.cloud_provider == "minikube" then minikubeCockroachLB(metadata, name, ip);
-
 {
-  all(metadata): {
+  all(metadata): if metadata.datastore == 'cockroachdb' then {
     assert !metadata.cockroach.shouldInit || (metadata.cockroach.shouldInit && metadata.cockroach.JoinExisting == []) : "If shouldInit is True, JoinExisiting should be empty",
+    assert metadata.cockroach.locality == "" : "cockroach.locality has been replaced by locality",
     CockroachInit: if metadata.cockroach.shouldInit then base.Job(metadata, 'init') {
       spec+: {
         template+: {
@@ -197,5 +198,5 @@ local cockroachLB(metadata, name, ip) =
         sessionAffinity: 'ClientIP',
       },
     },
-  },
+  } else {}
 }

@@ -8,8 +8,10 @@
   // This disables inter cluster crdb<->crdb access when set to true.
   single_cluster: false,
   enableScd: false,
+  datastore: 'cockroachdb',
+  locality: error 'must supply locality',
   cockroach: {
-    locality: error 'must supply crdb locality',
+    locality: '',
     hostnameSuffix: error 'must supply a hostnameSuffix, or override in statefulset',
     shouldInit: false,  // Set this to true if you are starting a new cluster.
     grpc_port: 26257,
@@ -18,6 +20,12 @@
     nodeIPs: error 'must supply the per-node ip addresses as an array', // For AWS, this array should contain the allocation id of the elastic ips.
     JoinExisting: [],
     storageClass: 'standard',
+  },
+  yugabyte: {
+    image: error 'must specify yugabyte db image',
+    storageClass: 'standard',
+    masterNodeIPs: [],
+    tserverNodeIPs: [],
   },
   PSP: {
     roleRef: '',
