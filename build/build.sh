@@ -28,8 +28,7 @@ else
 fi
 cd "${BASEDIR}"
 
-#VERSION=$(./scripts/git/version.sh dss)  # TODO: hardcoded for testing purposes, remove me before merging
-VERSION=cosign-test
+VERSION=$(./scripts/git/version.sh dss)
 LATEST_TAG="latest"
 
 if [[ -z "${DOCKER_URL}" ]]; then
