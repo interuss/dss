@@ -1,0 +1,42 @@
+name: docs
+on:
+  push:
+    branches:
+      - master
+      - main
+      - setup-mkdocs # TODO: remove me after initial setup
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: ~/.cache
+          restore-keys: |
+            mkdocs-material-
+      - run: |
+          pip install mkdocs-material
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-git-authors-plugin
+          pip install mike
+      - run: mkdocs gh-deploy --force
+
+# mike deploy -u 0.1 latest committoo
+# do that at releases?
+# also get a dev tag? with commits on master
+
+# mike set-default --push latest once at setup
+
+#  mike deploy --push --update-aliases 0.1 latest

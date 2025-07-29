@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: DSS Deployment Documentation
+site_url: https://orbitalize.github.io/dss # TODO: adapt me
+repo_url: https://github.com/Orbitalize/dss # TODO: adapt me
+extra:
+  version:
+    provider: mike # TODO https://squidfunk.github.io/mkdocs-material/setup/setting-up-versioning/
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/interuss
+docs_dir: docs
+#edit_uri: edit/main/docs/ # TODO: for content.action.edit, if subfolder, main is the branch
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    # enhance navigation (see https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/)
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.path
+    - navigation.indexes
+    - toc.follow
+    - navigation.top
+
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-site-search/
+    - search.suggest
+
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-the-header/
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-the-footer/
+    - header.autohide
+    - navigation.footer
+
+    # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+    - content.action.edit
+    - content.action.view
+
+plugins:
+  - search
+#  - git-revision-date-localized: # TODO: reenable me
+#      enable_creation_date: true
+#      fallback_to_build_date: true
+#  - git-authors # TODO: reenable me
+
+# https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown/
+markdown_extensions:
+  - admonition # enable use of call-outs:
+  - pymdownx.details # make call-outs collapsible
+  - def_list
+  - footnotes
+  - tables
+  - pymdownx.betterem
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
+      linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.inlinehilite
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true # displays a permalink next to headings
+
+nav:
+  - Home:
+    - 'index.md'
+    - 'architecture.md'
+    - 'migration.md'
+  - Infrastructure:
+    - 'infrastructure/index.md'
+    - Cloud deployment with Terraform:
+      - 'infrastructure/cloud/prereqs.md'
+      - 'infrastructure/cloud/cluster.md'
+      - 'infrastructure/cloud/dns.md'
+      - 'infrastructure/cloud/dss.md'
+      - 'infrastructure/cloud/cleanup.md'
+    - Local deployment with Minikube:
+      - 'infrastructure/local/prereqs.md'
+      - 'infrastructure/local/minikube.md'
+#  - Services:
+#  - Operations
+
+# set up this with releases: https://squidfunk.github.io/mkdocs-material/setup/setting-up-versioning/
