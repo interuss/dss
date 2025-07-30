@@ -41,7 +41,7 @@ local metadata = metadataBase {
     },
     storageClass: '${VAR_STORAGE_CLASS}',
     fix_27367_issue: true,
-    light_resources: true, // TODO Need to be an option
+    light_resources: ${VAR_YUGABYTE_LIGHT_RESOURCES},
   },
   backend+: {
     ipName: '${VAR_INGRESS_NAME}',

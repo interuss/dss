@@ -22,6 +22,7 @@ resource "local_file" "tanka_config_main" {
     VAR_YUGABYTE_MASTER_BIND_ADDRESS  = "$${HOSTNAMENO}.master.${var.db_hostname_suffix}"
     VAR_YUGABYTE_TSERVER_BIND_ADDRESS = "$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}"
     VAR_YUGABYTE_DOCKER_IMAGE_NAME    = "yugabytedb/yugabyte:2.25.1.0-b381" // TODO: This should be an option
+    VAR_YUGABYTE_LIGHT_RESOURCES      = var.yugabyte_light_resources
     VAR_APP_HOSTNAME                  = var.app_hostname
     VAR_PUBLIC_KEY_PEM_PATH           = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""
     VAR_JWKS_ENDPOINT                 = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
