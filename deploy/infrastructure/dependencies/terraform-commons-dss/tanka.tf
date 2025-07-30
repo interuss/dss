@@ -1,3 +1,7 @@
+locals {
+  tanka_workspace_location = abspath("${path.module}/../../../../deploy/services/tanka/workspace/${local.workspace_folder}")
+}
+
 resource "local_file" "tanka_config_main" {
   content = templatefile("${path.module}/templates/main.jsonnet.tmp", {
     root_path                         = path.module
@@ -36,7 +40,7 @@ resource "local_file" "tanka_config_main" {
     VAR_SUBNET                        = var.workload_subnet
     VAR_SSL_POLICY                    = var.ssl_policy
   })
-  filename = "${local.workspace_location}/main.jsonnet"
+  filename = "${local.tanka_workspace_location}/main.jsonnet"
 }
 
 resource "local_file" "tanka_config_spec" {
@@ -46,5 +50,5 @@ resource "local_file" "tanka_config_spec" {
     cluster_context = var.kubernetes_context_name
     api_server      = var.kubernetes_api_endpoint
   })
-  filename = "${local.workspace_location}/spec.json"
+  filename = "${local.tanka_workspace_location}/spec.json"
 }
