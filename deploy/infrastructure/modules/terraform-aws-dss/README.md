@@ -61,12 +61,13 @@ It contains scripts to operate the cluster and setup the services.
     1. Generate the certificates using `./dss-certs.sh init`
     1. If joining a cluster, check `dss-certs.sh`'s [help](../../../operations/certificates-management/README.md) to add others CA in your pool and share your CA with others pools members.
     1. Deploy the certificates using `./dss-certs.sh apply`.
-5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
-6. Wait for services to initialize:
+5. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
+6. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
+7. Wait for services to initialize:
     - On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:
         - On the [EKS page](https://eu-west-1.console.aws.amazon.com/eks/home), the status of the kubernetes cluster should be `Active`.
         - On the [EC2 page](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:), the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state `Active`.
-7. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
+8. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
 
 
 ## Clean up

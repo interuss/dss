@@ -61,8 +61,9 @@ It contains scripts to operate the cluster and setup the services.
     1. Generate the certificates using `./dss-certs.sh init`
     1. If joining a cluster, check `dss-certs.sh`'s [help](../../../operations/certificates-management/README.md) to add others CA in your pool and share your CA with others pools members.
     1. Deploy the certificates using `./dss-certs.sh apply`.
-5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
-6. Wait for services to initialize:
+5. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
+6. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
+7. Wait for services to initialize:
     - On Google Cloud, the highest-latency operation is provisioning of the HTTPS certificate which generally takes 10-45 minutes. To track this progress:
         - Go to the "Services & Ingress" left-side tab from the Kubernetes Engine page.
         - Click on the https-ingress item (filter by just the cluster of interest if you have multiple clusters in your project).
@@ -70,7 +71,7 @@ It contains scripts to operate the cluster and setup the services.
         - Under Frontend for Details, the Certificate column for HTTPS protocol will have an icon next to it which will change to a green checkmark when provisioning is complete.
         - Click on the certificate link to see provisioning progress.
         - If everything indicates OK and you still receive a cipher mismatch error message when attempting to visit /healthy, wait an additional 5 minutes before attempting to troubleshoot further.
-7. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
+8. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
 
 ## Clean up
 
