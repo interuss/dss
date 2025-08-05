@@ -420,7 +420,7 @@ local volumes = import 'volumes.libsonnet';
                   },
                   requests: {
                     cpu: if metadata.yugabyte.light_resources then 0.75 else 1,
-                    memory: if metadata.yugabyte.light_resources then "2Gi" else "2Gi",
+                    memory: "2Gi",
                   },
                 },
                 ports: [{
