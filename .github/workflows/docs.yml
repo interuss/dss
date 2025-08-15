@@ -1,0 +1,47 @@
+name: docs
+on:
+  push:
+    branches:
+      - master
+    tags:
+      # To modify to trigger the job for fork's releases
+      # Note: GitHub's filter pattern capabilities are limited[1], so this
+      # pattern matches more often than it should.  A more correct regex would
+      # be the one found in scripts/tag.sh.
+      # [1] https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.repository == 'interuss/dss'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: ~/.cache
+          restore-keys: |
+            mkdocs-material-
+      - run: |
+          pip install mkdocs-material
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mike
+      - if: ${{ github.ref_type == 'branch' }}
+        run: mike deploy --push dev
+        name: Deploy 'dev' deployment documentation from 'master' branch
+      - if: ${{ github.ref_type == 'tag' }}
+        run: |
+          VERSION=$(echo ${{ github.ref_name }} | sed -e "s/^interuss\/dss\/v//")
+          mike deploy --push --update-aliases $VERSION latest
+          mike set-default --push latest
+        name: Deploy new version of deployment documentation from tag
