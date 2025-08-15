@@ -1,8 +1,6 @@
 # Kubernetes deployment via Tanka
 
-The documentation and configuration have been moved to [deploy/services](../../deploy/services/tanka).
-[Architecture](../../deploy/architecture.md#architecture), [Survivability](../../deploy/architecture.md#survivability) 
-and [Sizing](../../deploy/architecture.md#sizing) sections have been moved to [deploy/architecture](../../deploy/architecture.md)
+This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss).
 
 ## Migrating configurations to new location
 
