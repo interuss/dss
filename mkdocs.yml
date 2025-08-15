@@ -88,4 +88,30 @@ markdown_extensions:
 
 nav:
   - Home:
-    - 'index.md'
+    - index.md
+    - build.md
+    - architecture.md
+    - migration.md
+  - Infrastructure:
+      - infrastructure/index.md
+      - infrastructure/local-minikube.md
+      - terraform-aws-dss:
+          - infrastructure/terraform-aws-dss/index.md
+          - infrastructure/terraform-aws-dss/dns.md
+      - terraform-google-dss:
+          - infrastructure/terraform-google-dss/index.md
+          - infrastructure/terraform-google-dss/dns.md
+  - Services:
+      - services/index.md
+      - services/helm-charts.md
+      - services/tanka.md
+  - Operations:
+      - operations/index.md
+      - operations/monitoring.md
+      - operations/pooling.md
+      - operations/pooling-crdb.md
+      - operations/troubleshooting.md
+      - operations/certificates-management.md
+      - CI:
+          - operations/ci/index.md
+          - operations/ci/aws-1.md
