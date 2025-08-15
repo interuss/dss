@@ -8,23 +8,25 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/infrastructure/terraform-aws-dss/">
       
       
+        <link rel="prev" href="../local-minikube/">
       
-        <link rel="next" href="build/">
+      
+        <link rel="next" href="dns/">
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
     
     
       
-        <title>DSS Deployment - DSS Deployment Documentation</title>
+        <title>terraform-aws-dss - DSS Deployment Documentation</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.7e37652d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
       
       
 
@@ -43,7 +45,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -62,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dss-deployment" class="md-skip">
+        <a href="#terraform-aws-dss" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +82,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="DSS Deployment Documentation" class="md-header__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment Documentation" class="md-header__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              DSS Deployment
+              terraform-aws-dss
             
           </span>
         </div>
@@ -185,13 +187,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="." class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
           
   
   
@@ -209,11 +209,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="infrastructure/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -235,7 +237,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="services/" class="md-tabs__link">
+        <a href="../../services/" class="md-tabs__link">
           
   
   
@@ -257,7 +259,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="operations/" class="md-tabs__link">
+        <a href="../../operations/" class="md-tabs__link">
           
   
   
@@ -293,7 +295,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="DSS Deployment Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -315,6 +317,146 @@
     </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deploying a DSS instance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Kubernetes deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CockroachDB and Kubernetes version migration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -353,151 +495,11 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="." class="md-nav__link md-nav__link--active">
-              
-  
-  
-  <span class="md-ellipsis">
-    Home
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link md-nav__link--active" for="__nav_1" id="__nav_1_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            Home
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="build/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Deploying a DSS instance
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Kubernetes deployment
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="migration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    CockroachDB and Kubernetes version migration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="infrastructure/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -510,13 +512,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Infrastructure
@@ -532,7 +534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="infrastructure/local-minikube/" class="md-nav__link">
+      <a href="../local-minikube/" class="md-nav__link">
         
   
   
@@ -552,6 +554,8 @@
                 
   
   
+    
+  
   
   
     
@@ -569,18 +573,21 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="infrastructure/terraform-aws-dss/" class="md-nav__link ">
+            <a href="./" class="md-nav__link md-nav__link--active">
               
   
   
@@ -593,13 +600,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+              <label class="md-nav__link md-nav__link--active" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             terraform-aws-dss
@@ -615,7 +622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="infrastructure/terraform-aws-dss/dns/" class="md-nav__link">
+      <a href="dns/" class="md-nav__link">
         
   
   
@@ -660,10 +667,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -671,7 +681,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="infrastructure/terraform-google-dss/" class="md-nav__link ">
+            <a href="../terraform-google-dss/" class="md-nav__link ">
               
   
   
@@ -684,7 +694,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_4" id="__nav_2_4_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -706,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="infrastructure/terraform-google-dss/dns/" class="md-nav__link">
+      <a href="../terraform-google-dss/dns/" class="md-nav__link">
         
   
   
@@ -771,7 +781,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="services/" class="md-nav__link ">
+            <a href="../../services/" class="md-nav__link ">
               
   
   
@@ -806,7 +816,7 @@
   
   
     <li class="md-nav__item">
-      <a href="services/helm-charts/" class="md-nav__link">
+      <a href="../../services/helm-charts/" class="md-nav__link">
         
   
   
@@ -829,7 +839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="services/tanka/" class="md-nav__link">
+      <a href="../../services/tanka/" class="md-nav__link">
         
   
   
@@ -894,7 +904,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="operations/" class="md-nav__link ">
+            <a href="../../operations/" class="md-nav__link ">
               
   
   
@@ -929,7 +939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/monitoring/" class="md-nav__link">
+      <a href="../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -952,7 +962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/pooling/" class="md-nav__link">
+      <a href="../../operations/pooling/" class="md-nav__link">
         
   
   
@@ -975,7 +985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/pooling-crdb/" class="md-nav__link">
+      <a href="../../operations/pooling-crdb/" class="md-nav__link">
         
   
   
@@ -998,7 +1008,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/troubleshooting/" class="md-nav__link">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1021,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/certificates-management/" class="md-nav__link">
+      <a href="../../operations/certificates-management/" class="md-nav__link">
         
   
   
@@ -1069,7 +1079,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="operations/ci/" class="md-nav__link ">
+            <a href="../../operations/ci/" class="md-nav__link ">
               
   
   
@@ -1104,7 +1114,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operations/ci/aws-1/" class="md-nav__link">
+      <a href="../../operations/ci/aws-1/" class="md-nav__link">
         
   
   
@@ -1162,55 +1172,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      Introduction
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deployment-layers" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deployment layers
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#getting-started" class="md-nav__link">
     <span class="md-ellipsis">
       Getting started
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#migrations-and-upgrades" class="md-nav__link">
-    <span class="md-ellipsis">
-      Migrations and upgrades
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development" class="md-nav__link">
-    <span class="md-ellipsis">
-      Development
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Development">
+    <nav class="md-nav" aria-label="Getting started">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#formatting" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Formatting
+      Prerequisites
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#amazon-web-services" class="md-nav__link">
+    <span class="md-ellipsis">
+      Amazon Web Services
     </span>
   </a>
   
@@ -1218,6 +1202,38 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-of-the-kubernetes-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deployment of the Kubernetes cluster
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-of-the-dss-services" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deployment of the DSS services
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clean up
+    </span>
+  </a>
   
 </li>
       
@@ -1237,7 +1253,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/infrastructure/terraform-aws-dss/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1246,61 +1262,94 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/index.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/infrastructure/terraform-aws-dss/index.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="dss-deployment">DSS Deployment<a class="headerlink" href="#dss-deployment" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>An operational DSS deployment requires a specific architecture to be compliant with <a href="https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations">standards requirements</a> and meet performance expectations as described in <a href="architecture/">architecture</a>.  This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.</p>
-<h2 id="deployment-layers">Deployment layers<a class="headerlink" href="#deployment-layers" title="Permanent link">&para;</a></h2>
-<p>This repository provides three layers of abstraction to deploy and operate a DSS instance via Kubernetes.</p>
-<p><img alt="Deployment layers" src="assets/deployment_layers.png" /></p>
-<p>As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
-However, you can do this on any supported <a href="https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/">cloud provider</a> or even on your own infrastructure.
-Review <a href="architecture/#objective">InterUSS pooling requirements</a> and consult the Kubernetes documentation for your chosen provider.</p>
-<p>The three layers are the following:</p>
+<h1 id="terraform-aws-dss">terraform-aws-dss<a class="headerlink" href="#terraform-aws-dss" title="Permanent link">&para;</a></h1>
+<p>This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS)
+and generates the tanka files to deploy a DSS instance.</p>
+<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<p>Download &amp; install the following tools to your workstation:</p>
 <ol>
-<li>
-<p><a href="infrastructure/">Infrastructure</a> provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the <a href="architecture/#objective">Pooling requirements</a>.
-   Terraform modules are provided for:</p>
-<ul>
-<li><a href="infrastructure/terraform-aws-dss/">Amazon Web Services (EKS)</a></li>
-<li><a href="infrastructure/terraform-google-dss/">Google (GKE)</a></li>
-</ul>
-</li>
-<li>
-<p>Services provides the tooling to deploy a DSS instance to a Kubernetes cluster.</p>
-<ul>
-<li><a href="services/helm-charts/">Helm Charts</a></li>
-<li><a href="services/tanka/">Tanka</a></li>
-</ul>
-</li>
-<li>
-<p><a href="operations/">Operations</a> provides instructions to operate a deployed DSS instance.</p>
-<ul>
-<li><a href="operations/#pooling-procedure">Pooling procedure</a></li>
-<li><a href="operations/troubleshooting/">Troubleshooting</a></li>
-</ul>
+<li>Install <a href="https://developer.hashicorp.com/terraform/downloads">terraform</a>.</li>
+<li>Install tools from <a href="../../build/">Prerequisites</a></li>
+<li>Install provider specific tools:<ol>
+<li><a href="./#amazon-web-services">Amazon Web Services</a></li>
+</ol>
 </li>
 </ol>
-<p>Depending on your level of expertise and your internal organizational practices, you should be able to use each layer independently or complementary.</p>
-<p>For local deployment approaches, see the documentation located in the <a href="build/#deployment-options">build folder</a></p>
-<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<p>You can find below two guides to deploy a DSS instance from scratch:
-- <a href="infrastructure/terraform-aws-dss/#getting-started">Amazon Web Services (EKS)</a>
-- <a href="infrastructure/terraform-google-dss/#getting-started">Google (GKE)</a></p>
-<p>For a complete use case, you can look into the configurations of the <a href="https://github.com/interuss/dss/blob/master/.github/workflows/dss-deploy.yml">CI job</a> in operations: <a href="operations/ci/">ci</a></p>
-<h2 id="migrations-and-upgrades">Migrations and upgrades<a class="headerlink" href="#migrations-and-upgrades" title="Permanent link">&para;</a></h2>
-<p>Information related to migrations and upgrades can be found in <a href="migration/">MIGRATION.md</a>.</p>
-<h2 id="development">Development<a class="headerlink" href="#development" title="Permanent link">&para;</a></h2>
-<p>The following diagram represents the resources in this repository per layer.
-<img alt="Deploy Overview" src="assets/generated/deploy_overview.png" /></p>
-<h3 id="formatting">Formatting<a class="headerlink" href="#formatting" title="Permanent link">&para;</a></h3>
-<p>Terraform files must be formatted using <code>terraform fmt -recursive</code> command to pass the CI linter check.</p>
+<h4 id="amazon-web-services">Amazon Web Services<a class="headerlink" href="#amazon-web-services" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Install and initialize <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions">AWS CLI</a>.<ol>
+<li>Confirm successful installation with <code>aws --version</code>.</li>
+</ol>
+</li>
+<li>If you don't have an account, sign-up: https://aws.amazon.com/free/</li>
+<li>Configure terraform to connect to AWS using your account.</li>
+<li>We recommend to create an AWS_PROFILE using for instance <code>aws configure --profile aws-interuss-dss</code>
+      Before running <code>terraform</code> commands, run once in your shell: <code>export AWS_PROFILE=aws-interuss-dss</code>
+      Other methods are described here: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration</li>
+</ol>
+<h3 id="deployment-of-the-kubernetes-cluster">Deployment of the Kubernetes cluster<a class="headerlink" href="#deployment-of-the-kubernetes-cluster" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Create a new folder in <code>/deploy/infrastructure/personal/</code> named, for instance, <code>terraform-aws-dss-dev</code>.</li>
+<li>Copy main.tf, output.tf and variables.gen.tf to the new folder.</li>
+<li>Copy <code>terraform.dev.example.tfvars</code> and rename to <code>terraform.tfvars</code></li>
+<li>Check that your new directory contains the following files:</li>
+<li>main.tf</li>
+<li>output.tf</li>
+<li>terraform.tfvars</li>
+<li>variables.gen.tf</li>
+<li>Set the variables in <code>terraform.tfvars</code> according to your environment. See <a href="https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md">TFVARS.gen.md</a> for variables descriptions.</li>
+<li>In the new directory (ie /deploy/infrastructure/personal/terraform-aws-dss-dev), initialize terraform: <code>terraform init</code>.</li>
+<li>Run <code>terraform plan</code> to check that the configuration is valid. It will display the resources which will be provisioned.</li>
+<li>Run <code>terraform apply</code> to deploy the cluster. (This operation may take up to 15 min.)</li>
+<li>Configure the DNS resolution according to these instructions: <a href="dns/">Setup DNS</a></li>
+</ol>
+<h2 id="deployment-of-the-dss-services">Deployment of the DSS services<a class="headerlink" href="#deployment-of-the-dss-services" title="Permanent link">&para;</a></h2>
+<p>During the successful run, the terraform job has created a new <a href="https://github.com/interuss/dss/tree/master/build/workspace">workspace</a>
+for the cluster. The new workspace name corresponds to the cluster context. The cluster context
+can be retrieved by running <code>terraform output</code> in your infrastructure  folder (ie /deploy/infrastructure/personal/terraform-aws-dss-dev).</p>
+<p>It contains scripts to operate the cluster and setup the services.</p>
+<ol>
+<li>Go to the new workspace <code>/build/workspace/${cluster_context}</code>.</li>
+<li>Run <code>./get-credentials.sh</code> to login to kubernetes. You can now access the cluster with <code>kubectl</code>.</li>
+<li>If using CockroachDB:<ol>
+<li>Generate the certificates using <code>./make-certs.sh</code>. Follow script instructions if you are not initializing the cluster.</li>
+<li>Deploy the certificates using <code>./apply-certs.sh</code>.</li>
+</ol>
+</li>
+<li>If using Yugabyte:<ol>
+<li>Generate the certificates using <code>./dss-certs.sh init</code></li>
+<li>If joining a cluster, check <code>dss-certs.sh</code>'s <a href="../../operations/certificates-management/">help</a> to add others CA in your pool and share your CA with others pools members.</li>
+<li>Deploy the certificates using <code>./dss-certs.sh apply</code>.</li>
+</ol>
+</li>
+<li>Go to the tanka workspace in <code>/deploy/services/tanka/workspace/${cluster_context}</code>.</li>
+<li>Run <code>tk apply .</code> to deploy the services to kubernetes. (This may take up to 30 min)</li>
+<li>Wait for services to initialize:<ul>
+<li>On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:<ul>
+<li>On the <a href="https://eu-west-1.console.aws.amazon.com/eks/home">EKS page</a>, the status of the kubernetes cluster should be <code>Active</code>.</li>
+<li>On the <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:">EC2 page</a>, the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state <code>Active</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.</li>
+</ol>
+<h2 id="clean-up">Clean up<a class="headerlink" href="#clean-up" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Note that the following operations can't be reverted and all data will be lost.</li>
+<li>To delete all resources, run <code>tk delete .</code> in the workspace folder.</li>
+<li>Make sure that all <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:">load balancers</a> and <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#TargetGroups:">target groups</a> have been deleted from the AWS region before next step.</li>
+<li><code>terraform destroy</code> in your infrastructure folder.</li>
+<li>On the <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#Volumes:">EBS page</a>, make sure to manually clean up the persistent storage. Note that the correct AWS region shall be selected.</li>
+</ol>
 
 
 
@@ -1356,15 +1405,31 @@ Review <a href="architecture/#objective">InterUSS pooling requirements</a> and c
       
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
+          
+          <a href="../local-minikube/" class="md-footer__link md-footer__link--prev" aria-label="Previous: minikube">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                minikube
+              </div>
+            </div>
+          </a>
+        
         
           
-          <a href="build/" class="md-footer__link md-footer__link--next" aria-label="Next: Deploying a DSS instance">
+          <a href="dns/" class="md-footer__link md-footer__link--next" aria-label="Next: Setup DNS">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Deploying a DSS instance
+                Setup DNS
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1417,10 +1482,10 @@ Review <a href="architecture/#objective">InterUSS pooling requirements</a> and c
     
     
       
-      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view"], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="assets/javascripts/bundle.50899def.min.js"></script>
+      <script src="../../assets/javascripts/bundle.50899def.min.js"></script>
       
     
   </body>

@@ -1,0 +1,21 @@
+// To render:
+//   dot -Tpng -ogenerated/run_locally_architecture.png run_locally_architecture.gv
+digraph G {
+  node [shape=box];
+  USS [shape=oval];
+  OAuth [label="dummy-oauth"];
+  CoreService [label="core-service"];
+  CRDB [label="CockroachDB node"];
+  PrivateKey [label="auth2.key"];
+  PublicKey [label="auth2.pem"];
+  PrivateKey -> OAuth [style=dotted];
+  PublicKey -> PrivateKey [style=dashed,dir=back];
+  subgraph cluster_0 {
+    label="InterUSS DSS instance";
+    CoreService -> CRDB [label="port 26257"];
+  }
+  USS -> CoreService [label="http://localhost:8082    "];
+  USS -> OAuth [label="http://localhost:8085/token"];
+  PublicKey -> CoreService [dir=back,style=dotted];
+  USS -> PublicKey [style=invis]; //To help with formatting
+}
