@@ -93,13 +93,34 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state"))}}
 	}
+	id := dssmodels.ManagerFromString(req.UssId)
+	oldVersion := scdmodels.OVN(req.Body.OldVersion)
 	ussareq := &scdmodels.UssAvailabilityStatus{
-		Uss:          dssmodels.ManagerFromString(req.UssId),
+		Uss:          id,
 		Availability: availability,
 	}
 
 	var result *restapi.UssAvailabilityStatusResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
+		old, err := r.GetUssAvailability(ctx, id)
+		if err != nil && err != pgx.ErrNoRows {
+			return stacktrace.Propagate(err, "Could not get USS availability from repo")
+		}
+		switch {
+		case old == nil && !oldVersion.Empty():
+			// no existing availability and update requested. Do not create and return default availability.
+			result = GetDefaultAvailabilityResponse(id)
+			return nil
+		case old != nil && old.Version != oldVersion:
+			// versions do not match. Do not update and return current USS availability.
+			result = &restapi.UssAvailabilityStatusResponse{
+				Status:  *old.ToRest(),
+				Version: old.Version.String(),
+			}
+			return nil
+		}
+
+		// Upsert the USS availability
 		ussa, err := r.UpsertUssAvailability(ctx, ussareq)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not upsert UssAvailability into repo")
