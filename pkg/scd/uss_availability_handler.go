@@ -50,9 +50,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 			return nil
 		}
 		response = &restapi.UssAvailabilityStatusResponse{
-			Status: restapi.UssAvailabilityStatus{
-				Availability: ussa.Availability.ToRest(),
-				Uss:          id.String()},
+			Status:  *ussa.ToRest(),
 			Version: ussa.Version.String(),
 		}
 		return nil
@@ -110,9 +108,7 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 			return stacktrace.NewError("UssAvailability returned no Uss for ID: %s", req.UssId)
 		}
 		result = &restapi.UssAvailabilityStatusResponse{
-			Status: restapi.UssAvailabilityStatus{
-				Availability: ussa.Availability.ToRest(),
-				Uss:          req.UssId},
+			Status:  *ussa.ToRest(),
 			Version: ussa.Version.String(),
 		}
 		return nil
