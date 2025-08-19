@@ -8,13 +8,13 @@ Source code is often accompanied by `*_test.go` files which define unit tests
 for the associated code.  All unit tests for the repo may be run with the
 following command from the root folder of the repo:
 ```shell script
-make test
+make test-go-units
 ```
 The above command skips the CockroachDB tests because a `store-uri` argument is
  not provided.  To perform the CockroachDB tests, run the following command
  from the root folder of the repo:
 ```shell script
-make test-cockroach
+make test-go-units-crdb
 ```
 
 ## Integration tests
