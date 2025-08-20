@@ -133,8 +133,8 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 	}
 	err = a.Store.Transact(ctx, action)
 	if err != nil {
+		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
-			// In case of older DB versions where availability table doesn't exist
 			result = GetDefaultAvailabilityResponse(id)
 		} else {
 			err = stacktrace.Propagate(err, "Could not set USS availability status")
