@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	DssReadIdentificationServiceAreasScope   = api.RequiredScope("dss.read.identification_service_areas")
 	DssWriteIdentificationServiceAreasScope  = api.RequiredScope("dss.write.identification_service_areas")
+	DssReadIdentificationServiceAreasScope   = api.RequiredScope("dss.read.identification_service_areas")
 	SearchIdentificationServiceAreasSecurity = []api.AuthorizationOption{
 		{
 			"AuthFromAuthorizationAuthority": {DssReadIdentificationServiceAreasScope},
