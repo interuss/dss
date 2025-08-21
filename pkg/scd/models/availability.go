@@ -49,3 +49,10 @@ func UssAvailabilityStateFromString(s string) (UssAvailabilityState, error) {
 func UssAvailabilityStateFromRest(s restapi.UssAvailabilityState) (UssAvailabilityState, error) {
 	return UssAvailabilityStateFromString(string(s))
 }
+
+func (u UssAvailabilityStatus) ToRest() *restapi.UssAvailabilityStatus {
+	return &restapi.UssAvailabilityStatus{
+		Uss:          u.Uss.String(),
+		Availability: u.Availability.ToRest(),
+	}
+}
