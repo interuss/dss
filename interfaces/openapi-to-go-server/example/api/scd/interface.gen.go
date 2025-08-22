@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	UtmConformanceMonitoringSaScope          = api.RequiredScope("utm.conformance_monitoring_sa")
-	UtmConstraintManagementScope             = api.RequiredScope("utm.constraint_management")
 	UtmConstraintProcessingScope             = api.RequiredScope("utm.constraint_processing")
-	UtmAvailabilityArbitrationScope          = api.RequiredScope("utm.availability_arbitration")
+	UtmConstraintManagementScope             = api.RequiredScope("utm.constraint_management")
 	UtmStrategicCoordinationScope            = api.RequiredScope("utm.strategic_coordination")
+	UtmConformanceMonitoringSaScope          = api.RequiredScope("utm.conformance_monitoring_sa")
+	UtmAvailabilityArbitrationScope          = api.RequiredScope("utm.availability_arbitration")
 	QueryOperationalIntentReferencesSecurity = []api.AuthorizationOption{
 		{
 			"Authority": {UtmStrategicCoordinationScope},
@@ -812,6 +812,11 @@ type SetUssAvailabilityResponseSet struct {
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
 	Response403 *ErrorResponse
+
+	// This response not part of the original F3548 standard API allows to indicate that:
+	// * The provided `version` does not match the current version of the USS availability status.
+	// * Despite repeated attempts, the DSS was unable to complete the update because of other simultaneous changes.
+	Response409 *ErrorResponse
 
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
