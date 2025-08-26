@@ -1,4 +1,4 @@
-name: docs
+name: Publish DSS deployment documentation (on new release tag and master)
 on:
   push:
     branches:
