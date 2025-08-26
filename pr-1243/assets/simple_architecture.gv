@@ -1,0 +1,34 @@
+// To render:
+//   dot -Tpng -ogenerated/simple_architecture.png simple_architecture.gv
+digraph G {
+  node [shape=box];
+  USS1 [label="USS 1"];
+  USS2 [label="USS 2"];
+  CoreService1 [label="Core Service"];
+  CoreService2 [label="Core Service"];
+  CRDB1 [label="CRDB"];
+  CRDB2 [label="CRDB"];
+  Certs [label="Certs and config"];
+  PublicInternet [label="Public Internet"];
+  OAuth -> PublicKey;
+  USS1 -> CoreService1;
+  USS2 -> CoreService1;
+  subgraph cluster_0 {
+    label="InterUSS DSS\ninstance 1";
+    CoreService1 -> CRDB1;
+  }
+  USS2 -> CoreService2;
+  subgraph cluster_1 {
+    label="InterUSS DSS\ninstance 2";
+    CoreService2 -> CRDB2;
+  }
+  CRDB1 -> PublicInternet [dir=both];
+  CRDB2 -> PublicInternet [dir=both];
+  OAuth -> USS1 [dir=back];
+  OAuth -> USS2 [dir=back];
+  PublicKey -> CoreService1 [dir=back,style=dotted];
+  PublicKey -> CoreService2 [dir=back,style=dotted];
+  CRDB1 -> Certs [style=dotted];
+  CRDB2 -> Certs [style=dotted];
+  Certs -> PublicInternet [dir=none,color=transparent];
+}
