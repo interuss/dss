@@ -8,19 +8,25 @@
       
       
       
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/services/helm-charts/">
       
       
+        <link rel="prev" href="../">
       
-      <link rel="icon" href="/dss/dev/assets/images/favicon.png">
+      
+        <link rel="next" href="../tanka/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
     
     
       
-        <title>DSS Deployment Documentation</title>
+        <title>DSS Helm Chart - DSS Deployment Documentation</title>
       
     
     
-      <link rel="stylesheet" href="/dss/dev/assets/stylesheets/main.7e37652d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
       
       
 
@@ -39,7 +45,7 @@
       
     
     
-    <script>__md_scope=new URL("/dss/dev",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -57,6 +63,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#dss-helm-chart" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -71,7 +82,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/dss/dev/." title="DSS Deployment Documentation" class="md-header__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment Documentation" class="md-header__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -91,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              DSS Helm Chart
             
           </span>
         </div>
@@ -180,7 +191,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/dss/dev/." class="md-tabs__link">
+        <a href="../.." class="md-tabs__link">
           
   
   
@@ -202,7 +213,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/dss/dev/infrastructure/" class="md-tabs__link">
+        <a href="../../infrastructure/" class="md-tabs__link">
           
   
   
@@ -220,11 +231,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="/dss/dev/services/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -246,7 +259,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="/dss/dev/operations/" class="md-tabs__link">
+        <a href="../../operations/" class="md-tabs__link">
           
   
   
@@ -282,7 +295,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/dss/dev/." title="DSS Deployment Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -341,7 +354,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/." class="md-nav__link ">
+            <a href="../.." class="md-nav__link ">
               
   
   
@@ -376,7 +389,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/build/" class="md-nav__link">
+      <a href="../../build/" class="md-nav__link">
         
   
   
@@ -399,7 +412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/architecture/" class="md-nav__link">
+      <a href="../../architecture/" class="md-nav__link">
         
   
   
@@ -422,7 +435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/migration/" class="md-nav__link">
+      <a href="../../migration/" class="md-nav__link">
         
   
   
@@ -481,7 +494,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/infrastructure/" class="md-nav__link ">
+            <a href="../../infrastructure/" class="md-nav__link ">
               
   
   
@@ -516,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/infrastructure/local-minikube/" class="md-nav__link">
+      <a href="../../infrastructure/local-minikube/" class="md-nav__link">
         
   
   
@@ -564,7 +577,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/infrastructure/terraform-aws-dss/" class="md-nav__link ">
+            <a href="../../infrastructure/terraform-aws-dss/" class="md-nav__link ">
               
   
   
@@ -599,7 +612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/infrastructure/terraform-aws-dss/dns/" class="md-nav__link">
+      <a href="../../infrastructure/terraform-aws-dss/dns/" class="md-nav__link">
         
   
   
@@ -655,7 +668,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/infrastructure/terraform-google-dss/" class="md-nav__link ">
+            <a href="../../infrastructure/terraform-google-dss/" class="md-nav__link ">
               
   
   
@@ -690,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/infrastructure/terraform-google-dss/dns/" class="md-nav__link">
+      <a href="../../infrastructure/terraform-google-dss/dns/" class="md-nav__link">
         
   
   
@@ -725,6 +738,8 @@
       
   
   
+    
+  
   
   
     
@@ -742,20 +757,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/services/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -768,13 +786,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Services
@@ -787,10 +805,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/dss/dev/services/helm-charts/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    DSS Helm Chart
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -801,6 +841,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-the-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update the chart
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -813,7 +906,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/services/tanka/" class="md-nav__link">
+      <a href="../tanka/" class="md-nav__link">
         
   
   
@@ -878,7 +971,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/operations/" class="md-nav__link ">
+            <a href="../../operations/" class="md-nav__link ">
               
   
   
@@ -913,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/monitoring/" class="md-nav__link">
+      <a href="../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -936,7 +1029,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/pooling/" class="md-nav__link">
+      <a href="../../operations/pooling/" class="md-nav__link">
         
   
   
@@ -959,7 +1052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/pooling-crdb/" class="md-nav__link">
+      <a href="../../operations/pooling-crdb/" class="md-nav__link">
         
   
   
@@ -982,7 +1075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/troubleshooting/" class="md-nav__link">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1005,7 +1098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/certificates-management/" class="md-nav__link">
+      <a href="../../operations/certificates-management/" class="md-nav__link">
         
   
   
@@ -1053,7 +1146,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="/dss/dev/operations/ci/" class="md-nav__link ">
+            <a href="../../operations/ci/" class="md-nav__link ">
               
   
   
@@ -1088,7 +1181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/dss/dev/operations/ci/aws-1/" class="md-nav__link">
+      <a href="../../operations/ci/aws-1/" class="md-nav__link">
         
   
   
@@ -1136,6 +1229,49 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-the-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update the chart
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1147,8 +1283,84 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+    <a href="https://github.com/interuss/dss/edit/master/docs/services/helm-charts.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/interuss/dss/raw/master/docs/services/helm-charts.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="dss-helm-chart">DSS Helm Chart<a class="headerlink" href="#dss-helm-chart" title="Permanent link">&para;</a></h1>
+<p>This <a href="https://helm.sh/">Helm Chart</a> deploys the DSS and cockroachdb kubernetes resources.</p>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<ol>
+<li>A Kubernetes cluster should be running and you should be properly authenticated.
+Requirements and instructions to create a new Kubernetes cluster can be found <a href="../../infrastructure/">here</a>.</li>
+<li>Create the certificates and apply them to the cluster using the instructions of <a href="../../build/">section 6 and 7</a></li>
+<li>Install <a href="https://helm.sh/">Helm</a> version 3.11.3 or higher</li>
+</ol>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Copy <code>values.example.yaml</code> to <code>values.dev.yaml</code> and edit it. In particular, the key <code>dss.image</code> must be set manually. See <code>values.schema.json</code> for schema definition. The root key <code>cockroachdb</code> supports all values supported by the <a href="https://github.com/cockroachdb/helm-charts/tree/master/cockroachdb#configuration"><code>cockroachdb</code> Chart</a>). Note that values.yaml contains the default values and are always passed to helm.</li>
+<li>Validate the configuration: <code>helm lint -f values.dev.yaml .</code></li>
+<li>Set a RELEASE_NAME to <code>dss</code>: <code>export RELEASE_NAME=dss</code>
+It is temporarily the only release name possible.</li>
+<li>Set the kube client context of your system, example: <code>export KUBE_CONTEXT=gke_interuss-deploy-example_europe-west6-a_dss-dev-w6</code></li>
+<li>Run <code>helm dep update --kube-context=$KUBE_CONTEXT</code></li>
+<li>Install the chart: <code>helm install --kube-context=$KUBE_CONTEXT -f values.dev.yaml $RELEASE_NAME .</code></li>
+</ol>
+<h3 id="update-the-chart">Update the chart<a class="headerlink" href="#update-the-chart" title="Permanent link">&para;</a></h3>
+<p>When changing the values in values.dev.yaml, values.yaml, the templates or upgrading the helm chart dependencies, changes can be applied to the cluster using the following command:</p>
+<ol>
+<li>Run <code>helm upgrade --kube-context=$KUBE_CONTEXT -f values.dev.yaml $RELEASE_NAME .</code></li>
+</ol>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 14:54:57 UTC">August 26, 2025</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -1166,6 +1378,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Services">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Services
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../tanka/" class="md-footer__link md-footer__link--next" aria-label="Next: Kubernetes deployment via Tanka">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Kubernetes deployment via Tanka
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -1210,10 +1460,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/dss/dev", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view"], "search": "/dss/dev/assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="/dss/dev/assets/javascripts/bundle.92b07e13.min.js"></script>
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
       
     
   </body>
