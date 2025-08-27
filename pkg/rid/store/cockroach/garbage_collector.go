@@ -42,11 +42,7 @@ func (gc *GarbageCollector) DeleteExpiredISAs(ctx context.Context) error {
 	}
 
 	for _, isa := range expiredISAs {
-		isaOut, err := gc.repos.DeleteISA(ctx, isa)
-		if isaOut != nil {
-			return stacktrace.Propagate(err,
-				"Deleted ISA")
-		}
+		_, err := gc.repos.DeleteISA(ctx, isa)
 		if err != nil {
 			return stacktrace.Propagate(err,
 				"Failed to delete ISAs")
@@ -64,11 +60,7 @@ func (gc *GarbageCollector) DeleteExpiredSubscriptions(ctx context.Context) erro
 	}
 
 	for _, sub := range expiredSubscriptions {
-		subOut, err := gc.repos.DeleteSubscription(ctx, sub)
-		if subOut != nil {
-			return stacktrace.Propagate(err,
-				"Deleted Subscription")
-		}
+		_, err := gc.repos.DeleteSubscription(ctx, sub)
 		if err != nil {
 			return stacktrace.Propagate(err,
 				"Failed to delete Subscription")
