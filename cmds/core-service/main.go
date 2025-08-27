@@ -157,22 +157,12 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	ridStore, err := ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
 	if err != nil {
-		// try DBName of defaultdb for older versions.
-		ridCrdb.Pool.Close()
-		connectParameters.DBName = "defaultdb"
-		ridCrdb, err := datastore.Dial(ctx, connectParameters)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database for older version <defaultdb>; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
+		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
+		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
+			ridCrdb.Pool.Close()
+			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
 		}
-		ridStore, err = ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
-		if err != nil {
-			// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
-			if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-				ridCrdb.Pool.Close()
-				return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
-			}
-			return nil, nil, stacktrace.Propagate(err, "Failed to create remote ID store")
-		}
+		return nil, nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 	}
 
 	repo, err := ridStore.Interact(ctx)
