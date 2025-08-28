@@ -12,7 +12,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
       (dict
-        "name" (printf "%s-%s" "ybdb-master-ext" ( $i | toString) )
+        "name" (printf "%s-%s" "ybdb-ext" ( $i | toString) )
         "ip" $lb.ip
         "subnet" $lb.subnet
         "cloudProvider" $cloudProvider
@@ -20,8 +20,8 @@ metadata:
     }}
   labels:
     app: yugabyte
-    name: ybdb-master-ext-{{$i}}
-  name: ybdb-master-ext-{{$i}}
+    name: ybdb-ext-{{$i}}
+  name: ybdb-ext-{{$i}}
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
   ports:
@@ -31,47 +31,12 @@ spec:
     - name: yugabyte-master-ui-ext-{{$i}}
       port: 7000
       targetPort: 7000
-    - name: yugabyte-master-ui2-ext-{{$i}}
-      port: 9000
-      targetPort: 9000
-  publishNotReadyAddresses: true
-  selector:
-    statefulset.kubernetes.io/pod-name: yb-master-{{$i}}
-  type: LoadBalancer
-{{- end }}
-
-# Tserver nodes Gateways
-{{- range $i, $lb := .Values.loadBalancers.yugabyteTserverNodes }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-    {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
-      (dict
-        "name" (printf "%s-%s" " ybdb-tserver-ext" ( $i | toString) )
-        "ip" $lb.ip
-        "subnet" $lb.subnet
-        "cloudProvider" $cloudProvider
-      ) | nindent 4
-    }}
-  labels:
-    app: yugabyte
-    name: yuga-tserver-ext-{{$i}}
-  name: yuga-tserver-ext-{{$i}}
-spec:
-  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
-  ports:
     - name: yugabyte-tserver-db-ext-{{$i}}
       port: 9100
       targetPort: 9100
     - name: yugabyte-tserver-ui-ext-{{$i}}
       port: 9000
       targetPort: 9000
-    - name: yugabyte-tserver-ui2-ext-{{$i}}
-      port: 7000
-      targetPort: 7000
     - name: yugabyte-tserver-ycql-ext-{{$i}}
       port: 9042
       targetPort: 9042
@@ -86,7 +51,8 @@ spec:
       targetPort: 12000
   publishNotReadyAddresses: true
   selector:
-    statefulset.kubernetes.io/pod-name: yb-tserver-{{$i}}
+     yugabytedUi: "true"
+     apps.kubernetes.io/pod-index: "{{$i}}"
   type: LoadBalancer
 {{- end }}
 {{- end }}

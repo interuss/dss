@@ -61,22 +61,13 @@ resource "google_compute_address" "ip_crdb" {
 }
 
 # Static IP addresses for yugabyte instances
-resource "google_compute_address" "ip_yugabyte_masters" {
+resource "google_compute_address" "ip_yugabyte" {
   count  = var.datastore_type == "yugabyte" ? var.node_count : 0
-  name   = format("%s-ip-yugabyte-master%v", var.cluster_name, count.index)
+  name   = format("%s-ip-yugabyte%v", var.cluster_name, count.index)
   region = local.region
 
   # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.master.%s", count.index, var.db_hostname_suffix)
-}
-
-resource "google_compute_address" "ip_yugabyte_tservers" {
-  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
-  name   = format("%s-ip-yugabyte-tserver%v", var.cluster_name, count.index)
-  region = local.region
-
-  # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
-  description = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
+  description = format("%s.%%s.%s", count.index, var.db_hostname_suffix)
 }
 
 locals {

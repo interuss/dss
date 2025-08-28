@@ -1,8 +1,8 @@
 
 locals {
   crdb_hostnames             = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_crdb[*] : i.tags.ExpectedDNS => i.public_ip }
-  yugabyte_master_hostnames  = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte_masters[*] : i.tags.ExpectedDNS => i.public_ip }
-  yugabyte_tserver_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte_tservers[*] : i.tags.ExpectedDNS => i.public_ip }
+  yugabyte_master_hostnames  = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte[*] : i.tags.ExpectedMasterDNS => i.public_ip }
+  yugabyte_tserver_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte[*] : i.tags.ExpectedTServerDNS => i.public_ip }
 }
 
 

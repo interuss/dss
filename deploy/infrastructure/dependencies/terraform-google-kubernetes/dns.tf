@@ -27,20 +27,20 @@ resource "google_dns_record_set" "crdb" {
 
 resource "google_dns_record_set" "yugabyte_masters" {
   count = var.datastore_type == "yugabyte" && var.google_dns_managed_zone_name != "" ? var.node_count : 0
-  name  = "${google_compute_address.ip_yugabyte_masters[count.index].description}." # description contains the expected hostname
+  name  = format("${google_compute_address.ip_yugabyte[count.index].description}.", "master") # description contains the expected hostname
   type  = "A"
   ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.default[0].name
-  rrdatas      = [google_compute_address.ip_yugabyte_masters[count.index].address]
+  rrdatas      = [google_compute_address.ip_yugabyte[count.index].address]
 }
 
 resource "google_dns_record_set" "yugabyte_tserver" {
   count = var.datastore_type == "yugabyte" && var.google_dns_managed_zone_name != "" ? var.node_count : 0
-  name  = "${google_compute_address.ip_yugabyte_tservers[count.index].description}." # description contains the expected hostname
+  name  = format("${google_compute_address.ip_yugabyte[count.index].description}.", "tserver") # description contains the expected hostname
   type  = "A"
   ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.default[0].name
-  rrdatas      = [google_compute_address.ip_yugabyte_tservers[count.index].address]
+  rrdatas      = [google_compute_address.ip_yugabyte[count.index].address]
 }
