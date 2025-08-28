@@ -209,6 +209,9 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 		}
 	}
 	if !validated {
+		if err == nil { // If we have no keys, errs may be nil
+			err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "No keys to validate against")
+		}
 		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")}
 	}
 
