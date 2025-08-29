@@ -424,10 +424,10 @@ local volumes = import 'volumes.libsonnet';
                   },
                 },
                 ports: [{
-                  name: 'http-ui',
+                  name: 'http-ui-2',
                   containerPort: 9000,
                 }, {
-                  name: 'tcp-rpc-port',
+                  name: 'tcp-rpc2-port',
                   containerPort: 9100,
                 }, {
                   name: 'yugabyted-ui',
