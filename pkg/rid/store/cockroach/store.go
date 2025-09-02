@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
@@ -23,7 +24,7 @@ import (
 
 const (
 	// File where the current Crdb schema version is stored.
-	currentCrdbMajorSchemaVersionFile = "../../../../build/db_schemas/rid/version.txt"
+	currentCrdbMajorSchemaVersionFile = "../../../../build/db_schemas/rid.version"
 
 	// The current major schema version for Yugabyte.
 	currentYugabyteMajorSchemaVersion = 1
@@ -119,7 +120,7 @@ func getCurrentCrdbSchemaVersion() (int64, error) {
 		return 0, stacktrace.Propagate(err, "Failed to read schema version file '%s'", currentCrdbMajorSchemaVersionFile)
 	}
 
-	v, err := strconv.Atoi(string(buf))
+	v, err := strconv.Atoi(strings.Split(string(buf), "")[0])
 	if err != nil {
 		return 0, stacktrace.Propagate(err, "Failed to convert schema version '%s' to int", string(buf))
 	}
