@@ -2,12 +2,13 @@ package cockroach
 
 import (
 	"context"
+	"time"
+
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/interuss/dss/pkg/datastore/flags"
 	dssql "github.com/interuss/dss/pkg/sql"
-	"time"
 
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
+	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/logging"
@@ -23,8 +24,8 @@ const (
 	currentCrdbMajorSchemaVersion     = 4
 	currentYugabyteMajorSchemaVersion = 1
 
-	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
-	expiredDurationInMin = 30
+	//  Records expire if current time is <ExpiredDurationInMin> minutes more than records' endTime.
+	ExpiredDurationInMin = 30
 )
 
 var (

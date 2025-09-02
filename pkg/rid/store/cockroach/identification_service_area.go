@@ -211,7 +211,7 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.
-// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
+// Records expire if current time is <ExpiredDurationInMin> minutes more than records' endTime.
 // The function queries both empty writer and null writer when passing empty string as a writer.
 func (r *repo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
 	writerQuery := "'" + writer + "'"
@@ -229,7 +229,7 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels
 		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
 	AND
 		(writer = %s)
-	LIMIT $1`, isaFields, expiredDurationInMin, writerQuery)
+	LIMIT $1`, isaFields, ExpiredDurationInMin, writerQuery)
 	)
 
 	return r.fetchISAs(ctx, isasInCellsQuery, dssmodels.MaxResultLimit)

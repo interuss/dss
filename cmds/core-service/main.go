@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -50,11 +49,10 @@ var (
 	locality          = flag.String("locality", "", "self-identification string of this DSS instance")
 	publicEndpoint    = flag.String("public_endpoint", "", "Public endpoint to access this DSS instance. Must be an absolute URI")
 
-	logFormat            = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel             = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests         = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
-	profServiceName      = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	garbageCollectorSpec = flag.String("garbage_collector_spec", "@every 30m", "Garbage collector schedule. The value must follow robfig/cron format. See https://godoc.org/github.com/robfig/cron#hdr-Usage for more detail.")
+	logFormat       = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel        = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	dumpRequests    = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
+	profServiceName = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
 
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -165,22 +163,16 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		return nil, nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 	}
 
-	repo, err := ridStore.Interact(ctx)
+	_, err = ridStore.Interact(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
-	gc := ridc.NewGarbageCollector(repo, locality)
 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
 	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, connectParameters.DBName) }); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
-	}
-
-	cronLogger := cron.VerbosePrintfLogger(log.New(os.Stdout, "RIDGarbageCollectorJob: ", log.LstdFlags))
-	if _, err = ridCron.AddJob(*garbageCollectorSpec, cron.NewChain(cron.SkipIfStillRunning(cronLogger)).Then(RIDGarbageCollectorJob{"delete rid expired records", *gc, ctx})); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic delete rid expired records to %s", connectParameters.DBName)
 	}
 	ridCron.Start()
 
@@ -377,22 +369,6 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 			next.ServeHTTP(w, r)
 		}
 	})
-}
-
-type RIDGarbageCollectorJob struct {
-	name string
-	gc   ridc.GarbageCollector
-	ctx  context.Context
-}
-
-func (gcj RIDGarbageCollectorJob) Run() {
-	logger := logging.WithValuesFromContext(gcj.ctx, logging.Logger)
-	err := gcj.gc.DeleteRIDExpiredRecords(gcj.ctx)
-	if err != nil {
-		logger.Warn("Fail to delete expired records", zap.Error(err))
-	} else {
-		logger.Info("Successful delete expired records")
-	}
 }
 
 func SetDeprecatingHttpFlag(logger *zap.Logger, newFlag **bool, deprecatedFlag **bool) {
