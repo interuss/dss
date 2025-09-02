@@ -251,3 +251,9 @@ func TestBasicTxn(t *testing.T) {
 
 	require.Len(t, subs, 1)
 }
+
+// TestVersionFileIsRead checks that the schema version file is read and parsed.
+func TestVersionIsParsed(t *testing.T) {
+	_, err := getCurrentCrdbSchemaVersion()
+	require.NoError(t, err)
+}

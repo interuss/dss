@@ -2,9 +2,11 @@ package cockroach
 
 import (
 	"context"
+	"os"
+	"strconv"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
+	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
@@ -16,8 +18,10 @@ import (
 )
 
 const (
-	// The current major schema version per datastore type.
-	currentCrdbMajorSchemaVersion     = 3
+	// File where the current Crdb schema version is stored.
+	currentCrdbMajorSchemaVersionFile = "../../../../build/db_schemas/scd/version.txt"
+
+	// The current major schema version for Yugabyte.
 	currentYugabyteMajorSchemaVersion = 1
 )
 
@@ -67,8 +71,13 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	if s.db.Version.Type == datastore.CockroachDB && currentCrdbMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, currentCrdbMajorSchemaVersion)
+	v, err := getCurrentCrdbSchemaVersion()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get current Crdb schema version")
+	}
+
+	if s.db.Version.Type == datastore.CockroachDB && v != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, v)
 	}
 
 	if s.db.Version.Type == datastore.Yugabyte && currentYugabyteMajorSchemaVersion != vs.Major {
@@ -76,6 +85,20 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func getCurrentCrdbSchemaVersion() (int64, error) {
+	buf, err := os.ReadFile(currentCrdbMajorSchemaVersionFile)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to read schema version file '%s'", currentCrdbMajorSchemaVersionFile)
+	}
+
+	v, err := strconv.Atoi(string(buf))
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to convert schema version '%s' to int", string(buf))
+	}
+
+	return int64(v), nil
 }
 
 // Interact implements store.Interactor interface.

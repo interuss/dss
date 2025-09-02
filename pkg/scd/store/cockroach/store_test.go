@@ -51,3 +51,9 @@ func CleanUp(ctx context.Context, s *Store) error {
 	_, err := s.db.Pool.Exec(ctx, query)
 	return err
 }
+
+// TestVersionFileIsRead checks that the schema version file is read and parsed.
+func TestVersionIsParsed(t *testing.T) {
+	_, err := getCurrentCrdbSchemaVersion()
+	require.NoError(t, err)
+}
