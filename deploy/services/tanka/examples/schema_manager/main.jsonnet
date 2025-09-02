@@ -6,8 +6,8 @@ local metadataBase = import '../metadata_base.libsonnet';
 // All VAR_* values below must be replaced with appropriate values; see
 // dss/build/README.md for more information.
 
-local rid_db_version = importstr "../../../../../build/db_schemas/rid/version.txt"
-local scd_db_version = importstr "../../../../../build/db_schemas/scd/version.txt"
+local rid_db_version = importstr "../../../../../build/db_schemas/rid.version"
+local scd_db_version = importstr "../../../../../build/db_schemas/scd.version"
 
 local metadata = metadataBase {
   namespace: 'VAR_NAMESPACE',
