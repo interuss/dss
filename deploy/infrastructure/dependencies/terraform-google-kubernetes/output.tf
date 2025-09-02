@@ -3,11 +3,11 @@ output "crdb_addresses" {
 }
 
 output "yugabyte_masters_addresses" {
-  value = [for a in google_compute_address.ip_yugabyte_masters[*] : { expected_dns : a.description, address : a.address }]
+  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "server"), address : a.address }]
 }
 
 output "yugabyte_tservers_addresses" {
-  value = [for a in google_compute_address.ip_yugabyte_tservers[*] : { expected_dns : a.description, address : a.address }]
+  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "tserver"), address : a.address }]
 }
 
 output "gateway_address" {
@@ -52,18 +52,18 @@ output "crdb_nodes" {
 
 output "yugabyte_masters_nodes" {
   value = [
-    for i in google_compute_address.ip_yugabyte_masters : {
+    for i in google_compute_address.ip_yugabyte : {
       ip  = i.address
-      dns = i.description
+      dns = format(i.description, "master")
     }
   ]
 }
 
 output "yugabyte_tservers_nodes" {
   value = [
-    for i in google_compute_address.ip_yugabyte_tservers : {
+    for i in google_compute_address.ip_yugabyte : {
       ip  = i.address
-      dns = i.description
+      dns = format(i.description, "tserver")
     }
   ]
 }

@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: DSS Deployment Documentation
+site_url: https://interuss.github.io/dss/
+repo_url: https://github.com/interuss/dss
+repo_name: interuss/dss
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/interuss
+docs_dir: docs
+edit_uri: edit/master/docs/
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/
+    - navigation.instant # no page reload on navigation, behaves as a single page app
+    - navigation.instant.prefetch # prefetches hovered links
+    - navigation.instant.progress # displays loading progress bar if loading takes more than 400ms
+    - navigation.tracking # tracks currently displayed page anchor in URL address
+    - navigation.tabs # displays top-level sections in menu below header
+    - navigation.sections # renders top-level sections as groups
+    - navigation.path # shows breadcrumb above title
+    - navigation.indexes # allows attaching page to section
+    - toc.follow # TOC in sidebar scrolls with page
+    - navigation.top # shows a back-to-top button
+
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-site-search/
+    - search.suggest # provides search completions
+
+
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-the-header/
+    - header.autohide # hides header on scroll down
+
+    # https://squidfunk.github.io/mkdocs-material/setup/setting-up-the-footer/
+    - navigation.footer # provides links to the previous and next page of the current page
+
+    # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+    - content.action.edit # provides link to edit page on github
+    - content.action.view # provides link to view page on github
+
+plugins:
+  - search
+  - git-revision-date-localized: # displays last update date
+      fallback_to_build_date: true
+
+markdown_extensions:
+  # https://squidfunk.github.io/mkdocs-material/reference/admonitions/
+  - admonition # enable use of call-outs
+  - pymdownx.details # make call-outs collapsible
+  - pymdownx.superfences:
+      # https://squidfunk.github.io/mkdocs-material/reference/diagrams
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+  # https://squidfunk.github.io/mkdocs-material/reference/lists
+  - def_list # enables 'dl' description lists
+  - pymdownx.tasklist: # enables '- [x]'/'- [ ]' task lists
+      custom_checkbox: true
+
+  # https://squidfunk.github.io/mkdocs-material/reference/footnotes/
+  - footnotes # enables '[^1]' footnotes
+
+  # https://squidfunk.github.io/mkdocs-material/reference/data-tables/
+  - tables # enables tables
+
+  # https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown-extensions
+  - pymdownx.betterem # improves markup detection
+  - pymdownx.highlight: # enables code syntax highlighting
+      anchor_linenums: true
+      pygments_lang_class: true
+      linenums: true # displays line numbers
+  - pymdownx.inlinehilite # enables inline code syntax highlighting
+  - pymdownx.smartsymbols # converts some symbols to their corresponding unicode equivalents
+  - pymdownx.snippets # enables inclusion of markdown snippets
+  - pymdownx.tabbed: # enables tabbed content
+      alternate_style: true
+
+  # https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown
+  - toc:
+      permalink: true # displays a permalink next to headings
+
+nav:
+  - Home:
+    - index.md
+    - build.md
+    - architecture.md
+    - migration.md
+  - Infrastructure:
+      - infrastructure/index.md
+      - infrastructure/local-minikube.md
+      - terraform-aws-dss:
+          - infrastructure/terraform-aws-dss/index.md
+          - infrastructure/terraform-aws-dss/dns.md
+      - terraform-google-dss:
+          - infrastructure/terraform-google-dss/index.md
+          - infrastructure/terraform-google-dss/dns.md
+  - Services:
+      - services/index.md
+      - services/helm-charts.md
+      - services/tanka.md
+  - Operations:
+      - operations/index.md
+      - operations/monitoring.md
+      - operations/pooling.md
+      - operations/pooling-crdb.md
+      - operations/troubleshooting.md
+      - operations/certificates-management.md
+      - CI:
+          - operations/ci/index.md
+          - operations/ci/aws-1.md

@@ -81,26 +81,15 @@ resource "aws_eip" "ip_crdb" {
   }
 }
 
-# Public Elastic IPs for the yubagybte master instances
-resource "aws_eip" "ip_yugabyte_masters" {
+# Public Elastic IPs for the yubagybte instances
+resource "aws_eip" "ip_yugabyte" {
   count  = var.datastore_type == "yugabyte" ? var.node_count : 0
   domain = "vpc"
 
   tags = {
-    Name = format("%s-ip-yugabyte-master%v", var.cluster_name, count.index)
+    Name = format("%s-ip-yugabyte%v", var.cluster_name, count.index)
     # Preserve mapping between ips and hostnames
-    ExpectedDNS = format("%s.master.%s", count.index, var.db_hostname_suffix)
-  }
-}
-
-# Public Elastic IPs for the yubagybte tserver instances
-resource "aws_eip" "ip_yugabyte_tservers" {
-  count  = var.datastore_type == "yugabyte" ? var.node_count : 0
-  domain = "vpc"
-
-  tags = {
-    Name = format("%s-ip-yugabyte-tserver%v", var.cluster_name, count.index)
-    # Preserve mapping between ips and hostnames
-    ExpectedDNS = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
+    ExpectedMasterDNS  = format("%s.master.%s", count.index, var.db_hostname_suffix)
+    ExpectedTServerDNS = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
   }
 }

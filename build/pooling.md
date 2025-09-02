@@ -1,3 +1,3 @@
 # DSS Pooling (moved)
 
-DSS pooling documentation may now be found in [the `deploy/operations` folder](../deploy/operations/pooling.md).
+This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss).

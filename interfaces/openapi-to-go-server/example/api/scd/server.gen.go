@@ -934,6 +934,10 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 		api.WriteJSON(w, 403, response.Response403)
 		return
 	}
+	if response.Response409 != nil {
+		api.WriteJSON(w, 409, response.Response409)
+		return
+	}
 	if response.Response429 != nil {
 		api.WriteJSON(w, 429, response.Response429)
 		return

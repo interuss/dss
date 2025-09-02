@@ -230,11 +230,14 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 		}
 	}
 
-	if validated {
-		return keyClaims, nil
+  if !validated {
+		if err == nil { // If we have no keys, errs may be nil
+			err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "No keys to validate against")
+		}
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")}
 	}
 
-	return claims{}, stacktrace.NewError("Access token validation failed")
+  return keyClaims, nil
 }
 
 func HasScope(scopes []string, requiredScope api.RequiredScope) bool {

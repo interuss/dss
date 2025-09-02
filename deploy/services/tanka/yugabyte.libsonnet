@@ -92,8 +92,8 @@ local volumes = import 'volumes.libsonnet';
                     memory: if metadata.yugabyte.light_resources then "0.5Gi" else "2Gi",
                   },
                   requests: {
-                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "2Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.1 else 1,
+                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "1Gi",
                   },
                 },
                 ports: [{
@@ -415,19 +415,19 @@ local volumes = import 'volumes.libsonnet';
                 image: metadata.yugabyte.image,
                 resources: {
                   limits: {
-                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "4Gi",
+                    cpu: if metadata.yugabyte.light_resources then 1.5 else 2,
+                    memory: if metadata.yugabyte.light_resources then "2Gi" else "4Gi",
                   },
                   requests: {
-                    cpu: if metadata.yugabyte.light_resources then 0.1 else 2,
-                    memory: if metadata.yugabyte.light_resources then "0.5Gi" else "4Gi",
+                    cpu: if metadata.yugabyte.light_resources then 0.75 else 1,
+                    memory: "2Gi",
                   },
                 },
                 ports: [{
-                  name: 'http-ui',
+                  name: 'http-ui-2',
                   containerPort: 9000,
                 }, {
-                  name: 'tcp-rpc-port',
+                  name: 'tcp-rpc2-port',
                   containerPort: 9100,
                 }, {
                   name: 'yugabyted-ui',
