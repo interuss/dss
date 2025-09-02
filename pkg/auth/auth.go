@@ -184,10 +184,31 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 
 // Authorize extracts and verifies bearer tokens from a http.Request.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
+	keyClaims, err := a.ExtractClaims(r)
+	if err != nil {
+		return api.AuthorizationResult{Error: err}
+	}
 
+	if !a.acceptedAudiences[keyClaims.Audience] {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
+	}
+
+	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			"Access token missing scopes (%v) while expecting %v and got %v",
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
+	}
+
+	return api.AuthorizationResult{
+		ClientID: &keyClaims.Subject,
+		Scopes:   keyClaims.Scopes.ToStringSlice(),
+	}
+}
+
+func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 	tknStr, ok := getToken(r)
 	if !ok {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")}
+		return claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
 	}
 
 	a.keyGuard.RLock()
@@ -208,24 +229,12 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 			break
 		}
 	}
-	if !validated {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")}
+
+	if validated {
+		return keyClaims, nil
 	}
 
-	if !a.acceptedAudiences[keyClaims.Audience] {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
-	}
-
-	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-			"Access token missing scopes (%v) while expecting %v and got %v",
-			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
-	}
-
-	return api.AuthorizationResult{
-		ClientID: &keyClaims.Subject,
-		Scopes:   keyClaims.Scopes.ToStringSlice(),
-	}
+	return claims{}, stacktrace.NewError("Access token validation failed")
 }
 
 func HasScope(scopes []string, requiredScope api.RequiredScope) bool {

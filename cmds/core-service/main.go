@@ -329,6 +329,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			&multiRouter,
 		))
 
+	handler = authDecoderMiddleware(authorizer, handler)
+
 	httpServer := &http.Server{
 		Addr:              address,
 		Handler:           handler,
@@ -386,6 +388,22 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
+	})
+}
+
+// authDecoderMiddleware decodes the authentication token and adds the Subject claim to the context.
+func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ctx context.Context
+
+		claims, err := authorizer.ExtractClaims(r)
+		if err != nil {
+			ctx = context.WithValue(r.Context(), logging.CtxAuthError{}, err)
+		} else {
+			ctx = context.WithValue(r.Context(), logging.CtxAuthSubject{}, claims.Subject)
+		}
+
+		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
