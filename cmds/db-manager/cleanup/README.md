@@ -4,7 +4,9 @@
 CLI tool that lists and deletes expired entities in the DSS store.
 At the time of writing this README, the entities supported by this tool are:
 - SCD operational intents;
-- SCD subscriptions.
+- SCD subscriptions;
+- RID identification service areas;
+- RID subscriptions.
 
 The usage of this tool is potentially dangerous: inputting wrong parameters may result in loss of data.
 As such it is strongly recommended to always review and validate the list of entities identified as expired, and to
@@ -32,15 +34,18 @@ Usage:
   db-manager evict [flags]
 
 Flags:
-      --delete         set this flag to true to delete the expired entities
-  -h, --help           help for evict
-      --scd_oir        set this flag to true to list expired SCD operational intents (default true)
-      --scd_sub        set this flag to true to list expired SCD subscriptions (default true)
-      --ttl duration   time-to-live duration used for determining expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
+      --delete            set this flag to true to delete the expired entities
+  -h, --help              help for evict
+      --locality string   self-identification string of this DSS instance
+      --rid_isa           set this flag to true to check for expired RID ISAs (default true)
+      --rid_sub           set this flag to true to check for expired RID subscriptions (default true)
+      --scd_oir           set this flag to true to check for expired SCD operational intents (default true)
+      --scd_sub           set this flag to true to check for expired SCD subscriptions (default true)
+      --ttl duration      time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
 
 Global Flags:
       --cockroach_application_name string   application name for tagging the connection to cockroach (default "dss")
-      --cockroach_db_name string            application name for tagging the connection to cockroach (default "dss")
+      --cockroach_db_name string            application name for tagging the connection to cockroach
       --cockroach_host string               cockroach host to connect to
       --cockroach_max_retries int           maximum number of attempts to retry a query in case of contention, default is 100 (default 100)
       --cockroach_port int                  cockroach port to connect to (default 26257)
@@ -56,6 +61,7 @@ Do note:
 - by default expired entities are only listed, not deleted, the flag `--delete` is required for deleting entities;
 - expiration of entities is preferably determined through their end times, however when they do not have end times, the last update times are used;
 - the flag `--ttl` accepts durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`;
+- the flag `--ttl` is only used for SCD entities. RID entities will use an 30 minutes interval;
 - the CockroachDB cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
 
 ### Examples

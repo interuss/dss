@@ -272,7 +272,7 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 }
 
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.
-// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
+// Records expire if current time is <ExpiredDurationInMin> minutes more than records' endTime.
 // The function queries both empty writer and null writer when passing empty string as a writer.
 func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error) {
 	writerQuery := "'" + writer + "'"
@@ -289,7 +289,7 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string) ([]*
 	WHERE
 		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
 	AND
-		(writer = %s)`, subscriptionFields, expiredDurationInMin, writerQuery)
+		(writer = %s)`, subscriptionFields, ExpiredDurationInMin, writerQuery)
 	)
 
 	return r.process(ctx, query)
