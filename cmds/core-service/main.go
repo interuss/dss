@@ -175,11 +175,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		}
 	}
 
-	repo, err := ridStore.Interact(ctx)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
-	}
-	gc := ridc.NewGarbageCollector(repo, locality)
+	gc := ridc.NewGarbageCollector(ridStore, locality)
 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
