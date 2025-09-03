@@ -14,11 +14,11 @@ local metadata = metadataBase {
   clusterName: 'VAR_CLUSTER_CONTEXT',
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   cockroach+: {
-    shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
+    shouldInit: true, // <-- This boolean value is VAR_SHOULD_INIT
     JoinExisting: [], // <-- This must be set to empty
   },
   schema_manager+: {
-    enable: false, // <-- this boolean value is VAR_ENABLE_SCHEMA_MANAGER
+    enable: true, // <-- this boolean value is VAR_ENABLE_SCHEMA_MANAGER
     image: 'VAR_DOCKER_IMAGE_NAME',
     desired_rid_db_version: rid_db_version,
     desired_scd_db_version: scd_db_version,
