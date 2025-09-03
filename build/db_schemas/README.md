@@ -12,15 +12,8 @@ for examples.
 The two new .sql files must be added to scd.libsonnet or rid.libsonnet
 (for remote ID) in this folder.
 
-When a new database version is created, it needs to be targeted in a number of
-places:
-* Both .sql files in the appropriate folder in db_schemas when setting
-  schema_versions.schema_version
-* [DSS main.jsonnet](../../deploy/services/tanka/examples/minimum/main.jsonnet)
-* [Schema manager main.jsonnet](../../deploy/services/tanka/examples/schema_manager/main.jsonnet)
-* /pkg/{rid|scd}/store/cockroach/store.go
-* /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
-* /deploy/services/helm-charts/dss/templates/schema-manager.yaml
+When a new database version is created, schema_versions.schema_version should be set 
+in both .sql files in the appropriate folder in db_schemas. 
 
 ## Yugabyte schema versions
 

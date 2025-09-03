@@ -14,7 +14,7 @@ local metadata = metadataBase {
   clusterName: 'VAR_CLUSTER_CONTEXT',
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   cockroach+: {
-    shouldInit: true, // <-- This boolean value is VAR_SHOULD_INIT
+    shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
     JoinExisting: [], // <-- This must be set to empty
   },
   schema_manager+: {
