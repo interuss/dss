@@ -33,5 +33,4 @@ yugabyte:
     nodeToNode: true
     clientToServer: true
     insecure: false
-    provided: true
-    
+    provided: true    

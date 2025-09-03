@@ -26,7 +26,7 @@ const (
 	// File where the current Crdb schema version is stored.
 	currentCrdbSchemaVersionFile = "../../../../build/db_schemas/version/crdb/scd.version"
 
-	// The current schema version for Yugabyte.
+	// File where the current Yugabyte schema version is stored.
 	currentYugabyteSchemaVersionFile = "../../../../build/db_schemas/version/yugabyte/scd.version"
 
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
