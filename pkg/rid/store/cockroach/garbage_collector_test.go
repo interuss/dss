@@ -23,7 +23,7 @@ func TestDeleteExpiredISAs(t *testing.T) {
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
-	// Insert ISA with endtime to 30 minutes ago
+	// Insert two ISA with endtime to 30 minutes ago
 	startTime := fakeClock.Now().Add(-1 * time.Hour)
 	endTime := fakeClock.Now().Add(-30 * time.Minute)
 	serviceArea := &ridmodels.IdentificationServiceArea{
@@ -46,6 +46,26 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
+	serviceArea2 := &ridmodels.IdentificationServiceArea{
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
+		URL:       "https://no/place/like/home/for/flights",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Writer:    writer,
+		Cells: s2.CellUnion{
+			s2.CellID(uint64(overflow)),
+			s2.CellID(17106221850767130624),
+		},
+	}
+	saOut, err = repo.InsertISA(ctx, serviceArea2)
+	require.NoError(t, err)
+	require.NotNil(t, saOut)
+
+	ret, err = repo.GetISA(ctx, serviceArea2.ID, false)
+	require.NoError(t, err)
+	require.NotNil(t, ret)
+
 	gc := NewGarbageCollector(repo, writer)
 	err = gc.DeleteRIDExpiredRecords(ctx)
 	require.NoError(t, err)
@@ -53,6 +73,11 @@ func TestDeleteExpiredISAs(t *testing.T) {
 	ret, err = repo.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
 	require.Nil(t, ret)
+
+	ret, err = repo.GetISA(ctx, serviceArea2.ID, false)
+	require.NoError(t, err)
+	require.Nil(t, ret)
+
 }
 
 func TestDeleteExpiredSubscriptions(t *testing.T) {
@@ -65,7 +90,7 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
-	// Insert ISA with endtime to 30 minutes ago
+	// Insert two ISA with endtime to 30 minutes ago
 	startTime := fakeClock.Now().Add(-1 * time.Hour)
 	endTime := fakeClock.Now().Add(-30 * time.Minute)
 	subscription := &ridmodels.Subscription{
@@ -90,11 +115,37 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 
+	subscription2 := &ridmodels.Subscription{
+		ID:                dssmodels.ID(uuid.New().String()),
+		Owner:             "myself",
+		URL:               "https://no/place/like/home",
+		StartTime:         &startTime,
+		EndTime:           &endTime,
+		NotificationIndex: 42,
+		Writer:            writer,
+		Cells: s2.CellUnion{
+			s2.CellID(uint64(overflow)),
+			12494535935418957824,
+		},
+	}
+
+	subOut, err = repo.InsertSubscription(ctx, subscription2)
+	require.NoError(t, err)
+	require.NotNil(t, subOut)
+
+	ret, err = repo.GetSubscription(ctx, subscription2.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ret)
+
 	gc := NewGarbageCollector(repo, writer)
 	err = gc.DeleteRIDExpiredRecords(ctx)
 	require.NoError(t, err)
 
 	ret, err = repo.GetSubscription(ctx, subscription.ID)
+	require.NoError(t, err)
+	require.Nil(t, ret)
+
+	ret, err = repo.GetSubscription(ctx, subscription2.ID)
 	require.NoError(t, err)
 	require.Nil(t, ret)
 }

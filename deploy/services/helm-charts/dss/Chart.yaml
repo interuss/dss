@@ -10,6 +10,6 @@ dependencies:
     version: 10.0.7
     condition: cockroachdb.enabled
   - name: yugabyte
-    repository: https://charts.yugabyte.com/
-    version: 2.25.1
+    repository: https://interuss.github.io/yugabyte-charts/
+    version: 2025.1.0
     condition: yugabyte.enabled

@@ -29,6 +29,9 @@ func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi
 	case dsserr.PermissionDenied:
 		*resp403 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
 	default:
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
 		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
 	}
 }

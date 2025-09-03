@@ -126,117 +126,8 @@ local yugabyteLB(metadata, name, ip) =
           for id in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
         }
       },
-      masterUi: base.Service(metadata, 'yb-master-ui') {
-        app:: 'yb-master',
-        spec+: {
-          ports: [
-            {
-              port: 7000,
-              name: 'http-ui',
-            },
-          ],
-          type: 'LoadBalancer',
-        },
-      },
-      yugabyteUi: base.Service(metadata, 'yugabyted-ui-service') {
-        app:: 'yb-master',
-        spec+: {
-          ports: [
-            {
-              port: 15433,
-              name: 'yugabyted-ui',
-            },
-          ],
-          type: 'LoadBalancer',
-          selector: {
-            yugabytedUi: "true"
-          }
-        },
-      },
-      tServer: base.Service(metadata, 'yb-tserver-service') {
-        app:: 'yb-tserver',
-        spec+: {
-          ports: [
-            {
-              port: 6379,
-              name: 'tcp-yedis-port',
-            },
-            {
-              port: 9042,
-              name: 'tcp-yql-port',
-            },
-            {
-              port: 5433,
-              name: 'tcp-ysql-port',
-            },
-          ],
-          type: 'LoadBalancer',
-        },
-      },
-      masters: base.Service(metadata, 'yb-masters') {
-        app:: 'yb-master',
-        spec+: {
-          ports: [
-            {
-              port: 7000,
-              name: 'http-ui',
-            },
-            {
-              port: 7100,
-              name: 'tcp-rpc-port',
-            },
-            {
-              port: 15433,
-              name: 'yugabyted-ui',
-            },
-          ],
-        },
-      },
-      tServers: base.Service(metadata, 'yb-tservers') {
-        app:: 'yb-tserver',
-        spec+: {
-          ports: [
-            {
-              port: 9000,
-              name: 'http-ui',
-            },
-            {
-              port: 12000,
-              name: 'http-ycql-met',
-            },
-            {
-              port: 11000,
-              name: 'http-yedis-met',
-            },
-            {
-              port: 13000,
-              name: 'http-ysql-met',
-            },
-            {
-              port: 9100,
-              name: 'tcp-rpc-port',
-            },
-            {
-              port: 6379,
-              name: 'tcp-yedis-port',
-            },
-            {
-              port: 9042,
-              name: 'tcp-yql-port',
-            },
-            {
-              port: 5433,
-              name: 'tcp-ysql-port',
-            },
-            {
-              port: 15433,
-              name: 'yugabyted-ui',
-            },
-          ],
-        },
-      },
       NodeGateways: {
-        ["gateway-master-" + i]: yugabyteLB(metadata, 'ybdb-master-ext-' + i, metadata.yugabyte.masterNodeIPs[i]) {
+        ["gateway-" + i]: yugabyteLB(metadata, 'ybdb-ext-' + i, metadata.yugabyte.masterNodeIPs[i]) {
           metadata+: {
             annotations+: {
               'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
@@ -244,7 +135,8 @@ local yugabyteLB(metadata, name, ip) =
           },
           spec+: {
             selector: {
-              'statefulset.kubernetes.io/pod-name': 'yb-master-' + i,
+                yugabytedUi: "true",
+                "apps.kubernetes.io/pod-index": '' + i,
             },
             publishNotReadyAddresses: true,
             ports: [
@@ -260,31 +152,6 @@ local yugabyteLB(metadata, name, ip) =
                 port: 9000,
                 name: 'http-ui-2',
               },
-
-            ],
-          },
-        } for i in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
-      } + {
-        ["gateway-tserver-" + i]: yugabyteLB(metadata, 'ybdb-tserver-ext-' + i, metadata.yugabyte.tserverNodeIPs[i]) {
-          metadata+: {
-            annotations+: {
-              'service.alpha.kubernetes.io/tolerate-unready-endpoints': 'true',
-            },
-          },
-          spec+: {
-            selector: {
-              'statefulset.kubernetes.io/pod-name': 'yb-tserver-' + i,
-            },
-            publishNotReadyAddresses: true,
-            ports: [
-              {
-                port: 9000,
-                name: 'http-ui',
-              },
-              {
-                port: 7000,
-                name: 'http-ui2',
-              },
               {
                 port: 12000,
                 name: 'http-ycql-met',
@@ -295,7 +162,7 @@ local yugabyteLB(metadata, name, ip) =
               },
               {
                 port: 9100,
-                name: 'tcp-rpc-port',
+                name: 'tcp-rpc2-port',
               },
               {
                 port: 9042,

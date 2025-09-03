@@ -90,11 +90,24 @@ resource "local_file" "helm_chart_values" {
         }
         tserver = {
           requests = {
-            cpu    = "0.1"
-            memory = "0.5G"
+            cpu    = "0.75"
+            memory = "2G"
           }
         }
-      } : {}
+        } : {
+        master = {
+          requests = {
+            cpu    = "1"
+            memory = "1G"
+          }
+        }
+        tserver = {
+          requests = {
+            cpu    = "1"
+            memory = "2G"
+          }
+        }
+      }
       enableLoadBalancer = false
 
       replicas = {

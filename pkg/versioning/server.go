@@ -2,6 +2,7 @@ package versioning
 
 import (
 	"context"
+
 	"github.com/interuss/dss/pkg/api"
 	versioning "github.com/interuss/dss/pkg/api/versioningv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -39,6 +40,10 @@ func setAuthError(ctx context.Context, authErr error, resp401, resp403 **api.Emp
 	case dsserr.PermissionDenied:
 		*resp403 = &api.EmptyResponseBody{}
 	default:
+
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
 		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
 	}
 }
