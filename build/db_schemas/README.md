@@ -9,15 +9,13 @@ and named according to what the changes do.  schema_versions.schema_version
 should be updated as the last step of each transition; see existing .sql files
 for examples.
 
-The two new .sql files must be added to scd.libsonnet or rid.libsonnet
-(for remote ID) in this folder.
+The two new .sql files must be added to scd.libsonnet, rid.libsonnet
+(for remote ID) or aux_lisbonnet in this folder.
 
 When a new database version is created, schema_versions.schema_version should be set 
 in both .sql files in the appropriate folder in db_schemas. 
 
-In addition, the version file in [build/db_schemas](https://github.com/interuss/dss/blob/master/build/db_schemas)
-should be updated, namely [rid.version](https://github.com/interuss/dss/blob/master/build/db_schemas/rid.version)
-and [scd.version](https://github.com/interuss/dss/blob/master/build/db_schemas/scd.version).
+In addition, the version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version).
 
 ## Yugabyte schema versions
 

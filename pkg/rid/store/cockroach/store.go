@@ -24,10 +24,10 @@ import (
 
 const (
 	// File where the current Crdb schema version is stored.
-	currentCrdbMajorSchemaVersionFile = "../../../../build/db_schemas/rid.version"
+	currentCrdbSchemaVersionFile = "../../../../build/db_schemas/version/crdb/scd.version"
 
-	// The current major schema version for Yugabyte.
-	currentYugabyteMajorSchemaVersion = 1
+	// The current schema version for Yugabyte.
+	currentYugabyteSchemaVersionFile = "../../../../build/db_schemas/version/yugabyte/scd.version"
 
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 	expiredDurationInMin = 30
@@ -98,7 +98,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	v, err := getCurrentCrdbSchemaVersion()
+	v, err := getCurrentMajorSchemaVersion(currentCrdbSchemaVersionFile)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Crdb schema version")
 	}
@@ -107,17 +107,22 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
 	}
 
-	if s.db.Version.Type == datastore.Yugabyte && currentYugabyteMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentYugabyteMajorSchemaVersion)
+	v, err = getCurrentMajorSchemaVersion(currentYugabyteSchemaVersionFile)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
+	}
+
+	if s.db.Version.Type == datastore.Yugabyte && v != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
 	}
 
 	return nil
 }
 
-func getCurrentCrdbSchemaVersion() (int64, error) {
-	buf, err := os.ReadFile(currentCrdbMajorSchemaVersionFile)
+func getCurrentMajorSchemaVersion(file string) (int64, error) {
+	buf, err := os.ReadFile(file)
 	if err != nil {
-		return 0, stacktrace.Propagate(err, "Failed to read schema version file '%s'", currentCrdbMajorSchemaVersionFile)
+		return 0, stacktrace.Propagate(err, "Failed to read schema version file '%s'", file)
 	}
 
 	v, err := strconv.Atoi(strings.Split(string(buf), "")[0])

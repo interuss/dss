@@ -2,6 +2,9 @@ package datastore
 
 import (
 	"context"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
@@ -20,9 +23,11 @@ import (
 )
 
 const (
-	// The current major schema version per datastore type.
-	currentCrdbMajorSchemaVersion     = 1
-	currentYugabyteMajorSchemaVersion = 1
+	// File where the current Crdb schema version is stored.
+	currentCrdbSchemaVersionFile = "../../../../build/db_schemas/version/crdb/scd.version"
+
+	// The current schema version for Yugabyte.
+	currentYugabyteSchemaVersionFile = "../../../../build/db_schemas/version/yugabyte/scd.version"
 )
 
 var (
@@ -91,15 +96,39 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Aux database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	if s.db.Version.Type == datastore.CockroachDB && currentCrdbMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for aux! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentCrdbMajorSchemaVersion)
+	v, err := getCurrentMajorSchemaVersion(currentCrdbSchemaVersionFile)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get current Crdb schema version")
 	}
 
-	if s.db.Version.Type == datastore.Yugabyte && currentYugabyteMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for aux! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, currentYugabyteMajorSchemaVersion)
+	if s.db.Version.Type == datastore.CockroachDB && v != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for aux! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
+	}
+
+	v, err = getCurrentMajorSchemaVersion(currentYugabyteSchemaVersionFile)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
+	}
+
+	if s.db.Version.Type == datastore.Yugabyte && v != vs.Major {
+		return stacktrace.NewError("Unsupported schema version for aux! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
 	}
 
 	return nil
+}
+
+func getCurrentMajorSchemaVersion(file string) (int64, error) {
+	buf, err := os.ReadFile(file)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to read schema version file '%s'", file)
+	}
+
+	v, err := strconv.Atoi(strings.Split(string(buf), "")[0])
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to convert schema version '%s' to int", string(buf))
+	}
+
+	return int64(v), nil
 }
 
 // Interact implements store.Interactor interface.
