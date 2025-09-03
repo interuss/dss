@@ -16,7 +16,8 @@ When a new database version is created, schema_versions.schema_version should be
 in both .sql files in the appropriate folder in db_schemas. 
 
 In addition, the corresponding version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version)
-should be updated.
+should be updated. Finally, run the `clone.sh` script located in that same folder in order to 
+update the version files in [/deploy/services/helm-charts/dss/version](https://github.com/interuss/dss/tree/master/deploy/services/helm-charts/dss/version). 
 
 ## Yugabyte schema versions
 
