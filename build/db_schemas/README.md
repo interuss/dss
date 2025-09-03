@@ -15,7 +15,8 @@ The two new .sql files must be added to scd.libsonnet, rid.libsonnet
 When a new database version is created, schema_versions.schema_version should be set 
 in both .sql files in the appropriate folder in db_schemas. 
 
-In addition, the version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version).
+In addition, the corresponding version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version)
+should be updated.
 
 ## Yugabyte schema versions
 
