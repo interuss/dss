@@ -34,3 +34,8 @@ yugabyte:
     clientToServer: true
     insecure: false
     provided: true
+
+schemas:
+  rid: {{ .Files.Get "../../../build/db_schemas/rid.version" | quote }}
+  scd: {{ .Files.Get "../../../build/db_schemas/scd.version" | quote }}
+  aux_: "1.0.0"
