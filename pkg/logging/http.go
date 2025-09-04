@@ -74,8 +74,8 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 
 		subject, ok := r.Context().Value(CtxAuthSubject{}).(string)
 		if !ok {
-			authError := r.Context().Value(CtxAuthError{}).(error)
-			logger = logger.With(zap.NamedError("resp_sub_err", authError))
+			authErrorMsg := r.Context().Value(CtxAuthError{}).(string)
+			logger = logger.With(zap.String("resp_sub_err", authErrorMsg))
 		} else {
 			logger = logger.With(zap.String("req_sub", subject))
 		}
