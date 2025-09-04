@@ -186,7 +186,7 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 	keyClaims, err := a.ExtractClaims(r)
 	if err != nil {
-		return api.AuthorizationResult{Error: err}
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Failed to extract claims from access token")}
 	}
 
 	if !a.acceptedAudiences[keyClaims.Audience] {

@@ -388,7 +388,8 @@ func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) ht
 
 		claims, err := authorizer.ExtractClaims(r)
 		if err != nil {
-			ctx = context.WithValue(r.Context(), logging.CtxAuthError{}, err)
+			//remove the stacktrace using the formatting specifier "%#s"
+			ctx = context.WithValue(r.Context(), logging.CtxAuthError{}, fmt.Sprintf("%#s", err))
 		} else {
 			ctx = context.WithValue(r.Context(), logging.CtxAuthSubject{}, claims.Subject)
 		}
