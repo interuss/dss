@@ -17,7 +17,7 @@ DSS-facilitated Subscriptions allow a USS to indicate interest in a specific 4D 
 
 In the example sequence diagram below, an Entity consumer (such as a Remote ID Display Provider) discovers a pre-existing Entity (such as an Identification Service Area) from USS 1 as well as an Entity added after the consumer's first query.
 
-![DSS Subscriptions sequence diagram](assets/generated/subscriptions.png)
+![DSS Subscriptions sequence diagram](docs/assets/generated/subscriptions.png)
 
 ### Interoperation
 A DSS Region consists of one or more synchronized DSS instances.  From a client perspective, interacting with any DSS instance within the DSS Region is equivalent to interacting with any other DSS instance within the DSS Region.  For instance, an Entity may be written to one DSS instance and then read from a different DSS instance because all DSS instances in a DSS Region share a common DSS Airspace Representation (DAR).  The implementation of the DAR is a single distributed CockroachDB cluster per DSS Region.  The expectation is that multiple separate organizations will each host a DSS instance in the same DSS Region, and each DSS instance will be accompanied with some number of CockroachDB nodes which join into the same cluster.  With a relatively small number of DSS instances, each organization will host a full replica of the CockroachDB database in its nodes.  And in any case, the CockroachDB database will transparently survive the total loss of one or more organizations' DSS instances and CockroachDB nodes as long as there are a sufficient number of DSS instances in the DSS Region.
@@ -33,12 +33,12 @@ As specified in the ASTM standard, the DSS facilitates the task of remote identi
 ### Remote ID Service Providers
 The role of a Remote ID Service Provider (SP) is to announce the existence of, and provide necessary telemetry for, UAS managed by the SP to other USSs interested in that information.  To accomplish this, the SP ensures that all aircraft it manages are contained within an Identification Service Area recognized by the DSS at all times.  The SP does this by creating new ISAs when necessary, or expanding existing ISAs to encompass new aircraft under management or aircraft movement beyond existing ISAs.  The ISAs specify a URL that may be polled by USSs with a need to see flight data for that relevant flight data, and the SP also has a responsibility to respond correctly to those queries.  An example sequence diagram illustrating SP interactions for two flights in the same area is shown below.
 
-![Remote ID Service Providers sequence diagram](assets/generated/rid_service.png)
+![Remote ID Service Providers sequence diagram](docs/assets/generated/rid_service.png)
 
 ### Remote ID Display Providers and telemetry consumption
 End users of remote ID (members of the general public) access remote ID through a Display Application (DA).  A Display Application retrieves telemetry data from a "backend" Display Provider (DP).  Though the API between DA and DP is not standardized, the sequence diagram below assumes polling-based communication.  The DP interacts with the remote ID ecosystem on behalf of the user.  It first contacts the DSS to discover relevant SPs (and likely be notified of future changes in relevant SPs) and then reaches out to each relevant SP for telemetry in the requested area.  An example sequence diagram illustrating the consumption of remote ID data is shown below.
 
-![Remote ID telemetry consumption sequence diagram](assets/generated/rid_display.png)
+![Remote ID telemetry consumption sequence diagram](docs/assets/generated/rid_display.png)
 
 ## USS Interoperability
 

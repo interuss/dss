@@ -1,6 +1,6 @@
 # USS to USS Discovery and Synchronization [![GoDoc](https://godoc.org/github.com/interuss/dss?status.svg)](https://godoc.org/github.com/interuss/dss)
 
-<img src="assets/color_logo_transparent.png" width="200">
+<img src="docs/assets/color_logo_transparent.png" width="200">
 
 This repository contains InterUSS's implementation of the Discovery and Synchronization Service (DSS) from multiple ASTM standards. See the [InterUSS website](https://interuss.org) for background information.
 
