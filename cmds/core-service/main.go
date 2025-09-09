@@ -398,10 +398,15 @@ func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) ht
 			Error:  err,
 		})
 
+		var errMsg string
+		if err != nil {
+			errMsg = fmt.Sprintf("%#s", err)
+		}
+
 		ctx = context.WithValue(ctx, logging.CtxAuthKey{}, logging.CtxAuthValue{
 			Subject: claims.Subject,
 			//remove the stacktrace using the formatting specifier "%#s"
-			ErrMsg: fmt.Sprintf("%#s", err),
+			ErrMsg: errMsg,
 		})
 
 		handler.ServeHTTP(w, r.WithContext(ctx))
