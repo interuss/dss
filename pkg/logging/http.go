@@ -75,11 +75,20 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
+<<<<<<< HEAD
 		v := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
 		if v.ErrMsg != "" {
 			logger = logger.With(zap.String("resp_sub_err", v.ErrMsg))
 		} else {
 			logger = logger.With(zap.String("req_sub", v.Subject))
+=======
+		subject, ok := r.Context().Value(CtxAuthSubject{}).(string)
+		if !ok {
+			authErrorMsg := r.Context().Value(CtxAuthError{}).(string)
+			logger = logger.With(zap.String("resp_sub_err", authErrorMsg))
+		} else {
+			logger = logger.With(zap.String("req_sub", subject))
+>>>>>>> 6bc9c3c2 ([logging] Add subject field to log output  (#1263))
 		}
 
 		handler.ServeHTTP(trw, r)
