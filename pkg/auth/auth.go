@@ -237,11 +237,7 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (Claims, error) {
 		if err == nil { // If we have no keys, errs may be nil
 			err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "No keys to validate against")
 		}
-<<<<<<< HEAD
 		return Claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
-=======
-		return claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
->>>>>>> 6bc9c3c2 ([logging] Add subject field to log output  (#1263))
 	}
 
 	return keyClaims, nil
