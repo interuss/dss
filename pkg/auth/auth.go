@@ -193,7 +193,7 @@ type CtxAuthValue struct {
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
 	v := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
 	if v.Error != nil {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(v.Error, dsserr.Unauthenticated, "Failed to extract claims from access token")}
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(v.Error, dsserr.Unauthenticated, "Invalid access token")}
 	}
 
 	if pass, missing := validateScopes(authOptions, v.Claims.Scopes); !pass {
