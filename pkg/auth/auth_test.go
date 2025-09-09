@@ -203,7 +203,7 @@ func TestClaimsValidation(t *testing.T) {
 		Now = time.Now
 	}()
 
-	claims := &claims{}
+	claims := &Claims{}
 
 	require.Error(t, claims.Valid())
 

@@ -61,12 +61,12 @@ func (s *ScopeSet) ToStringSlice() []string {
 	return scopes
 }
 
-type claims struct {
+type Claims struct {
 	jwt.StandardClaims
 	Scopes ScopeSet `json:"scope"`
 }
 
-func (c *claims) Valid() error {
+func (c *Claims) Valid() error {
 	if c.Subject == "" {
 		return errMissingOrEmptySubject
 	}

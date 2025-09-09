@@ -27,6 +27,7 @@ import (
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags" // Force command line flag registration
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -385,14 +386,23 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ctx context.Context
-
 		claims, err := authorizer.ExtractClaims(r)
-		if err != nil {
-			//remove the stacktrace using the formatting specifier "%#s"
-			ctx = context.WithValue(r.Context(), logging.CtxAuthError{}, fmt.Sprintf("%#s", err))
-		} else {
-			ctx = context.WithValue(r.Context(), logging.CtxAuthSubject{}, claims.Subject)
+		if err == nil {
+			if !authorizer.AcceptedAudiences[claims.Audience] {
+				err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", claims.Audience)
+			}
 		}
+
+		ctx = context.WithValue(r.Context(), auth.CtxAuthKey{}, auth.CtxAuthValue{
+			Claims: claims,
+			Error:  err,
+		})
+
+		ctx = context.WithValue(ctx, logging.CtxAuthKey{}, logging.CtxAuthValue{
+			Subject: claims.Subject,
+			//remove the stacktrace using the formatting specifier "%#s"
+			ErrMsg: fmt.Sprintf("%#s", err),
+		})
 
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
