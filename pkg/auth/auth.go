@@ -120,10 +120,11 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
-	logger            *zap.Logger
-	keys              []interface{}
-	keyGuard          sync.RWMutex
-	acceptedAudiences map[string]bool
+	logger   *zap.Logger
+	keys     []interface{}
+	keyGuard sync.RWMutex
+
+	AcceptedAudiences map[string]bool
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
@@ -148,7 +149,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	authorizer := &Authorizer{
-		acceptedAudiences: auds,
+		AcceptedAudiences: auds,
 		logger:            logger,
 		keys:              keys,
 	}
@@ -182,33 +183,35 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Unlock()
 }
 
+type CtxAuthKey struct{}
+type CtxAuthValue struct {
+	Claims Claims
+	Error  error
+}
+
 // Authorize extracts and verifies bearer tokens from a http.Request.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
-	keyClaims, err := a.ExtractClaims(r)
-	if err != nil {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Failed to extract claims from access token")}
+	v := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
+	if v.Error != nil {
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(v.Error, dsserr.Unauthenticated, "Failed to extract claims from access token")}
 	}
 
-	if !a.acceptedAudiences[keyClaims.Audience] {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
-	}
-
-	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
+	if pass, missing := validateScopes(authOptions, v.Claims.Scopes); !pass {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 			"Access token missing scopes (%v) while expecting %v and got %v",
-			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(v.Claims.Scopes.ToStringSlice(), ", "))}
 	}
 
 	return api.AuthorizationResult{
-		ClientID: &keyClaims.Subject,
-		Scopes:   keyClaims.Scopes.ToStringSlice(),
+		ClientID: &v.Claims.Subject,
+		Scopes:   v.Claims.Scopes.ToStringSlice(),
 	}
 }
 
-func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
+func (a *Authorizer) ExtractClaims(r *http.Request) (Claims, error) {
 	tknStr, ok := getToken(r)
 	if !ok {
-		return claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
+		return Claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
 	}
 
 	a.keyGuard.RLock()
@@ -216,10 +219,10 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 	a.keyGuard.RUnlock()
 	validated := false
 	var err error
-	var keyClaims claims
+	var keyClaims Claims
 
 	for _, key := range keys {
-		keyClaims = claims{}
+		keyClaims = Claims{}
 		key := key
 		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
 			return key, nil
@@ -234,7 +237,7 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 		if err == nil { // If we have no keys, errs may be nil
 			err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "No keys to validate against")
 		}
-		return claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
+		return Claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
 	}
 
 	return keyClaims, nil

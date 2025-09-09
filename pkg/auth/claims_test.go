@@ -8,7 +8,7 @@ import (
 )
 
 func TestScopesJSONUnmarshaling(t *testing.T) {
-	claims := &claims{}
+	claims := &Claims{}
 	require.NoError(t, json.Unmarshal([]byte(`{"scope": "one two three"}`), claims))
 	require.Contains(t, claims.Scopes, "one")
 	require.Contains(t, claims.Scopes, "two")
