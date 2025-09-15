@@ -4,12 +4,7 @@ set -e
 
 SCRIPT_NAME="$(basename "$0")"
 
-DEST_PATHS=(
-"../../../deploy/infrastructure/dependencies/terraform-commons-dss"
-"../../../deploy/services/helm-charts/dss"
-"../../../deploy/services/tanka"
-"../../../pkg"
-)
+source dest_paths.var 
 
 for DEST in "${DEST_PATHS[@]}"; do
     DEST_PATH="$DEST/db_versions"
@@ -18,9 +13,8 @@ for DEST in "${DEST_PATHS[@]}"; do
 
     mkdir -p "$DEST_PATH"
 
-    cp -r . "$DEST_PATH/"
-
-    rm -f "$DEST_PATH/$SCRIPT_NAME"
+    cp -r crdb "$DEST_PATH/"
+    cp -r yugabyte "$DEST_PATH/"
 
     echo "Cloned to $DEST_PATH successfully."
 done 

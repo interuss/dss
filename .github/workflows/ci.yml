@@ -31,6 +31,8 @@ jobs:
       run: make go-lint
     - name: Terraform lint
       run: make terraform-lint
+    - name: DB Version check 
+      run: make dbversion-check  
 
   dss-tests:
     name: DSS tests

@@ -1,0 +1,6 @@
+DEST_PATHS=(
+"../../../deploy/infrastructure/dependencies/terraform-commons-dss"
+"../../../deploy/services/helm-charts/dss"
+"../../../deploy/services/tanka"
+"../../../pkg"
+)
