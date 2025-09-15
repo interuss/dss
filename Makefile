@@ -68,7 +68,7 @@ terraform-lint:
 
 .PHONY: dbversion-check
 dbversion-check:
-	./build/db_schemas/version/check.sh
+	shellcheck -x ./build/db_schemas/version/check.sh
 
 # This mirrors the hygiene-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: hygiene-tests
