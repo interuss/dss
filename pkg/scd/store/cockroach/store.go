@@ -71,7 +71,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, v)
 	}
 
-	v, err = dbversions.GetCurrentMajorYugabytechemaVersion(dbversions.Scd)
+	v, err = dbversions.GetCurrentMajorYugabyteSchemaVersion(dbversions.Scd)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
 	}

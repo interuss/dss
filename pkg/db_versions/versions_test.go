@@ -13,5 +13,8 @@ func TestVersionIsParsed(t *testing.T) {
 	for _, tp := range types {
 		_, err := GetCurrentMajorCRDBSchemaVersion(tp)
 		require.NoError(t, err)
+
+		_, err = GetCurrentMajorYugabyteSchemaVersion(tp)
+		require.NoError(t, err)
 	}
 }

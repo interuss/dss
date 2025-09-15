@@ -102,7 +102,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
 	}
 
-	v, err = dbversions.GetCurrentMajorYugabytechemaVersion(dbversions.Rid)
+	v, err = dbversions.GetCurrentMajorYugabyteSchemaVersion(dbversions.Rid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
 	}
