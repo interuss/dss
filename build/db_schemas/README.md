@@ -16,10 +16,10 @@ When a new database version is created, schema_versions.schema_version should be
 in both .sql files in the appropriate folder in db_schemas. 
 
 In addition, the corresponding version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version)
-should be updated. Finally, run the `clone.sh` script located in that same folder in order to 
+should be updated. Finally, run the [`clone.sh`](https://github.com/interuss/dss/blob/master/build/db_schemas/version/clone.sh) script located in that same folder in order to 
 update the version files in the rest of the repo. 
 
-New folders where db versions are needed should be added to the `clone.sh` script to remain up to date. 
+New folders where db versions are needed should be added to the [`dest_paths.var`](https://github.com/interuss/dss/blob/master/build/db_schemas/version/dest_paths.var) file to remain up to date. 
 
 ## Yugabyte schema versions
 
