@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	Aux = iota
-	Rid
-	Scd
+	Aux = "aux"
+	Rid = "rid"
+	Scd = "scd"
 )
 
-func GetCurrentMajorCRDBSchemaVersion(dbType int) (int64, error) {
-	return getCurrentMajorSchemaVersion("crdb/" + strconv.Itoa(dbType) + ".version")
+func GetCurrentMajorCRDBSchemaVersion(dbType string) (int64, error) {
+	return getCurrentMajorSchemaVersion("crdb/" + dbType + ".version")
 }
 
-func GetCurrentMajorYugabytechemaVersion(dbType int) (int64, error) {
-	return getCurrentMajorSchemaVersion("yugabyte/" + strconv.Itoa(dbType) + ".version")
+func GetCurrentMajorYugabytechemaVersion(dbType string) (int64, error) {
+	return getCurrentMajorSchemaVersion("yugabyte/" + dbType + ".version")
 }
 
 func getCurrentMajorSchemaVersion(file string) (int64, error) {
