@@ -7,15 +7,15 @@ local metadataBase = import '../metadata_base.libsonnet';
 // dss/build/README.md for more information.
 
 // Crdb versions 
-local rid_db_version = importstr "../../version/crdb/rid.version";
-local scd_db_version = importstr "../../version/crdb/scd.version";
-local aux_db_version = importstr "../../version/crdb/aux.version";
+local rid_db_version = importstr "../../db_versions/crdb/rid.version";
+local scd_db_version = importstr "../../db_versions/crdb/scd.version";
+local aux_db_version = importstr "../../db_versions/crdb/aux.version";
 
 /**
 * Uncomment to use yugabyte
-local rid_db_version = importstr "../../version/yugabyte/rid.version";
-local scd_db_version = importstr "../../version/yugabyte/scd.version";
-local aux_db_version = importstr "../../version/yugabyte/aux.version";
+local rid_db_version = importstr "../../db_versions/yugabyte/rid.version";
+local scd_db_version = importstr "../../db_versions/yugabyte/scd.version";
+local aux_db_version = importstr "../../db_versions/yugabyte/aux.version";
 **/
 
 local metadata = metadataBase {

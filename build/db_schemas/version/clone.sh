@@ -2,8 +2,7 @@
 
 set -e 
 
-SCRIPT_NAME="$(basename "$0")"
-
+# shellcheck source=dest_paths.var
 source dest_paths.var 
 
 for DEST in "${DEST_PATHS[@]}"; do
