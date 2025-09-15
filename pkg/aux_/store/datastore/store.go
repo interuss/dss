@@ -24,10 +24,10 @@ import (
 
 const (
 	// File where the current Crdb schema version is stored.
-	currentCrdbSchemaVersionFile = "../../../../build/db_schemas/version/crdb/scd.version"
+	currentCrdbSchemaVersionFile = "../../../db_versions/crdb/scd.version"
 
 	// File where the current Yugabyte schema version is stored.
-	currentYugabyteSchemaVersionFile = "../../../../build/db_schemas/version/yugabyte/scd.version"
+	currentYugabyteSchemaVersionFile = "../../../db_versions/yugabyte/scd.version"
 )
 
 var (

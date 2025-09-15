@@ -4,12 +4,23 @@ set -e
 
 SCRIPT_NAME="$(basename "$0")"
 
-DEST_PATH="../../../deploy/services/helm-charts/dss/version"
+DEST_PATHS=(
+"../../../deploy/infrastructure/dependencies/terraform-commons-dss"
+"../../../deploy/services/helm-charts/dss"
+"../../../deploy/services/tanka"
+"../../../pkg"
+)
 
-mkdir -p "$DEST_PATH"
+for DEST in "${DEST_PATHS[@]}"; do
+    DEST_PATH="$DEST/db_versions"
 
-cp -r . "$DEST_PATH/"
+    echo "Cloning to $DEST_PATH."
 
-rm -f "$DEST_PATH/$SCRIPT_NAME"
+    mkdir -p "$DEST_PATH"
 
-echo "Cloned version folder to $DEST_PATH successfully."
+    cp -r . "$DEST_PATH/"
+
+    rm -f "$DEST_PATH/$SCRIPT_NAME"
+
+    echo "Cloned to $DEST_PATH successfully."
+done 

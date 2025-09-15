@@ -4,17 +4,17 @@
 {{- $datastoreUser :=  (include "datastoreUser" .) -}}
 {{- $jobVersion := .Release.Revision -}} {{/* Jobs template definition is immutable, using the revision in the name forces the job to be recreated at each helm upgrade. */}}
 
-{{- $rid_crdb := .Files.Get "version/crdb/rid.version" | quote }}
-{{- $scd_crdb := .Files.Get "version/crdb/scd.version" | quote }}
-{{- $aux_crdb := .Files.Get "version/crdb/aux.version" | quote }}
+{{- $rid_crdb := .Files.Get "db_versions/crdb/rid.version" | quote }}
+{{- $scd_crdb := .Files.Get "db_versions/crdb/scd.version" | quote }}
+{{- $aux_crdb := .Files.Get "db_versions/crdb/aux.version" | quote }}
 
 {{- $waitForDatastore := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $datastoreHost)) -}}
 {{- $schemas := dict "rid" $rid_crdb "scd" $scd_crdb "aux_" $aux_crdb }}
 
 {{- if .Values.yugabyte.enabled }}
-{{- $rid_yugabyte := .Files.Get "version/yugabyte/rid.version" | quote }}
-{{- $scd_yugabyte := .Files.Get "version/yugabyte/scd.version" | quote }}
-{{- $aux_yugabyte := .Files.Get "version/yugabyte/aux.version" | quote }}
+{{- $rid_yugabyte := .Files.Get "db_versions/yugabyte/rid.version" | quote }}
+{{- $scd_yugabyte := .Files.Get "db_versions/yugabyte/scd.version" | quote }}
+{{- $aux_yugabyte := .Files.Get "db_versions/yugabyte/aux.version" | quote }}
 {{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
 {{- $schemas = dict "rid" $rid_yugabyte "scd" $scd_yugabyte "aux_" $aux_yugabyte }}
 {{- end -}}
