@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	dbversions "github.com/interuss/dss/pkg/db_versions"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
@@ -23,12 +24,6 @@ import (
 )
 
 const (
-	// File where the current Crdb schema version is stored.
-	currentCrdbSchemaVersionFile = "../../../db_versions/crdb/scd.version"
-
-	// File where the current Yugabyte schema version is stored.
-	currentYugabyteSchemaVersionFile = "../../../db_versions/yugabyte/scd.version"
-
 	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 	expiredDurationInMin = 30
 )
@@ -98,7 +93,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Remote ID database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas")
 	}
 
-	v, err := getCurrentMajorSchemaVersion(currentCrdbSchemaVersionFile)
+	v, err := dbversions.GetCurrentMajorCRDBSchemaVersion(dbversions.Rid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Crdb schema version")
 	}
@@ -107,7 +102,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Unsupported schema version for remote ID! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", vs, v)
 	}
 
-	v, err = getCurrentMajorSchemaVersion(currentYugabyteSchemaVersionFile)
+	v, err = dbversions.GetCurrentMajorYugabytechemaVersion(dbversions.Rid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
 	}

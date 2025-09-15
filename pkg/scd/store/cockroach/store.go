@@ -2,28 +2,18 @@ package cockroach
 
 import (
 	"context"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	dbversions "github.com/interuss/dss/pkg/db_versions"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jonboulle/clockwork"
-)
-
-const (
-	// File where the current Crdb schema version is stored.
-	currentCrdbSchemaVersionFile = "../../../db_versions/crdb/scd.version"
-
-	// File where the current Yugabyte schema version is stored.
-	currentYugabyteSchemaVersionFile = "../../../db_versions/yugabyte/scd.version"
 )
 
 var (
@@ -72,7 +62,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	v, err := getCurrentMajorSchemaVersion(currentCrdbSchemaVersionFile)
+	v, err := dbversions.GetCurrentMajorCRDBSchemaVersion(dbversions.Scd)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Crdb schema version")
 	}
@@ -81,7 +71,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, v)
 	}
 
-	v, err = getCurrentMajorSchemaVersion(currentYugabyteSchemaVersionFile)
+	v, err = dbversions.GetCurrentMajorYugabytechemaVersion(dbversions.Scd)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get current Yugabyte schema version")
 	}
@@ -93,6 +83,7 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 	return nil
 }
 
+/**
 func getCurrentMajorSchemaVersion(file string) (int64, error) {
 	buf, err := os.ReadFile(file)
 	if err != nil {
@@ -105,7 +96,7 @@ func getCurrentMajorSchemaVersion(file string) (int64, error) {
 	}
 
 	return int64(v), nil
-}
+}*/
 
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
