@@ -12,6 +12,9 @@ for DEST in "${DEST_PATHS[@]}"; do
 
     mkdir -p "$DEST_PATH"
 
+    rm -r "$DEST_PATH/crdb"
+    rm -r "$DEST_PATH/yugabyte"
+
     cp -r crdb "$DEST_PATH/"
     cp -r yugabyte "$DEST_PATH/"
 

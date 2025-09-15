@@ -1,7 +1,7 @@
 locals {
   rid_crdb_file_version = file("db_versions/crdb/rid.version")
   scd_crdb_file_version = file("db_versions/crdb/scd.version")
-  aux_crdb_file_version = file("db_versions/crdb/aux.version")
+  aux_crdb_file_version = file("db_versions/crdb/aux_.version")
 
   rid_yugabyte_file_version = file("db_versions/yugabyte/rid.version")
   scd_yugabyte_file_version = file("db_versions/yugabyte/scd.version")

@@ -9,13 +9,13 @@ local metadataBase = import '../metadata_base.libsonnet';
 // Crdb versions 
 local rid_db_version = importstr "../../db_versions/crdb/rid.version";
 local scd_db_version = importstr "../../db_versions/crdb/scd.version";
-local aux_db_version = importstr "../../db_versions/crdb/aux.version";
+local aux_db_version = importstr "../../db_versions/crdb/aux_.version";
 
 /**
 * Uncomment to use yugabyte
 local rid_db_version = importstr "../../db_versions/yugabyte/rid.version";
 local scd_db_version = importstr "../../db_versions/yugabyte/scd.version";
-local aux_db_version = importstr "../../db_versions/yugabyte/aux.version";
+local aux_db_version = importstr "../../db_versions/yugabyte/aux_.version";
 **/
 
 local metadata = metadataBase {
