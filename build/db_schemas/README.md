@@ -17,7 +17,9 @@ in both .sql files in the appropriate folder in db_schemas.
 
 In addition, the corresponding version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version)
 should be updated. Finally, run the `clone.sh` script located in that same folder in order to 
-update the version files in [/deploy/services/helm-charts/dss/version](https://github.com/interuss/dss/tree/master/deploy/services/helm-charts/dss/version). 
+update the version files in the rest of the repo. 
+
+New folders where db versions are needed should be added to the `clone.sh` script to remain up to date. 
 
 ## Yugabyte schema versions
 
