@@ -23,9 +23,6 @@ const (
 	// The current major schema version per datastore type.
 	currentCrdbMajorSchemaVersion     = 4
 	currentYugabyteMajorSchemaVersion = 1
-
-	//  Records expire if current time is <ExpiredDurationInMin> minutes more than records' endTime.
-	ExpiredDurationInMin = 30
 )
 
 var (

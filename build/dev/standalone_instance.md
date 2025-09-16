@@ -4,7 +4,7 @@ _Note that all deployment strategies below require the use of [Docker](https://d
 
 ## Architecture
 
-![Architecture diagram for running local processes](../../assets/generated/run_locally_architecture.png)
+![Architecture diagram for running local processes](../../docs/assets/generated/run_locally_architecture.png)
 
 When the simple standalone deployment below is used, it will construct a DSS
 sandbox environment consisting of:
@@ -70,13 +70,13 @@ as an example:
 
 - Click `Edit Configuration` in the dropdown list right next to the 'bug' icon.
 
-    ![Add_remote_configuration_1](../../assets/debug/debug_add_remote_1.png)
+    ![Add_remote_configuration_1](../../docs/assets/debug/debug_add_remote_1.png)
 - Add a new `Go Remote` configuration.
 
-    ![Add_remote_configuration_2](../../assets/debug/debug_add_remote_2.png)
+    ![Add_remote_configuration_2](../../docs/assets/debug/debug_add_remote_2.png)
 - Set the Host as `localhost` and Port as `4000`, click `OK`.
 
-    ![Add_remote_configuration_3](../../assets/debug/debug_add_remote_3.png)
+    ![Add_remote_configuration_3](../../docs/assets/debug/debug_add_remote_3.png)
 
 **Enjoy!**
 
@@ -85,11 +85,11 @@ to debug any request sent to the local DSS endpoints hosted at `localhost:8082`.
 
 - Drop breakpoints and diagnose in real time
 
-    ![Debug_result_1](../../assets/debug/debug_result_1.png)
+    ![Debug_result_1](../../docs/assets/debug/debug_result_1.png)
 
 - Access variables
 
-    ![Debug_result_2](../../assets/debug/debug_result_2.png)
+    ![Debug_result_2](../../docs/assets/debug/debug_result_2.png)
 ## Advanced
 
 [`run_locally.sh`](run_locally.sh) is a thin wrapper around a `docker compose`

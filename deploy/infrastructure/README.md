@@ -17,7 +17,7 @@ used directly by users. Those submodules are the combination of the cloud specif
 and `terraform-common-dss`. `terraform-common-dss` module aggregates and outputs the infrastructure configuration
 which can be used as input to the `Services` deployment as shown in the diagram below.
 
-![Infrastructure Modules](../../assets/generated/deploy_infrastructure_modules.png)
+![Infrastructure Modules](../../docs/assets/generated/deploy_infrastructure_modules.png)
 
 ## Local
 

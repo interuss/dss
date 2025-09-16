@@ -34,14 +34,15 @@ Usage:
   db-manager evict [flags]
 
 Flags:
-      --delete            set this flag to true to delete the expired entities
-  -h, --help              help for evict
-      --locality string   self-identification string of this DSS instance
-      --rid_isa           set this flag to true to check for expired RID ISAs (default true)
-      --rid_sub           set this flag to true to check for expired RID subscriptions (default true)
-      --scd_oir           set this flag to true to check for expired SCD operational intents (default true)
-      --scd_sub           set this flag to true to check for expired SCD subscriptions (default true)
-      --ttl duration      time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
+      --delete             set this flag to true to delete the expired entities
+  -h, --help               help for evict
+      --locality string    self-identification string of this DSS instance
+      --rid_isa            set this flag to true to check for expired RID ISAs (default true)
+      --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
+      --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes which should be a safe value in most cases (default 30m0s)
+      --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
+      --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
+      --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
 
 Global Flags:
       --cockroach_application_name string   application name for tagging the connection to cockroach (default "dss")
@@ -60,8 +61,7 @@ Global Flags:
 Do note:
 - by default expired entities are only listed, not deleted, the flag `--delete` is required for deleting entities;
 - expiration of entities is preferably determined through their end times, however when they do not have end times, the last update times are used;
-- the flag `--ttl` accepts durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`;
-- the flag `--ttl` is only used for SCD entities. RID entities will use an 30 minutes interval;
+- the flag `--rid_ttl` and `--scd_ttl` accepts durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`;
 - the CockroachDB cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
 
 ### Examples
@@ -70,17 +70,17 @@ The following examples assume a running DSS deployed locally through [the `run_l
 #### List all entities older than 1 week
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --ttl=168h
+ --cockroach_host=local-dss-crdb --scd_ttl=168h --rid_ttl=168h
 ```
 
 #### List operational intents older than 1 week
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --ttl=168h --scd_oir=true --scd_sub=false
+ --cockroach_host=local-dss-crdb --scd_ttl=168h --scd_oir=true --scd_sub=false
 ```
 
 #### Delete all entities older than 30 days
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --ttl=720h --delete
+ --cockroach_host=local-dss-crdb --scd_ttl=720h  --rid_ttl=720h --delete
 ```

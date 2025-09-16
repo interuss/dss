@@ -32,7 +32,8 @@ var (
 	checkScdSubs  = flags.Bool("scd_sub", true, "set this flag to true to check for expired SCD subscriptions")
 	checkRidISAs  = flags.Bool("rid_isa", true, "set this flag to true to check for expired RID ISAs")
 	checkRidSubs  = flags.Bool("rid_sub", true, "set this flag to true to check for expired RID subscriptions")
-	ttl           = flags.Duration("ttl", time.Hour*24*112, "time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases")
+	scdTtl        = flags.Duration("scd_ttl", time.Hour*24*112, "time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases")
+	ridTtl        = flags.Duration("rid_ttl", time.Minute*30, "time-to-live duration used for determining RID entries expiration, defaults to 30 minutes which should be a safe value in most cases")
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
 )
@@ -43,8 +44,9 @@ func init() {
 
 func evict(cmd *cobra.Command, _ []string) error {
 	var (
-		ctx       = cmd.Context()
-		threshold = time.Now().Add(-*ttl)
+		ctx          = cmd.Context()
+		scdThreshold = time.Now().Add(-*scdTtl)
+		ridThreshold = time.Now().Add(-*ridTtl)
 	)
 	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
 
@@ -66,7 +68,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 	)
 	scdAction := func(ctx context.Context, r scdrepos.Repository) (err error) {
 		if *checkScdOirs {
-			expiredOpIntents, err = r.ListExpiredOperationalIntents(ctx, threshold)
+			expiredOpIntents, err = r.ListExpiredOperationalIntents(ctx, scdThreshold)
 			if err != nil {
 				return fmt.Errorf("listing expired operational intents: %w", err)
 			}
@@ -80,7 +82,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		}
 
 		if *checkScdSubs {
-			scdExpiredSub, err = r.ListExpiredSubscriptions(ctx, threshold)
+			scdExpiredSub, err = r.ListExpiredSubscriptions(ctx, scdThreshold)
 			if err != nil {
 				return fmt.Errorf("SCD listing expired subscriptions: %w", err)
 			}
@@ -101,7 +103,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 	ridAction := func(r ridrepos.Repository) (err error) {
 		if *checkRidISAs {
 
-			expiredISAs, err = r.ListExpiredISAs(ctx, *locality)
+			expiredISAs, err = r.ListExpiredISAs(ctx, *locality, ridThreshold)
 			if err != nil {
 				return stacktrace.Propagate(err, "Failed to list expired ISAs")
 			}
@@ -119,7 +121,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 		if *checkRidSubs {
 
-			ridExpiredSub, err = r.ListExpiredSubscriptions(ctx, *locality)
+			ridExpiredSub, err = r.ListExpiredSubscriptions(ctx, *locality, ridThreshold)
 			if err != nil {
 				return stacktrace.Propagate(err,
 					"Failed to list RID expired Subscriptions")
@@ -144,19 +146,19 @@ func evict(cmd *cobra.Command, _ []string) error {
 	}
 
 	for _, opIntent := range expiredOpIntents {
-		logExpiredEntity("operational intent", opIntent.ID, threshold, *deleteExpired, opIntent.EndTime != nil)
+		logExpiredEntity("operational intent", opIntent.ID, scdThreshold, *deleteExpired, opIntent.EndTime != nil)
 	}
 	for _, sub := range scdExpiredSub {
-		logExpiredEntity("SCD subscription", sub.ID, threshold, *deleteExpired, sub.EndTime != nil)
+		logExpiredEntity("SCD subscription", sub.ID, scdThreshold, *deleteExpired, sub.EndTime != nil)
 	}
 	for _, isa := range expiredISAs {
-		logExpiredEntity("ISA", isa.ID, time.Now().Add(-time.Duration(ridc.ExpiredDurationInMin)*time.Minute), *deleteExpired, isa.EndTime != nil)
+		logExpiredEntity("ISA", isa.ID, ridThreshold, *deleteExpired, isa.EndTime != nil)
 	}
 	for _, sub := range ridExpiredSub {
-		logExpiredEntity("RID subscription", sub.ID, time.Now().Add(-time.Duration(ridc.ExpiredDurationInMin)*time.Minute), *deleteExpired, sub.EndTime != nil)
+		logExpiredEntity("RID subscription", sub.ID, ridThreshold, *deleteExpired, sub.EndTime != nil)
 	}
 	if len(expiredOpIntents) == 0 && len(scdExpiredSub) == 0 && len(expiredISAs) == 0 && len(ridExpiredSub) == 0 {
-		log.Printf("no entity older than %s found", threshold.String())
+		log.Printf("no SCD entity older than %s and no RID entity older than %s found", scdThreshold.String(), ridThreshold.String())
 	} else if !*deleteExpired {
 		log.Printf("no entity was deleted, run the command again with the `--delete` flag to do so")
 	}

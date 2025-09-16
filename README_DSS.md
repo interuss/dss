@@ -6,7 +6,7 @@ Conceptual background on the DSS and services it supports may be found [here](./
 ## Simplified architecture
 
 ### Overview
-![Simplified architecture diagram](./assets/generated/simple_architecture.png)
+![Simplified architecture diagram](./docs/assets/generated/simple_architecture.png)
 
 A "DSS Region" consists of one or more DSS instances sharing the same
 DSS Airspace Representation (DAR) by forming a single CockroachDB

@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -39,5 +40,5 @@ type Subscription interface {
 	MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error)
 
 	// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
-	ListExpiredSubscriptions(ctx context.Context, writer string) ([]*ridmodels.Subscription, error)
+	ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error)
 }
