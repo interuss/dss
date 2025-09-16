@@ -2,7 +2,7 @@
 
 set -e 
 
-# shellcheck source=dest_paths.var
+# shellcheck source=./build/db_schemas/version/dest_paths.var
 source dest_paths.var 
 
 for DEST in "${DEST_PATHS[@]}"; do

@@ -2,6 +2,7 @@
 
 set -e
 
+# shellcheck source=./build/db_schemas/version/dest_paths.var
 source dest_paths.var
 
 # Function to compare directories
