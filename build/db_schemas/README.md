@@ -9,18 +9,17 @@ and named according to what the changes do.  schema_versions.schema_version
 should be updated as the last step of each transition; see existing .sql files
 for examples.
 
-The two new .sql files must be added to scd.libsonnet or rid.libsonnet
-(for remote ID) in this folder.
+The two new .sql files must be added to scd.libsonnet, rid.libsonnet
+(for remote ID) or aux_lisbonnet in this folder.
 
-When a new database version is created, it needs to be targeted in a number of
-places:
-* Both .sql files in the appropriate folder in db_schemas when setting
-  schema_versions.schema_version
-* [DSS main.jsonnet](../../deploy/services/tanka/examples/minimum/main.jsonnet)
-* [Schema manager main.jsonnet](../../deploy/services/tanka/examples/schema_manager/main.jsonnet)
-* /pkg/{rid|scd}/store/cockroach/store.go
-* /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
-* /deploy/services/helm-charts/dss/templates/schema-manager.yaml
+When a new database version is created, schema_versions.schema_version should be set 
+in both .sql files in the appropriate folder in db_schemas. 
+
+In addition, the corresponding version file in [build/db_schemas/version](https://github.com/interuss/dss/blob/master/build/db_schemas/version)
+should be updated. Finally, run the [`clone.sh`](https://github.com/interuss/dss/blob/master/build/db_schemas/version/clone.sh) script located in that same folder in order to 
+update the version files in the rest of the repo. 
+
+New folders where db versions are needed should be added to the [`dest_paths.var`](https://github.com/interuss/dss/blob/master/build/db_schemas/version/dest_paths.var) file to remain up to date. 
 
 ## Yugabyte schema versions
 
