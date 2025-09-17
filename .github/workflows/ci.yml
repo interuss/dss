@@ -65,6 +65,8 @@ jobs:
       run: make probe-locally
     - name: Run Qualifier against local DSS instance
       run: make qualify-locally
+    - name: Run evict tests against local DSS instance
+      run: make evict-locally
     - name: Bring down local DSS instance
       run: make down-locally
     - name: Collect coverage data
@@ -105,5 +107,7 @@ jobs:
         run: make probe-locally
       - name: Run Qualifier against local DSS instance
         run: make qualify-locally
+      - name: Run evict tests against local DSS instance
+        run: make evict-locally
       - name: Bring down local DSS instance
         run: make down-locally

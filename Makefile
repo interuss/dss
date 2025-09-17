@@ -135,7 +135,7 @@ cleanup-test-go-units-crdb:
 build-dss:
 	build/dev/run_locally.sh build
 
-test-e2e: down-locally build-dss start-locally probe-locally collect-local-logs down-locally
+test-e2e: down-locally build-dss start-locally probe-locally evict-locally collect-local-logs down-locally
 
 tag:
 	scripts/tag.sh $(UPSTREAM_OWNER)/dss/v$(VERSION)
@@ -151,6 +151,10 @@ start-locally:
 .PHONY: probe-locally
 probe-locally:
 	build/dev/probe_locally.sh
+
+.PHONY: evict-locally
+evict-locally:
+	build/dev/evict_locally.sh
 
 .PHONY: qualify-locally
 qualify-locally:
