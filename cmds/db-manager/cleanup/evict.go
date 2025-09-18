@@ -32,7 +32,7 @@ var (
 	checkScdSubs  = flags.Bool("scd_sub", true, "set this flag to true to check for expired SCD subscriptions")
 	checkRidISAs  = flags.Bool("rid_isa", true, "set this flag to true to check for expired RID ISAs")
 	checkRidSubs  = flags.Bool("rid_sub", true, "set this flag to true to check for expired RID subscriptions")
-	scdTtl        = flags.Duration("scd_ttl", time.Hour*24*112, "time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases")
+	scdTtl        = flags.Duration("scd_ttl", time.Hour*24*112, "time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days")
 	ridTtl        = flags.Duration("rid_ttl", time.Minute*30, "time-to-live duration used for determining RID entries expiration, defaults to 30 minutes which should be a safe value in most cases")
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
