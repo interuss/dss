@@ -191,20 +191,20 @@ type CtxAuthValue struct {
 
 // Authorize extracts and verifies bearer tokens from a http.Request.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
-	v := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
-	if v.Error != nil {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(v.Error, dsserr.Unauthenticated, "Invalid access token")}
+	authResults := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
+	if authResults.Error != nil {
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(authResults.Error, dsserr.Unauthenticated, "Invalid access token")}
 	}
 
-	if pass, missing := validateScopes(authOptions, v.Claims.Scopes); !pass {
+	if pass, missing := validateScopes(authOptions, authResults.Claims.Scopes); !pass {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 			"Access token missing scopes (%v) while expecting %v and got %v",
-			missing, describeAuthorizationExpectations(authOptions), strings.Join(v.Claims.Scopes.ToStringSlice(), ", "))}
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(authResults.Claims.Scopes.ToStringSlice(), ", "))}
 	}
 
 	return api.AuthorizationResult{
-		ClientID: &v.Claims.Subject,
-		Scopes:   v.Claims.Scopes.ToStringSlice(),
+		ClientID: &authResults.Claims.Subject,
+		Scopes:   authResults.Claims.Scopes.ToStringSlice(),
 	}
 }
 

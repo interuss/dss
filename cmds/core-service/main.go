@@ -307,12 +307,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
-	handler := logging.HTTPMiddleware(logger, *dumpRequests,
-		healthyEndpointMiddleware(logger,
-			&multiRouter,
-		))
-
-	handler = authDecoderMiddleware(authorizer, handler)
+	// the middlewares are wrapped and, therefore, executed in the opposite order
+	handler := healthyEndpointMiddleware(logger, &multiRouter)
+	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
+	handler = authMiddleware(authorizer, handler)
 
 	httpServer := &http.Server{
 		Addr:              address,
@@ -374,8 +372,8 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 	})
 }
 
-// authDecoderMiddleware decodes the authentication token and adds the Subject claim to the context.
-func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
+// authMiddleware decodes the authentication token and passes the claims to the context.
+func authMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ctx context.Context
 		claims, err := authorizer.ExtractClaims(r)
@@ -392,13 +390,13 @@ func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) ht
 
 		var errMsg string
 		if err != nil {
+			//remove the stacktrace using the formatting specifier "%#s"
 			errMsg = fmt.Sprintf("%#s", err)
 		}
 
 		ctx = context.WithValue(ctx, logging.CtxAuthKey{}, logging.CtxAuthValue{
 			Subject: claims.Subject,
-			//remove the stacktrace using the formatting specifier "%#s"
-			ErrMsg: errMsg,
+			ErrMsg:  errMsg,
 		})
 
 		handler.ServeHTTP(w, r.WithContext(ctx))
