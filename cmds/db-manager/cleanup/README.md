@@ -39,7 +39,7 @@ Flags:
       --locality string    self-identification string of this DSS instance
       --rid_isa            set this flag to true to check for expired RID ISAs (default true)
       --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
-      --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes which should be a safe value in most cases (default 30m0s)
+      --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
       --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
       --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
       --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
