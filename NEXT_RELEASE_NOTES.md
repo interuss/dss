@@ -17,13 +17,13 @@ The release notes should contain at least the following sections:
 
 #### Mandatory migration tasks
 
-* This version requires a database schema update. The migration is backward compatible with DSS `vX.Y.Z`. 
+* This version requires a database schema update. The migration is backward compatible with DSS `vX.Y.Z`.
   * For Tanka, in main.jsonnet, update desired_scd_db_version to `x.y.z`.
   * For Helm, upgrading a deployed chart with this new version will automatically migrate the version of the schema to `x.y.z`.
 
 #### Optional migration tasks
 
-* [terraform] cockroachdb.image.tag key with the image tag value v21.2.7 should be added to user's values.yaml files since default will be removed 
+* [terraform] cockroachdb.image.tag key with the image tag value v21.2.7 should be added to user's values.yaml files since default will be removed
   in a future release.
 
 #### Important information
@@ -43,6 +43,12 @@ The release notes should contain at least the following sections:
 # Release Notes for v0.21.0
 
 ## Mandatory migration tasks
+
+* The RID cronjob has been moved to an external command, see [#1261](https://github.com/interuss/dss/pull/1261)
+    * If you want to continue to cleanup old entries regularly, run the [evict command](cmds/db-manager/cleanup/README.md) as needed:
+        * Running the following command each 30 minutes will be equivalent to the previous situation
+        * `db-manager evict --rid_isa=True --rid_sub=True --rid_ttl=30m --scd_oir=False --scd_sub=False`
+    * Helm charts, tanka files and terraform files will be updated in future PRs (and theses notes as well)
 
 ## Optional migration tasks
 
