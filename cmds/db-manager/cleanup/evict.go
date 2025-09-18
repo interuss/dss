@@ -173,7 +173,7 @@ func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 	if err != nil {
 		logParams := connectParameters
 		logParams.Credentials.Password = "[REDACTED]"
-		return nil, fmt.Errorf("failed to connect to strategic conflict detection database with %+v: %w", logParams, err)
+		return nil, fmt.Errorf("failed to connect to SCD database with %+v: %w", logParams, err)
 	}
 
 	scdStore, err := scdc.NewStore(ctx, scdCrdb)
