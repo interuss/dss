@@ -3,8 +3,6 @@
 
 # To bring up this system, see standalone_instance.md.
 
-version: '3.8'
-
 services:
 
   local-dss-crdb:
