@@ -75,11 +75,11 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		v := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
-		if v.ErrMsg != "" {
-			logger = logger.With(zap.String("resp_sub_err", v.ErrMsg))
+		authResults := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
+		if authResults.ErrMsg != "" {
+			logger = logger.With(zap.String("resp_sub_err", authResults.ErrMsg))
 		} else {
-			logger = logger.With(zap.String("req_sub", v.Subject))
+			logger = logger.With(zap.String("req_sub", authResults.Subject))
 		}
 
 		handler.ServeHTTP(trw, r)
