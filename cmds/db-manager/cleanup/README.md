@@ -42,7 +42,7 @@ Flags:
       --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
       --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
       --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
-      --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days which should be a safe value in most cases (default 2688h0m0s)
+      --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
 
 Global Flags:
       --cockroach_application_name string   application name for tagging the connection to cockroach (default "dss")
