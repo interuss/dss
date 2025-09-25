@@ -1,4 +1,22 @@
 # Default configuration
+
+dss:
+  conf:
+    evict:
+      scd:
+          enableCron: false
+          schedule: "0 2 * * *"
+          ttl: 112d
+          operationalIntents: true
+          subscriptions: true
+      rid:
+          enableCron: true
+          schedule: "*/30 * * * *"
+          ttl: 30m
+          ISAs: true
+          subscriptions: true
+
+
 cockroachdb:
   enabled: true
   # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
