@@ -64,6 +64,22 @@ local metadata = metadataBase {
   prometheus+: {
     storageClass: 'VAR_STORAGE_CLASS',
   },
+  evict+: {
+    scd+: {
+      enable_cron: false, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
+      schedule: "VAR_EVICT_SCD_SCHEDULE",
+      ttl: "VAR_EVICT_SCD_TTL",
+      operational_intents: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS
+      subscriptions: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS
+    },
+    rid+: {
+      enable_cron: true, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
+      schedule: "VAR_EVICT_RID_SCHEDULE",
+      ttl: "VAR_EVICT_RID_TTL",
+      ISAs: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_ISAS
+      subscriptions: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS
+    },
+  },
 //  image_pull_secret: 'VAR_DOCKER_IMAGE_PULL_SECRET'
 };
 

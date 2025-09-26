@@ -194,7 +194,7 @@ local util = import 'util.libsonnet';
     local uniqueName = name + '-' + hash,
 
     metadata+: {
-        name: uniqueName,
+      name: uniqueName,
       labels: {
         name: std.join('-', std.split(uniqueName, ':')),
       },
@@ -214,6 +214,15 @@ local util = import 'util.libsonnet';
       },
       completions: 1,
       parallelism: 1,
+    },
+  },
+
+  CronJob(metadata, name): $._Object('batch/v1', 'CronJob', metadata, name) {
+    metadata+: {
+      name: name,
+      labels: {
+        name: name,
+      },
     },
   },
 
