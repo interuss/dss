@@ -6,7 +6,7 @@ dss:
       scd:
           enableCron: false
           schedule: "0 2 * * *"
-          ttl: 112d
+          ttl: 2688h
           operationalIntents: true
           subscriptions: true
       rid:
