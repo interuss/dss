@@ -9,6 +9,7 @@ local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
 local base = import 'base.libsonnet';
 local schema_manager = import 'schema-manager.libsonnet';
+local evict = import 'evict.libsonnet';
 
 local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
   roleRef: {
@@ -46,5 +47,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     grafana: grafana.all(metadata),
     alertmanager: if metadata.alert.enable == true then alertmanager.all(metadata),
     schema_manager: if metadata.cockroach.shouldInit == true || metadata.schema_manager.enable then schema_manager.all(metadata) else {},
+    evict: evict.all(metadata),
   },
 }

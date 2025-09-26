@@ -90,6 +90,22 @@
     desired_scd_db_version: '3.2.0',
     desired_aux_db_version: '1.0.0',
   },
+  evict: {
+    scd: {
+      enable_cron: false,
+      schedule: "0 2 * * *",
+      ttl: "2688h",
+      operational_intents: true,
+      subscriptions: true,
+    },
+    rid: {
+      enable_cron: true,
+      schedule: "*/30 * * * *",
+      ttl: "30m",
+      ISAs: true,
+      subscriptions: true,
+    },
+  },
   image_pull_secret: '',
   subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
 }

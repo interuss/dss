@@ -41,6 +41,22 @@ local metadata = metadataBase {
     desired_scd_db_version: '1.0.1',
     desired_aux_db_version: '1.0.0',
   },
+  evict+: {
+    scd+: {
+      enable_cron: false,
+      schedule: "0 2 * * *",
+      ttl: "2688h",
+      operational_intents: true,
+      subscriptions: true,
+    },
+    rid+: {
+      enable_cron: true,
+      schedule: "*/30 * * * *",
+      ttl: "30m",
+      ISAs: true,
+      subscriptions: true,
+    },
+  },
 };
 
 dss.all(metadata)

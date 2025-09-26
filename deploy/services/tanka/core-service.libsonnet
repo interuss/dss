@@ -105,7 +105,6 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
               args_:: {
                 addr: ':' + metadata.backend.port,
                 gcp_prof_service_name: metadata.backend.prof_grpc_name,
-                garbage_collector_spec: '@every 30m',
                 public_key_files: std.join(",", metadata.backend.pubKeys),
                 jwks_endpoint: metadata.backend.jwksEndpoint,
                 jwks_key_ids: std.join(",", metadata.backend.jwksKeyIds),
