@@ -28,7 +28,7 @@ def test_rid_ISA(qh: QueryHelper, eh: EvictHelper):
         logger.error("❌ Unable to retrieve ISA after creation")
         sys.exit(1)
 
-    logger.debug("Evicting subcriptions older than 1s")
+    logger.debug("Evicting subscriptions older than 1s")
     eh.evict_rid_ISAs("1s", delete=True)
 
     logger.debug("Check that ISA still exists")
@@ -49,7 +49,7 @@ def test_rid_ISA(qh: QueryHelper, eh: EvictHelper):
         sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
-    eh.evict_rid_subcriptions("1s", delete=True)
+    eh.evict_rid_subscriptions("1s", delete=True)
 
     logger.debug("Check that ISA still exists")
     if not qh.get_rid_ISA(ISA_id):
