@@ -49,6 +49,7 @@ spec:
                 {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
           imagePullSecrets: []
           terminationGracePeriodSeconds: 30
+          restartPolicy: Never
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
@@ -99,6 +100,7 @@ spec:
                 {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
           imagePullSecrets: []
           terminationGracePeriodSeconds: 30
+          restartPolicy: Never
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
