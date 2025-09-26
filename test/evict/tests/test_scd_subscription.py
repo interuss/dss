@@ -29,7 +29,7 @@ def test_scd_subscription(qh: QueryHelper, eh: EvictHelper):
         sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
-    eh.evict_scd_subcriptions("1s", delete=True)
+    eh.evict_scd_subscriptions("1s", delete=True)
 
     logger.debug("Check that subscription still exists")
     if not qh.get_scd_subscription(sub_id):
@@ -41,7 +41,7 @@ def test_scd_subscription(qh: QueryHelper, eh: EvictHelper):
     time.sleep(3)
 
     logger.debug("Evicting subscriptions older than 1s in dry mode")
-    eh.evict_scd_subcriptions("1s", delete=False)
+    eh.evict_scd_subscriptions("1s", delete=False)
 
     logger.debug("Check that subscription still exists")
     if not qh.get_scd_subscription(sub_id):
@@ -61,7 +61,7 @@ def test_scd_subscription(qh: QueryHelper, eh: EvictHelper):
         sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
-    eh.evict_scd_subcriptions("1s", delete=True)
+    eh.evict_scd_subscriptions("1s", delete=True)
 
     logger.debug("Check that subscription has been deleted")
     if qh.get_scd_subscription(sub_id):

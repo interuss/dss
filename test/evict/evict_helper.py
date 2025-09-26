@@ -71,13 +71,13 @@ class EvictHelper:
     def evict_scd_operational_intents(self, ttl: str, delete: bool):
         self.run_evict(scd_oir=True, delete=delete, scd_ttl=ttl)
 
-    def evict_scd_subcriptions(self, ttl: str, delete: bool):
+    def evict_scd_subscriptions(self, ttl: str, delete: bool):
         self.run_evict(scd_sub=True, delete=delete, scd_ttl=ttl)
 
     def evict_rid_ISAs(self, ttl: str, delete: bool, locality: str = "local_dev"):
         self.run_evict(rid_isa=True, delete=delete, rid_ttl=ttl, locality=locality)
 
-    def evict_rid_subcriptions(
+    def evict_rid_subscriptions(
         self, ttl: str, delete: bool, locality: str = "local_dev"
     ):
         self.run_evict(rid_sub=True, delete=delete, rid_ttl=ttl, locality=locality)

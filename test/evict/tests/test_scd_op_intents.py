@@ -53,7 +53,7 @@ def test_scd_op_intents(qh: QueryHelper, eh: EvictHelper):
         sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
-    eh.evict_scd_subcriptions("1s", delete=True)
+    eh.evict_scd_subscriptions("1s", delete=True)
 
     logger.debug("Check that operation intent still exists")
     if not qh.get_scd_op_intent(op_intent_id):
