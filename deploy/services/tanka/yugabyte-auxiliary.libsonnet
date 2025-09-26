@@ -126,6 +126,68 @@ local yugabyteLB(metadata, name, ip) =
           for id in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
         }
       },
+      masters: base.Service(metadata, 'yb-masters') {
+        app:: 'yb-master',
+        spec+: {
+          ports: [
+            {
+              port: 7000,
+              name: 'http-ui',
+            },
+            {
+              port: 7100,
+              name: 'tcp-rpc-port',
+            },
+            {
+              port: 15433,
+              name: 'yugabyted-ui',
+            },
+          ],
+        },
+      },
+      tServers: base.Service(metadata, 'yb-tservers') {
+        app:: 'yb-tserver',
+        spec+: {
+          ports: [
+            {
+              port: 9000,
+              name: 'http-ui',
+            },
+            {
+              port: 12000,
+              name: 'http-ycql-met',
+            },
+            {
+              port: 11000,
+              name: 'http-yedis-met',
+            },
+            {
+              port: 13000,
+              name: 'http-ysql-met',
+            },
+            {
+              port: 9100,
+              name: 'tcp-rpc-port',
+            },
+            {
+              port: 6379,
+              name: 'tcp-yedis-port',
+            },
+            {
+              port: 9042,
+              name: 'tcp-yql-port',
+            },
+            {
+              port: 5433,
+              name: 'tcp-ysql-port',
+            },
+            {
+              port: 15433,
+              name: 'yugabyted-ui',
+            },
+          ],
+        },
+      },
       NodeGateways: {
         ["gateway-" + i]: yugabyteLB(metadata, 'ybdb-ext-' + i, metadata.yugabyte.masterNodeIPs[i]) {
           metadata+: {
