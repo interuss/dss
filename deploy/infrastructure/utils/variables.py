@@ -45,6 +45,16 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "yugabyte_zone",
     "yugabyte_light_resources",
     "yugabyte_external_nodes",
+    "evict_enable_scd_cron",
+    "evict_scd_schedule",
+    "evict_scd_ttl",
+    "evict_scd_operational_intents",
+    "evict_scd_subscriptions",
+    "evict_enable_rid_cron",
+    "evict_rid_schedule",
+    "evict_rid_ttl",
+    "evict_rid_isas",
+    "evict_rid_subscriptions",
 ]
 
 # dependencies/terraform-*-kubernetes

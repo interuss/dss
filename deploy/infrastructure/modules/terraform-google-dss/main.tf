@@ -44,6 +44,16 @@ module "terraform-commons-dss" {
   kubernetes_cloud_provider_name   = module.terraform-google-kubernetes.kubernetes_cloud_provider_name
   kubernetes_context_name          = module.terraform-google-kubernetes.kubernetes_context_name
   kubernetes_get_credentials_cmd   = module.terraform-google-kubernetes.kubernetes_get_credentials_cmd
+  evict_enable_scd_cron            = var.evict_enable_scd_cron
+  evict_scd_schedule               = var.evict_scd_schedule
+  evict_scd_ttl                    = var.evict_scd_ttl
+  evict_scd_operational_intents    = var.evict_scd_operational_intents
+  evict_scd_subscriptions          = var.evict_scd_subscriptions
+  evict_enable_rid_cron            = var.evict_enable_rid_cron
+  evict_rid_schedule               = var.evict_rid_schedule
+  evict_rid_ttl                    = var.evict_rid_ttl
+  evict_rid_isas                   = var.evict_rid_isas
+  evict_rid_subscriptions          = var.evict_rid_subscriptions
 
   source = "../../dependencies/terraform-commons-dss"
 }

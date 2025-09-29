@@ -303,5 +303,65 @@ Example: [&quot;0.db.dss.example.com&quot;, &quot;1.db.dss.example.com&quot;, &q
                 <td><p>Fully-qualified domain name of existing yugabyte master nodes outside of the cluster if you are joining an existing pool.
 Example: [&quot;0.master.db.dss.example.com&quot;, &quot;1.master.db.dss.example.com&quot;, &quot;2.master.db.dss.example.com&quot;]</p>
 </td>
+            </tr><tr>
+                <td>evict_enable_scd_cron</td>
+                <td><code>bool</code></td>
+                <td><code>false</code></td>
+                <td><p>Set this to true to enable the cron job that automatically cleanup expired SCD entries.</p>
+</td>
+            </tr><tr>
+                <td>evict_scd_schedule</td>
+                <td><code>string</code></td>
+                <td><code>"0 2 * * *"</code></td>
+                <td><p>When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).</p>
+</td>
+            </tr><tr>
+                <td>evict_scd_ttl</td>
+                <td><code>string</code></td>
+                <td><code>"2688h"</code></td>
+                <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
+</td>
+            </tr><tr>
+                <td>evict_scd_operational_intents</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this to true to enable cleanup of SCD operational intents.</p>
+</td>
+            </tr><tr>
+                <td>evict_scd_subscriptions</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this to true to enable cleanup of SCD subscriptions.</p>
+</td>
+            </tr><tr>
+                <td>evict_enable_rid_cron</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this to true to enable the cron job that automatically cleanup RID entries.</p>
+</td>
+            </tr><tr>
+                <td>evict_rid_schedule</td>
+                <td><code>string</code></td>
+                <td><code>"*/30 * * * *"</code></td>
+                <td><p>When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).</p>
+</td>
+            </tr><tr>
+                <td>evict_rid_ttl</td>
+                <td><code>string</code></td>
+                <td><code>"30m"</code></td>
+                <td><p>How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
+</td>
+            </tr><tr>
+                <td>evict_rid_isas</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this to true to enable cleanup of RID ISAs.</p>
+</td>
+            </tr><tr>
+                <td>evict_rid_subscriptions</td>
+                <td><code>bool</code></td>
+                <td><code>true</code></td>
+                <td><p>Set this to true to enable cleanup of RID subscriptions.</p>
+</td>
             </tr></tbody>
     </table>

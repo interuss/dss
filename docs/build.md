@@ -504,7 +504,7 @@ a PR to that effect would be greatly appreciated.
 
     1.  `VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS`: Set this to true to enable cleanup of SCD operational intents.
 
-    1.  `VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS`: Set this to true to enable cleanup of SCD subscriptions
+    1.  `VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS`: Set this to true to enable cleanup of SCD subscriptions.
 
     1.  `VAR_EVICT_ENABLE_RID_CRON`: Set this to true to enable the cron job that automatically cleanup RID entries.
 
