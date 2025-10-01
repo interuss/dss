@@ -64,6 +64,22 @@ local metadata = metadataBase {
     desired_scd_db_version: '${VAR_DESIRED_SCD_DB_VERSION}',
     desired_aux_db_version: '${VAR_DESIRED_AUX_DB_VERSION}',
   },
+  evict+: {
+    scd+: {
+      enable_cron: ${VAR_EVICT_ENABLE_SCD_CRON},
+      schedule: "${VAR_EVICT_SCD_SCHEDULE}",
+      ttl: "${VAR_EVICT_SCD_TTL}",
+      operational_intents: ${VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS},
+      subscriptions: ${VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS},
+    },
+    rid+: {
+      enable_cron: ${VAR_EVICT_ENABLE_RID_CRON},
+      schedule: "${VAR_EVICT_RID_SCHEDULE}",
+      ttl: "${VAR_EVICT_RID_TTL}",
+      ISAs: ${VAR_EVICT_RID_ENABLE_ISAS},
+      subscriptions: ${VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS},
+    },
+  },
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',
   },
