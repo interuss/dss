@@ -48,11 +48,15 @@ The release notes should contain at least the following sections:
     * If you want to continue to cleanup old entries regularly, run the [evict command](cmds/db-manager/cleanup/README.md) as needed:
         * Running the following command each 30 minutes will be equivalent to the previous situation
         * `db-manager evict --rid_isa=True --rid_sub=True --rid_ttl=30m --scd_oir=False --scd_sub=False`
-    * Helm charts, tanka files and terraform files will be updated in future PRs (and theses notes as well)
+    * Helm charts, tanka files and terraform files has been updated with defaults that run RID cleanup as before and disable SCD cleanup
+        * Please review new parameters in each module specific documentation and update them as needed.
 
 ## Optional migration tasks
 
 ## Important information
+
+* The RID evict task is now deleting all expired entries instead of stopping after the first one, see [#1253](https://github.com/interuss/dss/pull/1253).
+    * The initial run may take longer than expected when deleting entries that may have been accumulating.
 
 ## Minimal database schema version
 
