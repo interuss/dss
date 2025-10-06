@@ -1,10 +1,13 @@
 # InterUSS DSS implementation details
 
-## CockroachDB
+## Datastore
 DSS instances in the same DSS cluster maintain a shared DSS Airspace
-Representation (DAR) using CockroachDB for data storage and
-synchronization between DSS participants.  The [CockroachDB
-documentation](https://www.cockroachlabs.com/docs/stable/) is recommended
+Representation (DAR) using CockroachDB or Yugabyte for data storage and
+synchronization between DSS participants.
+
+CockroachDB is the historicaly datastore and Yugabyte is the new one.
+
+The [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/) is recommended
 reading for performance characteristics and operational caveats. We list some of
 the caveats that we've run into below:
 

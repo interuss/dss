@@ -44,7 +44,7 @@ type repo struct {
 	version *datastore.Version
 }
 
-// Store is an implementation of store.Store using Cockroach DB as its backend
+// Store is an implementation of store.Store using Cockroach DB or yugabyte as its backend
 // store.
 //
 // TODO: Add the RID/SCD interfaces here, and collapse this store with the
@@ -59,7 +59,7 @@ type Store struct {
 	DatabaseName string
 }
 
-// NewStore returns a Store instance connected to a cockroach instance via db.
+// NewStore returns a Store instance connected to a database instance via db.
 func NewStore(ctx context.Context, db *datastore.Datastore, dbName string, logger *zap.Logger) (*Store, error) {
 	vs, err := db.GetSchemaVersion(ctx, dbName)
 	if err != nil {
