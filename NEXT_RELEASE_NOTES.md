@@ -52,7 +52,7 @@ The release notes should contain at least the following sections:
         * Please review new parameters in each module specific documentation and update them as needed.
 * A immutable field has been changed in terraform / tanka
   * Please remove any `*-schema-manager-*` jobs before upgrading chart / applying tanka configuration.
-  * The job is only used for migrations and can be safefly removed.
+  * The job is only used for migrations and can be removed.
 
 ## Optional migration tasks
 
