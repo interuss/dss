@@ -1,10 +1,10 @@
-package cockroach
+package datastore
 
 import (
 	"context"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
+	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
@@ -30,20 +30,20 @@ var (
 )
 
 // repo is an implementation of repos.Repo using
-// a CockroachDB transaction.
+// a CockroachDB/Yugabyte transaction.
 type repo struct {
 	q     dsssql.Queryable
 	clock clockwork.Clock
 }
 
 // Store is an implementation of an scd.Store using
-// a CockroachDB database.
+// a CockroachDB or Yugabyte database.
 type Store struct {
 	db    *datastore.Datastore
 	clock clockwork.Clock
 }
 
-// NewStore returns a Store instance connected to a cockroach instance via db.
+// NewStore returns a Store instance connected to a cockroach or Yugabyte instance via db.
 func NewStore(ctx context.Context, db *datastore.Datastore) (*Store, error) {
 	store := &Store{
 		db:    db,
