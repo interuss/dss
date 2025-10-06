@@ -50,6 +50,9 @@ The release notes should contain at least the following sections:
         * `db-manager evict --rid_isa=True --rid_sub=True --rid_ttl=30m --scd_oir=False --scd_sub=False`
     * Helm charts, tanka files and terraform files has been updated with defaults that run RID cleanup as before and disable SCD cleanup
         * Please review new parameters in each module specific documentation and update them as needed.
+* A immutable field has been changed in terraform / tanka
+  * Please remove any `*-schema-manager-*` jobs before upgrading chart / applying tanka configuration.
+  * The job is only used for migrations and can be safefly removed.
 
 ## Optional migration tasks
 
