@@ -28,8 +28,6 @@ spec:
 {{/*  TODO: use selector instead of incrementing jobVersion in name to mitigate immutable template*/}}
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "false"
       labels:
         name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
     spec:
