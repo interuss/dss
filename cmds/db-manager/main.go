@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	DBManagerCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine) // enable support for flags not yet migrated to using pflag (e.g. crdb flags)
+	DBManagerCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine) // enable support for flags not yet migrated to using pflag (e.g. datastore flags)
 	DBManagerCmd.AddCommand(migration.MigrationCmd)
 	DBManagerCmd.AddCommand(cleanup.EvictCmd)
 }

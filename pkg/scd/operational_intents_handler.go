@@ -24,7 +24,7 @@ import (
 // This is to be used in contexts where an implicit subscription may need to be cleaned up: if true is returned,
 // the subscription can be safely removed after the operational intent is deleted or attached to another subscription.
 //
-// NOTE: this should eventually be pushed down to CRDB as part of the queries being executed in the callers of this method.
+// NOTE: this should eventually be pushed down the datastore as part of the queries being executed in the callers of this method.
 //
 //	See https://github.com/interuss/dss/issues/1059 for more details
 func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID dssmodels.ID, subscription *scdmodels.Subscription) (bool, error) {

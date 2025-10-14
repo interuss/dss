@@ -64,7 +64,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	ridc.DefaultClock = fakeClock
 	ridCrdb, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
-	logger.Info("using cockroachDB.")
+	logger.Info("using datastore.")
 
 	store, err := ridc.NewStore(ctx, ridCrdb, "rid", logger)
 	require.NoError(t, err)

@@ -62,7 +62,7 @@ Do note:
 - by default expired entities are only listed, not deleted, the flag `--delete` is required for deleting entities;
 - expiration of entities is preferably determined through their end times, however when they do not have end times, the last update times are used;
 - the flag `--rid_ttl` and `--scd_ttl` accepts durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`;
-- the CockroachDB cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
+- the datastore cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
 
 ### Examples
 The following examples assume a running DSS deployed locally through [the `run_locally.sh` script](../../../build/dev/standalone_instance.md).
