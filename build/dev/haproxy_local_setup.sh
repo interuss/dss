@@ -131,7 +131,7 @@ docker run --rm --name rid-db-manager \
 	/usr/bin/db-manager migrate \
 	--schemas_dir db-schemas/rid \
 	--db_version "latest" \
-	--cockroach_host crdb
+	--datastore_host crdb
 
 sleep 1
 echo "Bootstrapping SCD Database tables"
@@ -142,7 +142,7 @@ docker run --rm --name scd-db-manager \
 	/usr/bin/db-manager migrate \
 	--schemas_dir db-schemas/scd \
 	--db_version "latest" \
-	--cockroach_host crdb
+	--datastore_host crdb
 
 sleep 1
 echo " ------------ CORE SERVICE ---------------- "
@@ -157,7 +157,7 @@ docker run -d --name core-service-for-testing -p 8082:8082 \
 	local-interuss-dss-image \
 	core-service \
     -addr :8082 \
-	--cockroach_host crdb \
+	--datastore_host crdb \
 	-public_key_files /app/test.crt \
 	-log_format console \
 	-dump_requests \

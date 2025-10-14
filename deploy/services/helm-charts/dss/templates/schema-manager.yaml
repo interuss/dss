@@ -36,17 +36,17 @@ spec:
       containers:
         - args:
             - migrate
-            - --cockroach_host={{ $datastoreHost }}
-            - --cockroach_port={{ $datastorePort }}
-            - --cockroach_user={{ $datastoreUser }}
+            - --datastore_host={{ $datastoreHost }}
+            - --datastore_port={{ $datastorePort }}
+            - --datastore_user={{ $datastoreUser }}
 {{ if $.Values.cockroachdb.enabled }}
-            - --cockroach_ssl_dir=/cockroach/cockroach-certs
-            - --cockroach_ssl_mode=verify-full
+            - --datastore_ssl_dir=/cockroach/cockroach-certs
+            - --datastore_ssl_mode=verify-full
             - --schemas_dir=/db-schemas/{{ $service }}
 {{ else }}
             - --schemas_dir=/db-schemas/yugabyte/{{ $service  }}
-            - --cockroach_ssl_dir=/opt/yugabyte-certs/
-            - --cockroach_ssl_mode=verify-full
+            - --datastore_ssl_dir=/opt/yugabyte-certs/
+            - --datastore_ssl_mode=verify-full
 {{ end }}
             - --db_version={{$schemaVersion}}
           command:

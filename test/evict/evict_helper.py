@@ -35,11 +35,11 @@ class EvictHelper:
             f"--rid_sub={str(rid_sub).lower()}",
             "--locality",
             locality,
-            "--cockroach_host",
+            "--datastore_host",
             db_hostname,
-            "--cockroach_port",
+            "--datastore_port",
             db_port,
-            "--cockroach_user",
+            "--datastore_user",
             db_username,
         ]
 

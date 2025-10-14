@@ -48,15 +48,15 @@ spec:
             - --public_endpoint={{$dss.conf.publicEndpoint}}
 {{ end }}
             - --locality={{$dss.conf.locality}}
-            - --cockroach_host={{ $datastoreHost }}
-            - --cockroach_port={{ $datastorePort }}
-            - --cockroach_user={{ $datastoreUser }}
+            - --datastore_host={{ $datastoreHost }}
+            - --datastore_port={{ $datastorePort }}
+            - --datastore_user={{ $datastoreUser }}
 {{ if $.Values.cockroachdb.enabled }}
-            - --cockroach_ssl_dir=/cockroach/cockroach-certs
-            - --cockroach_ssl_mode=verify-full
+            - --datastore_ssl_dir=/cockroach/cockroach-certs
+            - --datastore_ssl_mode=verify-full
 {{ else }}
-            - --cockroach_ssl_dir=/opt/yugabyte-certs
-            - --cockroach_ssl_mode=verify-full
+            - --datastore_ssl_dir=/opt/yugabyte-certs
+            - --datastore_ssl_mode=verify-full
 {{ end }}
             - --dump_requests=true
             - --enable_scd={{$dss.enableScd | default true}}
