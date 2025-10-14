@@ -44,29 +44,29 @@ The release notes should contain at least the following sections:
 
 ## Mandatory migration tasks
 
+* Ensure RID schema has been migrated to version 4.0.0 since the datastore doesn't fallback anymore on the default database. If that not the case, please use the previous release and upgrade to schema 4.0.0 first.
 * The RID cronjob has been moved to an external command, see [#1261](https://github.com/interuss/dss/pull/1261)
     * If you want to continue to cleanup old entries regularly, run the [evict command](cmds/db-manager/cleanup/README.md) as needed:
         * Running the following command each 30 minutes will be equivalent to the previous situation
         * `db-manager evict --rid_isa=True --rid_sub=True --rid_ttl=30m --scd_oir=False --scd_sub=False`
     * Helm charts, tanka files and terraform files has been updated with defaults that run RID cleanup as before and disable SCD cleanup
         * Please review new parameters in each module specific documentation and update them as needed.
-* The `auth2` key has been changed, see [#1178](https://github.com/interuss/dss/pull/1178). Please update your configuration if you used that public key.
-* A new `aux` store have been added. If you ran migration job manually, please take the new schema into account. Schemas are stored in the `aux_` folder.
-* The terraform variable `crdb_hostname_suffix` has been renamed to `db_hostname_suffix`, please update your configuration accordinly.
-* The terraform variable `crdb_locality` has been renamed to `locality` and is now mandatory, please update your configuration accordinly.
+* The test certificate `build/test-certs/auth2` public and private keys have been changed, see [#1178](https://github.com/interuss/dss/pull/1178). Please update your configuration if you used that public key.
+* A new `aux` store have been added including a new migration job. If you ran migration jobs manually, make sure you run the migration for this new schema. Schemas are stored in the `aux_` folder.
+* The terraform variable `crdb_hostname_suffix` has been renamed to `db_hostname_suffix`, please update your configuration accordingly.
+* The terraform variable `crdb_locality` has been renamed to `locality` and is now mandatory, please update your configuration accordingly.
 
 ## Optional migration tasks
 
-* A new parameter have been added, `public_endpoint`. Please set it to the public endpoint of your DSS instance.
+* A new parameter has been added, [`public_endpoint`](https://github.com/interuss/dss/blob/65499665ae6e6d2f4189556cf01ff671a8275ded/docs/build.md?plain=1#L460). Please set it to the public endpoint of your DSS instance in order to register this instance as a participant in the pool information.
 
 ## Important information
 
+* Yugabyte support has been added to terraform, tanka and helm files. **You're encouraged to use Yugabyte for new DSS Pool instances.**
 * The RID evict task is now deleting all expired entries instead of stopping after the first one, see [#1253](https://github.com/interuss/dss/pull/1253).
     * The initial run may take longer than expected when deleting entries that may have been accumulating.
 * Published images are now signed with [sigstore](https://www.sigstore.dev/), see [how to verify it](https://interuss.github.io/dss/latest/build/#verify-signature-of-prebuilt-interuss-docker-images).
-* The rid datastore don't fallback anymore on the default database, it's expected that you upgraded to schema 4.0.0, released 1 year ago. If that not the case, please use the previous release and upgrade to schmea 4.0.0 first.
-* Yugabyte support have been added to terraform, tanka and helm files. You're encouraged to use Yugabyte for new DSS Pool instances.
-* Documentation have been moved to a new [website](https://interuss.github.io/dss/latest/) instead of various README in the repository tree.
+* Deployment documentation has been moved to a new [website](https://interuss.github.io/dss/latest/) instead of various README in the repository tree.
 
 ## Minimal database schema version
 
