@@ -52,7 +52,7 @@ The release notes should contain at least the following sections:
     * Helm charts, tanka files and terraform files has been updated with defaults that run RID cleanup as before and disable SCD cleanup
         * Please review new parameters in each module specific documentation and update them as needed.
 * The test certificate `build/test-certs/auth2` public and private keys have been changed, see [#1178](https://github.com/interuss/dss/pull/1178). Please update your configuration if you used that public key.
-* A new `aux` store have been added including a new migration job. If you ran migration jobs manually, make sure you run the migration for this new schema. Schemas are stored in the `aux_` folder.
+* A new `aux` store have been added, which implies a new migration job using `schema-manager`. If you ran migration jobs manually, make sure you run the migration for this new schema. Schemas are stored in the `aux_` folder.
 * The terraform variable `crdb_hostname_suffix` has been renamed to `db_hostname_suffix`, please update your configuration accordingly.
 * The terraform variable `crdb_locality` has been renamed to `locality` and is now mandatory, please update your configuration accordingly.
 * [`public_endpoint`](https://github.com/interuss/dss/blob/65499665ae6e6d2f4189556cf01ff671a8275ded/docs/build.md?plain=1#L460) parameter has been added as a mandatory argument. Please set it to the public endpoint of your DSS instance in order to register this instance as a participant in the pool information.
