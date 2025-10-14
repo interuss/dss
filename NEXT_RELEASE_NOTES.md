@@ -55,10 +55,7 @@ The release notes should contain at least the following sections:
 * A new `aux` store have been added including a new migration job. If you ran migration jobs manually, make sure you run the migration for this new schema. Schemas are stored in the `aux_` folder.
 * The terraform variable `crdb_hostname_suffix` has been renamed to `db_hostname_suffix`, please update your configuration accordingly.
 * The terraform variable `crdb_locality` has been renamed to `locality` and is now mandatory, please update your configuration accordingly.
-
-## Optional migration tasks
-
-* A new parameter has been added, [`public_endpoint`](https://github.com/interuss/dss/blob/65499665ae6e6d2f4189556cf01ff671a8275ded/docs/build.md?plain=1#L460). Please set it to the public endpoint of your DSS instance in order to register this instance as a participant in the pool information.
+* [`public_endpoint`](https://github.com/interuss/dss/blob/65499665ae6e6d2f4189556cf01ff671a8275ded/docs/build.md?plain=1#L460) parameter has been added as a mandatory argument. Please set it to the public endpoint of your DSS instance in order to register this instance as a participant in the pool information.
 
 ## Important information
 
