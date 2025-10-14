@@ -39,7 +39,7 @@ more information.
 Individual Yugabyte nodes hosting sharded data of the DAR. More information about Yugabyte
 [here](https://www.yugabyte.com/).
 
-The current implementation relied historicaly on CockroachDB for data storage and synchronization
+The current implementation relied historically on CockroachDB for data storage and synchronization
 between DSS participants but is migrating to Yugabyte with both version supported. See [implementation details](implementation_details.md) for
 more information.
 
