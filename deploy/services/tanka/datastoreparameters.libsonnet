@@ -1,16 +1,16 @@
 {
   all(metadata):
     if metadata.datastore == "cockroachdb" then {
-      cockroach_host: 'cockroachdb-balanced.' + metadata.namespace,
-      cockroach_port: metadata.cockroach.grpc_port,
-      cockroach_ssl_mode: 'verify-full',
-      cockroach_user: 'root',
-      cockroach_ssl_dir: '/cockroach/cockroach-certs',
+      datastore_host: 'cockroachdb-balanced.' + metadata.namespace,
+      datastore_port: metadata.cockroach.grpc_port,
+      datastore_ssl_mode: 'verify-full',
+      datastore_user: 'root',
+      datastore_ssl_dir: '/cockroach/cockroach-certs',
     } else {
-      cockroach_host: 'yb-tservers.' + metadata.namespace,
-      cockroach_port: 5433,
-      cockroach_ssl_mode: 'verify-full',
-      cockroach_user: 'yugabyte',
-      cockroach_ssl_dir: '/opt/yugabyte-certs/',
+      datastore_host: 'yb-tservers.' + metadata.namespace,
+      datastore_port: 5433,
+      datastore_ssl_mode: 'verify-full',
+      datastore_user: 'yugabyte',
+      datastore_ssl_dir: '/opt/yugabyte-certs/',
     }
 }

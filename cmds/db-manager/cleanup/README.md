@@ -45,16 +45,16 @@ Flags:
       --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
 
 Global Flags:
-      --cockroach_application_name string   application name for tagging the connection to cockroach (default "dss")
-      --cockroach_db_name string            application name for tagging the connection to cockroach
-      --cockroach_host string               cockroach host to connect to
-      --cockroach_max_retries int           maximum number of attempts to retry a query in case of contention, default is 100 (default 100)
-      --cockroach_port int                  cockroach port to connect to (default 26257)
-      --cockroach_ssl_dir string            directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key
-      --cockroach_ssl_mode string           cockroach sslmode (default "disable")
-      --cockroach_user string               cockroach user to authenticate as (default "root")
-      --max_conn_idle_secs int              maximum amount of time in seconds a connection may be idle, default is 30 seconds (default 30)
-      --max_open_conns int                  maximum number of open connections to the database, default is 4 (default 4)
+      --datastore_application_name string   application name for tagging the connection to the database (default "dss")
+      --datastore_db_name string            database name to connect to
+      --datastore_host string               database host to connect to
+      --datastore_max_conn_idle_secs int    maximum amount of time in seconds a connection may be idle, default is 30 seconds (default 30)
+      --datastore_max_open_conns int        maximum number of open connections to the database, default is 4 (default 4)
+      --datastore_max_retries int           maximum number of attempts to retry a query in case of contention, default is 100 (default 100)
+      --datastore_port int                  database port to connect to (default 26257)
+      --datastore_ssl_dir string            directory to ssl certificates. Must contain files: ca.crt, client.<user>.crt, client.<user>.key
+      --datastore_ssl_mode string           database sslmode (default "disable")
+      --datastore_user string               database user to authenticate as (default "root")
 
 ```
 
@@ -62,7 +62,7 @@ Do note:
 - by default expired entities are only listed, not deleted, the flag `--delete` is required for deleting entities;
 - expiration of entities is preferably determined through their end times, however when they do not have end times, the last update times are used;
 - the flag `--rid_ttl` and `--scd_ttl` accepts durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`;
-- the CockroachDB cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
+- the datastore cluster connection flags are the same as [the `core-service` command](../../core-service/README.md).
 
 ### Examples
 The following examples assume a running DSS deployed locally through [the `run_locally.sh` script](../../../build/dev/standalone_instance.md).
@@ -70,17 +70,17 @@ The following examples assume a running DSS deployed locally through [the `run_l
 #### List all entities older than 1 week
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --scd_ttl=168h --rid_ttl=168h
+ --datastore_host=local-dss-crdb --scd_ttl=168h --rid_ttl=168h
 ```
 
 #### List operational intents older than 1 week
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --scd_ttl=168h --scd_oir=true --scd_sub=false
+ --datastore_host=local-dss-crdb --scd_ttl=168h --scd_oir=true --scd_sub=false
 ```
 
 #### Delete all entities older than 30 days
 ```shell
 docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
- --cockroach_host=local-dss-crdb --scd_ttl=720h  --rid_ttl=720h --delete
+ --datastore_host=local-dss-crdb --scd_ttl=720h  --rid_ttl=720h --delete
 ```

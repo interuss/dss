@@ -26,15 +26,15 @@ spec:
                 - --rid_isa=false
                 - --rid_sub=false
                 - --scd_ttl={{ $.Values.dss.conf.evict.scd.ttl }}
-                - --cockroach_host={{ $datastoreHost }}
-                - --cockroach_port={{ $datastorePort }}
-                - --cockroach_user={{ $datastoreUser }}
+                - --datastore_host={{ $datastoreHost }}
+                - --datastore_port={{ $datastorePort }}
+                - --datastore_user={{ $datastoreUser }}
   {{- if $.Values.cockroachdb.enabled }}
-                - --cockroach_ssl_dir=/cockroach/cockroach-certs
-                - --cockroach_ssl_mode=verify-full
+                - --datastore_ssl_dir=/cockroach/cockroach-certs
+                - --datastore_ssl_mode=verify-full
   {{- else }}
-                - --cockroach_ssl_dir=/opt/yugabyte-certs/
-                - --cockroach_ssl_mode=verify-full
+                - --datastore_ssl_dir=/opt/yugabyte-certs/
+                - --datastore_ssl_mode=verify-full
   {{- end }}
               command:
                 - db-manager
@@ -77,15 +77,15 @@ spec:
                 - --rid_isa={{ $.Values.dss.conf.evict.rid.ISAs }}
                 - --rid_sub={{ $.Values.dss.conf.evict.rid.subscriptions }}
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
-                - --cockroach_host={{ $datastoreHost }}
-                - --cockroach_port={{ $datastorePort }}
-                - --cockroach_user={{ $datastoreUser }}
+                - --datastore_host={{ $datastoreHost }}
+                - --datastore_port={{ $datastorePort }}
+                - --datastore_user={{ $datastoreUser }}
   {{- if $.Values.cockroachdb.enabled }}
-                - --cockroach_ssl_dir=/cockroach/cockroach-certs
-                - --cockroach_ssl_mode=verify-full
+                - --datastore_ssl_dir=/cockroach/cockroach-certs
+                - --datastore_ssl_mode=verify-full
   {{- else }}
-                - --cockroach_ssl_dir=/opt/yugabyte-certs/
-                - --cockroach_ssl_mode=verify-full
+                - --datastore_ssl_dir=/opt/yugabyte-certs/
+                - --datastore_ssl_mode=verify-full
   {{- end }}
               command:
                 - db-manager

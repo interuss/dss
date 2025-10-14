@@ -19,8 +19,8 @@ func connectParametersFromMap(m map[string]string) ConnectParameters {
 			Mode: m["ssl_mode"],
 			Dir:  m["ssl_dir"],
 		},
-		MaxOpenConns:       int(parseIntOrDefault(m["max_open_conns"], 4)),
-		MaxConnIdleSeconds: int(parseIntOrDefault(m["max_conn_idle_secs"], 40)),
+		MaxOpenConns:       int(parseIntOrDefault(m["datastore_max_open_conns"], 4)),
+		MaxConnIdleSeconds: int(parseIntOrDefault(m["datastore_max_conn_idle_secs"], 40)),
 	}
 }
 

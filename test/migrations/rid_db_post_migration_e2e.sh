@@ -41,7 +41,7 @@ docker run --rm --name scd-db-manager \
 	local-db-manager \
 	--schemas_dir db-schemas/scd \
 	--db_version "latest" \
-	--cockroach_host crdb
+	--datastore_host crdb
 
 sleep 1
 echo " ------------ CORE SERVICE ---------------- "
@@ -54,7 +54,7 @@ docker run -d --name core-service-for-testing \
 	-v "$(pwd)/build/test-certs/auth2.pem:/app/test.crt" \
 	local-interuss-dss-image \
 	core-service \
-	--cockroach_host crdb \
+	--datastore_host crdb \
 	-public_key_files /app/test.crt \
 	-log_format console \
 	-dump_requests \
