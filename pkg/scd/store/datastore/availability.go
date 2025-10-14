@@ -1,15 +1,16 @@
-package cockroach
+package datastore
 
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
-	"strings"
-	"time"
 )
 
 var (
