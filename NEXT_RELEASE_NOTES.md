@@ -53,7 +53,10 @@ The release notes should contain at least the following sections:
 * A immutable field has been changed in terraform / tanka
   * Please remove any `*-schema-manager-*` jobs before upgrading chart / applying tanka configuration.
   * The job is only used for migrations and can be removed.
-* Datastores parameters have been renamed to be more vendor-agnostic.
+
+## Optional migration tasks
+
+* Datastores parameters have been renamed to be more vendor-agnostic. The old ones have been deprecated but will continue to work for the time being.
     * If you call the dss executable directly, you will need to update parameters as below.
     * If you use helm/tanka to deploy the DSS, parameters have been renamed internally, you don't have to do anything.
 
@@ -69,8 +72,6 @@ The release notes should contain at least the following sections:
 | max_open_conns             | datastore_max_open_conns     | maximum number of open connections to the database, default is 4                                |
 | max_conn_idle_secs         | datastore_max_conn_idle_secs | maximum amount of time in seconds a connection may be idle, default is 30 seconds               |
 | cockroach_max_retries      | datastore_max_retries        | maximum number of attempts to retry a query in case of contention, default is 100               |
-
-## Optional migration tasks
 
 ## Important information
 
