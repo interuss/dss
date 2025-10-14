@@ -28,7 +28,7 @@ local metadata = metadataBase {
   },
   backend+: {
     ipName: 'VAR_INGRESS_NAME',
-    image: 'dss:moi20251006',
+    image: 'docker.io/interuss-local/dss:latest',
     pubKeys: ['/test-certs/auth2.pem'],
     hostname: 'local',
     publicEndpoint: 'http://127.0.0.1:8888',
@@ -36,7 +36,7 @@ local metadata = metadataBase {
   },
   schema_manager+: {
     enable: true,
-    image: 'dss:moi20251006',
+    image: 'docker.io/interuss-local/dss:latest',
     desired_rid_db_version: '1.0.1',
     desired_scd_db_version: '1.0.1',
     desired_aux_db_version: '1.0.0',
