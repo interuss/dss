@@ -3,7 +3,7 @@ output "crdb_addresses" {
 }
 
 output "yugabyte_masters_addresses" {
-  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "server"), address : a.address }]
+  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "master"), address : a.address }]
 }
 
 output "yugabyte_tservers_addresses" {
