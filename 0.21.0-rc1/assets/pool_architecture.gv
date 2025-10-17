@@ -1,0 +1,108 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture.png pool_architecture.gv
+digraph G {
+    node [shape=box];
+
+    DSSClient [label="DSS client"]
+
+    LoadBalancer1 [label="TLS termination +\nload balancer"]
+    CoreService1a [label="Core Service"];
+    CoreService1b [label="Core Service"];
+    CRDB1a [label="CRDB 1a"];
+    CRDB1b [label="CRDB 1b"];
+    PrivateKey1 [label="Certs signed by\nUSS1 private key"]
+
+    LoadBalancer2 [label="TLS termination +\nload balancer"]
+    CoreService2a [label="Core Service"];
+    CoreService2b [label="Core Service"];
+    CRDB2a [label="CRDB 2a"];
+    CRDB2b [label="CRDB 2b"];
+    PrivateKey2 [label="Certs signed by\nUSS2 private key"]
+
+    LoadBalancer3 [label="TLS termination +\nload balancer"]
+    CoreService3a [label="Core Service"];
+    CoreService3b [label="Core Service"];
+    CRDB3a [label="CRDB 3a"];
+    CRDB3b [label="CRDB 3b"];
+    PrivateKey3 [label="Certs signed by\nUSS3 private key"]
+
+    Certs [label="Shared ca.crt accepts public keys\nof all USSs' private keys"];
+    PublicInternet [label="Public Internet"];
+
+    subgraph cluster_0 {
+    label="USS1's DSS instance"
+    subgraph cluster_1 {
+    label="Stateful set a";
+    CoreService1a -> CRDB1a;
+    }
+    subgraph cluster_2 {
+    label="Stateful set b";
+    CoreService1b -> CRDB1b;
+    }
+    CRDB1a -> PrivateKey1 [dir=back,style=dotted];
+    CRDB1b -> PrivateKey1 [dir=back,style=dotted];
+    CoreService1b -> CRDB1a;
+    CoreService1a -> CRDB1b;
+    LoadBalancer1 -> CoreService1a
+    LoadBalancer1 -> CoreService1b
+    }
+
+    subgraph cluster_4 {
+    label="USS2's DSS instance"
+    subgraph cluster_5 {
+    label="Stateful set a";
+    CoreService2a -> CRDB2a;
+    }
+    subgraph cluster_6 {
+    label="Stateful set b";
+    CoreService2b -> CRDB2b;
+    }
+    CRDB2a -> PrivateKey2 [dir=back,style=dotted];
+    CRDB2b -> PrivateKey2 [dir=back,style=dotted];
+    CoreService2b -> CRDB2a;
+    CoreService2a -> CRDB2b;
+    LoadBalancer2 -> CoreService2a
+    LoadBalancer2 -> CoreService2b
+    }
+
+    subgraph cluster_8 {
+    label="USS3's DSS instance"
+    subgraph cluster_9 {
+    label="Stateful set a";
+    CoreService3a -> CRDB3a;
+    }
+    subgraph cluster_10 {
+    label="Stateful set b";
+    CoreService3b -> CRDB3b;
+    }
+    CRDB3a -> PrivateKey3 [dir=back,style=dotted];
+    CRDB3b -> PrivateKey3 [dir=back,style=dotted];
+    CoreService3b -> CRDB3a;
+    CoreService3a -> CRDB3b;
+    LoadBalancer3 -> CoreService3a
+    LoadBalancer3 -> CoreService3b
+    }
+
+    DSSClient -> LoadBalancer1;
+    DSSClient -> LoadBalancer2;
+    DSSClient -> LoadBalancer3;
+
+    CRDB1a -> Certs [dir=back,style=dotted];
+    CRDB1b -> Certs [dir=back,style=dotted];
+    CRDB2a -> Certs [dir=back,style=dotted];
+    CRDB2b -> Certs [dir=back,style=dotted];
+    CRDB3a -> Certs [dir=back,style=dotted];
+    CRDB3b -> Certs [dir=back,style=dotted];
+
+    CRDB1a -> PublicInternet [dir=both];
+    CRDB1b -> PublicInternet [dir=both];
+    CRDB2a -> PublicInternet [dir=both];
+    CRDB2b -> PublicInternet [dir=both];
+    CRDB3a -> PublicInternet [dir=both];
+    CRDB3b -> PublicInternet [dir=both];
+
+    PrivateKey1 -> Certs [dir=none,color=transparent];
+    PrivateKey2 -> Certs [dir=none,color=transparent];
+    PrivateKey3 -> Certs [dir=none,color=transparent];
+    Certs -> PublicInternet [dir=none,color=transparent];
+}
