@@ -52,3 +52,8 @@ yugabyte:
     clientToServer: true
     insecure: false
     provided: true
+
+  gflags:
+    ysql_hba_conf_csv: 'hostssl all all 0.0.0.0/0 cert'
+    use_client_to_server_encryption: true
+
