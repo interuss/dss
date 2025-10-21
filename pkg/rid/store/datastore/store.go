@@ -1,13 +1,14 @@
-package cockroach
+package datastore
 
 import (
 	"context"
+	"time"
+
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/interuss/dss/pkg/datastore/flags"
 	dssql "github.com/interuss/dss/pkg/sql"
-	"time"
 
-	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
+	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/logging"
@@ -22,9 +23,6 @@ const (
 	// The current major schema version per datastore type.
 	currentCrdbMajorSchemaVersion     = 4
 	currentYugabyteMajorSchemaVersion = 1
-
-	//  Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
-	expiredDurationInMin = 30
 )
 
 var (
@@ -45,7 +43,7 @@ type repo struct {
 	logger *zap.Logger
 }
 
-// Store is an implementation of store.Store using Cockroach DB as its backend
+// Store is an implementation of store.Store using Cockroach DB or Yugabyte as its backend
 // store.
 //
 // TODO: Add the SCD interfaces here, and collapse this store with the
@@ -60,7 +58,7 @@ type Store struct {
 	DatabaseName string
 }
 
-// NewStore returns a Store instance connected to a cockroach instance via db.
+// NewStore returns a Store instance connected to a cockroach or yugabyte instance via db.
 func NewStore(ctx context.Context, db *datastore.Datastore, dbName string, logger *zap.Logger) (*Store, error) {
 	vs, err := db.GetSchemaVersion(ctx, dbName)
 	if err != nil {

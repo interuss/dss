@@ -339,3 +339,113 @@ variable "yugabyte_external_nodes" {
 
 
 
+variable "evict_enable_scd_cron" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable the cron job that automatically cleanup expired SCD entries.
+
+  EOT
+
+  default = false
+}
+
+
+variable "evict_scd_schedule" {
+  type        = string
+  description = <<-EOT
+  When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+
+  EOT
+
+  default = "0 2 * * *"
+}
+
+
+variable "evict_scd_ttl" {
+  type        = string
+  description = <<-EOT
+  How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+
+  EOT
+
+  default = "2688h"
+}
+
+
+variable "evict_scd_operational_intents" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable cleanup of SCD operational intents.
+
+  EOT
+
+  default = true
+}
+
+
+variable "evict_scd_subscriptions" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable cleanup of SCD subscriptions.
+
+  EOT
+
+  default = true
+}
+
+
+variable "evict_enable_rid_cron" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable the cron job that automatically cleanup RID entries.
+
+  EOT
+
+  default = true
+}
+
+
+variable "evict_rid_schedule" {
+  type        = string
+  description = <<-EOT
+  When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+
+  EOT
+
+  default = "*/30 * * * *"
+}
+
+
+variable "evict_rid_ttl" {
+  type        = string
+  description = <<-EOT
+  How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+
+  EOT
+
+  default = "30m"
+}
+
+
+variable "evict_rid_isas" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable cleanup of RID ISAs.
+
+  EOT
+
+  default = true
+}
+
+
+variable "evict_rid_subscriptions" {
+  type        = bool
+  description = <<-EOT
+  Set this to true to enable cleanup of RID subscriptions.
+
+  EOT
+
+  default = true
+}
+
+

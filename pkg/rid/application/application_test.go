@@ -11,7 +11,7 @@ import (
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/rid/store"
-	ridc "github.com/interuss/dss/pkg/rid/store/cockroach"
+	ridc "github.com/interuss/dss/pkg/rid/store/datastore"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -62,11 +62,11 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 		connectParameters.DBName = "rid"
 	}
 	ridc.DefaultClock = fakeClock
-	ridCrdb, err := datastore.Dial(ctx, connectParameters)
+	ridDatastore, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
-	logger.Info("using cockroachDB.")
+	logger.Info("using datastore.")
 
-	store, err := ridc.NewStore(ctx, ridCrdb, "rid", logger)
+	store, err := ridc.NewStore(ctx, ridDatastore, "rid", logger)
 	require.NoError(t, err)
 
 	return store, func() {

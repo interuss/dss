@@ -1,4 +1,4 @@
-package cockroach
+package datastore
 
 import (
 	"context"
@@ -211,9 +211,8 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.
-// Records expire if current time is <expiredDurationInMin> minutes more than records' endTime.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	writerQuery := "'" + writer + "'"
 	if len(writer) == 0 {
 		writerQuery = "'' OR writer = NULL"
@@ -226,11 +225,11 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string) ([]*ridmodels
 	FROM
 		identification_service_areas
 	WHERE
-		ends_at + INTERVAL '%d' MINUTE <= CURRENT_TIMESTAMP
+		ends_at <= $1
 	AND
 		(writer = %s)
-	LIMIT $1`, isaFields, expiredDurationInMin, writerQuery)
+	LIMIT $2`, isaFields, writerQuery)
 	)
 
-	return r.fetchISAs(ctx, isasInCellsQuery, dssmodels.MaxResultLimit)
+	return r.fetchISAs(ctx, isasInCellsQuery, threshold, dssmodels.MaxResultLimit)
 }

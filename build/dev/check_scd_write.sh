@@ -22,7 +22,7 @@ curl --silent -X PUT  \
 -d '{
        "notify_for_operational_intents": true,
        "notify_for_constraints": false,
-       "uss_base_url": "https://example.com/foo",
+       "uss_base_url": "https://testdummy.interuss.org/interuss/dss/build/dev/check_scd_write/subscription",
        "extents": {
            "volume": {
                "altitude_upper": {
@@ -60,7 +60,7 @@ curl --silent -X PUT  "http://localhost:8082/dss/v1/constraint_references/000001
 -H "Authorization: Bearer ${ACCESS_TOKEN}"  \
 -H "Content-Type: application/json"  \
 -d '{
-    "uss_base_url": "https://example.com/con1/uss",
+    "uss_base_url": "https://testdummy.interuss.org/interuss/dss/build/dev/check_scd_write/constraint_references",
     "extents": [
         {
             "volume": {

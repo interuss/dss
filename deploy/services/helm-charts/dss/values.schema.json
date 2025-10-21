@@ -274,6 +274,58 @@
             "locality": {
               "description": "Locality attribute for this deployment. Example: zone=example",
               "type": "string"
+            },
+            "evict": {
+              "description": "Evict jobs configuration",
+              "type": "object",
+              "properties": {
+                "scd": {
+                  "description": "SCD Related configuration",
+                  "type": "object",
+                  "properties": {
+                    "enableCron": {
+                      "type": "boolean"
+                    },
+                    "schedule": {
+                      "type": "string",
+                      "description": "In cron format (https://crontab.guru/)"
+                    },
+                    "ttl": {
+                      "type": "string",
+                      "description": "Go duration format (https://pkg.go.dev/time#ParseDuration)"
+                    },
+                    "operationalIntents": {
+                      "type": "boolean"
+                    },
+                    "subscriptions": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "scd": {
+                  "description": "RID Related configuration",
+                  "type": "object",
+                  "properties": {
+                    "enableCron": {
+                      "type": "boolean"
+                    },
+                    "schedule": {
+                      "type": "string",
+                      "description": "In cron format (https://crontab.guru/)"
+                    },
+                    "ttl": {
+                      "type": "string",
+                      "description": "Go duration format (https://pkg.go.dev/time#ParseDuration)"
+                    },
+                    "ISAs": {
+                      "type": "boolean"
+                    },
+                    "subscriptions": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
             }
           },
           "required": ["hostname", "locality"]

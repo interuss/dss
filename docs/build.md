@@ -496,6 +496,26 @@ a PR to that effect would be greatly appreciated.
     1.  `VAR_ENABLE_SCHEMA_MANAGER`: Set this to true to enable the schema manager jobs.
         It is required to perform schema upgrades. Note that it is automatically enabled when `VAR_SHOULD_INIT` is true.
 
+    1.  `VAR_EVICT_ENABLE_SCD_CRON`: Set this to true to enable the cron job that automatically cleanup expired SCD entries.
+
+    1.  `VAR_EVICT_SCD_SCHEDULE`: When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+
+    1.  `VAR_EVICT_SCD_TTL`: How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+
+    1.  `VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS`: Set this to true to enable cleanup of SCD operational intents.
+
+    1.  `VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS`: Set this to true to enable cleanup of SCD subscriptions.
+
+    1.  `VAR_EVICT_ENABLE_RID_CRON`: Set this to true to enable the cron job that automatically cleanup RID entries.
+
+    1.  `VAR_EVICT_RID_SCHEDULE`: When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+
+    1.  `VAR_EVICT_RID_TTL`: How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+
+    1.  `VAR_EVICT_RID_ENABLE_ISAS`: Set this to true to enable cleanup of RID ISAs.
+
+    1.  `VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS`: Set this to true to enable cleanup of RID subscriptions.
+
 
 1.  Edit workspace/$CLUSTER_CONTEXT/spec.json and replace all VAR_*
     instances with appropriate values:

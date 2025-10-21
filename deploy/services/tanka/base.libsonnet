@@ -194,7 +194,7 @@ local util = import 'util.libsonnet';
     local uniqueName = name + '-' + hash,
 
     metadata+: {
-        name: uniqueName,
+      name: uniqueName,
       labels: {
         name: std.join('-', std.split(uniqueName, ':')),
       },
@@ -204,9 +204,6 @@ local util = import 'util.libsonnet';
       template: {
         metadata+: {
           labels: job.metadata.labels,
-          annotations+: {
-            'sidecar.istio.io/inject': 'false' # Kept for backward compatibility -- removing it breaks tanka diff since the field is expected to be immutable.
-          },
         },
         spec: $.PodSpec(metadata) {
           restartPolicy: 'OnFailure',
@@ -214,6 +211,15 @@ local util = import 'util.libsonnet';
       },
       completions: 1,
       parallelism: 1,
+    },
+  },
+
+  CronJob(metadata, name): $._Object('batch/v1', 'CronJob', metadata, name) {
+    metadata+: {
+      name: name,
+      labels: {
+        name: name,
+      },
     },
   },
 
