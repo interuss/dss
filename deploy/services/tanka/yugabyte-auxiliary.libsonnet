@@ -100,6 +100,7 @@ local yugabyteLB(metadata, name, ip) =
             --placement_zone=%s
             --use_private_ip=zone
             --node_to_node_encryption_use_client_certificates=true
+            --ysql_hba_conf_csv='hostssl all all 0.0.0.0/0 cert'
           ||| % [
             std.join(",", metadata.yugabyte.masterAddresses),
             metadata.yugabyte.tserver.rpc_bind_addresses,
