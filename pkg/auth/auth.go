@@ -212,7 +212,7 @@ func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 			errMsg = fmt.Sprintf("%#s", err)
 		}
 
-		ctx = context.WithValue(ctx, logging.CtxAuthKey{}, logging.CtxAuthValue{
+		ctx = context.WithValue(ctx, logging.CtxKey("sub"), logging.CtxAuthValue{
 			Subject: claims.Subject,
 			ErrMsg:  errMsg,
 		})

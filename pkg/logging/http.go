@@ -39,7 +39,7 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 	w.next.WriteHeader(statusCode)
 }
 
-type CtxAuthKey struct{}
+type CtxKey string
 type CtxAuthValue struct {
 	Subject string
 	ErrMsg  string
@@ -75,7 +75,7 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		authResults := r.Context().Value(CtxAuthKey{}).(CtxAuthValue)
+		authResults := r.Context().Value(CtxKey("sub")).(CtxAuthValue)
 		if authResults.ErrMsg != "" {
 			logger = logger.With(zap.String("resp_sub_err", authResults.ErrMsg))
 		} else {
