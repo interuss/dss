@@ -37,12 +37,6 @@ spec:
     - name: yugabyte-tserver-ui-ext-{{$i}}
       port: 9000
       targetPort: 9000
-    - name: yugabyte-tserver-ycql-ext-{{$i}}
-      port: 9042
-      targetPort: 9042
-    - name: yugabyte-tserver-ysql-ext-{{$i}}
-      port: 5433
-      targetPort: 5433
     - name: yugabyte-tserver-metrics-ext-{{$i}}
       port: 13000
       targetPort: 13000

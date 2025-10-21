@@ -226,14 +226,6 @@ local yugabyteLB(metadata, name, ip) =
                 port: 9100,
                 name: 'tcp-rpc2-port',
               },
-              {
-                port: 9042,
-                name: 'tcp-yql-port',
-              },
-              {
-                port: 5433,
-                name: 'tcp-ysql-port',
-              },
             ],
           },
         } for i in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
