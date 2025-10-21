@@ -30,6 +30,7 @@ v1:
                     flight_intents: che_non_conflicting_flights
                     id_generator: id_generator
                     planning_area: kentland_planning_area
+                    planning_area_volume: kentland_planning_area_volume
                     problematically_big_area: kentland_problematically_big_area
                     second_utm_auth: second_utm_auth
                     service_area: kentland_service_area
@@ -65,62 +66,86 @@ v1:
                         client_identity: utm_client_identity
                     resource_type: resources.interuss.IDGeneratorResource
                     specification: {}
-                kentland_planning_area:
-                    dependencies: {}
-                    resource_type: resources.PlanningAreaResource
+                kentland_planning_area_volume:
+                    resource_type: resources.VolumeResource
                     specification:
-                        base_url: https://uss_qualifier.test.utm/dummy_base_url
-                        volume:
-                            altitude_lower:
-                                reference: W84
-                                units: M
-                                value: 0
-                            altitude_upper:
-                                reference: W84
-                                units: M
-                                value: 3048
+                        template:
                             outline_polygon:
                                 vertices:
                                     - lat: 37.1853
-                                      lng: -80.614
+                                      lng: -80.6140
                                     - lat: 37.2148
-                                      lng: -80.614
+                                      lng: -80.6140
                                     - lat: 37.2148
-                                      lng: -80.544
+                                      lng: -80.5440
                                     - lat: 37.1853
-                                      lng: -80.544
+                                      lng: -80.5440
+                            altitude_lower:
+                                value: 0
+                                reference: W84
+                                units: M
+                            altitude_upper:
+                                value: 3048
+                                reference: W84
+                                units: M
+                kentland_planning_area:
+                    resource_type: resources.PlanningAreaResource
+                    dependencies:
+                        volume: kentland_planning_area_volume
+                    specification:
+                        base_url: https://uss_qualifier.test.utm/interuss/dss/build/dev/dss_probing_qualifier_config/kentland_planning_area
                 kentland_problematically_big_area:
-                    dependencies: {}
-                    resource_type: resources.VerticesResource
+                    resource_type: resources.VolumeResource
                     specification:
-                        vertices:
-                            - lat: 38
-                              lng: -81
-                            - lat: 37
-                              lng: -81
-                            - lat: 37
-                              lng: -80
-                            - lat: 38
-                              lng: -80
+                        template:
+                            outline_polygon:
+                                vertices:
+                                    - lat: 38
+                                      lng: -81
+                                    - lat: 37
+                                      lng: -81
+                                    - lat: 37
+                                      lng: -80
+                                    - lat: 38
+                                      lng: -80
+                kentland_service_area_volume:
+                    resource_type: resources.VolumeResource
+                    specification:
+                        template:
+                            outline_polygon:
+                                vertices:
+                                    - lat: 37.1853
+                                      lng: -80.6140
+                                    - lat: 37.2148
+                                      lng: -80.6140
+                                    - lat: 37.2148
+                                      lng: -80.5440
+                                    - lat: 37.1853
+                                      lng: -80.5440
+                            altitude_lower:
+                                value: 0
+                                reference: W84
+                                units: M
+                            altitude_upper:
+                                value: 3048
+                                reference: W84
+                                units: M
+                            start_time:
+                                offset_from:
+                                    starting_from:
+                                        time_during_test: TimeOfEvaluation
+                                    offset: 1s
+                            end_time:
+                                offset_from:
+                                    starting_from:
+                                        time_during_test: TimeOfEvaluation
+                                    offset: 1h0m1s
                 kentland_service_area:
-                    dependencies: {}
                     resource_type: resources.netrid.ServiceAreaResource
+                    dependencies:
+                        volume: kentland_service_area_volume
                     specification:
-                        altitude_max: 3048
-                        altitude_min: 0
-                        base_url: https://uss_qualifier.test.utm/dummy_base_url
-                        footprint:
-                            - lat: 37.1853
-                              lng: -80.614
-                            - lat: 37.2148
-                              lng: -80.614
-                            - lat: 37.2148
-                              lng: -80.544
-                            - lat: 37.1853
-                              lng: -80.544
-                        reference_time: '2023-01-10T00:00:00.123456+00:00'
-                        time_end: '2023-01-10T01:00:01.123456+00:00'
-                        time_start: '2023-01-10T00:00:01.123456+00:00'
+                        base_url: https://uss_qualifier.test.utm/interuss/dss/build/dev/dss_probing_qualifier_config/kentland_service_area
                 netrid_dss_instances_v19:
                     dependencies:
                         auth_adapter: utm_auth
