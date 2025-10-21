@@ -7,7 +7,7 @@ import sys
 
 from apply import do_apply
 from cluster import Cluster
-from init import do_init
+from init import do_init, do_generate_clients
 from nodes import do_generate_nodes
 from ca_pool import do_get_pool_ca, do_get_ca, do_add_cas, do_list_pool_ca, do_remove_cas
 
@@ -79,6 +79,7 @@ def parse_args():
             "get-pool-ca",
             "get-ca",
             "destroy",
+            "generate-clients"
         ],
     )
     parser.add_argument(
@@ -138,6 +139,8 @@ def main():
         do_get_pool_ca(cluster)
     elif args.action == "get-ca":
         do_get_ca(cluster)
+    elif args.action == "generate-clients":
+        do_generate_clients(cluster)
     elif args.action == "destroy":
         if input("Are you sure? You will loose all your certificates! [yN]") == "y":
             shutil.rmtree(cluster.directory)

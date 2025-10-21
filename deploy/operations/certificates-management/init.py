@@ -118,7 +118,7 @@ def generate_clients(cluster):
 
     for client in cluster.clients:
         if cluster.is_client_ready(client):
-            l.debug(f"Client '{client}' certificates already generated")
+            l.info(f"Client '{client}' certificates already generated")
             continue
         generate_client_config(cluster, client)
         generate_client_key(cluster, client)
@@ -138,7 +138,7 @@ distinguished_name = my_distinguished_name
 
 [ my_distinguished_name ]
 organizationName = {cluster.organization}
-commonName = client.{client}
+commonName = {client}
 """
         )
 
@@ -237,4 +237,13 @@ def do_init(cluster):
 
     l.info(
         "The new cluster certificates are ready! Don't forget to 'apply' the configuration."
+    )
+
+def do_generate_clients(cluster):
+    """Gemerate clients certificates"""
+
+    generate_clients(cluster)
+
+    l.info(
+        f"{len(cluster.clients)} client certificates ready. Don't forget to 'apply' the configuration."
     )
