@@ -42,14 +42,14 @@ yugabyte
 - name: wait-for-schema-{{.schemaName}}
   image: {{.datastoreImage}}
   volumeMounts:
-    {{- include "ca-certs:volumeMount" . | nindent 4 }}
-    {{- include "client-certs:volumeMount" . | nindent 4 }}
+    {{- include "ca-certs:volumeMount" $ | nindent 4 }}
+    {{- include "client-certs:volumeMount" $ | nindent 4 }}
   command:
     - sh
     - -c
 {{ if .cockroachdbEnabled }}
     - "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host {{.datastoreHost}} --port \"{{.datastorePort}}\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ else }}
-    - "ysqlsh  --host {{.datastoreHost}} --port \"{{.datastorePort}}\" \"sslmode=require\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
+    - "ysqlsh --host {{.datastoreHost}} --port \"{{.datastorePort}}\" \"sslmode=require sslcert=/opt/yugabyte-certs/client.yugabyte.crt sslkey=/opt/yugabyte-certs/client.yugabyte.key sslrootcert=/opt/yugabyte-certs/ca.crt\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ end }}
 {{- end -}}
