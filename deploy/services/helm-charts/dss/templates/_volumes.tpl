@@ -25,20 +25,20 @@
     secretName: {{ if .cockroachdbEnabled }}cockroachdb.client.root{{ else }}yugabyte-tls-client-cert{{ end }}
 {{- end -}}
 {{- define "client-certs:volumeMount" -}}
-{{ if .cockroachdbEnabled }}
+{{- if .cockroachdbEnabled }}
 - mountPath: /cockroach/cockroach-certs/client.root.crt
   name: client-certs
   subPath: client.root.crt
 - mountPath: /cockroach/cockroach-certs/client.root.key
   name: client-certs
   subPath: client.root.key
-{{ else }}
+{{- else -}}
 - mountPath: /opt/yugabyte-certs/client.yugabyte.crt
   name: client-certs
-  subPath: yugabytedb.crt
+  subPath: yugabyte.crt
 - mountPath: /opt/yugabyte-certs/client.yugabyte.key
   name: client-certs
-  subPath: yugabytedb.key
+  subPath: yugabyte.key
 {{- end -}}
 {{- end -}}
 
