@@ -27,7 +27,6 @@ import (
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags" // Force command line flag registration
-	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -318,7 +317,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	// the middlewares are wrapped and, therefore, executed in the opposite order
 	handler := healthyEndpointMiddleware(logger, &multiRouter)
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
-	handler = authMiddleware(authorizer, handler)
+	handler = authorizer.TokenMiddleware(handler)
 
 	httpServer := &http.Server{
 		Addr:              address,
@@ -377,37 +376,6 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
-	})
-}
-
-// authMiddleware decodes the authentication token and passes the claims to the context.
-func authMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ctx context.Context
-		claims, err := authorizer.ExtractClaims(r)
-		if err == nil {
-			if !authorizer.AcceptedAudiences[claims.Audience] {
-				err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", claims.Audience)
-			}
-		}
-
-		ctx = context.WithValue(r.Context(), auth.CtxAuthKey{}, auth.CtxAuthValue{
-			Claims: claims,
-			Error:  err,
-		})
-
-		var errMsg string
-		if err != nil {
-			//remove the stacktrace using the formatting specifier "%#s"
-			errMsg = fmt.Sprintf("%#s", err)
-		}
-
-		ctx = context.WithValue(ctx, logging.CtxAuthKey{}, logging.CtxAuthValue{
-			Subject: claims.Subject,
-			ErrMsg:  errMsg,
-		})
-
-		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

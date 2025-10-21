@@ -115,7 +115,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			claims, err := a.ExtractClaims(test.req)
+			claims, err := a.extractClaims(test.req)
 
 			ctx := context.WithValue(test.req.Context(), CtxAuthKey{}, CtxAuthValue{
 				Error:  err,
@@ -210,7 +210,7 @@ func TestClaimsValidation(t *testing.T) {
 		Now = time.Now
 	}()
 
-	claims := &Claims{}
+	claims := &claims{}
 
 	require.Error(t, claims.Valid())
 
