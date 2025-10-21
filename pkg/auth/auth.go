@@ -193,7 +193,6 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 // TokenMiddleware decodes the authentication token and passes the claims to the context.
 func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ctx context.Context
 		claims, err := a.extractClaims(r)
 		if err == nil {
 			if !a.acceptedAudiences[claims.Audience] {
@@ -212,7 +211,7 @@ func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 			errMsg = fmt.Sprintf("%#s", err)
 		}
 
-		ctx = context.WithValue(ctx, logging.CtxKey("sub"), logging.CtxAuthValue{
+		ctx := context.WithValue(r.Context(), logging.CtxKey("sub"), logging.CtxAuthValue{
 			Subject: claims.Subject,
 			ErrMsg:  errMsg,
 		})
