@@ -86,7 +86,7 @@ class Cluster(object):
 
     @property
     def clients(self):
-        return ["yugabytedb"]  # TODO: Do we need more, like a specifc one for the DSS?
+        return ["yugabyte"]  # TODO: Do we need more, like a specifc one for the DSS?
 
     def get_client_cert_file(self, client):
         return f"{self.client_certs_dir}/{client}.crt"

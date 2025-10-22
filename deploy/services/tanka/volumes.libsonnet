@@ -119,11 +119,11 @@ local util = import 'util.libsonnet';
         client_certs: [{
           name: 'client-certs',
           mountPath: '/opt/yugabyte-certs/client.yugabyte.crt',
-          subPath: 'yugabytedb.crt',
+          subPath: 'yugabyte.crt',
         }, {
           name: 'client-certs',
           mountPath: '/opt/yugabyte-certs/client.yugabyte.key',
-          subPath: 'yugabytedb.key',
+          subPath: 'yugabyte.key',
         }],
         publicCert: [{
           name: 'public-certs',
