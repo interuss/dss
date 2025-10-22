@@ -240,7 +240,7 @@ def do_init(cluster):
     )
 
 def do_generate_clients(cluster):
-    """Gemerate clients certificates"""
+    """Generate clients certificates"""
 
     generate_clients(cluster)
 
