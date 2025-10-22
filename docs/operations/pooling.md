@@ -60,8 +60,6 @@ others participants:
 * Master: Admin UI: 7000
 * TServer: gRPC: **9100**
 * TServer: Admin UI: 9000
-* TServer: ycql: 9042
-* TServer: ysql: **5433**
 * TServer: metrics: 13000
 * TServer: metrics: 12000
 
