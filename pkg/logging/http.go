@@ -39,8 +39,11 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 	w.next.WriteHeader(statusCode)
 }
 
-type CtxAuthError struct{}
-type CtxAuthSubject struct{}
+type CtxKey string
+type CtxAuthValue struct {
+	Subject string
+	ErrMsg  string
+}
 
 // HTTPMiddleware installs a logging http.Handler that logs requests and
 // selected aspects of responses to 'logger'.
@@ -72,12 +75,11 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		subject, ok := r.Context().Value(CtxAuthSubject{}).(string)
-		if !ok {
-			authErrorMsg := r.Context().Value(CtxAuthError{}).(string)
-			logger = logger.With(zap.String("resp_sub_err", authErrorMsg))
+		authResults := r.Context().Value(CtxKey("sub")).(CtxAuthValue)
+		if authResults.ErrMsg != "" {
+			logger = logger.With(zap.String("resp_sub_err", authResults.ErrMsg))
 		} else {
-			logger = logger.With(zap.String("req_sub", subject))
+			logger = logger.With(zap.String("req_sub", authResults.Subject))
 		}
 
 		handler.ServeHTTP(trw, r)
