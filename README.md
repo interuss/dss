@@ -13,7 +13,7 @@ multiple USSs operating in the same general area to share information while prot
 privacy. The system is focused on facilitating communication amongst actively operating USSs without details
 about UAS operations stored in or processed by the DSS.
 
-- [Deploying a DSS instance](./deploy/README.md)
+- [Deploying a DSS instance](https://interuss.github.io/dss)
 - [Conceptual background on the DSS and services](./concepts.md)
 - [Introduction to the DSS implementation](./README_DSS.md)
 - [DSS implementation details](./implementation_details.md)

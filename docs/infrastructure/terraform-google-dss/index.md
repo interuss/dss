@@ -6,25 +6,31 @@ the tanka files to deploy a DSS instance.
 ## Getting started
 
 ### Prerequisites
-Download & install the following tools to your workstation:
 
-1. Install [terraform](https://developer.hashicorp.com/terraform/downloads).
-2. Install tools from [Prerequisites](../../build.md)
-3. Install provider specific tools:
-    1. [Google Cloud Engine](./index.md#google-cloud-engine)
+#### Terraform
+
+1. Install [terraform](https://developer.hashicorp.com/terraform/downloads) to your workstation.
+    1. Verify installation with `terraform version`
+
+#### Kubernetes tools
+
+1. Install kubectl from [Prerequisites](../../build.md#prerequisites)
+   1. Verify kubectl installation with `kubectl version`
 
 #### Google Cloud Engine
 
 1. Install and initialize [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
-    1. Confirm successful installation with `gcloud version`.
-2. Check that the DSS project is correctly selected: gcloud config list project
+    1. Confirm successful initialization with `gcloud info`; check "Account".
+2. Ensure a GCP project is available (create one in web UI if needed)
+    1. Consider `$GOOGLE_PROJECT_NAME` to refer to this project
+3. Check that the GCP DSS project is correctly selected: `gcloud config list project`
     1. Set another one if needed using: `gcloud config set project $GOOGLE_PROJECT_NAME`
-3. Enable the following API using [Google Cloud CLI](https://cloud.google.com/endpoints/docs/openapi/enable-api#gcloud):
-    1. `compute.googleapis.com`
-    2. `container.googleapis.com`
-    3. If you want to manage DNS entries with terraform: `dns.googleapis.com`
-4. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`
-5. Run `gcloud auth application-default login` to generate credentials to call Google Cloud Platform APIs.
+4. Enable the following API using [Google Cloud CLI](https://cloud.google.com/endpoints/docs/openapi/enable-api#gcloud):
+    1. `gcloud services enable compute.googleapis.com`
+    2. `gcloud services enable container.googleapis.com`
+    3. If you want to manage DNS entries with terraform: `gcloud services enable dns.googleapis.com`
+5. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`
+6. Run `gcloud auth application-default login` to generate credentials to call Google Cloud Platform APIs.
     1. If the result of performing the authorization indicates 404 in the browser, check whether a local dummy-oauth instance is running (using port 8085).  Stop the dummy-oauth instance if it is running.
 
 ### Deployment of the Kubernetes cluster
