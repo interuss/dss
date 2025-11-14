@@ -531,10 +531,6 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
-	if valid.uExtent.EndTime.Before(*valid.uExtent.StartTime) {
-		return nil, stacktrace.NewError("End time is past the start time")
-	}
-
 	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
 	}
