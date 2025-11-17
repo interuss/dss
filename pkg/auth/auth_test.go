@@ -115,7 +115,12 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			res := a.Authorize(nil, test.req, []api.AuthorizationOption{})
+			claims, err := a.extractClaims(test.req)
+			a.decodedClaims = &middlewareResult{
+				claims: claims,
+				err:    err,
+			}
+			res := a.Authorize(nil, test.req.WithContext(context.Background()), []api.AuthorizationOption{})
 			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(res.Error) != test.code {
 				t.Logf("%v", res.Error)
 				t.Errorf("expected: %v, got: %v, with message %s", test.code, stacktrace.GetCode(res.Error), res.Error.Error())

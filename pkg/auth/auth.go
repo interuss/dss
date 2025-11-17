@@ -120,10 +120,18 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
-	logger            *zap.Logger
-	keys              []interface{}
-	keyGuard          sync.RWMutex
+	logger   *zap.Logger
+	keys     []interface{}
+	keyGuard sync.RWMutex
+
 	acceptedAudiences map[string]bool
+
+	decodedClaims *middlewareResult
+}
+
+type middlewareResult struct {
+	claims claims
+	err    error
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
@@ -182,30 +190,68 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Unlock()
 }
 
-// Authorize extracts and verifies bearer tokens from a http.Request.
+// TokenMiddleware decodes the authentication token and passes the claims to the authorizer and to the context for logging.
+func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, err := a.extractClaims(r)
+		if err == nil {
+			if !a.acceptedAudiences[claims.Audience] {
+				err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", claims.Audience)
+			}
+		}
+
+		a.decodedClaims = &middlewareResult{
+			claims: claims,
+			err:    err,
+		}
+
+		var errMsg string
+		if err != nil {
+			//remove the stacktrace using the formatting specifier "%#s"
+			errMsg = fmt.Sprintf("%#s", err)
+		}
+
+		ctx := context.WithValue(r.Context(), logging.CtxKey("sub"), logging.CtxAuthValue{
+			Subject: claims.Subject,
+			ErrMsg:  errMsg,
+		})
+
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// Authorize extracts and verifies bearer tokens from a http.Request after it was validated by the TokenMiddleware.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
-	keyClaims, err := a.ExtractClaims(r)
-	if err != nil {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Failed to extract claims from access token")}
+	if a.decodedClaims == nil {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Access token not found")}
 	}
 
-	if !a.acceptedAudiences[keyClaims.Audience] {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
+	if a.decodedClaims.err != nil {
+		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(a.decodedClaims.err, dsserr.Unauthenticated, "Invalid access token")}
 	}
 
-	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
+	if pass, missing := validateScopes(authOptions, a.decodedClaims.claims.Scopes); !pass {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 			"Access token missing scopes (%v) while expecting %v and got %v",
-			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(a.decodedClaims.claims.Scopes.ToStringSlice(), ", "))}
 	}
 
 	return api.AuthorizationResult{
-		ClientID: &keyClaims.Subject,
-		Scopes:   keyClaims.Scopes.ToStringSlice(),
+		ClientID: &a.decodedClaims.claims.Subject,
+		Scopes:   a.decodedClaims.claims.Scopes.ToStringSlice(),
 	}
 }
 
-func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
+func HasScope(scopes []string, requiredScope api.RequiredScope) bool {
+	for _, scope := range scopes {
+		if scope == string(requiredScope) {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *Authorizer) extractClaims(r *http.Request) (claims, error) {
 	tknStr, ok := getToken(r)
 	if !ok {
 		return claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
@@ -238,15 +284,6 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 	}
 
 	return keyClaims, nil
-}
-
-func HasScope(scopes []string, requiredScope api.RequiredScope) bool {
-	for _, scope := range scopes {
-		if scope == string(requiredScope) {
-			return true
-		}
-	}
-	return false
 }
 
 // describeAuthorizationExpectations builds a human-readable string describing the expectations of the authorization options.
