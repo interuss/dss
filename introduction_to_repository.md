@@ -7,6 +7,18 @@ This document aims to provide a introduction to the repository and its structure
 - The main codebase for the DSS is in `/pkg` and `/cmds`, the core organization and structure of the DSS is in these directories.
 - The `/interfaces` folder contains diagrams, API specifications of the standards and other test tools that come with the DSS. This folder contains references to the ASTM standard, diagrams about remote-id test suite etc.
 
+### Documentation
+
+Documentation is located in `/docs` and build automatically on each release.
+
+Do test documentation locally, you can use the following command:
+
+`make local-doc`
+
+and point your browser to http://127.0.0.1:8888/dss/
+
+Live reload is enabled, you should be able to edit files locally and see changes in live.
+
 ### Introduction to the Monitoring toolset
 
 The [`monitoring` repository](https://github.com/interuss/monitoring) contains a set of folders containing different test suites to test different capabilities of the DSS during development and production use.
