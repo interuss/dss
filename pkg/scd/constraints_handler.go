@@ -299,6 +299,10 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
 	}
 
+	if uExtent.StartTime.After(*uExtent.EndTime) {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint time_end must be after time_start")
+	}
+
 	cells, err := uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
