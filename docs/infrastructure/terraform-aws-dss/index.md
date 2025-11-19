@@ -33,10 +33,10 @@ Download & install the following tools to your workstation:
 2. Copy main.tf, output.tf and variables.gen.tf to the new folder.
 3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`
 4. Check that your new directory contains the following files:
-   - main.tf
-   - output.tf
-   - terraform.tfvars
-   - variables.gen.tf
+    - main.tf
+    - output.tf
+    - terraform.tfvars
+    - variables.gen.tf
 5. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
 6. In the new directory (ie /deploy/infrastructure/personal/terraform-aws-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.

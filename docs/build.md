@@ -34,30 +34,30 @@ Download & install the following tools to your workstation:
 
 - If deploying on Google Cloud,
   [install Google Cloud SDK](https://cloud.google.com/sdk/install)
-  - Confirm successful installation with `gcloud version`
-  - Run `gcloud init` to set up a connection to your account.
-  - `kubectl` can be installed from `gcloud` instead of via the method below.
+    - Confirm successful installation with `gcloud version`
+    - Run `gcloud init` to set up a connection to your account.
+    - `kubectl` can be installed from `gcloud` instead of via the method below.
 - [Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
   interact with kubernetes
-  - Confirm successful installation with `kubectl version --client` (should
-    succeed from any working directory).
-  - Note that kubectl can alternatively be installed via the Google Cloud SDK
-   `gcloud` shell if using Google Cloud.
+    - Confirm successful installation with `kubectl version --client` (should
+      succeed from any working directory).
+    - Note that kubectl can alternatively be installed via the Google Cloud SDK
+     `gcloud` shell if using Google Cloud.
 - [Install tanka](https://tanka.dev/install)
-  - On Linux, after downloading the binary per instructions, run
-    `sudo chmod +x /usr/local/bin/tk`
-  - Confirm successful installation with `tk --version`
+    - On Linux, after downloading the binary per instructions, run
+      `sudo chmod +x /usr/local/bin/tk`
+    - Confirm successful installation with `tk --version`
 - [Install Docker](https://docs.docker.com/get-docker/).
-  - Confirm successful installation with `docker --version`
+    - Confirm successful installation with `docker --version`
 - [Install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
   generate CockroachDB certificates.
-  - These instructions assume CockroachDB Core.
-  - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
-    completing the installation instructions.
-  - Confirm successful installation with `cockroach version`
+    - These instructions assume CockroachDB Core.
+    - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
+      completing the installation instructions.
+    - Confirm successful installation with `cockroach version`
 - If developing the DSS codebase,
   [install Golang](https://golang.org/doc/install)
-  - Confirm successful installation with `go version`
+    - Confirm successful installation with `go version`
 - Optionally install [Jsonnet](https://github.com/google/jsonnet) if editing
   the jsonnet templates.
 
@@ -143,18 +143,18 @@ a PR to that effect would be greatly appreciated.
     ID.
 
     -  On Google Cloud, the recommended procedure to create a cluster is:
-       -  In Google Cloud Platform, go to the Kubernetes Engine page and under
-          Clusters click Create cluster.
-       -  Name the cluster appropriately; e.g., `dss-us-prod`
-       -  Select Zonal and [a compute-zone appropriate to your
-          geography](https://cloud.google.com/compute/docs/regions-zones#available)
-       -  For the "default-pool" node pool:
-          - Enter 3 for number of nodes.
-          -  In the "Nodes" bullet under "default-pool", select N2 series and
-             n2-standard-4 for machine type.
-       -  In the "Networking" bullet under "Clusters", ensure "Enable [VPC
-          -native traffic](https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips)"
-          is checked.
+        -  In Google Cloud Platform, go to the Kubernetes Engine page and under
+           Clusters click Create cluster.
+        -  Name the cluster appropriately; e.g., `dss-us-prod`
+        -  Select Zonal and [a compute-zone appropriate to your
+           geography](https://cloud.google.com/compute/docs/regions-zones#available)
+        -  For the "default-pool" node pool:
+            - Enter 3 for number of nodes.
+            -  In the "Nodes" bullet under "default-pool", select N2 series and
+               n2-standard-4 for machine type.
+        -  In the "Networking" bullet under "Clusters", ensure "Enable [VPC
+           -native traffic](https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips)"
+           is checked.
 
 1.  Make sure correct cluster context is selected by printing the context
     name to the console: `kubectl config current-context`
@@ -166,9 +166,9 @@ a PR to that effect would be greatly appreciated.
       created above with
       [these instructions](https://cloud.google.com/kubernetes-engine/docs/quickstart).
       Specifically:
-       - `gcloud config set project your-project-id`
-       - `gcloud config set compute/zone your-compute-zone`
-       - `gcloud container clusters get-credentials your-cluster-name`
+        - `gcloud config set project your-project-id`
+        - `gcloud config set compute/zone your-compute-zone`
+        - `gcloud container clusters get-credentials your-cluster-name`
 
 1.  Ensure the desired namespace is selected; the recommended
     namespace is simply `default` with one cluster per DSS instance.  Print the
@@ -549,19 +549,19 @@ a PR to that effect would be greatly appreciated.
     - On Google Cloud, the highest-latency operation is provisioning of the
       HTTPS certificate which generally takes 10-45 minutes.  To track this
       progress:
-      - Go to the "Services & Ingress" left-side tab from the Kubernetes Engine
-        page.
-      - Click on the `https-ingress` item (filter by just the cluster of
-        interest if you have multiple clusters in your project).
-      - Under the "Ingress" section for Details, click on the link corresponding
-        with "Load balancer".
-      - Under Frontend for Details, the Certificate column for HTTPS protocol
-        will have an icon next to it which will change to a green checkmark when
-        provisioning is complete.
-      - Click on the certificate link to see provisioning progress.
-      - If everything indicates OK and you still receive a cipher mismatch error
-        message when attempting to visit /healthy, wait an additional 5 minutes
-        before attempting to troubleshoot further.
+        - Go to the "Services & Ingress" left-side tab from the Kubernetes Engine
+          page.
+        - Click on the `https-ingress` item (filter by just the cluster of
+          interest if you have multiple clusters in your project).
+        - Under the "Ingress" section for Details, click on the link corresponding
+          with "Load balancer".
+        - Under Frontend for Details, the Certificate column for HTTPS protocol
+          will have an icon next to it which will change to a green checkmark when
+          provisioning is complete.
+        - Click on the certificate link to see provisioning progress.
+        - If everything indicates OK and you still receive a cipher mismatch error
+          message when attempting to visit /healthy, wait an additional 5 minutes
+          before attempting to troubleshoot further.
 
 1.  If joining an existing pool, share your CRDB node addresses with the
     operators of the existing DSS instances.  They will add these node addresses

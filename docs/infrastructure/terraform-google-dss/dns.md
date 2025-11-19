@@ -11,7 +11,7 @@ it with the rest of the infrastructure.
   variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be
   automatically created by terraform.
 
-## Manual setup 
+## Manual setup
 
 If DNS entries are managed manually, set them up manually using the following steps:
 
@@ -36,5 +36,6 @@ If DNS entries are managed manually, set them up manually using the following st
        "address" = "35.186.236.146"
        "expected_dns" = "dss.interuss.example.com"
    }
-   
+   ```
+
 2. Create the related DNS A entries to point to the static ips.
