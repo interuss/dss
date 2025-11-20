@@ -1,0 +1,16 @@
+# This Dockerfile is used to build the documentation to be served locally
+
+FROM python:3.12
+
+RUN git config --global --add safe.directory /app
+
+COPY docs/requirements.txt /
+RUN pip install -r /requirements.txt
+
+COPY . /app
+
+WORKDIR /app
+
+EXPOSE 8000
+
+CMD ["mkdocs", "serve", "-a", "0.0.0.0:8000", "--livereload"]
