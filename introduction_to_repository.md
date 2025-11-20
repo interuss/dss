@@ -11,7 +11,7 @@ This document aims to provide a introduction to the repository and its structure
 
 Documentation is located in `/docs` and build automatically on each release.
 
-Do test documentation locally, you can use the following command:
+To test documentation locally, you can use the following command:
 
 `make local-doc`
 
