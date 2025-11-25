@@ -1286,7 +1286,7 @@
   <span class="md-ellipsis">
     
   
-    DSS Pooling
+    DSS Pooling (Yugabyte)
   
 
     
@@ -1314,7 +1314,7 @@
   <span class="md-ellipsis">
     
   
-    DSS Pooling
+    DSS Pooling (CockroachDB)
   
 
     
@@ -1764,31 +1764,43 @@ meets the CockroachDB requirements below.</p>
 <p>Download &amp; install the following tools to your workstation:</p>
 <ul>
 <li>If deploying on Google Cloud,
-  <a href="https://cloud.google.com/sdk/install">install Google Cloud SDK</a></li>
+  <a href="https://cloud.google.com/sdk/install">install Google Cloud SDK</a><ul>
 <li>Confirm successful installation with <code>gcloud version</code></li>
 <li>Run <code>gcloud init</code> to set up a connection to your account.</li>
 <li><code>kubectl</code> can be installed from <code>gcloud</code> instead of via the method below.</li>
+</ul>
+</li>
 <li><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">Install kubectl</a> to
-  interact with kubernetes</li>
+  interact with kubernetes<ul>
 <li>Confirm successful installation with <code>kubectl version --client</code> (should
-    succeed from any working directory).</li>
+  succeed from any working directory).</li>
 <li>Note that kubectl can alternatively be installed via the Google Cloud SDK
-   <code>gcloud</code> shell if using Google Cloud.</li>
-<li><a href="https://tanka.dev/install">Install tanka</a></li>
+ <code>gcloud</code> shell if using Google Cloud.</li>
+</ul>
+</li>
+<li><a href="https://tanka.dev/install">Install tanka</a><ul>
 <li>On Linux, after downloading the binary per instructions, run
-    <code>sudo chmod +x /usr/local/bin/tk</code></li>
+  <code>sudo chmod +x /usr/local/bin/tk</code></li>
 <li>Confirm successful installation with <code>tk --version</code></li>
-<li><a href="https://docs.docker.com/get-docker/">Install Docker</a>.</li>
+</ul>
+</li>
+<li><a href="https://docs.docker.com/get-docker/">Install Docker</a>.<ul>
 <li>Confirm successful installation with <code>docker --version</code></li>
+</ul>
+</li>
 <li><a href="https://www.cockroachlabs.com/get-cockroachdb/">Install CockroachDB</a> to
-  generate CockroachDB certificates.</li>
+  generate CockroachDB certificates.<ul>
 <li>These instructions assume CockroachDB Core.</li>
 <li>You may need to run <code>sudo chmod +x /usr/local/bin/cockroach</code> after
-    completing the installation instructions.</li>
+  completing the installation instructions.</li>
 <li>Confirm successful installation with <code>cockroach version</code></li>
+</ul>
+</li>
 <li>If developing the DSS codebase,
-  <a href="https://golang.org/doc/install">install Golang</a></li>
+  <a href="https://golang.org/doc/install">install Golang</a><ul>
 <li>Confirm successful installation with <code>go version</code></li>
+</ul>
+</li>
 <li>Optionally install <a href="https://github.com/google/jsonnet">Jsonnet</a> if editing
   the jsonnet templates.</li>
 </ul>
@@ -1878,21 +1890,23 @@ a PR to that effect would be greatly appreciated.</p>
     with other information by Kubernetes to generate a longer cluster context
     ID.</p>
 <ul>
-<li>On Google Cloud, the recommended procedure to create a cluster is:</li>
+<li>On Google Cloud, the recommended procedure to create a cluster is:<ul>
 <li>In Google Cloud Platform, go to the Kubernetes Engine page and under
-      Clusters click Create cluster.</li>
+   Clusters click Create cluster.</li>
 <li>Name the cluster appropriately; e.g., <code>dss-us-prod</code></li>
 <li>Select Zonal and <a href="https://cloud.google.com/compute/docs/regions-zones#available">a compute-zone appropriate to your
-      geography</a></li>
+   geography</a></li>
 <li>For the "default-pool" node pool:<ul>
 <li>Enter 3 for number of nodes.</li>
 <li>In the "Nodes" bullet under "default-pool", select N2 series and
-     n2-standard-4 for machine type.</li>
+   n2-standard-4 for machine type.</li>
 </ul>
 </li>
 <li>In the "Networking" bullet under "Clusters", ensure "Enable <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips">VPC
-      -native traffic</a>"
-      is checked.</li>
+   -native traffic</a>"
+   is checked.</li>
+</ul>
+</li>
 </ul>
 </li>
 <li>
@@ -1908,10 +1922,12 @@ a PR to that effect would be greatly appreciated.</p>
   created above with
   <a href="https://cloud.google.com/kubernetes-engine/docs/quickstart">these instructions</a>.
   Specifically:</p>
-</li>
+<ul>
 <li><code>gcloud config set project your-project-id</code></li>
 <li><code>gcloud config set compute/zone your-compute-zone</code></li>
 <li><code>gcloud container clusters get-credentials your-cluster-name</code></li>
+</ul>
+</li>
 </ul>
 </li>
 <li>
@@ -2394,20 +2410,22 @@ instance joining the pool.</li>
 <ul>
 <li>On Google Cloud, the highest-latency operation is provisioning of the
   HTTPS certificate which generally takes 10-45 minutes.  To track this
-  progress:</li>
+  progress:<ul>
 <li>Go to the "Services &amp; Ingress" left-side tab from the Kubernetes Engine
-    page.</li>
+  page.</li>
 <li>Click on the <code>https-ingress</code> item (filter by just the cluster of
-    interest if you have multiple clusters in your project).</li>
+  interest if you have multiple clusters in your project).</li>
 <li>Under the "Ingress" section for Details, click on the link corresponding
-    with "Load balancer".</li>
+  with "Load balancer".</li>
 <li>Under Frontend for Details, the Certificate column for HTTPS protocol
-    will have an icon next to it which will change to a green checkmark when
-    provisioning is complete.</li>
+  will have an icon next to it which will change to a green checkmark when
+  provisioning is complete.</li>
 <li>Click on the certificate link to see provisioning progress.</li>
 <li>If everything indicates OK and you still receive a cipher mismatch error
-    message when attempting to visit /healthy, wait an additional 5 minutes
-    before attempting to troubleshoot further.</li>
+  message when attempting to visit /healthy, wait an additional 5 minutes
+  before attempting to troubleshoot further.</li>
+</ul>
+</li>
 </ul>
 </li>
 <li>
@@ -2478,7 +2496,7 @@ existing clusters you will need to:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 1, 2025 19:40:26 UTC">October 1, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 25, 2025 10:14:52 UTC">November 25, 2025</span>
   </span>
 
     

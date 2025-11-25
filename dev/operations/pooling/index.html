@@ -25,7 +25,7 @@
     
     
       
-        <title>DSS Pooling - DSS Deployment Documentation</title>
+        <title>DSS Pooling (Yugabyte) - DSS Deployment Documentation</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dss-pooling" class="md-skip">
+        <a href="#dss-pooling-yugabyte" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              DSS Pooling
+              DSS Pooling (Yugabyte)
             
           </span>
         </div>
@@ -1071,7 +1071,7 @@
   <span class="md-ellipsis">
     
   
-    DSS Pooling
+    DSS Pooling (Yugabyte)
   
 
     
@@ -1089,7 +1089,7 @@
   <span class="md-ellipsis">
     
   
-    DSS Pooling
+    DSS Pooling (Yugabyte)
   
 
     
@@ -1298,7 +1298,7 @@
   <span class="md-ellipsis">
     
   
-    DSS Pooling
+    DSS Pooling (CockroachDB)
   
 
     
@@ -1709,7 +1709,7 @@
   
 
 
-<h1 id="dss-pooling">DSS Pooling<a class="headerlink" href="#dss-pooling" title="Permanent link">&para;</a></h1>
+<h1 id="dss-pooling-yugabyte">DSS Pooling (Yugabyte)<a class="headerlink" href="#dss-pooling-yugabyte" title="Permanent link">&para;</a></h1>
 <blockquote>
 <p>[!WARNING] This document is about pooling with <strong>Yugabyte</strong>. CockroachDB
 documentation is <a href="../pooling-crdb/">there</a>.</p>
@@ -1828,10 +1828,12 @@ InterUSS-compatible pool.  The deployment instructions produce a system that
 complies with all these requirements, so this section may be ignored if
 following those instructions.</p>
 <ul>
-<li>All Yugabyte nodes must be run in secure mode.</li>
+<li>All Yugabyte nodes must be run in secure mode.<ul>
 <li>use_node_to_node_encryption enabled</li>
 <li>use_client_to_server_encryption enabled</li>
 <li>allow_insecure_connections disabled</li>
+</ul>
+</li>
 <li>The ordering of the <code>--locality</code> flag keys must be the same across all
   CockroachDB nodes in the cluster.</li>
 <li>All DSS instances in the same cluster must point their ntpd at the same NTP
@@ -2061,7 +2063,7 @@ More information is available in <a href="https://docs.yugabyte.com/preview/admi
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 14:54:57 UTC">August 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 25, 2025 10:14:52 UTC">November 25, 2025</span>
   </span>
 
     
@@ -2114,13 +2116,13 @@ More information is available in <a href="https://docs.yugabyte.com/preview/admi
         
         
           
-          <a href="../pooling-crdb/" class="md-footer__link md-footer__link--next" aria-label="Next: DSS Pooling">
+          <a href="../pooling-crdb/" class="md-footer__link md-footer__link--next" aria-label="Next: DSS Pooling (CockroachDB)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                DSS Pooling
+                DSS Pooling (CockroachDB)
               </div>
             </div>
             <div class="md-footer__button md-icon">
