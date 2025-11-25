@@ -43,7 +43,7 @@ For a complete use case, you can look into the configurations of the [CI job](ht
 
 ## Migrations and upgrades
 
-Information related to migrations and upgrades can be found in [MIGRATION.md](migration.md).
+Information related to migrations and upgrades can be found in [the migration section](migration.md).
 
 ## Development
 

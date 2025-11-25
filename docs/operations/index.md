@@ -1,6 +1,6 @@
 # Operations
 
-This folder contains the instructions and related material used to operate a DSS. It is responsible to provide diagnostic capabilities and utilities to operate the DSS instance, such as certificates management.
+This section contains the instructions and related material used to operate a DSS. It is responsible to provide diagnostic capabilities and utilities to operate the DSS instance, such as certificates management.
 
 Currently, the operations scripts are located inside [build](../build.md) and if using the [infrastructure layer](../infrastructure/index.md), helpers are generated in the workspace directory by terraform after deployment.
 

@@ -1,8 +1,15 @@
-# Kubernetes deployment via Tanka
+# Tanka library
 
-This folder contains a set of configuration files to be used by
-[tanka](https://tanka.dev/install) to deploy a single DSS instance via
-Kubernetes following the procedures found in the [build](../build.md) folder.
+A set of configuration to be used by [tanka](https://tanka.dev/install) to deploy a single DSS instance via
+Kubernetes is provided [there](https://github.com/interuss/dss/tree/master/deploy/services/tanka).
+
+## Requirements
+
+This section hasen't been written yet.
+
+## Usage
+
+This section hasen't been written yet.
 
 ## Job cleanup
 

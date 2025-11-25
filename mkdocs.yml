@@ -94,13 +94,14 @@ nav:
     - migration.md
   - Infrastructure:
       - infrastructure/index.md
-      - infrastructure/local-minikube.md
       - terraform-aws-dss:
           - infrastructure/terraform-aws-dss/index.md
           - infrastructure/terraform-aws-dss/dns.md
       - terraform-google-dss:
           - infrastructure/terraform-google-dss/index.md
           - infrastructure/terraform-google-dss/dns.md
+      - minikube:
+          - infrastructure/minikube/index.md
   - Services:
       - services/index.md
       - services/helm-charts.md
