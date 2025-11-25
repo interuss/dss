@@ -1,4 +1,4 @@
-# DSS Pooling
+# DSS Pooling (CockroachDB)
 
 > [!WARNING]
 > This document is about pooling with **CockroachDB**. Yugabyte documentation is [there](./pooling.md).
@@ -122,7 +122,7 @@ following those instructions.
 
 - All CockroachDB nodes must be run in secure mode, by supplying the
   `--certs-dir` and `--ca-key` flags.
-  - Do not specify `--insecure`
+    - Do not specify `--insecure`
 - The ordering of the `--locality` flag keys must be the same across all
   CockroachDB nodes in the cluster.
 - All DSS instances in the same cluster must point their ntpd at the same NTP
