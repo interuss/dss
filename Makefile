@@ -212,3 +212,9 @@ evaluate-tanka:
 # This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
 .PHONY: presubmit
 presubmit: hygiene-tests dss-tests
+
+# Serve documentation locally
+.PHONY: local-doc
+local-doc:
+	docker build -f Dockerfile.docs . -t dss-docs
+	docker run --rm -it -p 8888:8000 -v $(CURDIR):/app/:ro dss-docs
