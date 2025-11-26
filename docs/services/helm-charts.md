@@ -4,7 +4,7 @@ An [Helm Chart](https://helm.sh/) is provided [there](https://github.com/interus
 ## Requirements
 1. A Kubernetes cluster should be running and you should be properly authenticated.
 Requirements and instructions to create a new Kubernetes cluster can be found [here](../infrastructure/index.md).
-2. Create the certificates and apply them to the cluster using the instructions of [section 6 and 7](../build.md)
+2. Create the certificates and apply them to the cluster using the instructions of [section 6 and 7](../build.md#certificates)
 3. Install [Helm](https://helm.sh/) version 3.11.3 or higher
 
 ## Usage

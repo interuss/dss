@@ -42,7 +42,7 @@ In the helm charts, use `docker.io/interuss-local/dss:latest` as image and be su
 
 You can now deploy the DSS services using [helm charts](../../services/helm-charts.md).
 
-Follow the instructions in the [helm section](../../services/helm-charts.md), especially the ones related to certificate generation and publication to the cluster. However, there are some minikube specific things to do:
+Follow the instructions in the [helm section](../../services/helm-charts.md), especially the ones related to [certificate generation](../../build.md#certificates) and publication to the cluster. However, there are some minikube specific things to do:
 
 * Use the `global.cloudProvider` setting with the value `minikube` and deploy the charts on the `dss-local-cluster` kubernetes context.
 * To access the service, find the external IP using the `kubectl get services dss-dss-gateway` command. The port 80, without HTTPs is used.

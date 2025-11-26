@@ -223,7 +223,7 @@ a PR to that effect would be greatly appreciated.
        to create DNS entries for the static IP addresses created above.  To list
        the IP addresses, use `gcloud compute addresses list`.
 
-1.  (Only if you use CockroachDB) Use [`make-certs.py` script](https://github.com/interuss/dss/blob/master/build/make-certs.py) to create certificates for
+1.  [](){ #certificates }(Only if you use CockroachDB) Use [`make-certs.py` script](https://github.com/interuss/dss/blob/master/build/make-certs.py) to create certificates for
     the CockroachDB nodes in this DSS instance:
 
         ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
