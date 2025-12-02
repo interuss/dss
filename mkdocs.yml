@@ -86,6 +86,8 @@ markdown_extensions:
   - toc:
       permalink: true # displays a permalink next to headings
 
+  - attr_list  # Enable creation of custom anchors
+
 nav:
   - Home:
     - index.md
