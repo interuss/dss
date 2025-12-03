@@ -55,6 +55,7 @@ local yugabyteLB(metadata, name, ip) =
             --placement_region=%s
             --placement_zone=%s
             --use_private_ip=zone
+            --node_to_node_encryption_use_client_certificates=true
           ||| % [
             std.join(",", metadata.yugabyte.masterAddresses),
             std.length(metadata.yugabyte.masterAddresses),
@@ -98,6 +99,7 @@ local yugabyteLB(metadata, name, ip) =
             --placement_region=%s
             --placement_zone=%s
             --use_private_ip=zone
+            --node_to_node_encryption_use_client_certificates=true
           ||| % [
             std.join(",", metadata.yugabyte.masterAddresses),
             metadata.yugabyte.tserver.rpc_bind_addresses,
