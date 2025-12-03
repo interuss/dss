@@ -52,3 +52,9 @@ yugabyte:
     clientToServer: true
     insecure: false
     provided: true
+
+  gflags:
+    master:
+      node_to_node_encryption_use_client_certificates: "true"
+    tserver:
+      node_to_node_encryption_use_client_certificates: "true"
