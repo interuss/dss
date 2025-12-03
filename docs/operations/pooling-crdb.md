@@ -1,7 +1,7 @@
 # DSS Pooling (CockroachDB)
 
-> [!WARNING]
-> This document is about pooling with **CockroachDB**. Yugabyte documentation is [there](./pooling.md).
+!!! note
+    This document is about pooling with **CockroachDB**. Yugabyte documentation is [there](./pooling.md).
 
 ## Introduction
 
