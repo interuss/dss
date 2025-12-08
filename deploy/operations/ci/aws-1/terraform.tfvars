@@ -11,7 +11,7 @@ aws_instance_type            = "t3.medium"
 aws_kubernetes_storage_class = "gp2"
 
 # DSS configuration
-image = "docker.io/interuss/dss:latest"
+image               = "docker.io/interuss/dss:latest"
 should_init         = true
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss-ci"
