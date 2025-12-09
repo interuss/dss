@@ -359,7 +359,8 @@ a PR to that effect would be greatly appreciated.
           [join flag](https://www.cockroachlabs.com/docs/stable/start-a-node.html#flags).
 
     1.  `VAR_YUGABYTE_DOCKER_IMAGE_NAME`: Docker image of Yugabyte db pods.
-        Shall be set to at least `yugabytedb/yugabyte:2.25.1.0-b381`
+        Ensure you use an image with mtls working, see https://github.com/yugabyte/yugabyte-db/commit/89685fa888daca54eb3164a8c301e3bda8cf41b0
+        `interuss/yugabyte:2025.1.2.1-interuss` is a known good image.
 
     1.  `VAR_YUGABYTE_MASTER_IPn`: IP address (**numeric**) of nth Yugabyte
         master node (add more entries if you have more than 3 nodes).

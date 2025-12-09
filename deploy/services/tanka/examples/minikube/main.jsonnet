@@ -17,7 +17,7 @@ local metadata = metadataBase {
     shouldInit: true,
   },
   yugabyte+: {
-    image: 'yugabytedb/yugabyte:2.25.1.0-b381',
+    image: 'interuss/yugabyte:2025.1.2.1-interuss',
     masterNodeIPs: ['', '', ''],
     tserverNodeIPs: ['', '', ''],
     placement: {
