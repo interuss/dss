@@ -25,7 +25,7 @@ resource "local_file" "tanka_config_main" {
     VAR_YUGABYTE_MASTER_ADDRESSES            = join(",", [for m in concat([for i in range(var.node_count) : format("%s.master.${var.db_hostname_suffix}", i)], var.yugabyte_external_nodes) : "'${m}'"])
     VAR_YUGABYTE_MASTER_BIND_ADDRESS         = "$${HOSTNAMENO}.master.${var.db_hostname_suffix}"
     VAR_YUGABYTE_TSERVER_BIND_ADDRESS        = "$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}"
-    VAR_YUGABYTE_DOCKER_IMAGE_NAME           = "yugabytedb/yugabyte:2.25.1.0-b381" // TODO: This should be an option
+    VAR_YUGABYTE_DOCKER_IMAGE_NAME           = "interuss/yugabyte:2025.1.2.1-interuss" // TODO: This should be an option
     VAR_YUGABYTE_LIGHT_RESOURCES             = var.yugabyte_light_resources
     VAR_APP_HOSTNAME                         = var.app_hostname
     VAR_PUBLIC_KEY_PEM_PATH                  = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""

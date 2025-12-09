@@ -36,9 +36,9 @@ yugabyte:
   enabled: false
   # See https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
 
-  Image:
-    repository: yugabytedb/yugabyte
-    tag: 2.25.1.0-b381
+  Image: # Ensure you use an image with mtls working, see https://github.com/yugabyte/yugabyte-db/commit/89685fa888daca54eb3164a8c301e3bda8cf41b0
+    repository: interuss/yugabyte
+    tag: 2025.1.2.1-interuss
 
   nameOverride: dss-yugabyte
 
