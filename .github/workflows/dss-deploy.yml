@@ -42,6 +42,7 @@ jobs:
           COMPOSE_PROFILES: aws-1
           AWS_REGION: us-east-1
           TF_VAR_app_hostname: ${{ secrets.APP_HOSTNAME }}
+          TF_VAR_authorization: ${{ secrets.AUTHORIZATION }}
           TF_VAR_aws_iam_administrator_role: ${{ secrets.AWS_IAM_ADMINISTRATOR_ROLE }}
           TF_VAR_aws_iam_ci_role: ${{ secrets.AWS_IAM_CI_ROLE }}
           TF_VAR_aws_iam_permissions_boundary: ${{ secrets.AWS_IAM_PERMISSIONS_BOUNDARY }}
