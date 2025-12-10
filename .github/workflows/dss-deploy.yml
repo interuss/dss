@@ -3,8 +3,9 @@ on:
   workflow_dispatch: {}
 jobs:
   deploy:
-    name: Deploy DSS to AWS
+    name: Deploy DSS to AWS (manual)
     runs-on: ubuntu-latest
+    environment: ci-deploy-aws-1
     if: github.repository == 'interuss/dss' || github.repository == 'Orbitalize/dss'
     concurrency:
       group: dss-deploy-aws
@@ -20,30 +21,33 @@ jobs:
           echo "Host: ${{ runner.os }}"
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref }}"
-          docker images
 
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - name: Configure AWS Credentials
+      - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::301042233698:role/InterUSSGithubCI
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-1
           mask-aws-account-id: true
           role-duration-seconds: 5400
 
-      - name: Caller Id
-        run: |
-          aws sts get-caller-identity
-
-      - name: Test Deployment Scenario AWS-1
+      - name: "Test Deployment Scenario: AWS-1"
         shell: bash
         working-directory: ./deploy/operations/
         env:
           COMPOSE_PROFILES: aws-1
           AWS_REGION: us-east-1
+          TF_VAR_app_hostname: ${{ secrets.APP_HOSTNAME }}
+          TF_VAR_authorization: ${{ secrets.AUTHORIZATION }}
+          TF_VAR_aws_iam_administrator_role: ${{ secrets.AWS_IAM_ADMINISTRATOR_ROLE }}
+          TF_VAR_aws_iam_ci_role: ${{ secrets.AWS_IAM_CI_ROLE }}
+          TF_VAR_aws_iam_permissions_boundary: ${{ secrets.AWS_IAM_PERMISSIONS_BOUNDARY }}
+          TF_VAR_aws_role_to_assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          TF_VAR_aws_route53_zone_id: ${{ secrets.AWS_ROUTE53_ZONE_ID }}
+          TF_VAR_db_hostname_suffix: ${{ secrets.DB_HOSTNAME_SUFFIX }}
         run: |
           docker compose up --exit-code-from ci-aws-1
