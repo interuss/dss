@@ -122,7 +122,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"aux\" does not exist") {
 			datastore.Pool.Close()
-			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for strategic conflict detection store")
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to datastore server for strategic conflict detection store")
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
 	}
@@ -144,21 +144,21 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "rid"
-	ridCrdb, err := datastore.Dial(ctx, connectParameters)
+	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to datastore server for remote ID store")
 		}
 		return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	ridStore, err := ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
+	ridStore, err := ridc.NewStore(ctx, datastore, connectParameters.DBName, logger)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-			ridCrdb.Pool.Close()
-			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for remote ID store")
+			datastore.Pool.Close()
+			return nil, nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to datastore server for remote ID store")
 		}
 		return nil, nil, stacktrace.Propagate(err, "Failed to create remote ID store")
 	}
@@ -171,7 +171,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
-	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, ridCrdb, connectParameters.DBName) }); err != nil {
+	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, datastore, connectParameters.DBName) }); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
 	}
 	ridCron.Start()
@@ -195,17 +195,17 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := datastore.Dial(ctx, connectParameters)
+	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	scdStore, err := scdc.NewStore(ctx, scdCrdb)
+	scdStore, err := scdc.NewStore(ctx, datastore)
 	if err != nil {
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"scd\" does not exist") {
-			scdCrdb.Pool.Close()
-			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to CRDB server for strategic conflict detection store")
+			datastore.Pool.Close()
+			return nil, stacktrace.PropagateWithCode(err, codeRetryable, "Failed to connect to datastore server for strategic conflict detection store")
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create strategic conflict detection store")
 	}
@@ -213,7 +213,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
 	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
-	if _, err := scdCron.AddFunc("@every 1m", func() { getDBStats(ctx, scdCrdb, scdc.DatabaseName) }); err != nil {
+	if _, err := scdCron.AddFunc("@every 1m", func() { getDBStats(ctx, datastore, scdc.DatabaseName) }); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", scdc.DatabaseName)
 	}
 
