@@ -43,6 +43,9 @@ The current implementation relied historically on CockroachDB for data storage a
 between DSS participants but is migrating to Yugabyte with both version supported. See [implementation details](implementation_details.md) for
 more information.
 
+The DSS temporarily requires a patched version of Yugabyte, the reader may find [here](build/yugabyte_image_building.md) instructions on how to build it.
+
+
 ### DB Manager
 
 Component responsible for performing orderly database schema migrations, including database bootstrapping. Invoked automatically on first run along with the CRDB cluster-init job, or when requested manually by a user.
