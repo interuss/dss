@@ -378,19 +378,26 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 	return orderedIndices, nil
 }
 
-func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
+func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error {
 
 	const query = `
-		SELECT
-			id
-		FROM
-			scd_subscriptions
-		WHERE
-			cells && $1
-		FOR UPDATE
-	`
+        SELECT
+            id
+        FROM
+            scd_subscriptions
+        WHERE
+            cells && $1
+        OR
+            id = ANY($2)
+        FOR UPDATE
+    `
 
-	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells))
+	ids := make([]string, len(subscriptionIds))
+	for i, id := range subscriptionIds {
+		ids[i] = id.String()
+	}
+
+	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells), ids)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}

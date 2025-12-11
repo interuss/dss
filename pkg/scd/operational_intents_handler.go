@@ -99,9 +99,16 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 
-		// Early lock on the subscriptions covering the cells relevant to the OIR
+		// Lock subscriptions based on the cell and subscriptions we're going to use
+		// to reduce the number of retries under concurrent load.
 		// See issue #1002 for details.
-		err = r.LockSubscriptionsOnCells(ctx, old.Cells)
+		var subscriptionIds = make([]dssmodels.ID, 0)
+
+		if old.SubscriptionID != nil {
+			subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
+		}
+
+		err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
@@ -830,18 +837,31 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 	var responseOK *restapi.ChangeOperationalIntentReferenceResponse
 	var responseConflict *restapi.AirspaceConflictResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Lock subscriptions based on the cell to reduce the number of retries under concurrent load.
-		// See issue #1002 for details.
-		err = r.LockSubscriptionsOnCells(ctx, validParams.cells)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to acquire lock")
-		}
 
 		// Get existing OperationalIntent, if any
 		old, err := r.GetOperationalIntent(ctx, validParams.id)
 		if err != nil {
 			return stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
 		}
+
+		// Lock subscriptions based on the cell and subscriptions we're going to use
+		// to reduce the number of retries under concurrent load.
+		// See issue #1002 for details.
+		var subscriptionIds = make([]dssmodels.ID, 0)
+
+		if old != nil && old.SubscriptionID != nil {
+			subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
+		}
+
+		if !validParams.subscriptionID.Empty() {
+			subscriptionIds = append(subscriptionIds, validParams.subscriptionID)
+		}
+
+		err = r.LockSubscriptionsOnCells(ctx, validParams.cells, subscriptionIds)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to acquire lock")
+		}
+
 		// Validate the request against the previous OIR
 		if err := validateUpsertRequestAgainstPreviousOIR(manager, validParams.ovn, old); err != nil {
 			return stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Request validation failed")

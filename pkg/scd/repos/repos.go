@@ -58,8 +58,8 @@ type Subscription interface {
 	// notification indices.
 	IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error)
 
-	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells.
-	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error
+	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells and, optionnaly, specific subscriptions via their IDs
+	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error
 
 	// ListExpiredSubscriptions lists all subscriptions older than the threshold.
 	// Their age is determined by their end time, or by their update time if they do not have an end time.
