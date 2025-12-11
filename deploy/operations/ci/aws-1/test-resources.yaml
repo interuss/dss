@@ -33,18 +33,31 @@ data:
         specification:
           environment_variable_containing_auth_spec: AUTH_SPEC
           scopes_authorized:
+            # InterUSS RIDv1 automated testing API
+            - rid.inject_test_data
+            - dss.read.identification_service_areas
             # ASTM F3411-22a USS emulation roles
             - rid.service_provider
             - rid.display_provider
             # ASTM F3411-19 USS emulation roles
             - dss.write.identification_service_areas
             - dss.read.identification_service_areas
+            # InterUSS flight_planning v1 automated testing API
+            - interuss.flight_planning.direct_automated_test
+            - interuss.flight_planning.plan
+            # Legacy InterUSS scd injection v1 automated testing API
+            - utm.inject_test_data
             # ASTM F3548-21 USS emulation roles
             - utm.strategic_coordination
             - utm.conformance_monitoring_sa
             - utm.availability_arbitration
-            - utm.constraint_management      
-      
+            - utm.constraint_management
+            # InterUSS versioning automated testing
+            - interuss.versioning.read_system_versions
+            - interuss.geospatial_map.query
+            # For authentication test purposes.
+            # Remove if the authentication provider pointed to by AUTH_SPEC does not support it.
+            - ""
       
       second_utm_auth:
         $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
@@ -99,6 +112,7 @@ data:
         specification:
           participant_id: uss_aws
           base_url: https://dss.ci.aws-interuss.uspace.dev
+          supports_ovn_request: true
           has_private_address: false
       
       scd_dss_instances:
@@ -110,11 +124,12 @@ data:
           dss_instances:
             - participant_id: uss_aws
               base_url: https://dss.ci.aws-interuss.uspace.dev
+              supports_ovn_request: true
               has_private_address: false
       
-      dss_crdb_cluster:
-        $content_schema: monitoring/uss_qualifier/resources/interuss/crdb/crdb/CockroachDBClusterResource.json
-        resource_type: resources.interuss.crdb.crdb.CockroachDBClusterResource
+      dss_datastore_cluster:
+        $content_schema: monitoring/uss_qualifier/resources/interuss/datastore/datastore/DatastoreDBClusterResource.json
+        resource_type: resources.interuss.datastore.datastore.DatastoreDBClusterResource
         specification:
           nodes:
             - participant_id: uss_aws
@@ -127,20 +142,24 @@ data:
               host: 2.db.ci.aws-interuss.uspace.dev
               port: 26257
 
+
   aws_dss_probing.yaml: |
     $content_schema: monitoring/uss_qualifier/configurations/configuration/USSQualifierConfiguration.json
     v1:
       test_run:
         resources:
           resource_declarations:
+            kentland_service_area_volume: {$ref: '../dev/library/resources.yaml#/kentland_service_area_volume'}
             kentland_service_area: { $ref: '../dev/library/resources.yaml#/kentland_service_area' }
+            kentland_planning_area_volume: { $ref: '../dev/library/resources.yaml#/kentland_planning_area_volume' }
             kentland_planning_area: { $ref: '../dev/library/resources.yaml#/kentland_planning_area' }
             kentland_problematically_big_area: { $ref: '../dev/library/resources.yaml#/kentland_problematically_big_area' }
+    
             utm_auth: { $ref: './ci_environment.yaml#/utm_auth' }
             second_utm_auth: {$ref: './ci_environment.yaml#/second_utm_auth'}
             utm_client_identity: { $ref: '../dev/library/resources.yaml#/utm_client_identity' }
             id_generator: { $ref: '../dev/library/resources.yaml#/id_generator' }
-            dss_crdb_cluster: { $ref: './ci_environment.yaml#/dss_crdb_cluster' }
+            dss_datastore_cluster: { $ref: './ci_environment.yaml#/dss_datastore_cluster' }
             scd_dss_instances: { $ref: './ci_environment.yaml#/scd_dss_instances' }
             netrid_dss_instances_v22a: { $ref: './ci_environment.yaml#/netrid_dss_instances_v22a' }
             netrid_dss_instances_v19: { $ref: './ci_environment.yaml#/netrid_dss_instances_v19' }
@@ -148,7 +167,7 @@ data:
         non_baseline_inputs:
           - v1.test_run.resources.resource_declarations.utm_auth
           - v1.test_run.resources.resource_declarations.second_utm_auth
-          - v1.test_run.resources.resource_declarations.dss_crdb_cluster
+          - v1.test_run.resources.resource_declarations.dss_datastore_cluster
           - v1.test_run.resources.resource_declarations.scd_dss_instances
           - v1.test_run.resources.resource_declarations.netrid_dss_instances_v22a
           - v1.test_run.resources.resource_declarations.netrid_dss_instances_v19
@@ -159,7 +178,7 @@ data:
               f3411v19_dss_instances: netrid_dss_instances_v19
               f3411v22a_dss_instances: netrid_dss_instances_v22a
               f3548v21_dss_instances: scd_dss_instances
-              dss_crdb_cluster: dss_crdb_cluster
+              dss_datastore_cluster: dss_datastore_cluster
               utm_client_identity: utm_client_identity
               id_generator: id_generator
               service_area: kentland_service_area
@@ -219,7 +238,7 @@ spec:
           image: alpine:3.17.3
           command: [ 'sh', '-c', "until wget -nv https://dss.ci.aws-interuss.uspace.dev/healthy; do echo waiting for dss to be available from the public internet; sleep 2; done" ]
       containers:
-        - image: interuss/monitoring:v0.16.0
+        - image: interuss/monitoring:v0.24.0
           name: uss-qualifier
           workingDir: /app/monitoring/uss_qualifier
           volumeMounts:
