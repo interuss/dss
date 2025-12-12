@@ -11,7 +11,7 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
-	crdbflags "github.com/interuss/dss/pkg/datastore/flags"
+	datastoreflags "github.com/interuss/dss/pkg/datastore/flags"
 
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
@@ -222,7 +222,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 
 func connectTo(ctx context.Context, dbName string) (*datastore.Datastore, error) {
 	// Connect to database server
-	connectParameters := crdbflags.ConnectParameters()
+	connectParameters := datastoreflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = dbName
 	return datastore.Dial(ctx, connectParameters)

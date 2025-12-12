@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/datastore"
-	crdbflags "github.com/interuss/dss/pkg/datastore/flags"
+	datastoreflags "github.com/interuss/dss/pkg/datastore/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -166,17 +166,17 @@ func evict(cmd *cobra.Command, _ []string) error {
 }
 
 func getSCDStore(ctx context.Context) (*scdc.Store, error) {
-	connectParameters := crdbflags.ConnectParameters()
+	connectParameters := datastoreflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = scdc.DatabaseName
-	scdCrdb, err := datastore.Dial(ctx, connectParameters)
+	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		logParams := connectParameters
 		logParams.Credentials.Password = "[REDACTED]"
 		return nil, fmt.Errorf("failed to connect to SCD database with %+v: %w", logParams, err)
 	}
 
-	scdStore, err := scdc.NewStore(ctx, scdCrdb)
+	scdStore, err := scdc.NewStore(ctx, datastore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create strategic conflict detection store with %+v: %w", connectParameters, err)
 	}
@@ -187,17 +187,17 @@ func getRIDStore(ctx context.Context) (*ridc.Store, error) {
 
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	connectParameters := crdbflags.ConnectParameters()
+	connectParameters := datastoreflags.ConnectParameters()
 	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "rid"
-	ridCrdb, err := datastore.Dial(ctx, connectParameters)
+	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		logParams := connectParameters
 		logParams.Credentials.Password = "[REDACTED]"
 		return nil, fmt.Errorf("failed to connect to remote ID database with %+v: %w", logParams, err)
 	}
 
-	ridStore, err := ridc.NewStore(ctx, ridCrdb, connectParameters.DBName, logger)
+	ridStore, err := ridc.NewStore(ctx, datastore, connectParameters.DBName, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create remote ID store with %+v: %w", connectParameters, err)
 	}

@@ -22,7 +22,7 @@ type (
 		Dir  string
 	}
 
-	// ConnectParameters bundles up parameters used for connecting to a CRDB instance.
+	// ConnectParameters bundles up parameters used for connecting to a datastore instance.
 	ConnectParameters struct {
 		ApplicationName    string
 		Host               string
