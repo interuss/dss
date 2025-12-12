@@ -112,9 +112,13 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 // * geo.ErrRadiusMustBeLargerThan0
 func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	result := &Volume4D{}
+	var unboundedStartTime, unboundedEndTime bool
 
 	for _, volume := range volumes {
-		if volume.EndTime != nil {
+		if volume.EndTime == nil {
+			unboundedEndTime = true
+			result.EndTime = nil
+		} else if !unboundedEndTime {
 			if result.EndTime != nil {
 				if volume.EndTime.After(*result.EndTime) {
 					*result.EndTime = *volume.EndTime
@@ -124,7 +128,10 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 			}
 		}
 
-		if volume.StartTime != nil {
+		if volume.StartTime == nil {
+			unboundedStartTime = true
+			result.StartTime = nil
+		} else if !unboundedStartTime {
 			if result.StartTime != nil {
 				if volume.StartTime.Before(*result.StartTime) {
 					*result.StartTime = *volume.StartTime
