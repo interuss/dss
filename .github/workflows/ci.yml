@@ -36,6 +36,9 @@ jobs:
     name: DSS tests
     runs-on: ubuntu-latest
     steps:
+    # See https://github.com/golang/go/issues/75031, can be removed when fixed
+    - name: Set go tool chain version
+      run: go env -w GOTOOLCHAIN=go1.25.5+auto
     - name: Job information
       run: |
         echo "Job information"
