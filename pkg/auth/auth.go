@@ -182,6 +182,13 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Unlock()
 }
 
+type ctxKey string
+
+const (
+	ctxKeyClaims ctxKey = "claims"
+	ctxKeyError  ctxKey = "auth_error"
+)
+
 // TokenMiddleware decodes the authentication token and passes the claims to the authorizer and to the context for logging.
 func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -199,13 +206,6 @@ func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
-type ctxKey string
-
-const (
-	ctxKeyClaims ctxKey = "claims"
-	ctxKeyError  ctxKey = "auth_error"
-)
 
 // Authorize extracts and verifies bearer tokens from a http.Request after it was validated by the TokenMiddleware.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
