@@ -218,29 +218,29 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 		}
 	}
 
-	claimsValue := r.Context().Value(ctxKeyClaims)
-	if claimsValue == nil {
+	keyClaimsValue := r.Context().Value(ctxKeyClaims)
+	if keyClaimsValue == nil {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing authentication claims from context")}
 	}
 
-	claims, ok := claimsValue.(claims)
+	keyClaims, ok := keyClaimsValue.(claims)
 	if !ok {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid authentication claims type in context")}
 	}
 
-	if !a.acceptedAudiences[claims.Audience] {
-		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", claims.Audience)}
+	if !a.acceptedAudiences[keyClaims.Audience] {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
 	}
 
-	if pass, missing := validateScopes(authOptions, claims.Scopes); !pass {
+	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
 			"Access token missing scopes (%v) while expecting %v and got %v",
-			missing, describeAuthorizationExpectations(authOptions), strings.Join(claims.Scopes.ToStringSlice(), ", "))}
+			missing, describeAuthorizationExpectations(authOptions), strings.Join(keyClaims.Scopes.ToStringSlice(), ", "))}
 	}
 
 	return api.AuthorizationResult{
-		ClientID: &claims.Subject,
-		Scopes:   claims.Scopes.ToStringSlice(),
+		ClientID: &keyClaims.Subject,
+		Scopes:   keyClaims.Scopes.ToStringSlice(),
 	}
 }
 
