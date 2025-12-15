@@ -115,7 +115,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			claims, err := a.extractClaims(test.req)
 			if err != nil {
 				ctx = context.WithValue(ctx, ctxKeyError, err)
