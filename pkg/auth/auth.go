@@ -120,10 +120,9 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
-	logger   *zap.Logger
-	keys     []interface{}
-	keyGuard sync.RWMutex
-
+	logger            *zap.Logger
+	keys              []interface{}
+	keyGuard          sync.RWMutex
 	acceptedAudiences map[string]bool
 }
 
