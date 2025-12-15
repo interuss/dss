@@ -52,7 +52,7 @@ func rsaTokenReqWithMissingIssuer(key *rsa.PrivateKey, exp, nbf int64) *http.Req
 }
 
 func TestNewRSAAuthClient(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	tmpfile, err := os.CreateTemp("/tmp", "bad.pem")
@@ -103,7 +103,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{rsaTokenReq(key, 100, 50), dsserr.Unauthenticated},
 	}
 
-	a, err := NewRSAAuthorizer(context.Background(), Configuration{
+	a, err := NewRSAAuthorizer(t.Context(), Configuration{
 		KeyResolver: &fromMemoryKeyResolver{
 			Keys: []interface{}{&key.PublicKey},
 		},
@@ -115,12 +115,14 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			ctx := context.Background()
 			claims, err := a.extractClaims(test.req)
-			a.decodedClaims = &middlewareResult{
-				claims: claims,
-				err:    err,
+			if err != nil {
+				ctx = context.WithValue(ctx, ctxKeyError, err)
+			} else {
+				ctx = context.WithValue(ctx, ctxKeyClaims, claims)
 			}
-			res := a.Authorize(nil, test.req.WithContext(context.Background()), []api.AuthorizationOption{})
+			res := a.Authorize(nil, test.req.WithContext(ctx), []api.AuthorizationOption{})
 			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(res.Error) != test.code {
 				t.Logf("%v", res.Error)
 				t.Errorf("expected: %v, got: %v, with message %s", test.code, stacktrace.GetCode(res.Error), res.Error.Error())
