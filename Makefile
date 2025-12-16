@@ -59,7 +59,7 @@ shell-lint:
 
 .PHONY: go-lint
 go-lint:
-	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v2.1.5 golangci-lint run -v
+	echo "===== Checking Go lint (except for *.gen.go files) =====" && docker run --rm -v $(CURDIR):/dss -w /dss golangci/golangci-lint:v2.7.2 golangci-lint run -v
 
 .PHONY: terraform-lint
 terraform-lint:
