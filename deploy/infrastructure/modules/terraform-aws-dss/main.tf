@@ -16,6 +16,7 @@ module "terraform-aws-kubernetes" {
 
 module "terraform-commons-dss" {
   # See variables.tf for variables description.
+  cluster_name                     = var.cluster_name
   image                            = var.image
   image_pull_secret                = var.image_pull_secret
   kubernetes_namespace             = var.kubernetes_namespace
