@@ -92,7 +92,9 @@ local volumes = import 'volumes.libsonnet';
               'http-addr': '0.0.0.0',
               cache: '25%',
               'max-sql-memory': '25%',
-            },
+            } + if metadata.cockroach.clusterName != "" then {
+                'cluster-name': metadata.cockroach.clusterName,
+            } else {},
           },
           terminationGracePeriodSeconds: 300,
         },

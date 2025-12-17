@@ -17,6 +17,7 @@ resource "local_file" "tanka_config_main" {
     VAR_STORAGE_CLASS                        = var.kubernetes_storage_class
     VAR_DOCKER_IMAGE_NAME                    = var.image
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
+    VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone

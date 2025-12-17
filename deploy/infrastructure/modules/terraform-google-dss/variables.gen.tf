@@ -327,8 +327,6 @@ variable "crdb_cluster_name" {
   The CRDB cluster name must be 6-20 characters in length, and can include lowercase letters, numbers,
   and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.
 
-  At the moment, this variable is only used for helm charts deployments.
-
   Example: interuss-us-production
   EOT
 }
