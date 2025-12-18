@@ -87,6 +87,7 @@ The release notes should contain at least the following sections:
     * The initial run may take longer than expected when deleting entries that may have been accumulating.
 * Published images are now signed with [sigstore](https://www.sigstore.dev/), see [how to verify it](https://interuss.github.io/dss/latest/build/#verify-signature-of-prebuilt-interuss-docker-images).
 * Deployment documentation has been moved to a new [website](https://interuss.github.io/dss/latest/) instead of various README in the repository tree.
+* Prometheus (deployed if using tanka) has been upgraded to version 3. If you customized / used Prometheus outside of provided configuration, please follow [upgrade guide](https://prometheus.io/docs/prometheus/latest/migration/).
 
 ## Minimal database schema version
 
