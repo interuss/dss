@@ -56,5 +56,11 @@ yugabyte:
   gflags:
     master:
       node_to_node_encryption_use_client_certificates: "true"
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
     tserver:
       node_to_node_encryption_use_client_certificates: "true"
+      placement_cloud: "cloud-1"
+      placement_region: "uss-1"
+      placement_zone: "zone-1"
