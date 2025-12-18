@@ -20,6 +20,7 @@
     nodeIPs: error 'must supply the per-node ip addresses as an array', // For AWS, this array should contain the allocation id of the elastic ips.
     JoinExisting: [],
     storageClass: 'standard',
+    clusterName: '',
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
