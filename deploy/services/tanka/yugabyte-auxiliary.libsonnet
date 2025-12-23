@@ -131,6 +131,7 @@ local yugabyteLB(metadata, name, ip) =
       masters: base.Service(metadata, 'yb-masters') {
         app:: 'yb-master',
         spec+: {
+          clusterIP: "None",
           ports: [
             {
               port: 7000,
@@ -150,6 +151,7 @@ local yugabyteLB(metadata, name, ip) =
       tServers: base.Service(metadata, 'yb-tservers') {
         app:: 'yb-tserver',
         spec+: {
+          clusterIP: "None",
           ports: [
             {
               port: 9000,
@@ -205,36 +207,12 @@ local yugabyteLB(metadata, name, ip) =
             publishNotReadyAddresses: true,
             ports: [
               {
-                port: 7000,
-                name: 'http-ui',
-              },
-              {
                 port: 7100,
                 name: 'tcp-rpc-port',
               },
               {
-                port: 9000,
-                name: 'http-ui-2',
-              },
-              {
-                port: 12000,
-                name: 'http-ycql-met',
-              },
-              {
-                port: 13000,
-                name: 'http-ysql-met',
-              },
-              {
                 port: 9100,
                 name: 'tcp-rpc2-port',
-              },
-              {
-                port: 9042,
-                name: 'tcp-yql-port',
-              },
-              {
-                port: 5433,
-                name: 'tcp-ysql-port',
               },
             ],
           },
