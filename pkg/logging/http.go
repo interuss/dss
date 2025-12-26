@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/interuss/dss/pkg/auth/claims"
 	"go.uber.org/zap"
 )
 
@@ -75,10 +76,9 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		if subValue := r.Context().Value(CtxKeySub); subValue != nil {
-			if sub, ok := subValue.(string); ok && sub != "" {
-				logger = logger.With(zap.String("req_sub", sub))
-			}
+		claimsValue, _ := claims.FromContext(r.Context())
+		if claimsValue.Subject != "" {
+			logger = logger.With(zap.String("req_sub", claimsValue.Subject))
 		}
 
 		handler.ServeHTTP(trw, r)
