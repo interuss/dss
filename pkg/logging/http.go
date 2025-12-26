@@ -42,8 +42,7 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 type CtxKey string
 
 const (
-	CtxKeySub    CtxKey = "sub"
-	CtxKeyErrMsg CtxKey = "sub_err_msg"
+	CtxKeySub CtxKey = "sub"
 )
 
 // HTTPMiddleware installs a logging http.Handler that logs requests and
@@ -76,11 +75,7 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		if errMsgValue := r.Context().Value(CtxKeyErrMsg); errMsgValue != nil {
-			if errMsg, ok := errMsgValue.(string); ok && errMsg != "" {
-				logger = logger.With(zap.String("resp_sub_err", errMsg))
-			}
-		} else if subValue := r.Context().Value(CtxKeySub); subValue != nil {
+		if subValue := r.Context().Value(CtxKeySub); subValue != nil {
 			if sub, ok := subValue.(string); ok && sub != "" {
 				logger = logger.With(zap.String("req_sub", sub))
 			}
