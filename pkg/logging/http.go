@@ -40,12 +40,6 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 	w.next.WriteHeader(statusCode)
 }
 
-type CtxKey string
-
-const (
-	CtxKeySub CtxKey = "sub"
-)
-
 // HTTPMiddleware installs a logging http.Handler that logs requests and
 // selected aspects of responses to 'logger'.
 func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Handler {
