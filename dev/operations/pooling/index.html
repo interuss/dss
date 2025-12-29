@@ -1752,10 +1752,11 @@
 
 
 <h1 id="dss-pooling-yugabyte">DSS Pooling (Yugabyte)<a class="headerlink" href="#dss-pooling-yugabyte" title="Permanent link">&para;</a></h1>
-<blockquote>
-<p>[!WARNING] This document is about pooling with <strong>Yugabyte</strong>. CockroachDB
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This document is about pooling with <strong>Yugabyte</strong>. CockroachDB
 documentation is <a href="../pooling-crdb/">there</a>.</p>
-</blockquote>
+</div>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>The DSS is designed to be deployed in a federated manner where multiple
 organizations each host a DSS instance, and all of those instances interoperate.
@@ -1800,32 +1801,40 @@ must be accessible. The ports on which Yugabyte communicates must be open to
 others participants:</p>
 <ul>
 <li>Master: gRPC: <strong>7100</strong></li>
-<li>Master: Admin UI: 7000</li>
 <li>TServer: gRPC: <strong>9100</strong></li>
+<li>Master: Admin UI: 7000</li>
 <li>TServer: Admin UI: 9000</li>
 <li>TServer: ycql: 9042</li>
-<li>TServer: ysql: <strong>5433</strong></li>
+<li>TServer: ysql: 5433</li>
 <li>TServer: metrics: 13000</li>
 <li>TServer: metrics: 12000</li>
 </ul>
 <p>The ports in bold are mandatory. The others ones are needed for management UI,
 the UI won't work correctly if any of those port is not reachable by other
-nodes.</p>
+nodes, except on the master node.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The Helm charts and the Tanka files only expose mandatory ports as they are the
+only ones secure. If usage of the UI is needed in a pool with multiple
+participants, you must find a way to open those ports in a way secure enough
+for your deployments.
+Most of those non-mandatory ports do not offer authentication nor encryption
+(or confidentiality). A secure method is required, such as an Istio mesh or
+a local private network.</p>
+</div>
 <p>This requirement may be verified by conducting a standard TLS diagnostic
 (like <a href="https://www.wormly.com/test_ssl">this one</a>) on the hostname:port
-for each TServer node (e.g., 0.tserver.db.dss.example.com:5433). The "Trust"
+for each TServer node (e.g., 0.tserver.db.dss.example.com:7100). The "Trust"
 characteristic will not pass because the certificate is issued by
 a custom CA which is not a generally-trusted root CA, but we
 explicitly enable trust by manually exchanging the trusted CA public keys
 in ca.crt (see "Each Yugabyte node accepts the certificates of every other
 node" below). However, all other checks should generally pass.</p>
-<p>NB: Only ports in bold and the 9042 are using TLS. You may test the others ones
-with your browser to check for connectivity.</p>
-<blockquote>
-<p>[!CAUTION]
-It's recommended to restrict access to those ports and only allow IPs of
-others participants. However guides and helm charts haven't been adapted yet.</p>
-</blockquote>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>It's recommended to restrict access to all ports and only allow IPs of
+others participants. However, guides and deployment tooling haven't been adapted yet.</p>
+</div>
 <h3 id="each-yugabyte-node-is-discoverable">"Each Yugabyte node is discoverable"<a class="headerlink" href="#each-yugabyte-node-is-discoverable" title="Permanent link">&para;</a></h3>
 <p>When a Yugabyte node is brought online, it must know how to connect to the
 existing network of nodes. This is accomplished by providing an explicit list of
@@ -1873,6 +1882,7 @@ following those instructions.</p>
 <li>All Yugabyte nodes must be run in secure mode.<ul>
 <li>use_node_to_node_encryption enabled</li>
 <li>use_client_to_server_encryption enabled</li>
+<li>node_to_node_encryption_use_client_certificates enabled</li>
 <li>allow_insecure_connections disabled</li>
 </ul>
 </li>
@@ -1902,14 +1912,14 @@ others DSS instance Yugabyte master nodes public endpoints, and CA certificates
 must be exchanged.</p>
 <p>It's possible to have one DSS instance as starting point. In that case,
 <code>yugabyte_external_nodes</code> will be empty and no CA exchange is needed.</p>
-<blockquote>
-<p>[!NOTE]
-Quick reminder for CA management:</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Quick reminder for CA management:</p>
 <p>Each DSS instance should use <code>./dss-certs.sh init</code> To get the CA that should
 be sent to others instances, use <code>./dss-certs.sh get-ca</code> To import the CA of
 others DSS instance, use <code>./dss-certs.sh add-pool-ca</code> Finally, apply
 certificates on the kubernetes cluster with <code>./dss-certs.sh apply</code></p>
-</blockquote>
+</div>
 <p>Ensure placement info is how you want it. See the section below for placement
 requirements.</p>
 <p>Upon deployment completion, the following should be run against the DSS instance
@@ -1944,12 +1954,12 @@ cluster.</p>
 <p>New nodes shall be allowed into the cluster. For each new Yugabyte master node,
 the following command shall be run on one master node of one existing DSS
 instance :</p>
-<blockquote>
-<p>[!WARNING]
-The <code>master_addresses</code> in all commands below must include the Yugabyte master
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code>master_addresses</code> in all commands below must include the Yugabyte master
 leader. Either always run commands in the cluster with the leader, or list all
 public addresses.</p>
-</blockquote>
+</div>
 <ol>
 <li>
 <p>Connection to a master node:</p>
@@ -2064,13 +2074,13 @@ down with the following command:</p>
 <p>Finally, each pool participant should remove master addresses from the
 <code>yugabyte_external_nodes</code> list their Yugabyte nodes will attempt to contact upon
 restart and remove the CA of the participant.</p>
-<blockquote>
-<p>[!NOTE]
-Quick reminder for CA management:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Quick reminder for CA management:</p>
 <p>Remove the old CA, use <code>./dss-certs.sh remove-pool-ca &lt;Certificate id&gt;</code>
 Finally, apply certificates on the kubernetes cluster with
 <code>./dss-certs.sh apply</code></p>
-</blockquote>
+</div>
 <h2 id="placement">Placement<a class="headerlink" href="#placement" title="Permanent link">&para;</a></h2>
 <p>It's important to maintain a good placement strategy, ensuring data availability
 in case of failures.</p>
@@ -2105,7 +2115,7 @@ More information is available in <a href="https://docs.yugabyte.com/preview/admi
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 25, 2025 10:14:52 UTC">November 25, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="December 29, 2025 15:49:07 UTC">December 29, 2025</span>
   </span>
 
     
@@ -2219,7 +2229,7 @@ More information is available in <a href="https://docs.yugabyte.com/preview/admi
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
