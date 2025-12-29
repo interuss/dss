@@ -1,7 +1,8 @@
 # DSS Pooling (Yugabyte)
 
-> [!WARNING] This document is about pooling with **Yugabyte**. CockroachDB
-> documentation is [there](./pooling-crdb.md).
+!!! note
+    This document is about pooling with **Yugabyte**. CockroachDB
+    documentation is [there](./pooling-crdb.md).
 
 ## Introduction
 
@@ -57,33 +58,39 @@ must be accessible. The ports on which Yugabyte communicates must be open to
 others participants:
 
 * Master: gRPC: **7100**
-* Master: Admin UI: 7000
 * TServer: gRPC: **9100**
+* Master: Admin UI: 7000
 * TServer: Admin UI: 9000
 * TServer: ycql: 9042
-* TServer: ysql: **5433**
+* TServer: ysql: 5433
 * TServer: metrics: 13000
 * TServer: metrics: 12000
 
 The ports in bold are mandatory. The others ones are needed for management UI,
 the UI won't work correctly if any of those port is not reachable by other
-nodes.
+nodes, except on the master node.
+
+!!! info
+    The Helm charts and the Tanka files only expose mandatory ports as they are the
+    only ones secure. If usage of the UI is needed in a pool with multiple
+    participants, you must find a way to open those ports in a way secure enough
+    for your deployments.
+    Most of those non-mandatory ports do not offer authentication nor encryption
+    (or confidentiality). A secure method is required, such as an Istio mesh or
+    a local private network.
 
 This requirement may be verified by conducting a standard TLS diagnostic
 (like [this one](https://www.wormly.com/test_ssl)) on the hostname:port
-for each TServer node (e.g., 0.tserver.db.dss.example.com:5433). The "Trust"
+for each TServer node (e.g., 0.tserver.db.dss.example.com:7100). The "Trust"
 characteristic will not pass because the certificate is issued by
 a custom CA which is not a generally-trusted root CA, but we
 explicitly enable trust by manually exchanging the trusted CA public keys
 in ca.crt (see "Each Yugabyte node accepts the certificates of every other
 node" below). However, all other checks should generally pass.
 
-NB: Only ports in bold and the 9042 are using TLS. You may test the others ones
-with your browser to check for connectivity.
-
-> [!CAUTION]
-> It's recommended to restrict access to those ports and only allow IPs of
-> others participants. However guides and helm charts haven't been adapted yet.
+!!! danger
+    It's recommended to restrict access to all ports and only allow IPs of
+    others participants. However, guides and deployment tooling haven't been adapted yet.
 
 ### "Each Yugabyte node is discoverable"
 
@@ -140,6 +147,7 @@ following those instructions.
 - All Yugabyte nodes must be run in secure mode.
     - use_node_to_node_encryption enabled
     - use_client_to_server_encryption enabled
+    - node_to_node_encryption_use_client_certificates enabled
     - allow_insecure_connections disabled
 - The ordering of the `--locality` flag keys must be the same across all
   CockroachDB nodes in the cluster.
@@ -176,13 +184,13 @@ must be exchanged.
 It's possible to have one DSS instance as starting point. In that case,
 `yugabyte_external_nodes` will be empty and no CA exchange is needed.
 
-> [!NOTE]
-> Quick reminder for CA management:
->
-> Each DSS instance should use `./dss-certs.sh init` To get the CA that should
-> be sent to others instances, use `./dss-certs.sh get-ca` To import the CA of
-> others DSS instance, use `./dss-certs.sh add-pool-ca` Finally, apply
-> certificates on the kubernetes cluster with `./dss-certs.sh apply`
+!!! info
+    Quick reminder for CA management:
+
+    Each DSS instance should use `./dss-certs.sh init` To get the CA that should
+    be sent to others instances, use `./dss-certs.sh get-ca` To import the CA of
+    others DSS instance, use `./dss-certs.sh add-pool-ca` Finally, apply
+    certificates on the kubernetes cluster with `./dss-certs.sh apply`
 
 Ensure placement info is how you want it. See the section below for placement
 requirements.
@@ -226,10 +234,10 @@ New nodes shall be allowed into the cluster. For each new Yugabyte master node,
 the following command shall be run on one master node of one existing DSS
 instance :
 
-> [!WARNING]
-> The `master_addresses` in all commands below must include the Yugabyte master
-> leader. Either always run commands in the cluster with the leader, or list all
-> public addresses.
+!!! warning
+    The `master_addresses` in all commands below must include the Yugabyte master
+    leader. Either always run commands in the cluster with the leader, or list all
+    public addresses.
 
 1. Connection to a master node:
 
@@ -344,12 +352,12 @@ Finally, each pool participant should remove master addresses from the
 `yugabyte_external_nodes` list their Yugabyte nodes will attempt to contact upon
 restart and remove the CA of the participant.
 
-> [!NOTE]
-> Quick reminder for CA management:
->
-> Remove the old CA, use `./dss-certs.sh remove-pool-ca <Certificate id>`
-> Finally, apply certificates on the kubernetes cluster with
-> `./dss-certs.sh apply`
+!!! note
+    Quick reminder for CA management:
+
+    Remove the old CA, use `./dss-certs.sh remove-pool-ca <Certificate id>`
+    Finally, apply certificates on the kubernetes cluster with
+    `./dss-certs.sh apply`
 
 ## Placement
 

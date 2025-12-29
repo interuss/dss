@@ -43,6 +43,11 @@ theme:
     - content.action.edit # provides link to edit page on github
     - content.action.view # provides link to view page on github
 
+    # https://squidfunk.github.io/mkdocs-material/reference/admonitions/
+    - admonition
+    - pymdownx.details
+    - pymdownx.superfences
+
 plugins:
   - search
   - git-revision-date-localized: # displays last update date
