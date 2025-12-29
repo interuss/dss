@@ -201,8 +201,7 @@ local yugabyteLB(metadata, name, ip) =
           },
           spec+: {
             selector: {
-                yugabytedUi: "true",
-                "apps.kubernetes.io/pod-index": '' + i,
+              app: 'yugabyte-proxy-' + i
             },
             publishNotReadyAddresses: true,
             ports: [
@@ -215,6 +214,111 @@ local yugabyteLB(metadata, name, ip) =
                 name: 'tcp-rpc2-port',
               },
             ],
+          },
+        } for i in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
+      },
+      ProxySecrets: {
+        ["yb-proxy-config-" + i]: base.Secret(metadata, 'yb-proxy-config-' + i) {
+          type: "Opaque",
+          stringData: {
+            "haproxy.cfg": |||
+              global
+                log stdout format raw local0
+                maxconn 4096
+
+              defaults
+                mode tcp
+                log global
+                timeout client 12h
+                timeout server 12h
+                timeout tunnel 12h
+                timeout connect 5s
+                option clitcpka
+                option srvtcpka
+                default-server init-addr libc,none
+
+              resolvers dns
+                parse-resolv-conf
+                hold valid 5s
+
+              frontend master-grpc-f
+                bind :7100
+                default_backend master-grpc-b
+
+              backend master-grpc-b
+                server yb-master-%s yb-master-%s.yb-masters.%s.svc.cluster.local:7100 check resolvers dns
+
+              frontend tserver-grpc-f
+                bind :9100
+                default_backend tserver-grpc-b
+
+              backend tserver-grpc-b
+                server yb-tserver-%s yb-tserver-%s.yb-tservers.%s.svc.cluster.local:9100 check resolvers dns
+          ||| % [i, i, metadata.namespace, i, i, metadata.namespace]
+          }
+        } for i in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
+      },
+      Proxy: {
+        ["yugabyte-proxy-" + i]: base.Deployment(metadata, 'yugabyte-proxy-' + i) {
+          apiVersion: 'apps/v1',
+          kind: 'Deployment',
+          metadata+: {
+            namespace: metadata.namespace,
+            labels: {
+              name: 'yugabyte-proxy-' + i
+            }
+          },
+          spec+: {
+            replicas: 2,
+            selector: {
+              matchLabels: {
+                app: 'yugabyte-proxy-' + i
+              }
+            },
+            strategy: {
+              rollingUpdate: {
+                maxSurge: "25%",
+                maxUnavailable: "25%",
+              },
+              type: "RollingUpdate",
+            },
+            template+: {
+              metadata+: {
+                labels: {
+                  app: 'yugabyte-proxy-' + i
+                }
+              },
+              spec+: {
+                volumes: [
+                  {
+                    name: "config-volume",
+                    secret: {
+                      secretName: "yb-proxy-config-" + i,
+                    }
+                  }
+                ],
+                soloContainer:: base.Container('yugabyte-proxy') {
+                  image: "haproxy:3.3",
+                  imagePullPolicy: 'Always',
+                  ports: [
+                    {
+                      containerPort: 7100,
+                      name: 'master-grpc',
+                    },
+                    {
+                      containerPort: 9100,
+                      name: 'tserver-grpc',
+                    },
+                  ],
+                  volumeMounts: [
+                    {
+                      name: "config-volume",
+                      mountPath: "/usr/local/etc/haproxy/",
+                    }
+                  ],
+                },
+              },
+            },
           },
         } for i in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
     },
