@@ -90,7 +90,7 @@ node" below). However, all other checks should generally pass.
 
 !!! danger
     It's recommended to restrict access to all ports and only allow IPs of
-    others participants. However, guides and helm charts haven't been adapted yet.
+    others participants. However, guides and deployment tooling haven't been adapted yet.
 
 ### "Each Yugabyte node is discoverable"
 
