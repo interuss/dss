@@ -21,7 +21,7 @@ While that command is running, open a browser and navigate to
 
 The default username is `admin` with a default password of `admin` if using tanka, or a random value in a kubernetes secret named `<release>-grafana` if using helm charts.
 
-Example to retrive the secret in a default 'dss' release:
+Example to retrieve the secret in a default 'dss' release:
 
 ```shell
 kubectl get secrets/dss-grafana -o jsonpath="{.data.admin-password}" | base64 -d
