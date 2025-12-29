@@ -16,6 +16,7 @@ module "terraform-google-kubernetes" {
 
 module "terraform-commons-dss" {
   # See variables.tf for variables description.
+  cluster_name                     = var.cluster_name
   image                            = var.image
   kubernetes_namespace             = var.kubernetes_namespace
   kubernetes_storage_class         = var.google_kubernetes_storage_class

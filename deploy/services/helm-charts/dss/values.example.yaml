@@ -77,3 +77,15 @@ loadBalancers:
 
 global:
   cloudProvider: google
+
+monitoring:  # Set to true to enable monitoring stack
+  enabled: true
+
+prometheus:
+  server:
+    persistentVolume:
+      storageClass: standard  # If you need a specfic storage class, set it there
+
+grafana:
+  persistence:
+    storageClassName: standard  # If you need a specfic storage class, set it there

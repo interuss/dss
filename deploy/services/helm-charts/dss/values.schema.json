@@ -342,12 +342,23 @@
         }
       },
       "required": ["cloudProvider"]
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable monitoring stack with prometheus and grafana."
+        }
+      },
+      "required": ["enabled"]
     }
   },
   "required": [
     "loadBalancers",
     "dss",
-    "global"
+    "global",
+    "monitoring"
   ],
   "title": "Values",
   "type": "object"
