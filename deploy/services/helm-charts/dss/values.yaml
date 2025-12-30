@@ -67,6 +67,16 @@ yugabyte:
 
 monitoring:
   enabled: false
+  externalService:
+    enabled: false
+    ip: ""
+    subnet: ""
+    hostname: ""
+    # AWS
+    allowedIPs:
+      - 1.2.3.4/32
+    # GCP
+    allowedIPsPolicy: "cloud-armor-policy-prometheus"
 
 prometheus:
   server:
