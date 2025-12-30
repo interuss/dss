@@ -64,3 +64,209 @@ yugabyte:
       placement_cloud: "cloud-1"
       placement_region: "uss-1"
       placement_zone: "zone-1"
+
+monitoring:
+  enabled: false
+
+prometheus:
+  server:
+    global:
+      scrape_interval: 5s
+      scrape_timeout: 5s
+      evaluation_interval: 5s
+
+    service:
+      annotations:
+        'prometheus.io/scrape': 'true'
+        'prometheus.io/port': '9090'
+
+  prometheus-pushgateway:
+    enabled: false
+
+  prometheus-node-exporter:
+    enabled: false
+
+  kube-state-metrics:
+    enabled: false
+
+  alertmanager:
+    enabled: false
+
+  serverFiles:
+    prometheus.yml:
+      scrape_configs:
+        - job_name: K8s-Endpoints
+          tls_config:
+            insecure_skip_verify: true
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            separator: ;
+            regex: "true"
+            replacement: $1
+            action: keep
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            separator: ;
+            regex: (https?)
+            target_label: __scheme__
+            replacement: $1
+            action: replace
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            separator: ;
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: $1
+            action: replace
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            separator: ;
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            target_label: __address__
+            replacement: $1:$2
+            action: replace
+          - separator: ;
+            regex: __meta_kubernetes_service_label_([^_]+)(_kubernetes_io_name)?$
+            replacement: $1
+            action: labelmap
+          - source_labels: [__meta_kubernetes_namespace]
+            separator: ;
+            target_label: kubernetes_namespace
+            replacement: $1
+            action: replace
+          - source_labels: [__meta_kubernetes_service_name]
+            separator: ;
+            target_label: kubernetes_name
+            replacement: $1
+            action: replace
+          - source_labels: [__meta_kubernetes_pod_label_statefulset_kubernetes_io_pod_name]
+            separator: ;
+            regex: (dss-cockroachdb-\d+)
+            target_label: pod_name
+            replacement: $1
+            action: replace
+          kubernetes_sd_configs:
+          - role: endpoints
+
+    recording_rules.yml:
+      "groups":
+        - "name": "rules/aggregation.rules"
+          "rules":
+          - "expr": "sum without(store) (capacity{app=\"cockroachdb\"})"
+            "record": "node:capacity"
+          - "expr": "sum without(instance) (node:capacity{app=\"cockroachdb\"})"
+            "record": "cluster:capacity"
+          - "expr": "sum without(store) (capacity_available{app=\"cockroachdb\"})"
+            "record": "node:capacity_available"
+          - "expr": "sum without(instance) (node:capacity_available{app=\"cockroachdb\"})"
+            "record": "cluster:capacity_available"
+          - "expr": "capacity_available{app=\"cockroachdb\"} / capacity{app=\"cockroachdb\"}"
+            "record": "capacity_available:ratio"
+          - "expr": "node:capacity_available{app=\"cockroachdb\"} / node:capacity{app=\"cockroachdb\"}"
+            "record": "node:capacity_available:ratio"
+          - "expr": "cluster:capacity_available{app=\"cockroachdb\"} / cluster:capacity{app=\"cockroachdb\"}"
+            "record": "cluster:capacity_available:ratio"
+          - "expr": "rate(txn_durations_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "txn_durations_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, txn_durations_bucket:rate1m)"
+            "record": "txn_durations:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, txn_durations_bucket:rate1m)"
+            "record": "txn_durations:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, txn_durations_bucket:rate1m)"
+            "record": "txn_durations:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, txn_durations_bucket:rate1m)"
+            "record": "txn_durations:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, txn_durations_bucket:rate1m)"
+            "record": "txn_durations:rate1m:quantile_99"
+          - "expr": "rate(exec_latency_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "exec_latency_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, exec_latency_bucket:rate1m)"
+            "record": "exec_latency:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, exec_latency_bucket:rate1m)"
+            "record": "exec_latency:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, exec_latency_bucket:rate1m)"
+            "record": "exec_latency:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, exec_latency_bucket:rate1m)"
+            "record": "exec_latency:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, exec_latency_bucket:rate1m)"
+            "record": "exec_latency:rate1m:quantile_99"
+          - "expr": "rate(round_trip_latency_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "round_trip_latency_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, round_trip_latency_bucket:rate1m)"
+            "record": "round_trip_latency:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, round_trip_latency_bucket:rate1m)"
+            "record": "round_trip_latency:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, round_trip_latency_bucket:rate1m)"
+            "record": "round_trip_latency:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, round_trip_latency_bucket:rate1m)"
+            "record": "round_trip_latency:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, round_trip_latency_bucket:rate1m)"
+            "record": "round_trip_latency:rate1m:quantile_99"
+          - "expr": "rate(sql_exec_latency_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "sql_exec_latency_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, sql_exec_latency_bucket:rate1m)"
+            "record": "sql_exec_latency:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, sql_exec_latency_bucket:rate1m)"
+            "record": "sql_exec_latency:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, sql_exec_latency_bucket:rate1m)"
+            "record": "sql_exec_latency:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, sql_exec_latency_bucket:rate1m)"
+            "record": "sql_exec_latency:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, sql_exec_latency_bucket:rate1m)"
+            "record": "sql_exec_latency:rate1m:quantile_99"
+          - "expr": "rate(raft_process_logcommit_latency_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "raft_process_logcommit_latency_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, raft_process_logcommit_latency_bucket:rate1m)"
+            "record": "raft_process_logcommit_latency:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, raft_process_logcommit_latency_bucket:rate1m)"
+            "record": "raft_process_logcommit_latency:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, raft_process_logcommit_latency_bucket:rate1m)"
+            "record": "raft_process_logcommit_latency:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, raft_process_logcommit_latency_bucket:rate1m)"
+            "record": "raft_process_logcommit_latency:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, raft_process_logcommit_latency_bucket:rate1m)"
+            "record": "raft_process_logcommit_latency:rate1m:quantile_99"
+          - "expr": "rate(raft_process_commandcommit_latency_bucket{app=\"cockroachdb\"}[1m])"
+            "record": "raft_process_commandcommit_latency_bucket:rate1m"
+          - "expr": "histogram_quantile(0.5, raft_process_commandcommit_latency_bucket:rate1m)"
+            "record": "raft_process_commandcommit_latency:rate1m:quantile_50"
+          - "expr": "histogram_quantile(0.75, raft_process_commandcommit_latency_bucket:rate1m)"
+            "record": "raft_process_commandcommit_latency:rate1m:quantile_75"
+          - "expr": "histogram_quantile(0.9, raft_process_commandcommit_latency_bucket:rate1m)"
+            "record": "raft_process_commandcommit_latency:rate1m:quantile_90"
+          - "expr": "histogram_quantile(0.95, raft_process_commandcommit_latency_bucket:rate1m)"
+            "record": "raft_process_commandcommit_latency:rate1m:quantile_95"
+          - "expr": "histogram_quantile(0.99, raft_process_commandcommit_latency_bucket:rate1m)"
+            "record": "raft_process_commandcommit_latency:rate1m:quantile_99"
+
+grafana:
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: prometheus
+          type: prometheus
+          access: proxy
+          orgId: 1
+          url: http://dss-prometheus-server:80
+          version: 1
+          editable: true
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  dashboardsConfigMaps:
+    default: "dss-grafana-dashboards-default"
+
+  persistence:
+    type: pvc
+    enabled: true
+>>>>>>> f3220540 ([helm] Add support for monitoring stack)

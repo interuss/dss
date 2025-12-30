@@ -91,6 +91,32 @@ resource "local_file" "helm_chart_values" {
     global = {
       cloudProvider = var.kubernetes_cloud_provider_name
     }
+
+    monitoring = {
+      enabled = false
+    },
+
+    prometheus = {
+      server = {
+        persistentVolume = {
+          storageClass = var.kubernetes_storage_class
+        }
+
+        global = {
+          external_labels = {
+            environment = "dev"
+            k8s_cluster = var.cluster_name
+          }
+        }
+      }
+    }
+
+    grafana = {
+      persistence = {
+        storageClassName = var.kubernetes_storage_class
+      }
+    }
+
     }) : yamlencode({
     cockroachdb = {
       enabled = false
@@ -260,6 +286,31 @@ resource "local_file" "helm_chart_values" {
 
     global = {
       cloudProvider = var.kubernetes_cloud_provider_name
+    }
+
+    monitoring = {
+      enabled = false
+    },
+
+    prometheus = {
+      server = {
+        persistentVolume = {
+          storageClass = var.kubernetes_storage_class
+        }
+
+        global = {
+          external_labels = {
+            environment = "dev"
+            k8s_cluster = var.cluster_name
+          }
+        }
+      }
+    }
+
+    grafana = {
+      persistence = {
+        storageClassName = var.kubernetes_storage_class
+      }
     }
   })
 

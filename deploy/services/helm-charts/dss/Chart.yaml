@@ -13,3 +13,11 @@ dependencies:
     repository: https://interuss.github.io/yugabyte-charts/
     version: 2025.1.0
     condition: yugabyte.enabled
+  - name: prometheus
+    repository: https://prometheus-community.github.io/helm-charts
+    version: 27.51.0
+    condition: monitoring.enabled
+  - name: grafana
+    repository: https://grafana.github.io/helm-charts
+    version: 10.3.1
+    condition: monitoring.enabled
