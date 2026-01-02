@@ -64,6 +64,8 @@ yugabyte:
       placement_cloud: "cloud-1"
       placement_region: "uss-1"
       placement_zone: "zone-1"
+      use_client_to_server_encryption: true
+      ysql_hba_conf_csv: 'hostssl all all 0.0.0.0/0 cert'
 
 monitoring:
   enabled: false
@@ -269,4 +271,3 @@ grafana:
   persistence:
     type: pvc
     enabled: true
->>>>>>> f3220540 ([helm] Add support for monitoring stack)
