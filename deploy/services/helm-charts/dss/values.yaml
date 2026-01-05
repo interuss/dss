@@ -72,11 +72,8 @@ monitoring:
     ip: ""
     subnet: ""
     hostname: ""
-    # AWS
-    allowedIPs:
-      - 1.2.3.4/32
-    # GCP
-    allowedIPsPolicy: "cloud-armor-policy-prometheus"
+    allowedIPs: []
+    allowedIPsPolicy: ""
 
 prometheus:
   server:
@@ -279,4 +276,3 @@ grafana:
   persistence:
     type: pvc
     enabled: true
->>>>>>> f3220540 ([helm] Add support for monitoring stack)

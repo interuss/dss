@@ -22,7 +22,7 @@ metadata:
     app: {{$.Release.Name}}-prometheus
     name: {{$.Release.Name}}-prometheus-external
   annotations:
-    cloud.google.com/backend-config: '{"default": "promtheus-external"}'
+    cloud.google.com/backend-config: '{"default": "prometheus-external"}'
   name: {{$.Release.Name}}-prometheus-external
 spec:
   ports:
@@ -33,7 +33,7 @@ spec:
   selector:
      app.kubernetes.io/instance: "{{$.Release.Name}}"
      app.kubernetes.io/name: "prometheus"
-  type: NodePort
+  type: ClusterIP
 
 ---
 apiVersion: networking.k8s.io/v1
