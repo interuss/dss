@@ -370,7 +370,7 @@
               "type": "string"
             },
             "allowedIPs": {
-              "description": "List of IP allowed to connect to the service, for AWS only",
+              "description": "List of IP ranges allowed to connect to the service, for AWS only",
               "type": "array",
               "items": {
                 "type": "string"
