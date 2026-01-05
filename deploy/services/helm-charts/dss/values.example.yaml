@@ -80,6 +80,15 @@ global:
 
 monitoring:  # Set to true to enable monitoring stack
   enabled: true
+  externalService:
+    enabled: false  # Set this to true to expose prometheus on a public endpoint
+    ip: ""  # IP used to expose the service (same behaviour as loadBalancers' IP field)
+    subnet: ""  # AWS only (same behaviour as loadBalancers' subnet field)
+    hostname: ""  # Hostname where the prometheus shall be exposed
+    allowedIPs: # AWS Only: List of subnets allowed to connect
+      - 1.2.3.4/32
+    # GCP only: policy used to allow only specific IPs to connect
+    allowedIPsPolicy: "cloud-armor-policy-prometheus"
 
 prometheus:
   server:

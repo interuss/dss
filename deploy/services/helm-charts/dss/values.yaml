@@ -69,6 +69,13 @@ yugabyte:
 
 monitoring:
   enabled: false
+  externalService:
+    enabled: false
+    ip: ""
+    subnet: ""
+    hostname: ""
+    allowedIPs: []
+    allowedIPsPolicy: ""
 
 prometheus:
   server:

@@ -349,6 +349,38 @@
         "enabled": {
           "type": "boolean",
           "description": "Enable monitoring stack with prometheus and grafana."
+        },
+        "externalService": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable exposure of prometheus as a public service"
+            },
+            "ip": {
+              "description": "Public ip or cloud resource name.",
+              "type": "string"
+            },
+            "subnet": {
+              "description": "Optional: Subnet of the public ip for AWS only",
+              "type": "string"
+            },
+            "hostname": {
+              "description": "Optional: Hostname of the public ip for GCP only",
+              "type": "string"
+            },
+            "allowedIPs": {
+              "description": "List of IP ranges allowed to connect to the service, for AWS only",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowedIPsPolicy": {
+              "description": "Name of cloud armor policy for allowed IPs, GCP only",
+              "type": "string"
+            }
+          }
         }
       },
       "required": ["enabled"]
