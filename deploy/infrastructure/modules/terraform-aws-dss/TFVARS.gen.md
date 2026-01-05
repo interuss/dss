@@ -87,6 +87,23 @@ Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>external_prometheus</td>
+                <td><code>string</code></td>
+                <td><code>""</code></td>
+                <td><p>Domain used to expose prometheus on an external endpoint.</p>
+<p>Leave empty to disable exposition of prometheus publicly.</p>
+<p>Only supported in helm deployments.</p>
+<p>Example: <code>prometheus.dss.example.com</code></p>
+</td>
+            </tr><tr>
+                <td>external_prometheus_allowed_ips</td>
+                <td><code>list(string)</code></td>
+                <td><code>[]</code></td>
+                <td><p>List of subnets allowed to connect to the external prometheus.</p>
+<p>Only supported in helm deployments.</p>
+<p>Example: <code>1.2.3.4/24,42.42.42.42/32</code></p>
+</td>
+            </tr><tr>
                 <td>kubernetes_version</td>
                 <td><code>string</code></td>
                 <td></td>
@@ -365,6 +382,14 @@ Example: [&quot;0.master.db.dss.example.com&quot;, &quot;1.master.db.dss.example
                 <td><code>bool</code></td>
                 <td><code>true</code></td>
                 <td><p>Set this to true to enable cleanup of RID subscriptions.</p>
+</td>
+            </tr><tr>
+                <td>enable_monitoring</td>
+                <td><code>bool</code></td>
+                <td><code>false</code></td>
+                <td><p>Set to true to enable monitoring stack with prometheus / grafana.</p>
+<p>Only supported in helm deployments.</p>
+<p>Example: <code>true</code></p>
 </td>
             </tr></tbody>
     </table>

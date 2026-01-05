@@ -50,6 +50,11 @@ variable "ip_gateway" {
   description = "IP of the gateway used by the DSS service"
 }
 
+variable "ip_external_prometheus" {
+  type        = string
+  description = "IP of the gateway used by the external prometheus"
+}
+
 variable "kubernetes_storage_class" {
   type        = string
   description = <<-EOT
@@ -67,6 +72,12 @@ variable "gateway_cert_name" {
   default     = ""
 }
 
+variable "external_prometheus_cert_name" {
+  type        = string
+  description = "Only required for AWS cloud provider. Certificate reference used by the prometheus. For AWS, provide the ARN of the certificate."
+  default     = ""
+}
+
 variable "workload_subnet" {
   type        = string
   description = "Only required for AWS cloud provider. Subnet where the kubernetes worker nodes is deployed. For AWS, provide the name or the id of the workload_subnet"
@@ -78,3 +89,10 @@ variable "ssl_policy" {
   description = "Only required for Google cloud provider. Name of the SSL policy created for the DSS Gateway Ingress."
   default     = ""
 }
+
+variable "external_prometheus_allowed_ips_policy" {
+  type        = string
+  description = "Only required for Google cloud provider when exposing prometheus externally. Name of the cloud armor policy created for the prometheus gateway Ingress."
+  default     = ""
+}
+

@@ -64,6 +64,36 @@ variable "cluster_name" {
   EOT
 }
 
+variable "external_prometheus" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Domain used to expose prometheus on an external endpoint.
+
+  Leave empty to disable exposition of prometheus publicly.
+
+  Only supported in helm deployments.
+
+  Example: `prometheus.dss.example.com`
+
+  EOT
+}
+
+
+variable "external_prometheus_allowed_ips" {
+  type        = list(string)
+  default     = []
+  description = <<-EOT
+  List of subnets allowed to connect to the external prometheus.
+
+  Only supported in helm deployments.
+
+  Example: `1.2.3.4/24,42.42.42.42/32`
+
+  EOT
+}
+
+
 variable "image" {
   type        = string
   description = <<-EOT
@@ -453,6 +483,19 @@ variable "evict_rid_subscriptions" {
   EOT
 
   default = true
+}
+
+
+variable "enable_monitoring" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Set to true to enable monitoring stack with prometheus / grafana.
+
+  Only supported in helm deployments.
+
+  Example: `true`
+  EOT
 }
 
 

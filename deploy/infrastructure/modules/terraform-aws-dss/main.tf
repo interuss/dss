@@ -10,6 +10,7 @@ module "terraform-aws-kubernetes" {
   aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
   node_count                   = var.node_count
   kubernetes_version           = var.kubernetes_version
+  external_prometheus          = var.external_prometheus
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
@@ -46,6 +47,7 @@ module "terraform-commons-dss" {
   kubernetes_get_credentials_cmd   = module.terraform-aws-kubernetes.kubernetes_get_credentials_cmd
   workload_subnet                  = module.terraform-aws-kubernetes.workload_subnet
   gateway_cert_name                = module.terraform-aws-kubernetes.app_hostname_cert_arn
+  external_prometheus_cert_name    = module.terraform-aws-kubernetes.prometheus_hostname_cert_arn
   evict_enable_scd_cron            = var.evict_enable_scd_cron
   evict_scd_schedule               = var.evict_scd_schedule
   evict_scd_ttl                    = var.evict_scd_ttl
@@ -56,6 +58,10 @@ module "terraform-commons-dss" {
   evict_rid_ttl                    = var.evict_rid_ttl
   evict_rid_isas                   = var.evict_rid_isas
   evict_rid_subscriptions          = var.evict_rid_subscriptions
+  enable_monitoring                = var.enable_monitoring
+  external_prometheus              = var.external_prometheus
+  external_prometheus_allowed_ips  = var.external_prometheus_allowed_ips
+  ip_external_prometheus           = module.terraform-aws-kubernetes.ip_external_prometheus
 
   source = "../../dependencies/terraform-commons-dss"
 }
