@@ -9,7 +9,7 @@
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: promtheus-external
+  name: prometheus-external
 spec:
   securityPolicy:
     name: "{{ $.Values.monitoring.externalService.allowedIPsPolicy }}"
