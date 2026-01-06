@@ -18,6 +18,10 @@ output "ip_gateway" {
   value = aws_eip.gateway[0].id
 }
 
+output "ip_external_prometheus" {
+  value = length(aws_eip.external_prometheus) > 0 ? aws_eip.external_prometheus[0].id : ""
+}
+
 output "crdb_nodes" {
   value = [
     for i in aws_eip.ip_crdb : {
@@ -79,6 +83,26 @@ output "gateway_address" {
           c.resource_record_value
         ]
     }]
+  }
+}
+
+output "external_prometheus_address" {
+  value = length(aws_eip.external_prometheus) > 0 ? {
+    expected_dns : aws_eip.external_prometheus[0].tags.ExpectedDNS,
+    address : aws_eip.external_prometheus[0].public_ip,
+    certificate_validation_dns : [
+      for c in aws_acm_certificate.prometheus_hostname[0].domain_validation_options[*] : {
+        managed_by_terraform : length(aws_route53_record.prometheus_hostname_cert_validation) > 0
+        name : c.resource_record_name,
+        type : c.resource_record_type,
+        records : [
+          c.resource_record_value
+        ]
+    }]
+    } : {
+    expected_dns : null,
+    address : null,
+    certificate_validation_dns : []
   }
 }
 

@@ -13,7 +13,7 @@ it with the rest of the infrastructure.
   See instructions for [subdomains delegation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html#UpdateDNSParentDomain)
 
 
-## Manual setup 
+## Manual setup
 
 If DNS entries are managed manually, set them up manually using the following steps:
 
@@ -36,7 +36,7 @@ If DNS entries are managed manually, set them up manually using the following st
    ]
    gateway_address = {
        "address" = "35.186.236.146"
-       "expected_dns" = "dss.interuss.example.com"  
+       "expected_dns" = "dss.interuss.example.com"
        "certificate_validation_dns" = [
         {
           "managed_by_terraform" = false
@@ -55,3 +55,5 @@ If DNS entries are managed manually, set them up manually using the following st
 
 3. Create the entries for SSL certificate validation according to the information provided
     in `gateway_address.certificate_validation_dns`.
+
+4. Should you have enabled the monitoring stack with an external prometheus, perform the same steps as the ones for the `gateway_address`

@@ -56,6 +56,26 @@ output "app_hostname_cert_arn" {
   value = aws_acm_certificate.app_hostname.arn
 }
 
+resource "aws_acm_certificate" "prometheus_hostname" {
+  count             = var.external_prometheus == "" ? 0 : 1
+  domain_name       = var.external_prometheus
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "prometheus_hostname_cert" {
+  count                   = var.aws_route53_zone_id == "" || var.external_prometheus == "" ? 0 : 1
+  certificate_arn         = aws_acm_certificate.prometheus_hostname[count.index].arn
+  validation_record_fqdns = [for name in aws_acm_certificate.prometheus_hostname[count.index].domain_validation_options.*.resource_record_name : trimsuffix(name, ".")]
+}
+
+output "prometheus_hostname_cert_arn" {
+  value = length(aws_acm_certificate.prometheus_hostname) > 0 ? aws_acm_certificate.prometheus_hostname[0].arn : ""
+}
+
 # Public Elastic IP for the gateway (1 per subnet)
 # At the moment, worker nodes will be deployed in the same subnet, so only one elastic ip is required.
 resource "aws_eip" "gateway" {
@@ -91,5 +111,15 @@ resource "aws_eip" "ip_yugabyte" {
     # Preserve mapping between ips and hostnames
     ExpectedMasterDNS  = format("%s.master.%s", count.index, var.db_hostname_suffix)
     ExpectedTServerDNS = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
+  }
+}
+
+resource "aws_eip" "external_prometheus" {
+  domain = "vpc"
+  count  = var.external_prometheus == "" ? 0 : 1
+
+  tags = {
+    Name        = format("%s-ip-external_prometheus", var.cluster_name)
+    ExpectedDNS = var.external_prometheus
   }
 }

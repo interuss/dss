@@ -70,6 +70,17 @@ resource "google_compute_address" "ip_yugabyte" {
   description = format("%s.%%s.%s", count.index, var.db_hostname_suffix)
 }
 
+resource "google_compute_global_address" "external_prometheus" {
+
+  count = var.external_prometheus == "" ? 0 : 1
+
+  name       = format("%s-ip-prometheus", var.cluster_name)
+  ip_version = "IPV4"
+
+  # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
+  description = var.external_prometheus
+}
+
 locals {
   kubectl_cluster_context_name = format("gke_%s_%s_%s", google_container_cluster.kubernetes_cluster.project, google_container_cluster.kubernetes_cluster.location, google_container_cluster.kubernetes_cluster.name)
 }

@@ -67,3 +67,11 @@ output "yugabyte_tservers_nodes" {
     }
   ]
 }
+
+output "ip_external_prometheus" {
+  value = length(google_compute_global_address.external_prometheus) > 0 ? google_compute_global_address.external_prometheus[0].name : ""
+}
+
+output "external_prometheus_allowed_ips_policy" {
+  value = "dss-prometheus-security-policy"
+}

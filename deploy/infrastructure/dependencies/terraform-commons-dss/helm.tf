@@ -93,7 +93,24 @@ resource "local_file" "helm_chart_values" {
     }
 
     monitoring = {
-      enabled = false
+      enabled = var.enable_monitoring
+      externalService = var.external_prometheus != "" ? {
+        enabled          = var.enable_monitoring
+        ip               = var.ip_external_prometheus
+        subnet           = var.workload_subnet
+        certName         = var.external_prometheus_cert_name
+        hostname         = var.external_prometheus
+        allowedIPs       = var.external_prometheus_allowed_ips
+        allowedIPsPolicy = var.external_prometheus_allowed_ips_policy
+        } : {
+        enabled          = false
+        ip               = null
+        subnet           = null
+        certName         = null
+        hostname         = null
+        allowedIPs       = null
+        allowedIPsPolicy = null
+      }
     },
 
     prometheus = {
@@ -289,7 +306,24 @@ resource "local_file" "helm_chart_values" {
     }
 
     monitoring = {
-      enabled = false
+      enabled = var.enable_monitoring
+      externalService = var.external_prometheus != "" ? {
+        enabled          = var.enable_monitoring
+        ip               = var.ip_external_prometheus
+        subnet           = var.workload_subnet
+        certName         = var.external_prometheus_cert_name
+        hostname         = var.external_prometheus
+        allowedIPs       = var.external_prometheus_allowed_ips
+        allowedIPsPolicy = var.external_prometheus_allowed_ips_policy
+        } : {
+        enabled          = false
+        ip               = null
+        subnet           = null
+        certName         = null
+        hostname         = null
+        allowedIPs       = null
+        allowedIPsPolicy = null
+      }
     },
 
     prometheus = {
