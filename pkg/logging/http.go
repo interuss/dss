@@ -70,8 +70,7 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		claimsValue, _ := claims.FromContext(r.Context())
-		if claimsValue.Subject != "" {
+		if claimsValue, _ := claims.FromContext(r.Context()); claimsValue.Subject != "" {
 			logger = logger.With(zap.String("req_sub", claimsValue.Subject))
 		}
 
