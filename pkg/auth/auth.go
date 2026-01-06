@@ -186,7 +186,7 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 // TokenMiddleware decodes the authentication token and passes the claims to the authorizer and to the context for logging.
 func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ctx context.Context
+		ctx := r.Context()
 		claimsValue, err := a.extractClaims(r)
 		if err != nil {
 			ctx = claims.NewContextFromError(ctx, err)
