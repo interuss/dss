@@ -26,12 +26,12 @@ var (
 	errKey    = ctxKey("error")
 )
 
-func NewContext(ctx context.Context, claims Claims, err error) context.Context {
-	if err != nil {
-		return context.WithValue(ctx, errKey, err)
-	}
-
+func NewContext(ctx context.Context, claims Claims) context.Context {
 	return context.WithValue(ctx, claimsKey, claims)
+}
+
+func NewContextFromError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, errKey, err)
 }
 
 func FromContext(ctx context.Context) (Claims, error) {

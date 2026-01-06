@@ -186,8 +186,13 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 // TokenMiddleware decodes the authentication token and passes the claims to the authorizer and to the context for logging.
 func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ctx context.Context
 		claimsValue, err := a.extractClaims(r)
-		ctx := claims.NewContext(r.Context(), claimsValue, err)
+		if err != nil {
+			ctx = claims.NewContextFromError(ctx, err)
+		} else {
+			ctx = claims.NewContext(ctx, claimsValue)
+		}
 
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -198,6 +203,10 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 	keyClaims, err := claims.FromContext(r.Context())
 	if err != nil {
 		return api.AuthorizationResult{Error: stacktrace.Propagate(err, "Error retrieving claims from context")}
+	}
+
+	if !a.acceptedAudiences[keyClaims.Audience] {
+		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
 	}
 
 	if pass, missing := validateScopes(authOptions, keyClaims.Scopes); !pass {
