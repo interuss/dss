@@ -4,7 +4,95 @@
 
 # Master nodes Gateways
 {{- range $i, $lb := .Values.loadBalancers.yugabyteMasterNodes }}
+
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yb-proxy-config-{{$i}}
+data:
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+      maxconn 4096
+
+    defaults
+      mode tcp
+      log global
+      # We set high timeouts to avoid disconnects with low activitiy
+      timeout client 12h
+      timeout server 12h
+      timeout tunnel 12h
+      timeout connect 5s
+      # We enable TCP keep alives on client and server side
+      option clitcpka
+      option srvtcpka
+      # K8s services may not be ready when HaProxy start, we ignore errors
+      default-server init-addr libc,none
+
+    resolvers dns
+      parse-resolv-conf
+      # We limit DNS validity to 5s to react to changes on K8s services
+      hold valid 5s
+
+    frontend master-grpc-f
+      bind :7100
+      default_backend master-grpc-b
+
+    backend master-grpc-b
+      server yb-master-{{$i}} yb-master-{{$i}}.yb-masters.default.svc.cluster.local:7100 check resolvers dns
+
+    frontend tserver-grpc-f
+      bind :9100
+      default_backend tserver-grpc-b
+
+    backend tserver-grpc-b
+      server yb-tserver-{{$i}} yb-tserver-{{$i}}.yb-tservers.default.svc.cluster.local:9100 check resolvers dns
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: yugabyte-proxy-{{$i}}
+  name: yugabyte-proxy-{{$i}}
+spec:
+  replicas: 2  # We deploy two instances to provide resilience if one Kubernetes node goes down.
+  selector:
+    matchLabels:
+      app: yugabyte-proxy-{{$i}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: yugabyte-proxy-{{$i}}
+      annotations:
+        release: {{$.Release.Name}}/{{$.Release.Revision}}
+    spec:
+      containers:
+        - name: yugabyte-proxy
+          image: "haproxy:3.3"
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 7100
+              name: master-grpc
+            - containerPort: 9100
+              name: tserver-grpc
+          volumeMounts:
+            - name: config-volume
+              mountPath: /usr/local/etc/haproxy/
+              readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: yb-proxy-config-{{$i}}
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,8 +121,7 @@ spec:
       targetPort: 9100
   publishNotReadyAddresses: true
   selector:
-     yugabytedUi: "true"
-     apps.kubernetes.io/pod-index: "{{$i}}"
+    app: yugabyte-proxy-{{$i}}
   type: LoadBalancer
 {{- end }}
 {{- end }}
