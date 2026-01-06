@@ -12,6 +12,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api"
 	"github.com/interuss/dss/pkg/api/scdv1"
+	"github.com/interuss/dss/pkg/auth/claims"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
 
@@ -52,7 +53,7 @@ func rsaTokenReqWithMissingIssuer(key *rsa.PrivateKey, exp, nbf int64) *http.Req
 }
 
 func TestNewRSAAuthClient(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	tmpfile, err := os.CreateTemp("/tmp", "bad.pem")
@@ -103,7 +104,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		{rsaTokenReq(key, 100, 50), dsserr.Unauthenticated},
 	}
 
-	a, err := NewRSAAuthorizer(context.Background(), Configuration{
+	a, err := NewRSAAuthorizer(t.Context(), Configuration{
 		KeyResolver: &fromMemoryKeyResolver{
 			Keys: []interface{}{&key.PublicKey},
 		},
@@ -115,7 +116,15 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	for i, test := range authTests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			res := a.Authorize(nil, test.req, []api.AuthorizationOption{})
+			ctx := t.Context()
+			claimsValue, err := a.extractClaims(test.req)
+			if err != nil {
+				ctx = claims.NewContextFromError(ctx, err)
+			} else {
+				ctx = claims.NewContext(ctx, claimsValue)
+			}
+
+			res := a.Authorize(nil, test.req.WithContext(ctx), []api.AuthorizationOption{})
 			if test.code != stacktrace.ErrorCode(0) && stacktrace.GetCode(res.Error) != test.code {
 				t.Logf("%v", res.Error)
 				t.Errorf("expected: %v, got: %v, with message %s", test.code, stacktrace.GetCode(res.Error), res.Error.Error())
@@ -193,17 +202,17 @@ func TestMissingScopes(t *testing.T) {
 }
 
 func TestClaimsValidation(t *testing.T) {
-	Now = func() time.Time {
+	claims.Now = func() time.Time {
 		return time.Unix(42, 0)
 	}
-	jwt.TimeFunc = Now
+	jwt.TimeFunc = claims.Now
 
 	defer func() {
 		jwt.TimeFunc = time.Now
-		Now = time.Now
+		claims.Now = time.Now
 	}()
 
-	claims := &claims{}
+	claims := &claims.Claims{}
 
 	require.Error(t, claims.Valid())
 

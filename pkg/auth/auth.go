@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/api"
+	"github.com/interuss/dss/pkg/auth/claims"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
@@ -182,11 +183,26 @@ func (a *Authorizer) setKeys(keys []interface{}) {
 	a.keyGuard.Unlock()
 }
 
-// Authorize extracts and verifies bearer tokens from a http.Request.
+// TokenMiddleware decodes the authentication token and passes the claims to the authorizer and to the context for logging.
+func (a *Authorizer) TokenMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claimsValue, err := a.extractClaims(r)
+		if err != nil {
+			ctx = claims.NewContextFromError(ctx, err)
+		} else {
+			ctx = claims.NewContext(ctx, claimsValue)
+		}
+
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// Authorize extracts and verifies bearer tokens from a http.Request after it was validated by the TokenMiddleware.
 func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptions []api.AuthorizationOption) api.AuthorizationResult {
-	keyClaims, err := a.ExtractClaims(r)
+	keyClaims, err := claims.FromContext(r.Context())
 	if err != nil {
-		return api.AuthorizationResult{Error: stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Failed to extract claims from access token")}
+		return api.AuthorizationResult{Error: stacktrace.Propagate(err, "Error retrieving claims from context")}
 	}
 
 	if !a.acceptedAudiences[keyClaims.Audience] {
@@ -205,10 +221,10 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 	}
 }
 
-func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
+func (a *Authorizer) extractClaims(r *http.Request) (claims.Claims, error) {
 	tknStr, ok := getToken(r)
 	if !ok {
-		return claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
+		return claims.Claims{}, stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Missing access token")
 	}
 
 	a.keyGuard.RLock()
@@ -216,10 +232,10 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 	a.keyGuard.RUnlock()
 	validated := false
 	var err error
-	var keyClaims claims
+	var keyClaims claims.Claims
 
 	for _, key := range keys {
-		keyClaims = claims{}
+		keyClaims = claims.Claims{}
 		key := key
 		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
 			return key, nil
@@ -234,7 +250,7 @@ func (a *Authorizer) ExtractClaims(r *http.Request) (claims, error) {
 		if err == nil { // If we have no keys, errs may be nil
 			err = stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "No keys to validate against")
 		}
-		return claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
+		return claims.Claims{}, stacktrace.PropagateWithCode(err, dsserr.Unauthenticated, "Access token validation failed")
 	}
 
 	return keyClaims, nil
@@ -278,7 +294,7 @@ func describeAuthorizationExpectations(authOptions []api.AuthorizationOption) st
 // validateScopes matches scopes against a set of authorization options. Validation against a single one of those is
 // enough for the validation to succeed. Returns true if it succeeds, or returns false and a string describing the
 // missing scopes if it fails. Empty authorization options means that the validation passes.
-func validateScopes(authOptions []api.AuthorizationOption, clientScopes ScopeSet) (bool, string) {
+func validateScopes(authOptions []api.AuthorizationOption, clientScopes claims.ScopeSet) (bool, string) {
 	if len(authOptions) == 0 {
 		return true, ""
 	}
