@@ -11,11 +11,28 @@ multiple organizations to each host one DSS instance that is interoperable with
 each other organization's DSS instance.  A DSS pool with three participating
 organizations (USSs) will have an architecture similar to the diagram below.
 
-_**Note** that the diagram shows 2 stateful sets per DSS instance.  Currently, the
-helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after
-Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
+_**Note** that the diagrams bellow shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
+
+### Certificates
+
+This diagram shows how certificates are shared. It applies to both CockroachDB and Yugabyte deployments.
+
+![Pool architecture diagram](assets/generated/pool_architecture_certs.png)
+
+### CochroachDB
 
 ![Pool architecture diagram](assets/generated/pool_architecture.png)
+
+### Yugabyte
+
+Detail on an instance level
+![Pool architecture diagram with Yugabyte](assets/generated/pool_architecture_yugabyte_instance.png)
+
+Top level simplified view, with one replica shown and yugabyte services regrouped in one box.
+![Pool architecture diagram with Yugabyte](assets/generated/pool_architecture_yugabyte.png)
+
+To reduce the number of required public load balancers, we do use an intermediate reverse proxy to expose the ports of Yugabyte master and tserver on a shared public IP per stateful set instance.
+Usual Kubernetes load balancers can't assign connection based on ports out of the box, so we use the reverse proxy to dispatch connections on both services depending on the connected port.
 
 ### Terminology notes
 
