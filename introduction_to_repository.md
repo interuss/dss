@@ -27,7 +27,7 @@ You may generate them automatically using:
 
 Ensure dot is installed as `dot` and PlantUMl is installed as `plantuml` (if needed, create an alias to `java -jar plantuml.jar`, with the full jar path).
 
-On liunux, you may automatically watch for changes and rebuild them on the fly with:
+On Linux, you may automatically watch for changes and rebuild them on the fly with:
 
 `make dos-assets-watch`
 
