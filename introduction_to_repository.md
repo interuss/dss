@@ -19,7 +19,7 @@ and point your browser to http://127.0.0.1:8888/dss/
 
 Live reload is enabled, you should be able to edit files locally and see changes in live.
 
-The documentation use generated assets from [Graphviz](https://graphviz.org/) and [PlantUML](https://plantuml.com/).
+The documentation uses generated assets from [Graphviz](https://graphviz.org/) and [PlantUML](https://plantuml.com/).
 
 You may generate them automatically using:
 
