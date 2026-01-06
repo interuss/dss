@@ -1,6 +1,7 @@
 'To render with PlantUML:
 '  java -jar plantuml.jar -o generated rid_service.puml
 @startuml
+skinparam dpi 300
 participant "Display\nProvider" as DP
 participant "Discovery and\nSynchronization Service" as DSS
 participant "Service\nProvider" as SP
@@ -33,7 +34,7 @@ UASA ->> SP : Telemetry A5
 UASB ->> SP : Telemetry B1
 
 DP -> SP : Poll /uss/flights for lat,lng box
-activate SP 
+activate SP
 SP -->> DP : Telemetry A5, B1
 deactivate
 

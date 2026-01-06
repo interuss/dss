@@ -1,6 +1,7 @@
 'To render with PlantUML:
 '  java -jar plantuml.jar -o generated rid_display.puml
 @startuml
+skinparam dpi 300
 actor User
 participant "Display\nApplication" as DA
 participant "Display\nProvider" as DP
@@ -28,7 +29,7 @@ deactivate SP2
 DP -> SP1 : t2 Poll /uss/flights for lat,lng box
 activate SP1
 DP -> SP2 : t2 Poll /uss/flights for lat,lng box
-activate SP2 
+activate SP2
 DP -->> DA : t1 Current flight telemetry
 deactivate DP
 

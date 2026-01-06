@@ -1,7 +1,8 @@
 // To render:
-//   dot -Tsvg -ogenerated/survivability_3x2.svg survivability_3x2.gv
+//   dot -Tpng -ogenerated/survivability_3x2.png survivability_3x2.gv
 digraph G {
     node [shape=box];
+    graph [dpi = 300];
 
     NNNs [label= "1: (🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟩 )",color=green,penwidth=5]
 

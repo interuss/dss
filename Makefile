@@ -218,3 +218,22 @@ presubmit: hygiene-tests dss-tests
 local-doc:
 	docker build -f Dockerfile.docs . -t dss-docs
 	docker run --rm -it -p 8888:8000 -v $(CURDIR):/app/:ro dss-docs
+
+# Generation of documentation's generated files
+SOURCES_GV = $(wildcard docs/assets/*.gv)
+OBJECTS_GV = $(patsubst docs/assets/%.gv, docs/assets/generated/%.png, $(SOURCES_GV))
+SOURCES_PUML = $(wildcard docs/assets/*.puml)
+OBJECTS_PUML = $(patsubst docs/assets/%.puml, docs/assets/generated/%.png, $(SOURCES_PUML))
+
+docs/assets/generated/%.png: docs/assets/%.gv
+	dot -Tpng $< -o $@
+
+docs/assets/generated/%.png: docs/assets/%.puml
+	plantuml -o generated $<
+
+doc-assets: $(OBJECTS_GV) $(OBJECTS_PUML)
+
+# Automatic rebuilding of assets
+.PHONY: doc-assets-watch
+doc-assets-watch:
+	while inotifywait -e modify docs/assets/*; do make doc-assets; done

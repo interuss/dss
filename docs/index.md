@@ -8,7 +8,7 @@ An operational DSS deployment requires a specific architecture to be compliant w
 
 This repository provides three layers of abstraction to deploy and operate a DSS instance via Kubernetes.
 
-![Deployment layers](assets/deployment_layers.png)
+![Deployment layers](assets/generated/deployment_layers.png)
 
 As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
 However, you can do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.
