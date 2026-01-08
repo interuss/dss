@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
-site_name: InterUSS DSS Deployment User Documentation
+site_name: DSS Deployment User Documentation
 site_url: https://interuss.github.io/dss/
 repo_url: https://github.com/interuss/dss
 repo_name: interuss/dss
@@ -99,6 +99,5 @@ markdown_extensions:
   # https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown
   - toc:
       permalink: true # displays a permalink next to headings
-      baselevel: 2
 
   - attr_list  # Enable creation of custom anchors
