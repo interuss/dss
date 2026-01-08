@@ -23,7 +23,7 @@ The deployment of a DSS instance involves 3 stages:
 
 1. Recommending procedures and guidelines on how to operate the DSS: **The Operations**.
 
-![Deployment layers](assets/deployment_layers.png)
+![Deployment layers](assets/generated/deployment_layers.png)
 
 As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
 However, you can do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.

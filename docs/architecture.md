@@ -56,7 +56,7 @@ underlying CockroachDB database technology and how we configure it.  The diagram
 below shows the result of failures (bringing a node down for maintenance, or
 having an entire USS go down) from different starting points, assuming 3 replicas.
 
-![Survivability diagram](assets/generated/survivability_3x2.svg)
+![Survivability diagram](assets/generated/survivability_3x2.png)
 
 The table below summarizes survivable failures with 3 DSS instances configured according
 to the architecture described above.  Each system state is summarized by three

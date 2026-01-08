@@ -2,6 +2,7 @@
 //   dot -Tpng -ogenerated/run_locally_architecture.png run_locally_architecture.gv
 digraph G {
   node [shape=box];
+  graph [dpi = 300];
   USS [shape=oval];
   OAuth [label="dummy-oauth"];
   CoreService [label="core-service"];

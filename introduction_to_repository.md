@@ -19,6 +19,20 @@ and point your browser to http://127.0.0.1:8888/dss/
 
 Live reload is enabled, you should be able to edit files locally and see changes in live.
 
+The documentation uses generated assets from [Graphviz](https://graphviz.org/) and [PlantUML](https://plantuml.com/).
+
+You may generate them automatically using:
+
+`make doc-assets`
+
+Ensure dot is installed as `dot` and PlantUMl is installed as `plantuml` (if needed, create an alias to `java -jar plantuml.jar`, with the full jar path).
+
+On Linux, you may automatically watch for changes and rebuild them on the fly with:
+
+`make dos-assets-watch`
+
+You need to have [inotifywait](https://linux.die.net/man/1/inotifywait) installed for the command to work, usually via the `inotify-tools` package of your distribution.
+
 ### Introduction to the Monitoring toolset
 
 The [`monitoring` repository](https://github.com/interuss/monitoring) contains a set of folders containing different test suites to test different capabilities of the DSS during development and production use.
