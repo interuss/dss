@@ -1,12 +1,20 @@
-# DSS Deployment
+# DSS Deployment User Documentation
 
 ## Introduction
+
+This website provides instructions to deploy the InterUSS USS to USS Discovery and Synchronization service.
 
 An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).  This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
 
 ## Deployment layers
 
-This repository provides three layers of abstraction to deploy and operate a DSS instance via Kubernetes.
+The deployment of a DSS instance involves 3 stages:
+
+1. Provisioning the required cloud resources, in particular a Kubernetes cluster: **The Infrastructure**.
+
+1. Deploying the DSS applications under the form of kubernetes resources: **The Services**.
+
+1. Recommending procedures and guidelines on how to operate the DSS: **The Operations**.
 
 ![Deployment layers](assets/deployment_layers.png)
 

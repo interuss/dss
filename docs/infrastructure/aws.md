@@ -39,8 +39,7 @@ Download & install the following tools to your workstation:
 9. Configure the DNS resolution according to these instructions:
 
 === "Terraform managed"
-    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
-    it with the rest of the infrastructure.
+    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage it with the rest of the infrastructure.
 
     **For Elastic Kubernetes Service (AWS)**, create the zone in your aws account and set the `aws_route53_zone_id`
     variable with the zone id. Entries will be automatically created by terraform.

@@ -94,13 +94,19 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. If using CockroachDB:
-    1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
-    1. Deploy the certificates using `./apply-certs.sh`.
-4. If using Yugabyte:
+
+3. Prepare the datastore certificates:
+=== "Yugabyte"
     1. Generate the certificates using `./dss-certs.sh init`
     1. If joining a cluster, check `dss-certs.sh`'s [help](../../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
     1. Deploy the certificates using `./dss-certs.sh apply`.
+
+=== "CockroachDB"
+    1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
+    1. Deploy the certificates using `./apply-certs.sh`.
+
+---
+
 5. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
 6. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 7. Wait for services to initialize:
