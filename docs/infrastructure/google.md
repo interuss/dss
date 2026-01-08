@@ -1,4 +1,4 @@
-# terraform-google-dss
+# Deploy a DSS instance to Google Cloud Platform with terraform
 
 This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates
 the tanka files to deploy a DSS instance.
@@ -14,10 +14,10 @@ the tanka files to deploy a DSS instance.
 
 #### Kubernetes tools
 
-1. Install kubectl from [Prerequisites](../../build.md#prerequisites)
+1. Install kubectl from [Prerequisites](index.md#prerequisites)
    1. Verify kubectl installation with `kubectl version`
 
-#### Google Cloud Engine
+#### Google Cloud Platform
 
 1. Install and initialize [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
     1. Confirm successful initialization with `gcloud info`; check "Account".
@@ -47,8 +47,42 @@ the tanka files to deploy a DSS instance.
 6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or
-handled by terraform depending on the cloud provider. See [DNS](dns.md) for details.
+9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:
+
+=== "Terraform managed"
+    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
+    it with the rest of the infrastructure.
+
+    - **For Google Cloud Platform**, configure the zone in your google account and set the `google_dns_managed_zone_name` variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be automatically created by terraform.
+
+=== "Manual setup"
+    If DNS entries are managed manually, set them up manually using the following steps:
+
+    1. Retrieve IP addresses and expected hostnames: `terraform output`
+    Example of expected output:
+    ```
+        crdb_addresses = [
+            {
+                "address" = "34.65.15.23"
+                "expected_dns" = "0.interuss.example.com"
+            },
+            {
+                "address" = "34.65.146.56"
+                "expected_dns" = "1.interuss.example.com"
+            },
+            {
+                "address" = "34.65.191.145"
+                "expected_dns" = "2.interuss.example.com"
+            },
+        ]
+        gateway_address = {
+            "address" = "35.186.236.146"
+            "expected_dns" = "dss.interuss.example.com"
+        }
+    ```
+    2. Create the related DNS A entries to point to the static ips.
+
+---
 
 ## Deployment of the DSS services
 
@@ -60,13 +94,19 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. If using CockroachDB:
+
+3. Prepare the datastore certificates:
+=== "Yugabyte"
+    1. Generate the certificates using `./dss-certs.sh init`
+    1. If joining a cluster, check `dss-certs.sh`'s [help](../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
+    1. Deploy the certificates using `./dss-certs.sh apply`.
+
+=== "CockroachDB"
     1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
     1. Deploy the certificates using `./apply-certs.sh`.
-4. If using Yugabyte:
-    1. Generate the certificates using `./dss-certs.sh init`
-    1. If joining a cluster, check `dss-certs.sh`'s [help](../../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
-    1. Deploy the certificates using `./dss-certs.sh apply`.
+
+---
+
 5. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
 6. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
 7. Wait for services to initialize:

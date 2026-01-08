@@ -1,25 +1,7 @@
-# Deploying a DSS instance
-
-## Deployment options
+# Deploying a DSS instance to Google Cloud Platform manually step by step
 
 This document describes how to deploy a production-style DSS instance to
 interoperate with other DSS instances in a DSS pool.
-
-To run a local DSS instance for testing, evaluation, or development, see
-[dev/standalone_instance.md](https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md).
-
-To create a local DSS instance with multi-node CRDB cluster, see [dev/mutli_node_local_dss.md](https://github.com/interuss/dss/blob/master/build/dev/mutli_node_local_dss.md).
-
-To create or join a pool consisting of multiple interoperable DSS instances, see
-[information on pooling](operations/pooling.md).
-
-## Glossary
-
-- DSS Region - A region in which a single, unified airspace representation is
-  presented by one or more interoperable DSS instances, each instance typically
-  operated by a separate organization.  A specific environment (for example,
-  "production" or "staging") in a particular DSS Region is called a "pool".
-- DSS instance - a single logical replica in a DSS pool.
 
 ## Preface
 
@@ -30,110 +12,16 @@ meets the CockroachDB requirements below.
 
 ## Prerequisites
 
-Download & install the following tools to your workstation:
-
-- If deploying on Google Cloud,
-  [install Google Cloud SDK](https://cloud.google.com/sdk/install)
-    - Confirm successful installation with `gcloud version`
-    - Run `gcloud init` to set up a connection to your account.
-    - `kubectl` can be installed from `gcloud` instead of via the method below.
-- [Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
-  interact with kubernetes
-    - Confirm successful installation with `kubectl version --client` (should
-      succeed from any working directory).
-    - Note that kubectl can alternatively be installed via the Google Cloud SDK
-     `gcloud` shell if using Google Cloud.
-- [Install tanka](https://tanka.dev/install)
-    - On Linux, after downloading the binary per instructions, run
-      `sudo chmod +x /usr/local/bin/tk`
-    - Confirm successful installation with `tk --version`
-- [Install Docker](https://docs.docker.com/get-docker/).
-    - Confirm successful installation with `docker --version`
-- [Install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
-  generate CockroachDB certificates.
-    - These instructions assume CockroachDB Core.
-    - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
-      completing the installation instructions.
-    - Confirm successful installation with `cockroach version`
-- If developing the DSS codebase,
-  [install Golang](https://golang.org/doc/install)
-    - Confirm successful installation with `go version`
-- Optionally install [Jsonnet](https://github.com/google/jsonnet) if editing
-  the jsonnet templates.
-
-## Docker images
-
-The application logic of the DSS is located in core-service which is provided in
-a Docker image which is built locally and then pushed to a Docker registry of
-your choice.  All major cloud providers have a docker registry service, or you
-can set up your own.
-
-To use the prebuilt InterUSS Docker images (without building them yourself), use
-`docker.io/interuss/dss` for `VAR_DOCKER_IMAGE_NAME`.
-
-To build these images (and, optionally, push them to a docker registry):
-
-1. Set the environment variable `DOCKER_URL` to your docker registry url
-endpoint.
-
-    -   For Google Cloud, `DOCKER_URL` should be set similarly to as described
-        [here](https://cloud.google.com/container-registry/docs/pushing-and-pulling#tag_the_local_image_with_the_registry_name),
-        like `gcr.io/your-project-id` (do not include the image name;
-        it will be appended by the build script)
-
-    -   For Amazon Web Services, `DOCKER_URL` should be set similarly to as described
-        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html),
-        like `${aws_account_id}.dkr.ecr.${region}.amazonaws.com/` (do not include the image name;
-        it will be appended by the build script)
-
-1. Ensure you are logged into your docker registry service.
-
-    -   For Google Cloud,
-        [these](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
-        are the recommended instructions (`gcloud auth configure-docker`).
-        Ensure that
-        [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control).
-
-    -   For Amazon Web Services, create a private repository by following the instructions
-        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html), then login
-        as described [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
-
-1. Use the [`build.sh` script](https://github.com/interuss/dss/blob/master/build/build.sh) in this directory to build and push
-   an image tagged with the current date and git commit hash.
-
-1. Note the VAR_* value printed at the end of the script.
-
-### Access to private repository
-
-See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication.
-
-### Verify signature of prebuilt InterUSS Docker images
-
-The prebuilt docker images are signed using [sigstore](https://www.sigstore.dev/).
-The identity of the CI workflow, attested by GitHub, is used so sign the images.
-
-The signature may be verified by using [cosign](https://github.com/sigstore/cosign):
-```shell
-docker pull "docker.io/interuss/dss:latest"
-cosign verify "docker.io/interuss/dss:latest" \
-  --certificate-identity-regexp="https://github.com/interuss/dss/.github/workflows/dss-publish.yml@refs/*" \
-  --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
-```
-Adapt the version specified if required.
+Install the required tools as described [here](./index.md#prerequisites).
 
 ## Deploying a DSS instance via Kubernetes
 
-This section discusses deploying a Kubernetes service manually, although you can deploy
+It discusses deploying a Kubernetes service manually, although you can deploy
 a DSS instance however you like as long as it meets the CockroachDB requirements
 above. You can do this on any supported
 [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/)
 or even on your own infrastructure. Consult the Kubernetes documentation for
 your chosen provider.
-
-To instead deploy infrastructure using terraform, see the [terraform infrastructure deployment page](infrastructure/index.md).
-
-If you can augment this documentation with specifics for another cloud provider,
-a PR to that effect would be greatly appreciated.
 
 1.  Create a new Kubernetes cluster. We recommend a new cluster for each DSS
     instance.  A reasonable cluster name might be `dss-us-prod-e4a` (where `e4a`
@@ -257,7 +145,7 @@ a PR to that effect would be greatly appreciated.
         the rest of the instances, such that ca.crt is the same across all
         instances.
 
-1.  (Only if you use Yugabyte) Use [`dss-certs.py` script](operations/certificates-management.md) to create certificates for the Yugabyte nodes in this DSS instance.
+1.  (Only if you use Yugabyte) Use [`dss-certs.py` script](../operations/certificates-management.md) to create certificates for the Yugabyte nodes in this DSS instance.
 
 1.  If joining an existing DSS pool, share ca.crt with the DSS instance(s) you
     are trying to join, and have them apply the new ca.crt, which now contains
@@ -291,7 +179,7 @@ a PR to that effect would be greatly appreciated.
         (typically around 10 minutes)
 
 1.  Ensure the Docker images are built according to the instructions in the
-    [previous section](#docker-images).
+    [getting started](index.md#docker-images).
 
 1.  From this working directory,
     `cp -r ../deploy/services/tanka/examples/minimum/* workspace/$CLUSTER_CONTEXT`.  Note that
@@ -573,15 +461,15 @@ a PR to that effect would be greatly appreciated.
 
 ## Pooling
 
-See [the pooling documentation](operations/pooling.md).
+See [the pooling documentation](../operations/pooling.md).
 
 ## Tools
 
-See [operations monitoring documentation](operations/monitoring.md).
+See [operations monitoring documentation](../operations/monitoring.md).
 
 ## Troubleshooting
 
-See [Troubleshooting in `deploy/operations`](operations/troubleshooting.md).
+See [Troubleshooting in `deploy/operations`](../operations/troubleshooting.md).
 
 ## Upgrading Database Schemas
 
