@@ -2,6 +2,7 @@
 //   dot -Tpng -ogenerated/create_pool_n.png create_pool_n.gv
 digraph {
   node [shape=box]
+  graph [dpi = 300];
 
   Legendn [label="Instance n",color=red]
   PS1 [label="Pool verified with\nn-1 instances",shape=note]

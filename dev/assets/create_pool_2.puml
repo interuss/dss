@@ -1,6 +1,7 @@
 'To render with PlantUML:
 '  java -jar plantuml.jar -o generated create_pool_2.puml
 @startuml
+skinparam dpi 300
 participant "USS 1" as USS1
 participant "USS 2" as USS2
 participant "Pool state" as PoolState

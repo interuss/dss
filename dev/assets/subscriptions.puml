@@ -1,6 +1,7 @@
 'To render with PlantUML:
 '  java -jar plantuml.jar -o generated subscriptions.puml
 @startuml
+skinparam dpi 300
 participant "Entity\nconsumer" as EC
 participant "Discovery and\nSynchronization Service" as DSS
 participant "Entity producer\n(USS 1)" as EP1

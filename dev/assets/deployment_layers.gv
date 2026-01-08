@@ -1,5 +1,6 @@
 digraph {
   node [shape=box,fillcolor=white,style=filled]
+  graph [dpi = 300];
 
   Start -> Infrastructure -> Services -> Operations
 
