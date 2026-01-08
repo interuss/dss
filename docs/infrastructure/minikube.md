@@ -1,4 +1,4 @@
-# minikube
+# Deploy a DSS instance locally on Minikube
 
 This section provide instructions to prepare a local minikube cluster.
 

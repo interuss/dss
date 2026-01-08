@@ -1,4 +1,4 @@
-# terraform-google-dss
+# Deploy a DSS instance on Google Cloud Platform with terraform
 
 This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates
 the tanka files to deploy a DSS instance.

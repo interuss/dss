@@ -1,0 +1,6 @@
+flatten_single_child_sections: true
+nav:
+  - "Amazon Web Services with terraform": aws.md
+  - "Google Cloud Platform with terraform": google.md
+  - "Google Cloud Platform manually": google-manual.md
+  - "Minikube": minikube.md
