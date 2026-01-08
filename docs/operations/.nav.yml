@@ -1,0 +1,8 @@
+nav:
+  - "Overview": index.md
+  - "Certificates management (Yugabyte)": certificates-management.md
+  - "Pooling (Yugabyte)": pooling.md
+  - "Pooling (CockroachDB)": pooling-crdb.md
+  - "Monitoring": monitoring.md
+  - "Migrations": migrations.md
+  - "Troubleshooting": troubleshooting.md

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/interuss/dss/pkg/auth/claims"
 	"go.uber.org/zap"
 )
 
@@ -39,9 +40,6 @@ func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 	w.next.WriteHeader(statusCode)
 }
 
-type CtxAuthError struct{}
-type CtxAuthSubject struct{}
-
 // HTTPMiddleware installs a logging http.Handler that logs requests and
 // selected aspects of responses to 'logger'.
 func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Handler {
@@ -72,12 +70,8 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			}
 		}
 
-		subject, ok := r.Context().Value(CtxAuthSubject{}).(string)
-		if !ok {
-			authErrorMsg := r.Context().Value(CtxAuthError{}).(string)
-			logger = logger.With(zap.String("resp_sub_err", authErrorMsg))
-		} else {
-			logger = logger.With(zap.String("req_sub", subject))
+		if claimsValue, _ := claims.FromContext(r.Context()); claimsValue.Subject != "" {
+			logger = logger.With(zap.String("req_sub", claimsValue.Subject))
 		}
 
 		handler.ServeHTTP(trw, r)

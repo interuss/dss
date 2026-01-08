@@ -1,0 +1,6 @@
+nav:
+  - "Getting Started": index.md
+  - "Architecture": architecture.md
+  - "Deploy a DSS instance to": infrastructure/
+  - "Operate a DSS instance": operations/
+  

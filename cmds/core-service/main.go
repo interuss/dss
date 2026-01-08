@@ -306,12 +306,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
-	handler := logging.HTTPMiddleware(logger, *dumpRequests,
-		healthyEndpointMiddleware(logger,
-			&multiRouter,
-		))
-
-	handler = authDecoderMiddleware(authorizer, handler)
+	// the middlewares are wrapped and, therefore, executed in the opposite order
+	handler := healthyEndpointMiddleware(logger, &multiRouter)
+	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
+	handler = authorizer.TokenMiddleware(handler)
 
 	httpServer := &http.Server{
 		Addr:              address,
@@ -370,23 +368,6 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
-	})
-}
-
-// authDecoderMiddleware decodes the authentication token and adds the Subject claim to the context.
-func authDecoderMiddleware(authorizer *auth.Authorizer, handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ctx context.Context
-
-		claims, err := authorizer.ExtractClaims(r)
-		if err != nil {
-			//remove the stacktrace using the formatting specifier "%#s"
-			ctx = context.WithValue(r.Context(), logging.CtxAuthError{}, fmt.Sprintf("%#s", err))
-		} else {
-			ctx = context.WithValue(r.Context(), logging.CtxAuthSubject{}, claims.Subject)
-		}
-
-		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

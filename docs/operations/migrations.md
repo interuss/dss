@@ -28,8 +28,8 @@ be different by DSS instance.
 
 ### Terraform deployment
 
-If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](migration.md#helm-deployment)
-or [Tanka](migration.md#tanka-deployment). Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to
+If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](migrations.md#helm-deployment)
+or [Tanka](migrations.md#tanka-deployment). Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to
 align your configuration with the new state of the cluster.
 
 ### Helm deployment
@@ -75,7 +75,7 @@ For deployments using Tanka configuration, since no instructions are provided fo
 we recommend to follow the manual steps documented by CockroachDB: `Cluster Upgrade with Manual configs`.
 (See specific links below) To apply the changes to your cluster, follow the manual steps and reflect the new
 values in the *Leader* and *Followers* Tanka configurations, namely the new image version (see
-[`VAR_CRDB_DOCKER_IMAGE_NAME`](build.md)) to ensure the new configuration is aligned with the cluster state.
+[`VAR_CRDB_DOCKER_IMAGE_NAME`](../infrastructure/google-manual.md)) to ensure the new configuration is aligned with the cluster state.
 
 #### 21.2.7 to 24.1.3
 
@@ -91,7 +91,7 @@ CockroachDB requires to upgrade one minor version at a time, therefore the follo
 
 **Important notes:**
 
-- The migration plan below has been tested with the deployment of services using [Helm](services/helm-charts.md) and [Tanka](services/tanka.md) without Istio enabled. Note that this configuration flag has been decommissioned since [#995](https://github.com/interuss/dss/pull/995).
+- The migration plan below has been tested with the deployment of services using Helm and Tanka without Istio enabled. Note that this configuration flag has been decommissioned since [#995](https://github.com/interuss/dss/pull/995).
 - Further work is required to test and evaluate the availability of the DSS during migrations.
 - It is highly recommended to rehearse such operation on a test cluster before applying them to a production environment.
 

@@ -1,4 +1,4 @@
-# Certificates management
+# Certificates management (Yugabyte)
 
 ## Introduction
 
@@ -31,6 +31,8 @@ To run the script, just run `./dss-certs.py`. The python script don't require an
 * `./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default apply`
 * `./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 apply`
 * `./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 apply`
+
+!!! Roll out restart required
 
 ## Operations
 

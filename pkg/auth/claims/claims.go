@@ -1,6 +1,7 @@
-package auth
+package claims
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -17,6 +18,34 @@ var (
 	// Now allows test to override with specific time values
 	Now = time.Now
 )
+
+type ctxKey string
+
+var (
+	claimsKey = ctxKey("claims")
+	errKey    = ctxKey("error")
+)
+
+func NewContext(ctx context.Context, claims Claims) context.Context {
+	return context.WithValue(ctx, claimsKey, claims)
+}
+
+func NewContextFromError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, errKey, err)
+}
+
+func FromContext(ctx context.Context) (Claims, error) {
+	claims, ok := ctx.Value(claimsKey).(Claims)
+	if !ok {
+		err, ok := ctx.Value(errKey).(error)
+		if ok {
+			return Claims{}, err
+		}
+		return Claims{}, stacktrace.NewError("No claims or error in context")
+	}
+
+	return claims, nil
+}
 
 // ScopeSet models a set of scopes.
 type ScopeSet map[string]struct{}
@@ -61,12 +90,12 @@ func (s *ScopeSet) ToStringSlice() []string {
 	return scopes
 }
 
-type claims struct {
+type Claims struct {
 	jwt.StandardClaims
 	Scopes ScopeSet `json:"scope"`
 }
 
-func (c *claims) Valid() error {
+func (c *Claims) Valid() error {
 	if c.Subject == "" {
 		return errMissingOrEmptySubject
 	}
