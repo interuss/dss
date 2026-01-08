@@ -11,7 +11,7 @@ and generates the tanka files to deploy a DSS instance.
 Download & install the following tools to your workstation:
 
 1. Install [terraform](https://developer.hashicorp.com/terraform/downloads).
-2. Install tools from [Prerequisites](../../build.md)
+2. Install tools from [Prerequisites](index.md)
 3. Install AWS specific tools:
    1. Install and initialize [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions).
        1. Confirm successful installation with `aws --version`.
@@ -102,7 +102,7 @@ It contains scripts to operate the cluster and setup the services.
 
 === "Yugabyte"
     1. Generate the certificates using `./dss-certs.sh init`
-    1. If joining a cluster, check `dss-certs.sh`'s [help](../../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
+    1. If joining a cluster, check `dss-certs.sh`'s [help](../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
     1. Deploy the certificates using `./dss-certs.sh apply`.
 
 === "CockroachDB"

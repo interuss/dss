@@ -14,10 +14,10 @@ the tanka files to deploy a DSS instance.
 
 #### Kubernetes tools
 
-1. Install kubectl from [Prerequisites](../../build.md#prerequisites)
+1. Install kubectl from [Prerequisites](index.md#prerequisites)
    1. Verify kubectl installation with `kubectl version`
 
-#### Google Cloud Engine
+#### Google Cloud Platform
 
 1. Install and initialize [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
     1. Confirm successful initialization with `gcloud info`; check "Account".
@@ -98,7 +98,7 @@ It contains scripts to operate the cluster and setup the services.
 3. Prepare the datastore certificates:
 === "Yugabyte"
     1. Generate the certificates using `./dss-certs.sh init`
-    1. If joining a cluster, check `dss-certs.sh`'s [help](../../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
+    1. If joining a cluster, check `dss-certs.sh`'s [help](../operations/certificates-management.md) to add others CA in your pool and share your CA with others pools members.
     1. Deploy the certificates using `./dss-certs.sh apply`.
 
 === "CockroachDB"

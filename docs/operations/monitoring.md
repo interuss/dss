@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Some of the tools from [the manual deployment documentation](../build.md#prerequisites) are required to interact with monitoring services.
+Some of these [tools](../infrastructure/index.md#prerequisites) are required to interact with monitoring services.
 
 ## Grafana / Prometheus
 

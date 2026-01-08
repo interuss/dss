@@ -11,7 +11,7 @@ Minikube is going to take care of most of the work by spawning a local kubernete
 Download & install the following tools to your workstation:
 
 1. Install [minikube](https://minikube.sigs.k8s.io/docs/start/) (First step only).
-2. Install tools from [Prerequisites](../../build.md)
+2. Install tools from [Prerequisites](./google-manual.md#prerequisites)
 
 ### Create a new minikube cluster
 
@@ -32,7 +32,7 @@ You can also use any other tool as needed. You can switch to the cluster's conte
 
 ### Upload or update local image
 
-Should you want to run the local docker image that you [built](../../build.md), run the following commands to upload / update your image
+Should you want to run the local docker image that you [built](./google-manual.md#prerequisites), run the following commands to upload / update your image
 
 1. `minikube image -p dss-local-cluster push interuss-local/dss`
 
@@ -40,14 +40,19 @@ In the helm charts, use `docker.io/interuss-local/dss:latest` as image and be su
 
 ## Deployment of the DSS services
 
-You can now deploy the DSS services using [helm charts](../../services/helm-charts.md).
+You can now deploy the DSS services using Helm or Tanka. See the repository `/deploy/services` for more information.
 
-Follow the instructions in the [helm section](../../services/helm-charts.md), especially the ones related to [certificate generation](../../build.md#certificates) and publication to the cluster. However, there are some minikube specific things to do:
+=== "Helm"
+    Minikube specific settings:
 
-* Use the `global.cloudProvider` setting with the value `minikube` and deploy the charts on the `dss-local-cluster` kubernetes context.
-* To access the service, find the external IP using the `kubectl get services dss-dss-gateway` command. The port 80, without HTTPs is used.
+    * Use the `global.cloudProvider` setting with the value `minikube` and deploy the charts on the `dss-local-cluster` kubernetes context.
 
-You may also use the tanka files to deploy the service. An example configuration is provided [there](https://github.com/interuss/dss/tree/master/deploy/services/tanka/examples/minikube).
+=== "Tanka"
+    An example configuration is provided in the repository: `/deploy/services/tanka/examples/minikube`
+
+---
+
+To access the service, find the external IP using the `kubectl get services dss-dss-gateway` command. The port 80, without HTTPs is used.
 
 ## Clean up
 
