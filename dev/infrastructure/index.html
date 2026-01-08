@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://interuss.github.io/dss/dev/infrastructure/">
       
       
-        <link rel="prev" href="../migration/">
+        <link rel="prev" href="../architecture/">
       
       
-        <link rel="next" href="terraform-aws-dss/">
+        <link rel="next" href="aws/">
       
       
         
@@ -25,11 +25,14 @@
     
     
       
-        <title>Infrastructure - DSS Deployment Documentation</title>
+        <title>Introduction - DSS Deployment User Documentation</title>
       
     
     
       <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="light-blue" data-md-color-accent="light-blue">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -66,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#infrastructure" class="md-skip">
+        <a href="#getting-started" class="md-skip">
           Skip to content
         </a>
       
@@ -82,12 +90,13 @@
     
       
 
-<header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="DSS Deployment Documentation" class="md-header__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
-      
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="DSS Deployment User Documentation" class="md-header__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
+      
+  <img src="../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -98,21 +107,21 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            DSS Deployment Documentation
+            DSS Deployment User Documentation
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Infrastructure
+              Introduction
             
           </span>
         </div>
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -180,105 +189,6 @@
       
         
           
-            
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-grid">
-    <ul class="md-tabs__list">
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href=".." class="md-tabs__link">
-          
-  
-  
-    
-  
-  Home
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-  
-  
-    
-    
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Infrastructure
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../services/" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Services
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../operations/" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Operations
-
-        </a>
-      </li>
-    
-  
-
-      
-    </ul>
-  </div>
-</nav>
-          
         
       
       <main class="md-main" data-md-component="main">
@@ -292,18 +202,15 @@
                     
 
 
-  
 
-
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="DSS Deployment Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment Documentation" data-md-component="logo">
+    <a href=".." title="DSS Deployment User Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
-    DSS Deployment Documentation
+    DSS Deployment User Documentation
   </label>
   
     <div class="md-nav__source">
@@ -326,88 +233,15 @@
   
   
   
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href=".." class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Home
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Home
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
-      <a href="../build/" class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Deploying a DSS instance
+    Getting Started
   
 
     
@@ -419,10 +253,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -435,7 +268,7 @@
   <span class="md-ellipsis">
     
   
-    Kubernetes deployment
+    Architecture
   
 
     
@@ -447,23 +280,35 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
+  
+  
+    
   
   
   
-  
-    <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    CockroachDB and Kubernetes version migration
+    Deploy a DSS instance to
   
 
     
@@ -471,462 +316,154 @@
   
   
 
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Infrastructure
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link md-nav__link--active" for="__nav_2" id="__nav_2_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            
-  
-    Infrastructure
-  
-
           </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
         
-          
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="terraform-aws-dss/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    terraform-aws-dss
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_2" id="__nav_2_2_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    terraform-aws-dss
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="terraform-aws-dss/dns/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Setup DNS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="terraform-google-dss/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    terraform-google-dss
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_2_3" id="__nav_2_3_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    terraform-google-dss
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="terraform-google-dss/dns/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Setup DNS
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="minikube/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    minikube
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    minikube
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../services/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Services
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Services
+    Deploy a DSS instance to
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker images
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker images">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-to-private-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access to private repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-signature-of-prebuilt-interuss-docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify signature of prebuilt InterUSS Docker images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
               
             
               
@@ -936,14 +473,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../services/helm-charts/" class="md-nav__link">
+      <a href="aws/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Helm Chart
+    Amazon Web Services with terraform
   
 
     
@@ -964,14 +501,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../services/tanka/" class="md-nav__link">
+      <a href="google/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Tanka library
+    Google Cloud Platform with terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="google-manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Cloud Platform manually
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="minikube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minikube
   
 
     
@@ -1000,30 +593,7 @@
   
     
     
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
     
-    
-    
-      
-      
-        
-      
     
     
     <li class="md-nav__item md-nav__item--nested">
@@ -1033,15 +603,14 @@
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../operations/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Operations
+    Operate a DSS instance
   
 
     
@@ -1049,26 +618,130 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Operations
+    Operate a DSS instance
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operations/certificates-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificates management (Yugabyte)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operations/pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling (Yugabyte)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operations/pooling-crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling (CockroachDB)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1106,42 +779,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../operations/pooling/" class="md-nav__link">
+      <a href="../operations/migrations/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    DSS Pooling (Yugabyte)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../operations/pooling-crdb/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DSS Pooling (CockroachDB)
+    Migrations
   
 
     
@@ -1183,139 +828,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../operations/certificates-management/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Certificates management
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../operations/ci/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CI
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    CI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../operations/ci/aws-1/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AWS-1 CI deployment
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -1343,6 +855,75 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker images
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker images">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-to-private-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access to private repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-signature-of-prebuilt-interuss-docker-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify signature of prebuilt InterUSS Docker images
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1356,6 +937,48 @@
 
 
 
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href=".." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Deploy a DSS instance to
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
 
               
               <article class="md-content__inner md-typeset">
@@ -1380,13 +1003,126 @@
   
 
 
-<h1 id="infrastructure">Infrastructure<a class="headerlink" href="#infrastructure" title="Permanent link">&para;</a></h1>
-<p>Infrastructure provides instructions and tooling to easily provision a Kubernetes cluster and cloud resources (load balancers, storage...) to a cloud provider. The resulting infrastructure meets the <a href="../architecture/#objective">Pooling requirements</a>. Terraform modules are provided for:</p>
+<h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<h2 id="glossary">Glossary<a class="headerlink" href="#glossary" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="terraform-aws-dss/">Amazon Web Services (EKS)</a></li>
-<li><a href="terraform-google-dss/">Google (GKE)</a></li>
+<li>DSS Region - A region in which a single, unified airspace representation is
+  presented by one or more interoperable DSS instances, each instance typically
+  operated by a separate organization.  A specific environment (for example,
+  "production" or "staging") in a particular DSS Region is called a "pool".</li>
+<li>DSS instance - a single logical replica in a DSS pool.</li>
 </ul>
-<p>Should you want to test deployments locally, for testing or deployments purpose, you will find instructions about using minikube <a href="minikube/">there</a>.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<p>Download &amp; install the following tools to your workstation:</p>
+<ul>
+<li>If deploying on Google Cloud,
+  <a href="https://cloud.google.com/sdk/install">install Google Cloud SDK</a><ul>
+<li>Confirm successful installation with <code>gcloud version</code></li>
+<li>Run <code>gcloud init</code> to set up a connection to your account.</li>
+<li><code>kubectl</code> can be installed from <code>gcloud</code> instead of via the method below.</li>
+</ul>
+</li>
+<li><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">Install kubectl</a> to
+  interact with kubernetes<ul>
+<li>Confirm successful installation with <code>kubectl version --client</code> (should
+  succeed from any working directory).</li>
+<li>Note that kubectl can alternatively be installed via the Google Cloud SDK
+ <code>gcloud</code> shell if using Google Cloud.</li>
+</ul>
+</li>
+<li><a href="https://tanka.dev/install">Install tanka</a><ul>
+<li>On Linux, after downloading the binary per instructions, run
+  <code>sudo chmod +x /usr/local/bin/tk</code></li>
+<li>Confirm successful installation with <code>tk --version</code></li>
+</ul>
+</li>
+<li><a href="https://docs.docker.com/get-docker/">Install Docker</a>.<ul>
+<li>Confirm successful installation with <code>docker --version</code></li>
+</ul>
+</li>
+<li><a href="https://www.cockroachlabs.com/get-cockroachdb/">Install CockroachDB</a> to
+  generate CockroachDB certificates.<ul>
+<li>These instructions assume CockroachDB Core.</li>
+<li>You may need to run <code>sudo chmod +x /usr/local/bin/cockroach</code> after
+  completing the installation instructions.</li>
+<li>Confirm successful installation with <code>cockroach version</code></li>
+</ul>
+</li>
+<li>If developing the DSS codebase,
+  <a href="https://golang.org/doc/install">install Golang</a><ul>
+<li>Confirm successful installation with <code>go version</code></li>
+</ul>
+</li>
+<li>Optionally install <a href="https://github.com/google/jsonnet">Jsonnet</a> if editing
+  the jsonnet templates.</li>
+</ul>
+<h2 id="docker-images">Docker images<a class="headerlink" href="#docker-images" title="Permanent link">&para;</a></h2>
+<p>The application logic of the DSS is located in core-service which is provided in
+a Docker image which is built locally and then pushed to a Docker registry of
+your choice.  All major cloud providers have a docker registry service, or you
+can set up your own.</p>
+<p>To use the prebuilt InterUSS Docker images (without building them yourself), use
+<code>docker.io/interuss/dss</code> for <code>VAR_DOCKER_IMAGE_NAME</code>.</p>
+<p>To build these images (and, optionally, push them to a docker registry):</p>
+<ol>
+<li>
+<p>Set the environment variable <code>DOCKER_URL</code> to your docker registry url
+endpoint.</p>
+<ul>
+<li>
+<p>For Google Cloud, <code>DOCKER_URL</code> should be set similarly to as described
+    <a href="https://cloud.google.com/container-registry/docs/pushing-and-pulling#tag_the_local_image_with_the_registry_name">here</a>,
+    like <code>gcr.io/your-project-id</code> (do not include the image name;
+    it will be appended by the build script)</p>
+</li>
+<li>
+<p>For Amazon Web Services, <code>DOCKER_URL</code> should be set similarly to as described
+    <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html">here</a>,
+    like <code>${aws_account_id}.dkr.ecr.${region}.amazonaws.com/</code> (do not include the image name;
+    it will be appended by the build script)</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Ensure you are logged into your docker registry service.</p>
+<ul>
+<li>
+<p>For Google Cloud,
+    <a href="https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper">these</a>
+    are the recommended instructions (<code>gcloud auth configure-docker</code>).
+    Ensure that
+    <a href="https://cloud.google.com/container-registry/docs/access-control">appropriate permissions are enabled</a>.</p>
+</li>
+<li>
+<p>For Amazon Web Services, create a private repository by following the instructions
+    <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html">here</a>, then login
+    as described <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html">here</a>.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Use the <a href="https://github.com/interuss/dss/blob/master/build/build.sh"><code>build.sh</code> script</a> in this directory to build and push
+   an image tagged with the current date and git commit hash.</p>
+</li>
+<li>
+<p>Note the VAR_* value printed at the end of the script.</p>
+</li>
+</ol>
+<h3 id="access-to-private-repository">Access to private repository<a class="headerlink" href="#access-to-private-repository" title="Permanent link">&para;</a></h3>
+<p>See below the description of <code>VAR_DOCKER_IMAGE_PULL_SECRET</code> to configure authentication.</p>
+<h3 id="verify-signature-of-prebuilt-interuss-docker-images">Verify signature of prebuilt InterUSS Docker images<a class="headerlink" href="#verify-signature-of-prebuilt-interuss-docker-images" title="Permanent link">&para;</a></h3>
+<p>The prebuilt docker images are signed using <a href="https://www.sigstore.dev/">sigstore</a>.
+The identity of the CI workflow, attested by GitHub, is used so sign the images.</p>
+<p>The signature may be verified by using <a href="https://github.com/sigstore/cosign">cosign</a>:
+<div class="language-shell highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span>
+<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>docker<span class="w"> </span>pull<span class="w"> </span><span class="s2">&quot;docker.io/interuss/dss:latest&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>cosign<span class="w"> </span>verify<span class="w"> </span><span class="s2">&quot;docker.io/interuss/dss:latest&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="w">  </span>--certificate-identity-regexp<span class="o">=</span><span class="s2">&quot;https://github.com/interuss/dss/.github/workflows/dss-publish.yml@refs/*&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="w">  </span>--certificate-oidc-issuer<span class="o">=</span><span class="s2">&quot;https://token.actions.githubusercontent.com&quot;</span>
+</code></pre></div></td></tr></table></div>
+Adapt the version specified if required.</p>
 
 
 
@@ -1407,7 +1143,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 26, 2025 10:09:32 UTC">November 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 8, 2026 16:34:22 UTC">January 8, 2026</span>
   </span>
 
     
@@ -1425,14 +1161,10 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
-        
-          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
-  Back to top
-</button>
         
       </main>
       
@@ -1443,7 +1175,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../migration/" class="md-footer__link md-footer__link--prev" aria-label="Previous: CockroachDB and Kubernetes version migration">
+          <a href="../architecture/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Architecture">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1453,20 +1185,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                CockroachDB and Kubernetes version migration
+                Architecture
               </div>
             </div>
           </a>
         
         
           
-          <a href="terraform-aws-dss/" class="md-footer__link md-footer__link--next" aria-label="Next: terraform-aws-dss">
+          <a href="aws/" class="md-footer__link md-footer__link--next" aria-label="Next: Amazon Web Services with terraform">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                terraform-aws-dss
+                Amazon Web Services with terraform
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1521,7 +1253,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.indexes", "toc.follow", "navigation.top", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
