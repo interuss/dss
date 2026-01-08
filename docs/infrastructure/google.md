@@ -47,8 +47,42 @@ the tanka files to deploy a DSS instance.
 6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
 7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
 8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed manually or
-handled by terraform depending on the cloud provider. See [DNS](dns.md) for details.
+9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:
+
+=== "Terraform managed"
+    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
+    it with the rest of the infrastructure.
+
+    - **For Google Cloud Platform**, configure the zone in your google account and set the `google_dns_managed_zone_name` variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be automatically created by terraform.
+
+=== "Manual setup"
+    If DNS entries are managed manually, set them up manually using the following steps:
+
+    1. Retrieve IP addresses and expected hostnames: `terraform output`
+    Example of expected output:
+    ```
+        crdb_addresses = [
+            {
+                "address" = "34.65.15.23"
+                "expected_dns" = "0.interuss.example.com"
+            },
+            {
+                "address" = "34.65.146.56"
+                "expected_dns" = "1.interuss.example.com"
+            },
+            {
+                "address" = "34.65.191.145"
+                "expected_dns" = "2.interuss.example.com"
+            },
+        ]
+        gateway_address = {
+            "address" = "35.186.236.146"
+            "expected_dns" = "dss.interuss.example.com"
+        }
+    ```
+    2. Create the related DNS A entries to point to the static ips.
+
+---
 
 ## Deployment of the DSS services
 

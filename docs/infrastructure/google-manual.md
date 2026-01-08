@@ -1,4 +1,4 @@
-# Deploying a DSS instance
+# Deploying a DSS instance step by step on Google Cloud Platform
 
 ## Deployment options
 
