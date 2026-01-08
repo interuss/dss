@@ -1,4 +1,4 @@
-# Deploying a DSS instance step by step on Google Cloud Platform
+# Deploying a DSS instance to Google Cloud Platform manually step by step
 
 This document describes how to deploy a production-style DSS instance to
 interoperate with other DSS instances in a DSS pool.
