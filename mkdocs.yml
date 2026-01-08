@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
-site_name: DSS Deployment Documentation
+site_name: InterUSS DSS Deployment User Documentation
 site_url: https://interuss.github.io/dss/
 repo_url: https://github.com/interuss/dss
 repo_name: interuss/dss
@@ -16,18 +16,21 @@ theme:
   name: material
   icon:
     repo: fontawesome/brands/github
+  logo: assets/InterUSS_horizontal.svg
+  palette:
+    primary: "light blue"
+    accent: "light blue"
   features:
     # https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/
     - navigation.instant # no page reload on navigation, behaves as a single page app
     - navigation.instant.prefetch # prefetches hovered links
     - navigation.instant.progress # displays loading progress bar if loading takes more than 400ms
     - navigation.tracking # tracks currently displayed page anchor in URL address
-    - navigation.tabs # displays top-level sections in menu below header
-    - navigation.sections # renders top-level sections as groups
+#    - navigation.tabs # displays top-level sections in menu below header
+#    - navigation.sections # renders top-level sections as groups
     - navigation.path # shows breadcrumb above title
-    - navigation.indexes # allows attaching page to section
+#    - navigation.indexes # allows attaching page to section
     - toc.follow # TOC in sidebar scrolls with page
-    - navigation.top # shows a back-to-top button
 
     # https://squidfunk.github.io/mkdocs-material/setup/setting-up-site-search/
     - search.suggest # provides search completions
@@ -43,6 +46,9 @@ theme:
     - content.action.edit # provides link to edit page on github
     - content.action.view # provides link to view page on github
 
+    # https://squidfunk.github.io/mkdocs-material/reference/content-tabs/#anchor-links--or-even-me
+    - content.tabs.link
+
     # https://squidfunk.github.io/mkdocs-material/reference/admonitions/
     - admonition
     - pymdownx.details
@@ -50,6 +56,7 @@ theme:
 
 plugins:
   - search
+  - awesome-nav
   - git-revision-date-localized: # displays last update date
       fallback_to_build_date: true
 
@@ -86,40 +93,43 @@ markdown_extensions:
   - pymdownx.snippets # enables inclusion of markdown snippets
   - pymdownx.tabbed: # enables tabbed content
       alternate_style: true
-
+      slugify: !!python/object/apply:pymdownx.slugs.slugify # enables links to tab as anchor
+        kwds:
+          case: lower
   # https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown
   - toc:
       permalink: true # displays a permalink next to headings
+      baselevel: 2
 
   - attr_list  # Enable creation of custom anchors
 
-nav:
-  - Home:
-    - index.md
-    - build.md
-    - architecture.md
-    - migration.md
-  - Infrastructure:
-      - infrastructure/index.md
-      - terraform-aws-dss:
-          - infrastructure/terraform-aws-dss/index.md
-          - infrastructure/terraform-aws-dss/dns.md
-      - terraform-google-dss:
-          - infrastructure/terraform-google-dss/index.md
-          - infrastructure/terraform-google-dss/dns.md
-      - minikube:
-          - infrastructure/minikube/index.md
-  - Services:
-      - services/index.md
-      - services/helm-charts.md
-      - services/tanka.md
-  - Operations:
-      - operations/index.md
-      - operations/monitoring.md
-      - operations/pooling.md
-      - operations/pooling-crdb.md
-      - operations/troubleshooting.md
-      - operations/certificates-management.md
-      - CI:
-          - operations/ci/index.md
-          - operations/ci/aws-1.md
+#nav:
+#  - Home:
+#    - index.md
+#    - build.md
+#    - architecture.md
+#    - migration.md
+#  - Infrastructure:
+#      - infrastructure/index.md
+#      - terraform-aws-dss:
+#          - infrastructure/terraform-aws-dss/index.md
+#          - infrastructure/terraform-aws-dss/dns.md
+#      - terraform-google-dss:
+#          - infrastructure/terraform-google-dss/index.md
+#          - infrastructure/terraform-google-dss/dns.md
+#      - minikube:
+#          - infrastructure/minikube/index.md
+#  - Services:
+#      - services/index.md
+#      - services/helm-charts.md
+#      - services/tanka.md
+#  - Operations:
+#      - operations/index.md
+#      - operations/monitoring.md
+#      - operations/pooling.md
+#      - operations/pooling-crdb.md
+#      - operations/troubleshooting.md
+#      - operations/certificates-management.md
+#      - CI:
+#          - operations/ci/index.md
+#          - operations/ci/aws-1.md
