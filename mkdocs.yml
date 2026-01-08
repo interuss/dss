@@ -59,6 +59,7 @@ plugins:
   - awesome-nav
   - git-revision-date-localized: # displays last update date
       fallback_to_build_date: true
+  - glightbox
 
 markdown_extensions:
   # https://squidfunk.github.io/mkdocs-material/reference/admonitions/
