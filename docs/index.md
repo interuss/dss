@@ -8,10 +8,10 @@ An operational DSS deployment requires a specific architecture to be compliant w
 
 ## Getting started
 
-- Deploy a DSS instance on [Amazon Web Services (EKS)](infrastructure/aws.md) using terraform
-- Deploy a DSS instance on [Google (GKE)](infrastructure/google.md) using terraform
-- Deploy a DSS instance on [Google (GKE)](infrastructure/google.md) step by step
-- Deploy a DSS instance on [Minikube](infrastructure/minikube.md)
+- Deploy a DSS instance to [Amazon Web Services (EKS)](infrastructure/aws.md) using terraform
+- Deploy a DSS instance to [Google (GKE)](infrastructure/google.md) using terraform
+- Deploy a DSS instance to [Google (GKE)](infrastructure/google-manual.md) step by step
+- Deploy a DSS instance to [Minikube](infrastructure/minikube.md)
 
 ## Deployment layers
 
