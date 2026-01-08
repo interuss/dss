@@ -30,7 +30,8 @@ Download & install the following tools to your workstation:
     - Confirm successful installation with `tk --version`
 - [Install Docker](https://docs.docker.com/get-docker/).
     - Confirm successful installation with `docker --version`
-- [Install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
+- If using CockroachDB as the datastore, 
+  [install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
   generate CockroachDB certificates.
     - These instructions assume CockroachDB Core.
     - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
@@ -86,7 +87,7 @@ endpoint.
 
 ### Access to private repository
 
-See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication.
+See the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication [on the manual step by step guide](google-manual.md).
 
 ### Verify signature of prebuilt InterUSS Docker images
 
