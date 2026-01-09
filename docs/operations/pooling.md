@@ -149,8 +149,6 @@ following those instructions.
     - use_client_to_server_encryption enabled
     - node_to_node_encryption_use_client_certificates enabled
     - allow_insecure_connections disabled
-- The ordering of the `--locality` flag keys must be the same across all
-  CockroachDB nodes in the cluster.
 - All DSS instances in the same cluster must point their ntpd at the same NTP
   Servers.
 
