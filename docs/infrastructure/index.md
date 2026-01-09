@@ -4,7 +4,7 @@ This section describes how to deploy a DSS instance on Kubernetes.
 
 ## Deployment Options
 
-The DSS can be deployed on various platforms. Choose the method that best facilitates your needs:
+The DSS can be deployed on various platforms. Choose the method that best suits your needs:
 
 | Platform | Tools | Description |
 | :--- | :--- | :--- |
