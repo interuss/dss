@@ -243,27 +243,21 @@ instance :
 
     `kubectl exec -it yb-master-0 -- sh`
 
-1. Preparation of certificates for the client:
-
-    * `cp /opt/certs/yugabyte/node.yb-master-0.yb-masters.default.svc.cluster.local.crt /tmp/node.crt`
-    * `cp /opt/certs/yugabyte/node.yb-master-0.yb-masters.default.svc.cluster.local.key /tmp/node.key`
-    * `cp /opt/certs/yugabyte/ca.crt /tmp/ca.crt`
-
 1. Addition of a new master node
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config ADD_SERVER [PUBLIC HOSTNAME] 7100`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config ADD_SERVER [PUBLIC HOSTNAME] 7100``
 
 The last command can be repeated as needed, however a small delay is needed for
 the cluster to settle when adding a new node. If you get `Leader is not ready
 for Config Change, can try again`, just try again.
 
 You should have all masters listed in the web ui or using the
-`yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_masters`
+``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_masters``
 command.
 
 The tserver nodes will join automatically, using the list of provided master
 nodes. They can be listed for confirmation in the web ui or using the
-`yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_tablet_servers`
+``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_tablet_servers``
 command.
 
 The pool should then be re-verified for functionality
@@ -308,7 +302,7 @@ to scale down the Statefulset and that removes the last node first (ex:
 
     1. Blacklist one node in your cluster.
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist ADD [TSERVER_PUBLIC_HOSTNAME]`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist ADD [TSERVER_PUBLIC_HOSTNAME]``
 
     1. Wait for the node to be drained (no user tablet-peer or system-table-peer
        in the gui). If node is not draining, you may have placement constraints
@@ -323,14 +317,14 @@ to scale down the Statefulset and that removes the last node first (ex:
 
     1. Remove the node:
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 remove_tablet_server [TSERVER_ID]`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 remove_tablet_server [TSERVER_ID]``
 
     If the command is giving you an error, data of the node may not have been
     drain correctly dues to placement constraints.
 
     1. Remove the node from the black list:
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist REMOVE [TSERVER_PUBLIC_HOSTNAME]`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist REMOVE [TSERVER_PUBLIC_HOSTNAME]``
 
     1. Fully remove the node in your cluster.
 
@@ -341,12 +335,12 @@ to scale down the Statefulset and that removes the last node first (ex:
 
     1. Remove the master from the master list
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config REMOVE_SERVER [PUBLIC HOSTNAME] 7100`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config REMOVE_SERVER [PUBLIC HOSTNAME] 7100``
 
     If the master node to be removed is the current leader, you may make it step
     down with the following command:
 
-    `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 master_leader_stepdown`
+    ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 master_leader_stepdown``
 
 Finally, each pool participant should remove master addresses from the
 `yugabyte_external_nodes` list their Yugabyte nodes will attempt to contact upon
@@ -369,8 +363,8 @@ We do recommend a minimum of 3 participants and one copy in each participants.
 You may use the `modify_placement_info` command to set placement settings.
 Example:
 
-* `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 modify_placement_info dss.uss-1,dss.uss-2,dss.uss-3 3`
-* `yb-admin -certs_dir_name /tmp/ -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 modify_placement_info dss.uss-1,dss.uss-2,dss.uss-3,dss.uss-4,dss.uss-5 5`
+* ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 modify_placement_info dss.uss-1,dss.uss-2,dss.uss-3 3``
+* ``yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 modify_placement_info dss.uss-1,dss.uss-2,dss.uss-3,dss.uss-4,dss.uss-5 5``
 
 You may however use a different strategy depending on your availability needs,
 e.g. you may want to avoid common datacenter between the same DSS instance. To
