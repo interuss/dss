@@ -24,6 +24,9 @@ Download & install the following tools to your workstation:
 
 ### Deployment of the Kubernetes cluster
 
+!!! tip "Paths in the documentation"
+    In the documentation, we often refer to path starting from the root (prefixed with `/`). This is to indicate that the path is relative to the root of the repository.
+
 1. Create a new folder in `/deploy/infrastructure/personal/` named, for instance, `terraform-aws-dss-dev`.
 2. Copy `main.tf`, `output.tf` and `variables.gen.tf` to the new folder.
 3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`.

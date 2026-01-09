@@ -1,7 +1,6 @@
 # Deploy a DSS instance to Google Cloud Platform with terraform
 
-This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates
-the tanka files to deploy a DSS instance.
+This guide will help you deploy a DSS instance to Google Cloud Platform with terraform and tanka.
 
 ## Getting started
 
@@ -15,7 +14,7 @@ the tanka files to deploy a DSS instance.
 #### Kubernetes tools
 
 1. Install kubectl from [Prerequisites](index.md#prerequisites)
-   1. Verify kubectl installation with `kubectl version`
+    1. Verify kubectl installation with `kubectl version`
 
 #### Google Cloud Platform
 
@@ -34,6 +33,9 @@ the tanka files to deploy a DSS instance.
     1. If the result of performing the authorization indicates 404 in the browser, check whether a local dummy-oauth instance is running (using port 8085).  Stop the dummy-oauth instance if it is running.
 
 ### Deployment of the Kubernetes cluster
+
+!!! tip "Paths in the documentation"
+    In the documentation, we often refer to path starting from the root (prefixed with `/`). This is to indicate that the path is relative to the root of the repository.
 
 1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-google-dss-dev`.
 2. Copy main.tf, output.tf and variables.gen.tf to the new folder. (Note that the modules can be added to existing projects)
