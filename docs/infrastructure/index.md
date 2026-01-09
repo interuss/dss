@@ -1,4 +1,18 @@
-# Getting started
+# Introduction
+
+This section describes how to deploy a DSS instance on Kubernetes.
+
+## Deployment Options
+
+The DSS can be deployed on various platforms. Choose the method that best suits your needs:
+
+| Platform | Tools | Description |
+| :--- | :--- | :--- |
+| **Amazon Web Services** | Terraform | [Deploy on AWS using Terraform](aws.md) to provision EKS and required resources. |
+| **Google Cloud Platform** | Terraform | [Deploy on GCP using Terraform](google.md) to provision GKE and required resources. |
+| **Google Cloud Platform** | Manual | [Deploy on GCP manually](google-manual.md) without Terraform. |
+| **Locally** | Minikube | [Deploy locally using Minikube](minikube.md) for development and testing. |
+
 
 ## Glossary
 
@@ -30,7 +44,8 @@ Download & install the following tools to your workstation:
     - Confirm successful installation with `tk --version`
 - [Install Docker](https://docs.docker.com/get-docker/).
     - Confirm successful installation with `docker --version`
-- [Install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
+- If using CockroachDB as the datastore, 
+  [install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
   generate CockroachDB certificates.
     - These instructions assume CockroachDB Core.
     - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
@@ -86,7 +101,7 @@ endpoint.
 
 ### Access to private repository
 
-See below the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication.
+See the description of `VAR_DOCKER_IMAGE_PULL_SECRET` to configure authentication [on the manual step by step guide](google-manual.md).
 
 ### Verify signature of prebuilt InterUSS Docker images
 
@@ -100,4 +115,5 @@ cosign verify "docker.io/interuss/dss:latest" \
   --certificate-identity-regexp="https://github.com/interuss/dss/.github/workflows/dss-publish.yml@refs/*" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
+
 Adapt the version specified if required.
