@@ -229,9 +229,7 @@ def get_tfvars_md_content(
     content += """
     <table>
         <thead>
-            <th>Variable name</th>
-            <th>Type</th>
-            <th>Default value</th>
+            <th>Variable</th>
             <th>Description</th>
         </thead>
         <tbody>
@@ -244,19 +242,17 @@ def get_tfvars_md_content(
             .replace(",", ",<br/>")
         )
 
-    for v in variables:
+    for v in sorted(variables):
         description, value_type, default_value = parse_definition(v, definitions[v])
         formatted_value_type = f"<code>{simplify_type(value_type)}</code>"
         formatted_default_value = (
-            f"<code>{default_value}</code>" if default_value is not None else ""
+            f"<br/>Default value: <code>{default_value}</code>" if default_value is not None else ""
         )
         formatted_description = marko.convert(description)
         content += f"""
             <tr>
-                <td>{v}</td>
-                <td>{formatted_value_type}</td>
-                <td>{formatted_default_value}</td>
-                <td>{formatted_description}</td>
+                <td>{v} ({formatted_value_type})</td>
+                <td>{formatted_description}{formatted_default_value}</td>
             </tr>
         """.strip()
 
