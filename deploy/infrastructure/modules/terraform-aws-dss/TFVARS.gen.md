@@ -30,7 +30,7 @@ Currently, the terraform module uses the two first availability zones of the reg
                 <td><code>string</code></td>
                 <td></td>
                 <td><p>AWS EC2 instance type used for the Kubernetes node pool.</p>
-<p>Example: <code>m6g.xlarge</code> for production and <code>t3.medium</code> for development</p>
+<p>Example: <code>m6a.xlarge</code> for production and <code>t3.medium</code> for development</p>
 </td>
             </tr><tr>
                 <td>aws_route53_zone_id</td>

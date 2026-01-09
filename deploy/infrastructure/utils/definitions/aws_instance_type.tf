@@ -3,6 +3,6 @@ variable "aws_instance_type" {
   description = <<-EOT
   AWS EC2 instance type used for the Kubernetes node pool.
 
-  Example: `m6g.xlarge` for production and `t3.medium` for development
+  Example: `m6a.xlarge` for production and `t3.medium` for development
   EOT
 }
