@@ -4,16 +4,19 @@
 
 This website provides instructions to deploy the InterUSS USS to USS Discovery and Synchronization service.
 
-An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).  This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).  
+This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
+
 
 ## Getting started
 
+- Review [architecture requirements](architecture.md)
 - Deploy a DSS instance to [Amazon Web Services (EKS)](infrastructure/aws.md) using terraform
 - Deploy a DSS instance to [Google (GKE)](infrastructure/google.md) using terraform
 - Deploy a DSS instance to [Google (GKE)](infrastructure/google-manual.md) manually step by step
 - Deploy a DSS instance to [Minikube](infrastructure/minikube.md)
 
-## Deployment layers
+## Tooling
 
 The deployment of a DSS instance involves 3 stages:
 
@@ -25,21 +28,16 @@ The deployment of a DSS instance involves 3 stages:
 
 ![Deployment layers](assets/generated/deployment_layers.png)
 
-As described below, InterUSS provides tooling for Kubernetes deployments on Amazon Web Services (EKS) and Google Cloud (GKE).
-However, you can do this on any supported [cloud provider](https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/) or even on your own infrastructure.
-Review [InterUSS pooling requirements](./architecture.md#objective) and consult the Kubernetes documentation for your chosen provider.
-
 Depending on your level of expertise and your internal organizational practices, you should be able to use each layer independently or complementary.
 
-## Migrations and upgrades
+InterUSS offers two terraform modules to deploy the **Infrastructure**:
 
-Information related to migrations and upgrades can be found in [the migration section](operations/migrations.md).
+- [Amazon Web Services](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/)
+- [Google Cloud Platform](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-google-dss/)
 
-## Development
+The **Services** are deployed using the following tools:
 
-The following diagram represents the resources in this repository per layer.
-![Deploy Overview](assets/generated/deploy_overview.png)
+- [Tanka](https://github.com/interuss/dss/blob/master/deploy/services/tanka/)
+- [Helm Chart](https://github.com/interuss/dss/blob/master/deploy/services/helm-charts/dss)
 
-### Formatting
-
-Terraform files must be formatted using `terraform fmt -recursive` command to pass the CI linter check.
+See [Operate a DSS instance](operations/index.md) for more information on tools to perform the **Operations**.
