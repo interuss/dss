@@ -1,7 +1,6 @@
 # Deploy a DSS instance to Google Cloud Platform with terraform
 
-This terraform module creates a Kubernetes cluster in Google Cloud Engine and generates
-the tanka files to deploy a DSS instance.
+This guide will help you deploy a DSS instance to Google Cloud Platform with terraform and tanka.
 
 ## Getting started
 
@@ -15,7 +14,7 @@ the tanka files to deploy a DSS instance.
 #### Kubernetes tools
 
 1. Install kubectl from [Prerequisites](index.md#prerequisites)
-   1. Verify kubectl installation with `kubectl version`
+    1. Verify kubectl installation with `kubectl version`
 
 #### Google Cloud Platform
 
@@ -35,27 +34,31 @@ the tanka files to deploy a DSS instance.
 
 ### Deployment of the Kubernetes cluster
 
-1. Create a new folder in `/deploy/infrastructure/personal/` named for instance `terraform-google-dss-dev`.
-2. Copy main.tf, output.tf and variables.gen.tf to the new folder. (Note that the modules can be added to existing projects)
-3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`
-4. Check that your new directory contains the following files:
-    - main.tf
-    - output.tf
-    - terraform.tfvars
-    - variables.gen.tf
-5. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-google-dss/TFVARS.gen.md) for variables descriptions.
-6. In the new directory (ie /deploy/infrastructure/personal/terraform-google-dss-dev), initialize terraform: `terraform init`.
-7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
-8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:
+!!! tip "Paths in the documentation"
+    In the documentation, we often refer to path starting from the root (prefixed with `/`). This is to indicate that the path is relative to the root of the repository.
 
-=== "Terraform managed"
+1. Create a new folder in `/deploy/infrastructure/personal/` for the deployment named for example: `terraform-google-dss-dev`
+2. From `/deploy/infrastructure/modules/terraform-google-dss`, copy `main.tf`, `output.tf`, `variables.gen.tf` and `terraform.dev.example.tfvars` to the infrastructure personal folder.
+3. In the infrastructure personal folder:
+    1. Rename `terraform.dev.example.tfvars` to `terraform.tfvars`.
+    2. Check that the directory contains the following files:
+        1. main.tf
+        2. output.tf
+        3. terraform.tfvars
+        4. variables.gen.tf
+    3. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-google-dss/TFVARS.gen.md) for variables descriptions.
+    4. Initialize terraform: `terraform init`.
+    5. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
+    6. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
+4. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:
+
+=== "Terraform managed DNS entries"
     If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
     it with the rest of the infrastructure.
 
     - **For Google Cloud Platform**, configure the zone in your google account and set the `google_dns_managed_zone_name` variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be automatically created by terraform.
 
-=== "Manual setup"
+=== "Manual DNS entries setup"
     If DNS entries are managed manually, set them up manually using the following steps:
 
     1. Retrieve IP addresses and expected hostnames: `terraform output`
@@ -80,20 +83,22 @@ the tanka files to deploy a DSS instance.
             "expected_dns" = "dss.interuss.example.com"
         }
     ```
-    2. Create the related DNS A entries to point to the static ips.
+    2. Create the related DNS A entries to point to the static ips indicated in the output:
+      - `crdb_addresses[*].expected_dns`
+      - `gateway_address.expected_dns`
 
 ---
 
 ## Deployment of the DSS services
 
-During the successful run, the terraform job has created a new [workspace](https://github.com/interuss/dss/tree/master/build/workspace)
+Following the successful terraform run, you should find a new [workspace directory](https://github.com/interuss/dss/tree/master/build/workspace)
 for the new cluster. The new workspace name corresponds to the cluster context. The cluster context
-can be retrieved by running `terraform output` in your infrastructure folder (ie /deploy/infrastructure/personal/terraform-google-dss-dev).
+can be retrieved by running `terraform output` in your infrastructure folder (eg /deploy/infrastructure/personal/terraform-google-dss-dev).
 
 It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
-2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
+    2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
 
 3. Prepare the datastore certificates:
 === "Yugabyte"
