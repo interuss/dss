@@ -27,19 +27,20 @@ Download & install the following tools to your workstation:
 !!! tip "Paths in the documentation"
     In the documentation, we often refer to path starting from the root (prefixed with `/`). This is to indicate that the path is relative to the root of the repository.
 
-1. Create a new folder in `/deploy/infrastructure/personal/` named, for instance, `terraform-aws-dss-dev`.
-2. Copy `main.tf`, `output.tf` and `variables.gen.tf` to the new folder.
-3. Copy `terraform.dev.example.tfvars` and rename to `terraform.tfvars`.
-4. Check that your new directory contains the following files:
-    - main.tf
-    - output.tf
-    - terraform.tfvars
-    - variables.gen.tf
-5. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
-6. In the new directory (ie /deploy/infrastructure/personal/terraform-aws-dss-dev), initialize terraform: `terraform init`.
-7. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
-8. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-9. Configure the DNS resolution according to these instructions:
+1. Create a new folder in `/deploy/infrastructure/personal/` for the deployment named for example: `terraform-aws-dss-dev`
+2. From `/deploy/infrastructure/modules/terraform-aws-dss`, copy `main.tf`, `output.tf`, `variables.gen.tf` and `terraform.dev.example.tfvars` to the infrastructure personal folder.
+3. In the infrastructure personal folder (eg /deploy/infrastructure/personal/terraform-aws-dss-dev):
+    1. Rename `terraform.dev.example.tfvars` to `terraform.tfvars`.
+    2. Check that the directory contains the following files:
+        1. main.tf
+        2. output.tf
+        3. terraform.tfvars
+        4. variables.gen.tf
+    3. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
+    4. Initialize terraform: `terraform init`.
+    5. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
+    6. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
+4. Configure the DNS resolution according to these instructions:
 
 === "Terraform managed"
     If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage it with the rest of the infrastructure.
@@ -83,7 +84,7 @@ Download & install the following tools to your workstation:
                ]
            }
            ```
-    2. Create the following DNS A entries to point to the static ips:
+    2. Create the following DNS A entries to point to the static ips indicated in the output:
       - `crdb_addresses[*].expected_dns`
       - `gateway_address.expected_dns`
     3. Create the entries for SSL certificate validation according to the information provided
@@ -100,8 +101,9 @@ can be retrieved by running `terraform output` in your infrastructure  folder (i
 It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
-2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. Generate certificates
+    1. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
+
+2. Prepare the datastore certificates:
 
 === "Yugabyte"
     1. Generate the certificates using `./dss-certs.sh init`
@@ -112,13 +114,14 @@ It contains scripts to operate the cluster and setup the services.
     1. Generate the certificates using `./make-certs.sh`. Follow script instructions if you are not initializing the cluster.
     1. Deploy the certificates using `./apply-certs.sh`.
 
-4. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
-5. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
-6. Wait for services to initialize:
+--- 
+3. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
+4. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
+5. Wait for services to initialize:
     - On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:
         - On the [EKS page](https://eu-west-1.console.aws.amazon.com/eks/home), the status of the kubernetes cluster should be `Active`.
         - On the [EC2 page](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:), the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state `Active`.
-8. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
+6. Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.
 
 
 ## Clean up
