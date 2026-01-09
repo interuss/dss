@@ -11,7 +11,7 @@ multiple organizations to each host one DSS instance that is interoperable with
 each other organization's DSS instance.  A DSS pool with three participating
 organizations (USSs) will have an architecture similar to the diagram below.
 
-_**Note** that the diagrams bellow shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
+_**Note** that the diagrams below shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets._
 
 ### Certificates
 
