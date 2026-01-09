@@ -1,4 +1,18 @@
-# Getting started
+# Introduction
+
+This section describes how to deploy a DSS instance on Kubernetes.
+
+## Deployment Options
+
+The DSS can be deployed on various platforms. Choose the method that best facilitates your needs:
+
+| Platform | Tools | Description |
+| :--- | :--- | :--- |
+| **Amazon Web Services** | Terraform | [Deploy on AWS using Terraform](aws.md) to provision EKS and required resources. |
+| **Google Cloud Platform** | Terraform | [Deploy on GCP using Terraform](google.md) to provision GKE and required resources. |
+| **Google Cloud Platform** | Manual | [Deploy on GCP manually](google-manual.md) without Terraform. |
+| **Locally** | Minikube | [Deploy locally using Minikube](minikube.md) for development and testing. |
+
 
 ## Glossary
 
@@ -101,4 +115,5 @@ cosign verify "docker.io/interuss/dss:latest" \
   --certificate-identity-regexp="https://github.com/interuss/dss/.github/workflows/dss-publish.yml@refs/*" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
+
 Adapt the version specified if required.
