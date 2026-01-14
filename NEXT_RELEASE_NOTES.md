@@ -60,6 +60,8 @@ The release notes should contain at least the following sections:
 * A immutable field has been changed in terraform / tanka
   * Please remove any `*-schema-manager-*` jobs before upgrading chart / applying tanka configuration.
   * The job is only used for migrations and can be removed.
+* Minimal support for kubernetes version have been bumped from 1.24 to 1.28.
+  * If you're using a version <1.28, please upgrade your cluster first
 
 ## Optional migration tasks
 

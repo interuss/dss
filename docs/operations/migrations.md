@@ -99,7 +99,7 @@ CockroachDB requires to upgrade one minor version at a time, therefore the follo
 
 Migrations of GKE clusters are managed using terraform.
 
-#### 1.24 to 1.32
+#### 1.24 to 1.34
 
 For each intermediate version up to the target version (eg. if you upgrade from 1.27 to 1.30, apply thoses
 instructions for 1.28, 1.29, 1.30), do:
@@ -124,7 +124,7 @@ Before proceeding, always check on the cluster page the *Upgrade Insights* tab w
 availability of Kubernetes resources in each version. The following sections omit this check if no resource is
 expected to be reported in the context of a standard deployment performed with the tools in this repository.
 
-#### 1.25 to 1.32
+#### 1.25 to 1.34
 
 1. Before migrating to 1.29, upgrade aws-load-balancer-controller helm chart on your cluster using `terraform apply`. Changes introduced by [PR #1167](https://github.com/interuss/dss/pull/1167).
 You can verify if the operation has succeeded by running `helm list -n kube-system`. The APP VERSION shall be `2.12`.
