@@ -84,6 +84,9 @@ prometheus:
       scrape_timeout: 5s
       evaluation_interval: 5s
 
+    podAnnotations:
+      serverFilesVersion: "1"  # Increment this value when changing serverFiles to force redeployment
+
     service:
       annotations:
         'prometheus.io/scrape': 'true'
@@ -101,7 +104,7 @@ prometheus:
   alertmanager:
     enabled: false
 
-  serverFiles:
+  serverFiles:  # Caution: When changing this, please update the podAnnotations above
     prometheus.yml:
       scrape_configs:
         - job_name: K8s-Endpoints
