@@ -167,4 +167,6 @@ def do_generate_nodes(cluster):
         for node_id in range(0, int(cluster.nodes_count)):
             generate_node(cluster, node_type, node_id)
 
+    generate_node(cluster, "prometheus", "")
+
     l.info("All nodes certificates are ready")

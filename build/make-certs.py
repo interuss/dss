@@ -54,6 +54,10 @@ class CockroachCluster(object):
     def node_certs_dir(self):
         return os.path.join(self.directory, "node_certs_dir")
 
+    @property
+    def prometheus_certs_dir(self):
+        return os.path.join(self.directory, "prometheus_certs_dir")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -115,8 +119,10 @@ def main():
     # Delete and recreate the directories.
     shutil.rmtree(cr.node_certs_dir, ignore_errors=True)
     shutil.rmtree(cr.client_certs_dir, ignore_errors=True)
+    shutil.rmtree(cr.prometheus_certs_dir, ignore_errors=True)
     os.mkdir(cr.client_certs_dir)
     os.mkdir(cr.node_certs_dir)
+    os.mkdir(cr.prometheus_certs_dir)
 
     if create_ca:
         # Create the CA.
@@ -135,6 +141,7 @@ def main():
     # Copy out the CA cert for generation, we delete these copies later.
     shutil.copy(cr.ca_certs_file, cr.client_certs_dir)
     shutil.copy(cr.ca_certs_file, cr.node_certs_dir)
+    shutil.copy(cr.ca_certs_file, cr.prometheus_certs_dir)
 
     # We slightly abuse the rotate certs feature:
     # https://www.cockroachlabs.com/docs/stable/rotate-certificates.html
@@ -160,7 +167,20 @@ def main():
         ]
     )
 
-    print("Created new client certificate in {}".format(cr.client_certs_dir))
+    subprocess.check_call(
+        [
+            "cockroach",
+            "cert",
+            "create-client",
+            "grafana",
+            "--certs-dir",
+            cr.client_certs_dir,
+            "--ca-key",
+            cr.ca_key_file,
+        ]
+    )
+
+    print("Created new clients certificate in {}".format(cr.client_certs_dir))
 
     node_addresses = ["localhost"]
     node_addresses.extend(args.node_address)
@@ -199,6 +219,23 @@ def main():
     )
 
     print("Created new node certificate in {}".format(cr.node_certs_dir))
+
+    node_addresses = ["prometheus"]
+
+    subprocess.check_call(
+        [
+            "cockroach",
+            "cert",
+            "create-node",
+            "--certs-dir",
+            cr.prometheus_certs_dir,
+            "--ca-key",
+            cr.ca_key_file,
+        ]
+        + node_addresses
+    )
+
+    print("Created new prometheus certificate in {}".format(cr.prometheus_certs_dir))
 
 
 if __name__ == "__main__":

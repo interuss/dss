@@ -29,6 +29,7 @@ NAMESPACE="$2"
 WORKSPACE=$(echo "${CONTEXT}" | tr ':/' '_')
 CLIENTS_CERTS_DIR="$DIR/workspace/$WORKSPACE/client_certs_dir"
 NODE_CERTS_DIR="$DIR/workspace/$WORKSPACE/node_certs_dir"
+PROMETHEUS_CERTS_DIR="$DIR/workspace/$WORKSPACE/prometheus_certs_dir"
 CA_KEY_DIR="$DIR/workspace/$WORKSPACE/ca_key_dir"
 CA_CRT_DIR="$DIR/workspace/$WORKSPACE/ca_certs_dir"
 JWT_PUBLIC_CERTS_DIR="$DIR/jwt-public-certs"
@@ -43,6 +44,8 @@ kubectl delete secret cockroachdb.node --namespace "$NAMESPACE"  --context "$CON
 kubectl delete secret cockroachdb.ca.crt --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret cockroachdb.ca.key --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 kubectl delete secret dss.public.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
+kubectl delete secret monitoring.grafana.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
+kubectl delete secret monitoring.prometheus.certs --namespace "$NAMESPACE"  --context "$CONTEXT" || true
 
 kubectl create secret generic cockroachdb.client.root --namespace default --from-file "$CLIENTS_CERTS_DIR"  --context "$CONTEXT"
 if [[ $NAMESPACE != "default" ]]; then
@@ -57,6 +60,8 @@ $UPLOAD_CA_KEY && kubectl create secret generic cockroachdb.ca.key --namespace "
 # This secret is kept for backward compatibility.
 kubectl create secret generic cockroachdb.ca.crt --namespace "$NAMESPACE" --from-file "$CA_CRT_DIR"  --context "$CONTEXT"
 kubectl create secret generic dss.public.certs --namespace "$NAMESPACE" --from-file "$JWT_PUBLIC_CERTS_DIR"  --context "$CONTEXT"
+kubectl create secret generic monitoring.grafana.certs --namespace "$NAMESPACE" --from-file "$CLIENTS_CERTS_DIR" --context "$CONTEXT"
+kubectl create secret generic monitoring.prometheus.certs --namespace "$NAMESPACE" --from-file "$PROMETHEUS_CERTS_DIR" --context "$CONTEXT"
 
 echo '========================================================================='
 echo '= Secrets uploaded successfully.                                        ='
