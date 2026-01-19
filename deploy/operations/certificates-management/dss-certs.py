@@ -9,7 +9,13 @@ from apply import do_apply
 from cluster import Cluster
 from init import do_init, do_generate_clients
 from nodes import do_generate_nodes
-from ca_pool import do_get_pool_ca, do_get_ca, do_add_cas, do_list_pool_ca, do_remove_cas
+from ca_pool import (
+    do_get_pool_ca,
+    do_get_ca,
+    do_add_cas,
+    do_list_pool_ca,
+    do_remove_cas,
+)
 
 l = logging.getLogger(__name__)
 
@@ -79,7 +85,7 @@ def parse_args():
             "get-pool-ca",
             "get-ca",
             "destroy",
-            "generate-clients"
+            "generate-clients",
         ],
     )
     parser.add_argument(
@@ -98,7 +104,6 @@ def parse_args():
 
 
 def main():
-
     args = parse_args()
     logging.basicConfig(
         level=args.log_level,
@@ -117,7 +122,7 @@ def main():
         if args.ca_file == "-":
             return sys.stdin.read()
 
-        with open(args.ca_file, 'r') as f:
+        with open(args.ca_file, "r") as f:
             return f.read()
 
     if args.action == "init":
@@ -144,9 +149,9 @@ def main():
     elif args.action == "destroy":
         if input("Are you sure? You will loose all your certificates! [yN]") == "y":
             shutil.rmtree(cluster.directory)
-            l.warning(f"Destroyed cluster certificates")
+            l.warning("Destroyed cluster certificates")
         else:
-            l.info(f"Cancelled removal")
+            l.info("Cancelled removal")
 
 
 if __name__ == "__main__":

@@ -12,10 +12,8 @@ l = logging.getLogger(__name__)
 
 
 def build_pool_hash(cluster):
-
     CAs = []
     for f in os.listdir(cluster.ca_pool_dir):
-
         if f.endswith(".crt") and f != "ca.crt":
             CAs.append(f.lower())
 
@@ -31,7 +29,6 @@ def build_pool_hash(cluster):
 
 
 def add_cas(cluster, certificate):
-
     folder = cluster.ca_pool_dir
 
     l.debug("Getting new CA metadata")
@@ -58,12 +55,10 @@ def add_cas(cluster, certificate):
 
 
 def regenerate_ca_files(cluster):
-
     l.debug("Regenerating CA files from all CA in the pool")
 
     CAs = []
     for filename in os.listdir(cluster.ca_pool_dir):
-
         if filename.endswith(".crt") and filename != "ca.crt":
             with open(os.path.join(cluster.ca_pool_dir, filename), "r") as f:
                 CAs.append(f.read())
@@ -117,26 +112,32 @@ def do_remove_cas(cluster, certificates_or_serial):
 
     for filename in sorted(os.listdir(cluster.ca_pool_dir)):
         if filename.endswith(".crt") and filename != "ca.crt":
-
             serial = get_cert_serial(os.path.join(cluster.ca_pool_dir, filename))
             name = get_cert_display_name(os.path.join(cluster.ca_pool_dir, filename))
 
-            if certificates_or_serial == name or certificates_or_serial == serial or f"SN={certificates_or_serial}, " in name or name.startswith(certificates_or_serial):
+            if (
+                certificates_or_serial == name
+                or certificates_or_serial == serial
+                or f"SN={certificates_or_serial}, " in name
+                or name.startswith(certificates_or_serial)
+            ):
                 os.unlink(os.path.join(cluster.ca_pool_dir, filename))
                 l.info(f"Removed certificate {name}")
 
     regenerate_ca_files(cluster)
 
+
 def do_get_ca(cluster):
     with open(cluster.ca_cert_file, "r") as f:
         print(f.read())
+
 
 def do_get_pool_ca(cluster):
     with open(cluster.ca_pool_ca, "r") as f:
         print(f.read())
 
-def do_list_pool_ca(cluster):
 
+def do_list_pool_ca(cluster):
     h = build_pool_hash(cluster)
 
     print(f"Current CA pool hash: {h}")

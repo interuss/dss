@@ -7,7 +7,6 @@ from utils import get_cert_display_name
 
 
 def generate_node_config(cluster, node_type, node_id):
-
     l.debug(f"Creating {node_type} #{node_id} configuration file")
 
     short_name = cluster.get_node_short_name(node_type, node_id)
@@ -51,7 +50,6 @@ DNS.7 = yb-{node_type}s.{cluster.namespace}.svc.cluster.local
 
 
 def generate_node_key(cluster, node_type, node_id):
-
     l.debug(f"Generating {node_type} #{node_id} private key")
 
     file = cluster.get_node_key_file(node_type, node_id)
@@ -75,7 +73,6 @@ def generate_node_key(cluster, node_type, node_id):
 
 
 def generate_node_csr(cluster, node_type, node_id):
-
     l.debug(f"Generating {node_type} #{node_id} certificate request")
 
     subprocess.check_call(
@@ -97,7 +94,6 @@ def generate_node_csr(cluster, node_type, node_id):
 
 
 def generate_node_cert(cluster, node_type, node_id):
-
     l.debug(f"Generating {node_type} #{node_id} certificate")
 
     file = cluster.get_node_cert_file(node_type, node_id)

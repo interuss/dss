@@ -98,7 +98,6 @@ def generate_ca(cluster):
 
 
 def make_directories(cluster):
-
     l.debug("Creating directories")
 
     if not os.path.exists("workspace"):
@@ -115,7 +114,6 @@ def make_directories(cluster):
 
 
 def generate_clients(cluster):
-
     for client in cluster.clients:
         if cluster.is_client_ready(client):
             l.info(f"Client '{client}' certificates already generated")
@@ -127,7 +125,6 @@ def generate_clients(cluster):
 
 
 def generate_client_config(cluster, client):
-
     l.debug(f"Creating client '{client}' configuration file")
 
     with open(cluster.get_client_conf_file(client), "w") as f:
@@ -146,7 +143,6 @@ commonName = {client}
 
 
 def generate_client_key(cluster, client):
-
     l.debug(f"Generating client '{client}' private key")
 
     subprocess.check_call(
@@ -157,7 +153,6 @@ def generate_client_key(cluster, client):
 
 
 def generate_client_csr(cluster, client):
-
     l.debug(f"Generating client '{client}' certificate request")
 
     subprocess.check_call(
@@ -179,7 +174,6 @@ def generate_client_csr(cluster, client):
 
 
 def generate_client_cert(cluster, client):
-
     l.debug(f"Generating client '{client}' certificate")
 
     subprocess.check_call(
@@ -238,6 +232,7 @@ def do_init(cluster):
     l.info(
         "The new cluster certificates are ready! Don't forget to 'apply' the configuration."
     )
+
 
 def do_generate_clients(cluster):
     """Generate clients certificates"""
