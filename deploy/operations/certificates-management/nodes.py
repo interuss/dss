@@ -148,6 +148,8 @@ def generate_node(cluster, node_type, node_id):
     generate_node_csr(cluster, node_type, node_id)
     generate_node_cert(cluster, node_type, node_id)
 
+    shutil.copy(cluster.ca_pool_ca, getattr(cluster, f"{node_type}_ca"))
+
 
 l = logging.getLogger(__name__)
 
