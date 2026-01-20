@@ -104,7 +104,7 @@ class Cluster(object):
     def clients(self):
         return [
             "yugabyte",
-            "client.grafana",  # Grafana expect the 'client.'
+            "client.grafana",  # Grafana expects the 'client.'
         ]  # TODO: Do we need more, like a specifc one for the DSS?
 
     def get_client_cert_file(self, client):
