@@ -27,8 +27,18 @@ local datasourcePrometheus(metadata) = {
       name: 'prometheus',
       orgId: 1,
       type: 'prometheus',
-      url: 'http://prometheus-service.' + metadata.namespace + '.svc:9090',
+      url: 'https://prometheus-service.' + metadata.namespace + '.svc:9090',
       version: 1,
+      jsonData: {
+        tlsAuth: true,
+        tlsAuthWithCACert: true,
+        serverName: 'prometheus',
+      },
+      secureJsonData: {
+        tlsCACert: '$__file{/certs/ca.crt}',
+        tlsClientCert: '$__file{/certs/client.grafana.crt}',
+        tlsClientKey: '$__file{/certs/client.grafana.key}',
+      },
     },
   ],
 };
@@ -127,6 +137,10 @@ local notifierConfig(metadata) = {
                     name: 'grafana-notifier-provisioning',
                     readOnly: false,
                   },
+                  {
+                    mountPath: '/certs/',
+                    name: 'grafana-certs',
+                  },
                 ] + dashboard.all(metadata).mount,
               },
             ],
@@ -154,6 +168,13 @@ local notifierConfig(metadata) = {
                 configMap: {
                   defaultMode: 420,
                   name: 'grafana-notifier-provisioning',
+                },
+              },
+              {
+                name: 'grafana-certs',
+                secret: {
+                    secretName: 'monitoring.grafana.certs',
+                    defaultMode: 420,
                 },
               },
             ] + dashboard.all(metadata).volumes,
