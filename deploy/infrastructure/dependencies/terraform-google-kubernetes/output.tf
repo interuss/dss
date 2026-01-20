@@ -67,3 +67,7 @@ output "yugabyte_tservers_nodes" {
     }
   ]
 }
+
+output "ip_prometheus" {
+  value = length(google_compute_address.ip_prometheus) > 0 ? google_compute_address.ip_prometheus[0].address : ""
+}

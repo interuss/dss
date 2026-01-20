@@ -44,3 +44,13 @@ resource "google_dns_record_set" "yugabyte_tserver" {
   managed_zone = data.google_dns_managed_zone.default[0].name
   rrdatas      = [google_compute_address.ip_yugabyte[count.index].address]
 }
+
+resource "google_dns_record_set" "prometheus_hostname" {
+  count = var.prometheus_hostname == "" || var.google_dns_managed_zone_name == "" ? 0 : 1
+  name  = "${google_compute_address.ip_prometheus[0].description}." # description contains the expected hostname
+  type  = "A"
+  ttl   = 300
+
+  managed_zone = data.google_dns_managed_zone.default[0].name
+  rrdatas      = [google_compute_address.ip_prometheus[0].address]
+}

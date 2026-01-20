@@ -127,6 +127,11 @@ Use <code>latest</code> to use the latest schema version.</p>
 <p>Example: <code>3.1.0</code></p>
 <br/>Default value: <code>"latest"</code></td>
             </tr><tr>
+                <td>enable_monitoring (<code>bool</code>)</td>
+                <td><p>Set to true to enable monitoring stack with prometheus / grafana.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>enable_scd (<code>bool</code>)</td>
                 <td><p>Set this boolean true to enable ASTM strategic conflict detection functionality</p>
 <br/>Default value: <code>true</code></td>
@@ -245,6 +250,12 @@ DSS instances) value is acceptable.</p>
 Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>3</code></p>
 </td>
+            </tr><tr>
+                <td>prometheus_hostname (<code>string</code>)</td>
+                <td><p>Domain used to expose prometheus on an external endpoint.</p>
+<p>Leave empty to disable exposition of prometheus publicly.</p>
+<p>Example: <code>prometheus.dss.example.com</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>should_init (<code>bool</code>)</td>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance

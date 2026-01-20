@@ -50,6 +50,11 @@ variable "ip_gateway" {
   description = "IP of the gateway used by the DSS service"
 }
 
+variable "ip_prometheus" {
+  type        = string
+  description = "IP of the gateway used by prometheus"
+}
+
 variable "kubernetes_storage_class" {
   type        = string
   description = <<-EOT

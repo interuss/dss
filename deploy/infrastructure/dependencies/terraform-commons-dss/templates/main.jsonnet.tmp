@@ -83,6 +83,8 @@ local metadata = metadataBase {
   },
   prometheus+: {
     storageClass: '${VAR_STORAGE_CLASS}',
+    expose_external: ${VAR_PROMETHEUS_EXPOSE_EXTERNAL},
+    IP: '${VAR_PROMETHEUS_IP}',
   },
   image_pull_secret: '${VAR_DOCKER_IMAGE_PULL_SECRET}',
   cloud_provider: '${VAR_CLOUD_PROVIDER}',

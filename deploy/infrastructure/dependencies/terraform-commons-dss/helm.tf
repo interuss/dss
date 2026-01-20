@@ -93,7 +93,18 @@ resource "local_file" "helm_chart_values" {
     }
 
     monitoring = {
-      enabled = false
+      enabled = var.enable_monitoring
+      externalService = var.prometheus_hostname != "" ? {
+        enabled  = var.enable_monitoring
+        ip       = var.ip_prometheus
+        subnet   = var.workload_subnet
+        hostname = var.prometheus_hostname
+        } : {
+        enabled  = false
+        ip       = null
+        subnet   = null
+        hostname = null
+      }
     },
 
     prometheus = {
@@ -289,7 +300,18 @@ resource "local_file" "helm_chart_values" {
     }
 
     monitoring = {
-      enabled = false
+      enabled = var.enable_monitoring
+      externalService = var.prometheus_hostname != "" ? {
+        enabled  = var.enable_monitoring
+        ip       = var.ip_prometheus
+        subnet   = var.workload_subnet
+        hostname = var.prometheus_hostname
+        } : {
+        enabled  = false
+        ip       = null
+        subnet   = null
+        hostname = null
+      }
     },
 
     prometheus = {
