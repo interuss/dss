@@ -53,6 +53,9 @@ local volumes = import 'volumes.libsonnet';
             labels+: {
               yugabytedUi: "true",
             },
+            annotations+: {
+              "checksum/config": std.native('sha256')(std.manifestJson(metadata.yugabyte)),
+            },
           },
           spec+: {
             affinity: {
@@ -376,6 +379,9 @@ local volumes = import 'volumes.libsonnet';
           metadata+: {
             labels+: {
               yugabytedUi: "true",
+            },
+            annotations+: {
+              "checksum/config": std.native('sha256')(std.manifestJson(metadata.yugabyte)),
             },
           },
           spec+: {
