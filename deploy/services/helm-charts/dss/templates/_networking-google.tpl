@@ -1,3 +1,6 @@
+{{- define "google-lb-default-annotations" -}}
+{{- end -}}
+
 {{- define "google-lb-crdb-annotations" -}}
 {{- end -}}
 
