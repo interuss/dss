@@ -35,6 +35,8 @@ def do_apply(cluster):
         "yb-tserver-yugabyte-tls-cert",
         "yugabyte-tls-client-cert",
         "dss.public.certs",
+        "monitoring.grafana.certs",
+        "monitoring.prometheus.certs",
     ]:
         try:
             subprocess.check_call(
@@ -60,7 +62,9 @@ def do_apply(cluster):
     for secret_name, folder in [
         ("yb-master-yugabyte-tls-cert", cluster.master_certs_dir),
         ("yb-tserver-yugabyte-tls-cert", cluster.tserver_certs_dir),
+        ("monitoring.grafana.certs", cluster.client_certs_dir),
         ("yugabyte-tls-client-cert", cluster.client_certs_dir),
+        ("monitoring.prometheus.certs", cluster.prometheus_certs_dir),
         (
             "dss.public.certs",
             os.path.join("..", "..", "..", "build", "jwt-public-certs"),

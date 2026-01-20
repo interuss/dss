@@ -81,6 +81,14 @@ class Cluster(object):
         return os.path.join(self.tserver_certs_dir, "ca.crt")
 
     @property
+    def prometheus_certs_dir(self):
+        return os.path.join(self.directory, "prometheus")
+
+    @property
+    def prometheus_ca(self):
+        return os.path.join(self.prometheus_certs_dir, "ca.crt")
+
+    @property
     def ca_pool_dir(self):
         return os.path.join(self.directory, "ca_pool")
 
@@ -94,7 +102,10 @@ class Cluster(object):
 
     @property
     def clients(self):
-        return ["yugabyte"]  # TODO: Do we need more, like a specifc one for the DSS?
+        return [
+            "yugabyte",
+            "client.grafana",  # Grafana expects the 'client.'
+        ]  # TODO: Do we need more, like a specifc one for the DSS?
 
     def get_client_cert_file(self, client):
         return f"{self.client_certs_dir}/{client}.crt"
@@ -108,13 +119,22 @@ class Cluster(object):
     def get_client_conf_file(self, client):
         return f"{self.ca_key_dir}/client.{client}.conf"
 
+    def get_client_ca_file(self, client):
+        return f"{self.client_certs_dir}/ca.crt"
+
     def is_client_ready(self, client):
         return os.path.exists(self.get_client_cert_file(client))
 
     def get_node_short_name(self, node_type, node_id):
+        if node_type == "prometheus":
+            return "prometheus"
+
         return f"yb-{node_type}-{node_id}"
 
     def get_node_short_name_group(self, node_type, node_id):
+        if node_type == "prometheus":
+            return "prometheus"
+
         short_name = self.get_node_short_name(node_type, node_id)
         return f"{short_name}.yb-{node_type}s"
 
@@ -134,11 +154,19 @@ class Cluster(object):
     def get_node_cert_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
         full_name = self.get_node_full_name(node_type, node_id)
+
+        if node_type == "prometheus":
+            return f"{folder}/node.crt"
+
         return f"{folder}/node.{full_name}.crt"
 
     def get_node_key_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
         full_name = self.get_node_full_name(node_type, node_id)
+
+        if node_type == "prometheus":
+            return f"{folder}/node.key"
+
         return f"{folder}/node.{full_name}.key"
 
     def get_node_cert_second_file(self, node_type, node_id):
@@ -156,6 +184,9 @@ class Cluster(object):
     def get_node_csr_file(self, node_type, node_id):
         full_name = self.get_node_full_name(node_type, node_id)
         return f"{self.ca_key_dir}/node.{full_name}.csr"
+
+    def get_node_ca_file(self, node_type, node_id):
+        return f"{self.ca_key_dir}/ca.crt"
 
     def get_node_conf_file(self, node_type, node_id):
         full_name = self.get_node_full_name(node_type, node_id)

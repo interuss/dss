@@ -71,7 +71,7 @@ def regenerate_ca_files(cluster):
     shutil.copy(cluster.ca_pool_ca, cluster.client_ca)
     shutil.copy(cluster.ca_cert_file, cluster.client_instance_ca)
 
-    for node_type in ["master", "tserver"]:
+    for node_type in ["master", "tserver", "prometheus"]:
         shutil.copy(cluster.ca_pool_ca, getattr(cluster, f"{node_type}_ca"))
 
     h = build_pool_hash(cluster)

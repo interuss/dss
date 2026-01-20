@@ -107,6 +107,7 @@ def make_directories(cluster):
     os.mkdir(cluster.ca_key_dir)
     os.mkdir(cluster.master_certs_dir)
     os.mkdir(cluster.tserver_certs_dir)
+    os.mkdir(cluster.prometheus_certs_dir)
     os.mkdir(cluster.client_certs_dir)
     os.mkdir(cluster.ca_pool_dir)
 
