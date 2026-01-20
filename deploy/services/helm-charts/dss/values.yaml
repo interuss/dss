@@ -85,7 +85,7 @@ prometheus:
       evaluation_interval: 5s
 
     podAnnotations:
-      serverFilesVersion: "1"  # Increment this value when changing serverFiles to force redeployment
+      serverFilesVersion: "1"  # Since the prometheus helm chart does not detect changes in server files, this value is used to force the redeployment following the update of the serverFiles defined below. 
 
     service:
       annotations:
