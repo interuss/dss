@@ -78,6 +78,14 @@ local notifierConfig(metadata) = {
           },
         },
         template+: {
+          metadata+: {
+            annotations+: {
+              "checksum/datasource": std.native('sha256')(std.manifestJson(datasourcePrometheus(metadata))),
+              "checksum/dashboardConfig": std.native('sha256')(std.manifestJson(dashboardConfig)),
+              "checksum/dashboard": std.native('sha256')(std.manifestJson(dashboard.all(metadata).config)),
+              "checksum/notifierConfig": if metadata.alert.enable == true then std.native('sha256')(std.manifestJson(notifierConfig(metadata))) else "",
+            },
+          },
           spec: {
             containers: [
               {
