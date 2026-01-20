@@ -104,7 +104,7 @@ prometheus:
   alertmanager:
     enabled: false
 
-  serverFiles:  # Caution: When changing this, please update the podAnnotations above
+  serverFiles:  # Caution: Since the prometheus helm chart does not detect changes in server files, update the `prometheus.server.podAnnotations.serverFilesVersion` to force the redeployment of prometheus. 
     prometheus.yml:
       scrape_configs:
         - job_name: K8s-Endpoints
