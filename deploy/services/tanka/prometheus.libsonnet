@@ -1,5 +1,5 @@
 local base = import 'base.libsonnet';
-local k8sEndpoints = import 'prometheus_configs/k8s-endpoints.libsonnet';
+local scrapeConfigs = import 'prometheus_configs/scrape-configs.libsonnet';
 local crdbAggregation = import 'prometheus_configs/crdb-aggregation.libsonnet';
 
 
@@ -17,7 +17,7 @@ local PrometheusConfig(metadata) = {
     'aggregation.rules.yml',
     'custom.rules.yml',
   ],
-  scrape_configs: k8sEndpoints.scrape_configs,
+  scrape_configs: scrapeConfigs.scrape_configs,
 };
 
 local PrometheusWebConfig(metadata) = {
@@ -137,7 +137,7 @@ local externalLB(metadata, name, ip) =
             annotations+: {
               "checksum/config": std.native('sha256')(std.manifestJson(PrometheusConfig(metadata))),
               "checksum/webconfig": std.native('sha256')(std.manifestJson(PrometheusWebConfig(metadata))),
-              "checksum/k8sEndpoints": std.native('sha256')(std.manifestJson(k8sEndpoints)),
+              "checksum/scrapeConfigs": std.native('sha256')(std.manifestJson(scrapeConfigs)),
               "checksum/crdbAggregation": std.native('sha256')(std.manifestJson(crdbAggregation)),
             },
           },
