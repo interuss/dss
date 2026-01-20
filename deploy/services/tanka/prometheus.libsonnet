@@ -29,15 +29,29 @@ local PrometheusWebConfig(metadata) = {
    }
 };
 
-local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
-  app:: 'prometheus',
+local googleExternalLB(metadata, name, ip) = base.Service(metadata, name) {
   port:: 9090,
+  app:: 'prometheus',
   spec+: {
     type: 'LoadBalancer',
-    loadBalancerIP: metadata.prometheus.IP,
-    loadBalancerSourceRanges: metadata.prometheus.whitelist_ip_ranges
-  }
+    loadBalancerIP: ip,
+  },
 };
+
+local awsExternalLB(metadata, name, ip) = base.AWSLoadBalancer(metadata, name, [ip], metadata.subnet) {
+  port:: 9090,
+  app:: 'prometheus',
+};
+
+local minikubeExternalLB(metadata, name, ip) = base.Service(metadata, name) {
+  port:: 9090,
+  app:: 'prometheus',
+};
+
+local externalLB(metadata, name, ip) =
+    if metadata.cloud_provider == "google" then googleExternalLB(metadata, name, ip)
+    else if metadata.cloud_provider == "aws" then awsExternalLB(metadata, name, ip)
+    else if metadata.cloud_provider == "minikube" then minikubeExternalLB(metadata, name, ip);
 
 {
   all(metadata) : {
@@ -231,7 +245,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         ],
       },
     },
-    externalService: if metadata.prometheus.expose_external == true then PrometheusExternalService(metadata),
+    externalLB: if metadata.prometheus.expose_external == true then externalLB(metadata, "prometheus", metadata.prometheus.IP),
     internalService: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus',
       port:: 9090,

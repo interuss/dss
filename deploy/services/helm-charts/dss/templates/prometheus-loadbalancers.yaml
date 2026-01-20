@@ -3,113 +3,36 @@
 {{- if $.Values.monitoring.enabled }}
 {{- if $.Values.monitoring.externalService.enabled }}
 
-{{- if eq $cloudProvider "google" }}
-
----
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: prometheus-external
-spec:
-  securityPolicy:
-    name: "{{ $.Values.monitoring.externalService.allowedIPsPolicy }}"
-
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app: {{$.Release.Name}}-prometheus
-    name: {{$.Release.Name}}-prometheus-external
   annotations:
-    cloud.google.com/backend-config: '{"default": "prometheus-external"}'
-  name: {{$.Release.Name}}-prometheus-external
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- include (printf "%s-lb-default-annotations" $cloudProvider)
+      (dict
+        "name" "prometheus-external"
+        "ip" $.Values.monitoring.externalService.ip
+        "subnet" $.Values.monitoring.externalService.subnet
+        "cloudProvider" $cloudProvider
+      ) | nindent 4
+    }}
+  labels:
+    app: prometheus
+    name: prometheus-external
+  name: prometheus-external
+  namespace: default
 spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $.Values.monitoring.externalService.ip) | nindent 2}}
   ports:
-    - name: prometheus
+    - name: prometheus-external
       port: 9090
       targetPort: 9090
   publishNotReadyAddresses: true
   selector:
-     app.kubernetes.io/instance: "{{$.Release.Name}}"
-     app.kubernetes.io/name: "prometheus"
-  type: ClusterIP
+    app.kubernetes.io/name: prometheus
 
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    {{- include (printf "%s-ingress-prometheus-annotations" $cloudProvider)
-      (dict
-        "certName" (printf "%s-prometheus-https-certificate" $.Release.Name)
-        "ip" $.Values.monitoring.externalService.ip
-        "frontendConfig" (empty .sslPolicy | ternary "" "ssl-frontend-config")
-      ) | nindent 4
-    }}
-  labels:
-    name: {{$.Release.Name}}-prometheus-https-ingress
-  name: {{$.Release.Name}}-prometheus-https-ingress
-spec:
-  {{- include (printf "%s-ingress-spec" $cloudProvider) . | nindent 2 }}
-  rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{$.Release.Name}}-prometheus-external
-                port:
-                  number: 9090
-
----
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  labels:
-    name: {{$.Release.Name}}-prometheus-https-certificate
-  name: {{$.Release.Name}}-prometheus-https-certificate
-spec:
-  domains:
-    - {{ $.Values.monitoring.externalService.hostname }}
-
-{{- else }}
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    {{- include (printf "%s-ingress-prometheus-annotations" $cloudProvider)
-      (merge $.Values.monitoring.externalService
-        (dict
-          "name" "prometheus-external"
-          "cloudProvider" $cloudProvider
-        )
-      ) | nindent 4
-    }}
-  labels:
-    app: {{$.Release.Name}}-prometheus
-    name: {{$.Release.Name}}-prometheus-external
-  name: {{$.Release.Name}}-prometheus-external
-spec:
-  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $.Values.monitoring.externalService.ip) | nindent 2}}
-  loadBalancerSourceRanges:
-{{- range $i, $ip := $.Values.monitoring.externalService.allowedIPs }}
-    - {{$ip}}
-{{- end }}
-  ports:
-    - name: prometheus
-      port: 443
-      targetPort: 9090
-  publishNotReadyAddresses: true
-  selector:
-     app.kubernetes.io/instance: "{{$.Release.Name}}"
-     app.kubernetes.io/name: "prometheus"
   type: LoadBalancer
-
-{{- end }}
 
 {{- end }}
 {{- end }}
