@@ -91,7 +91,7 @@ func (s *ScopeSet) ToStringSlice() []string {
 }
 
 type Claims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	Scopes ScopeSet `json:"scope"`
 }
 
@@ -101,9 +101,9 @@ func (c *Claims) Valid() error {
 	}
 	now := Now()
 
-	c.VerifyExpiresAt(now.Unix(), true)
+	c.VerifyExpiresAt(now, true)
 
-	if c.ExpiresAt > now.Add(time.Hour).Unix() {
+	if c.ExpiresAt.After(now.Add(time.Hour)) {
 		return errTokenExpireTooFar
 	}
 
@@ -111,5 +111,5 @@ func (c *Claims) Valid() error {
 		return errMissingIssuer
 	}
 
-	return c.StandardClaims.Valid()
+	return c.RegisteredClaims.Valid()
 }
