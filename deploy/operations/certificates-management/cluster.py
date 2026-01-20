@@ -6,7 +6,15 @@ from utils import slugify
 class Cluster(object):
     """Represent an instance of a cluster, expose paths"""
 
-    def __init__(self, name, cluster_context, namespace, organization, nodes_count, nodes_public_address):
+    def __init__(
+        self,
+        name,
+        cluster_context,
+        namespace,
+        organization,
+        nodes_count,
+        nodes_public_address,
+    ):
         self._name = name
         self.cluster_context = cluster_context
         self.namespace = namespace
@@ -119,7 +127,9 @@ class Cluster(object):
         return f"{short_name}.{self.namespace}.svc.cluster.local"
 
     def get_node_public_address(self, node_type, node_id):
-        return self.nodes_public_address.replace("<ID>", str(node_id)).replace("<TYPE>", node_type)
+        return self.nodes_public_address.replace("<ID>", str(node_id)).replace(
+            "<TYPE>", node_type
+        )
 
     def get_node_cert_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
