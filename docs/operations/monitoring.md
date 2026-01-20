@@ -29,6 +29,34 @@ kubectl get secrets/dss-grafana -o jsonpath="{.data.admin-password}" | base64 -d
 
 Click the magnifying glass on the left side to select a dashboard to view.
 
+### Prometheus access
+
+Prometheus access is protected by a client certificate. If you need to access the web interface, you will need to import a valid client certificate in your browser.
+
+!!! info
+    For day to day usage, you don't need to access Prometheus, use Grafana instead. This is only useful for debugging.
+
+To build a pkcs12 file from a valid client certificate (use a random password):
+
+=== "Yugabyte"
+    ```
+    openssl pkcs12 -export -inkey deploy/operations/certificates-management/workspace/demo/clients/client.grafana.key -in deploy/operations/certificates-management/workspace/demo/clients/client.grafana.crt  -out /tmp/cert_key.p12
+    ```
+
+=== "CockroachDB"
+    ```
+    openssl pkcs12 -export -inkey build/workspace/demo/client_certs_dir/client.grafana.key -in build/workspace/demo/client_certs_dir/client.grafana.crt -out /tmp/cert_key.p12
+    ```
+
+---
+
+Then import this file as client certificate in your browser.
+
+* Firefox: Preferences > Privacy & Security > View Certificates > Your Certificates > Import
+* Chrome: Privacy and security > Security > Manage Certificates > Import
+
+Next time you access the interface, select the certificate you just imported.
+
 ## Prometheus Federation (Multi Cluster Monitoring)
 
 The DSS can use [Prometheus](https://prometheus.io/docs/introduction/overview/) to

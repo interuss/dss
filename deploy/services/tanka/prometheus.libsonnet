@@ -20,6 +20,15 @@ local PrometheusConfig(metadata) = {
   scrape_configs: k8sEndpoints.scrape_configs,
 };
 
+local PrometheusWebConfig(metadata) = {
+  tls_server_config: {
+    cert_file: '/certs/node.crt',
+    key_file: '/certs/node.key',
+    client_auth_type: 'RequireAndVerifyClientCert',
+    client_ca_file: '/certs/ca.crt'
+   }
+};
+
 local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-external') {
   app:: 'prometheus',
   port:: 9090,
@@ -93,6 +102,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
     configMap: base.ConfigMap(metadata, 'prometheus-conf') {
       data: {
         'prometheus.yml': std.manifestYamlDoc(PrometheusConfig(metadata)),
+        'web-config.yml': std.manifestYamlDoc(PrometheusWebConfig(metadata)),
         'aggregation.rules.yml': std.manifestYamlDoc(crdbAggregation),
         'custom.rules.yml': std.manifestYamlDoc({
           groups: [
@@ -112,6 +122,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
           metadata+: {
             annotations+: {
               "checksum/config": std.native('sha256')(std.manifestJson(PrometheusConfig(metadata))),
+              "checksum/webconfig": std.native('sha256')(std.manifestJson(PrometheusWebConfig(metadata))),
               "checksum/k8sEndpoints": std.native('sha256')(std.manifestJson(k8sEndpoints)),
               "checksum/crdbAggregation": std.native('sha256')(std.manifestJson(crdbAggregation)),
             },
@@ -129,6 +140,13 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                 name: 'prometheus-datadir',
                 persistentVolumeClaim: {
                   claimName: 'prometheus-datadir',
+                },
+              },
+              {
+                name: 'prometheus-certs',
+                secret: {
+                    secretName: 'monitoring.prometheus.certs',
+                    defaultMode: 420,
                 },
               },
             ],
@@ -156,6 +174,7 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                 image: metadata.prometheus.image,
                 args: [
                   '--config.file=/etc/prometheus/prometheus.yml',
+                  '--web.config.file=/etc/prometheus/web-config.yml',
                   '--storage.tsdb.path=/data/prometheus/',
                   '--storage.tsdb.retention.time=' + metadata.prometheus.retention,
                   // following thanos recommendation
@@ -175,24 +194,18 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
                     name: 'prometheus-datadir',
                     mountPath: '/data/prometheus/',
                   },
+                  {
+                    name: 'prometheus-certs',
+                    mountPath: '/certs/',
+                  },
                 ],
                 livenessProbe: {
-                  httpGet: {
-                    path: '/-/healthy',
+                  tcpSocket: {
                     port: 9090
                   },
                   initialDelaySeconds: 50,
                   periodSeconds: 6,
                   failureThreshold: 200
-                },
-                readinessProbe: {
-                  httpGet: {
-                    path: '/-/ready',
-                    port: 9090
-                  },
-                  initialDelaySeconds: 30,
-                  periodSeconds: 6,
-                  failureThreshold: 200,
                 },
               },
             ],
@@ -222,7 +235,6 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
     internalService: base.Service(metadata, 'prometheus-service') {
       app:: 'prometheus',
       port:: 9090,
-      enable_monitoring:: true,
     },
   },
 }

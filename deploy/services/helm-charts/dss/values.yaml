@@ -85,12 +85,17 @@ prometheus:
       evaluation_interval: 5s
 
     podAnnotations:
-      serverFilesVersion: "1"  # Since the prometheus helm chart does not detect changes in server files, this value is used to force the redeployment following the update of the serverFiles defined below. 
+      serverFilesVersion: "2"  # Since the prometheus helm chart does not detect changes in server files, this value is used to force the redeployment following the update of the serverFiles defined below.
 
-    service:
-      annotations:
-        'prometheus.io/scrape': 'true'
-        'prometheus.io/port': '9090'
+    extraFlags:
+      - "web.config.file=/etc/config/web-config.yml"
+
+    extraSecretMounts:
+      - name: prometheus-certs
+        secretName: 'monitoring.prometheus.certs'
+        mountPath: /certs/
+
+    tcpSocketProbeEnabled: true
 
   prometheus-pushgateway:
     enabled: false
@@ -104,7 +109,14 @@ prometheus:
   alertmanager:
     enabled: false
 
-  serverFiles:  # Caution: Since the prometheus helm chart does not detect changes in server files, update the `prometheus.server.podAnnotations.serverFilesVersion` to force the redeployment of prometheus. 
+  serverFiles:  # Caution: Since the prometheus helm chart does not detect changes in server files, update the `prometheus.server.podAnnotations.serverFilesVersion` to force the redeployment of prometheus.
+    web-config.yml:
+      tls_server_config:
+        cert_file: '/certs/node.crt'
+        key_file: '/certs/node.key'
+        client_auth_type: 'RequireAndVerifyClientCert'
+        client_ca_file: '/certs/ca.crt'
+
     prometheus.yml:
       scrape_configs:
         - job_name: K8s-Endpoints
@@ -307,9 +319,17 @@ grafana:
           type: prometheus
           access: proxy
           orgId: 1
-          url: http://dss-prometheus-server:80
+          url: https://dss-prometheus-server:80
           version: 1
           editable: true
+          jsonData:
+            tlsAuth: true
+            tlsAuthWithCACert: true
+            serverName: 'prometheus'
+          secureJsonData:
+            tlsCACert: '$__file{/certs/ca.crt}'
+            tlsClientCert: '$__file{/certs/client.grafana.crt}'
+            tlsClientKey: '$__file{/certs/client.grafana.key}'
 
   dashboardProviders:
     dashboardproviders.yaml:
@@ -333,3 +353,8 @@ grafana:
 
   deploymentStrategy:
     type: Recreate
+
+  extraSecretMounts:
+    - name: grafana-certs
+      secretName: 'monitoring.grafana.certs'
+      mountPath: /certs/
