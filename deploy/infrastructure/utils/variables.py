@@ -23,7 +23,14 @@ GENERATED_COMMENT = """
 
 # Variables per project
 # For all */terraform-*
-GLOBAL_VARIABLES = ["app_hostname", "db_hostname_suffix", "datastore_type", "node_count", "cluster_name"]
+GLOBAL_VARIABLES = [
+    "app_hostname",
+    "db_hostname_suffix",
+    "datastore_type",
+    "node_count",
+    "cluster_name",
+    "prometheus_hostname",
+]
 
 # dependencies/terraform-commons-dss
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
@@ -55,6 +62,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "evict_rid_ttl",
     "evict_rid_isas",
     "evict_rid_subscriptions",
+    "enable_monitoring",
 ]
 
 # dependencies/terraform-*-kubernetes
@@ -91,11 +99,13 @@ AWS_KUBERNETES_VARIABLES = [
 
 # modules/terraform-aws-dss
 AWS_MODULE_VARIABLES = (
-    AWS_KUBERNETES_VARIABLES + [
+    AWS_KUBERNETES_VARIABLES
+    + [
         "aws_kubernetes_storage_class",
         "crdb_hostname_suffix",
         "crdb_locality",
-    ] + COMMONS_DSS_VARIABLES
+    ]
+    + COMMONS_DSS_VARIABLES
 )
 
 PROJECT_VARIABLES = {
@@ -246,7 +256,9 @@ def get_tfvars_md_content(
         description, value_type, default_value = parse_definition(v, definitions[v])
         formatted_value_type = f"<code>{simplify_type(value_type)}</code>"
         formatted_default_value = (
-            f"<br/>Default value: <code>{default_value}</code>" if default_value is not None else ""
+            f"<br/>Default value: <code>{default_value}</code>"
+            if default_value is not None
+            else ""
         )
         formatted_description = marko.convert(description)
         content += f"""
@@ -262,7 +274,7 @@ def get_tfvars_md_content(
     """.strip()
 
     if has_internal_vars:
-        content += f"## Internal variables\n\n"
+        content += "## Internal variables\n\n"
         content += f"This module requires additional variables, see [{INTERNAL_VARIABLES_FILENAME}](./{INTERNAL_VARIABLES_FILENAME}) for details"
 
     return content

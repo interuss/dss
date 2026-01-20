@@ -40,3 +40,7 @@ yugabyte_region          = "gcp-uss-1"
 yugabyte_zone            = "gcp-uss-1"
 yugabyte_light_resources = false
 yugabyte_external_nodes  = []
+
+# Monitoring
+enable_monitoring = false
+# prometheus_hostname             = "prometheus.dss.interuss.example.com"

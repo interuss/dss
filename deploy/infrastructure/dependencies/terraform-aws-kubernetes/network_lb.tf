@@ -93,3 +93,13 @@ resource "aws_eip" "ip_yugabyte" {
     ExpectedTServerDNS = format("%s.tserver.%s", count.index, var.db_hostname_suffix)
   }
 }
+
+resource "aws_eip" "ip_prometheus" {
+  domain = "vpc"
+  count  = var.prometheus_hostname == "" ? 0 : 1
+
+  tags = {
+    Name        = format("%s-ip-prometheus", var.cluster_name)
+    ExpectedDNS = var.prometheus_hostname
+  }
+}

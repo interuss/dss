@@ -61,3 +61,14 @@ resource "aws_route53_record" "yugabyte_tserver_hostnames" {
   ttl     = 300
   records = [each.value]
 }
+
+# Public prometheus DNS
+resource "aws_route53_record" "prometheus_hostname" {
+  count = var.prometheus_hostname == "" ? 0 : 1
+
+  zone_id = var.aws_route53_zone_id
+  name    = var.prometheus_hostname
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.ip_prometheus[count.index].public_ip]
+}

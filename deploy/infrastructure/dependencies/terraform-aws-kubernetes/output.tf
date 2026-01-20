@@ -18,6 +18,10 @@ output "ip_gateway" {
   value = aws_eip.gateway[0].id
 }
 
+output "ip_prometheus" {
+  value = length(aws_eip.ip_prometheus) > 0 ? aws_eip.ip_prometheus[0].id : ""
+}
+
 output "crdb_nodes" {
   value = [
     for i in aws_eip.ip_crdb : {
@@ -79,6 +83,16 @@ output "gateway_address" {
           c.resource_record_value
         ]
     }]
+  }
+}
+
+output "prometheus_address" {
+  value = length(aws_eip.ip_prometheus) > 0 ? {
+    expected_dns : aws_eip.ip_prometheus[0].tags.ExpectedDNS,
+    address : aws_eip.ip_prometheus[0].public_ip,
+    } : {
+    expected_dns : null,
+    address : null,
   }
 }
 

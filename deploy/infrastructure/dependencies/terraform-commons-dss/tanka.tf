@@ -51,6 +51,8 @@ resource "local_file" "tanka_config_main" {
     VAR_EVICT_RID_TTL                        = var.evict_rid_ttl
     VAR_EVICT_RID_ENABLE_ISAS                = var.evict_rid_isas
     VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS       = var.evict_rid_subscriptions
+    VAR_PROMETHEUS_EXPOSE_EXTERNAL           = var.prometheus_hostname != ""
+    VAR_PROMETHEUS_IP                        = var.ip_prometheus
   })
   filename = "${local.tanka_workspace_location}/main.jsonnet"
 }

@@ -96,6 +96,20 @@ variable "cluster_name" {
   EOT
 }
 
+variable "prometheus_hostname" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Domain used to expose prometheus on an external endpoint.
+
+  Leave empty to disable exposition of prometheus publicly.
+
+  Example: `prometheus.dss.example.com`
+
+  EOT
+}
+
+
 variable "kubernetes_version" {
   type        = string
   description = <<-EOT
@@ -541,6 +555,17 @@ variable "evict_rid_subscriptions" {
   EOT
 
   default = true
+}
+
+
+variable "enable_monitoring" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Set to true to enable monitoring stack with prometheus / grafana.
+
+  Example: `true`
+  EOT
 }
 
 

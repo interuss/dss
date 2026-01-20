@@ -10,6 +10,7 @@ module "terraform-aws-kubernetes" {
   aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
   node_count                   = var.node_count
   kubernetes_version           = var.kubernetes_version
+  prometheus_hostname          = var.prometheus_hostname
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
@@ -56,6 +57,9 @@ module "terraform-commons-dss" {
   evict_rid_ttl                    = var.evict_rid_ttl
   evict_rid_isas                   = var.evict_rid_isas
   evict_rid_subscriptions          = var.evict_rid_subscriptions
+  enable_monitoring                = var.enable_monitoring
+  prometheus_hostname              = var.prometheus_hostname
+  ip_prometheus                    = module.terraform-aws-kubernetes.ip_prometheus
 
   source = "../../dependencies/terraform-commons-dss"
 }
