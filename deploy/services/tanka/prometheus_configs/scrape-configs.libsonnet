@@ -1,6 +1,23 @@
 {
   scrape_configs: [
     {
+      job_name: 'prometheus',
+      scheme: 'https',
+      tls_config: {
+        ca_file: '/certs/ca.crt',
+        cert_file: '/certs/node.crt',
+        key_file: '/certs/node.key',
+        insecure_skip_verify: true,
+      },
+      static_configs: [
+        {
+          targets: [
+            '127.0.0.1:9090',
+          ]
+        },
+      ],
+    },
+    {
       job_name: 'K8s-Endpoints',
       kubernetes_sd_configs: [
         {
