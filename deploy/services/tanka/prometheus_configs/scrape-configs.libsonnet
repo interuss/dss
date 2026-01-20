@@ -7,7 +7,7 @@
         ca_file: '/certs/ca.crt',
         cert_file: '/certs/node.crt',
         key_file: '/certs/node.key',
-        insecure_skip_verify: true,
+        insecure_skip_verify: true,  # Don't verify as it's localhost (so it's safe) and hostname don't match
       },
       static_configs: [
         {
