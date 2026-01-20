@@ -84,6 +84,9 @@ prometheus:
       scrape_timeout: 5s
       evaluation_interval: 5s
 
+    podAnnotations:
+      serverFilesVersion: "1"  # Since the prometheus helm chart does not detect changes in server files, this value is used to force the redeployment following the update of the serverFiles defined below. 
+
     service:
       annotations:
         'prometheus.io/scrape': 'true'
@@ -101,7 +104,7 @@ prometheus:
   alertmanager:
     enabled: false
 
-  serverFiles:
+  serverFiles:  # Caution: Since the prometheus helm chart does not detect changes in server files, update the `prometheus.server.podAnnotations.serverFilesVersion` to force the redeployment of prometheus. 
     prometheus.yml:
       scrape_configs:
         - job_name: K8s-Endpoints

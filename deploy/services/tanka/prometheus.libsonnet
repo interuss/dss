@@ -109,6 +109,13 @@ local PrometheusExternalService(metadata) = base.Service(metadata, 'prometheus-e
         serviceName: 'prometheus-service',
         replicas: 1,
         template+: {
+          metadata+: {
+            annotations+: {
+              "checksum/config": std.native('sha256')(std.manifestJson(PrometheusConfig(metadata))),
+              "checksum/k8sEndpoints": std.native('sha256')(std.manifestJson(k8sEndpoints)),
+              "checksum/crdbAggregation": std.native('sha256')(std.manifestJson(crdbAggregation)),
+            },
+          },
           spec+: {
             volumes: [
               {
