@@ -193,6 +193,81 @@ local yugabyteLB(metadata, name, ip) =
           ],
         },
       },
+      individualMasters: {
+        ["master-" + i]: base.Service(metadata, 'yb-master-' + i) {
+          app:: 'yb-master-' + i,
+          metadata+: {
+            annotations+: {
+              'prometheus.io/scrape': 'true',
+              'prometheus.io/port': '7000',
+              'prometheus.io/path': 'prometheus-metrics',
+            },
+          },
+          spec+: {
+            selector: {
+              'app': "yb-master",
+              'apps.kubernetes.io/pod-index': std.toString(i),
+            },
+            clusterIP: "None",
+            ports: [
+              {
+                port: 7000,
+                name: 'http-ui',
+              },
+            ],
+          },
+        } for i in std.range(0, std.length(metadata.yugabyte.masterNodeIPs) - 1)
+      },
+      individualTServers: {
+        ["tserver-" + i]: base.Service(metadata, 'yb-tserver-' + i) {
+          app:: 'yb-tserver-' + i,
+          metadata+: {
+            annotations+: {
+              'prometheus.io/scrape': 'true',
+              'prometheus.io/port': '9000',
+              'prometheus.io/path': 'prometheus-metrics',
+            },
+          },
+          spec+: {
+            selector: {
+              'app': "yb-tserver",
+              'apps.kubernetes.io/pod-index': std.toString(i),
+            },
+            clusterIP: "None",
+            ports: [
+              {
+                port: 9000,
+                name: 'http-ui',
+              },
+            ],
+          },
+        } for i in std.range(0, std.length(metadata.yugabyte.masterNodeIPs) - 1)
+      },
+      individualTServersYsql: {
+        ["ysql-" + i]: base.Service(metadata, 'yb-ysql-' + i) {
+          app:: 'yb-ysql-' + i,
+          metadata+: {
+            annotations+: {
+              'prometheus.io/scrape': 'true',
+              'prometheus.io/port': '13000',
+              'prometheus.io/path': 'prometheus-metrics',
+            },
+          },
+          spec+: {
+            selector: {
+              'app': "yb-tserver",
+              'apps.kubernetes.io/pod-index': std.toString(i),
+            },
+            clusterIP: "None",
+            ports: [
+              {
+                port: 13000,
+                name: 'http-ysql-met',
+              },
+            ],
+          },
+        } for i in std.range(0, std.length(metadata.yugabyte.masterNodeIPs) - 1)
+      },
       NodeGateways: {
         ["gateway-" + i]: yugabyteLB(metadata, 'ybdb-ext-' + i, metadata.yugabyte.masterNodeIPs[i]) {
           metadata+: {

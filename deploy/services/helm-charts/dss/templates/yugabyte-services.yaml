@@ -1,0 +1,77 @@
+{{- if $.Values.yugabyte.enabled }}
+
+{{- range $i, $lb := .Values.loadBalancers.yugabyteMasterNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: prometheus-metrics
+    prometheus.io/port: '7000'
+    prometheus.io/scrape: 'true'
+  labels:
+    app: yb-master-{{$i}}
+    name: yb-master-{{$i}}
+  name: yb-master-{{$i}}
+spec:
+  ports:
+    - name: http-ui
+      port: 7000
+      targetPort: 7000
+  publishNotReadyAddresses: true
+  selector:
+    app: yb-master
+    apps.kubernetes.io/pod-index: '{{$i}}'
+  type: ClusterIP
+  clusterIP: None
+{{- end }}
+
+{{- range $i, $lb := .Values.loadBalancers.yugabyteTserverNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: prometheus-metrics
+    prometheus.io/port: '9000'
+    prometheus.io/scrape: 'true'
+  labels:
+    app: yb-tserver-{{$i}}
+    name: yb-tserver-{{$i}}
+  name: yb-tserver-{{$i}}
+spec:
+  ports:
+    - name: http-ui
+      port: 9000
+      targetPort: 9000
+  publishNotReadyAddresses: true
+  selector:
+    app: yb-tserver
+    apps.kubernetes.io/pod-index: '{{$i}}'
+  type: ClusterIP
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: prometheus-metrics
+    prometheus.io/port: '13000'
+    prometheus.io/scrape: 'true'
+  labels:
+    app: yb-ysql-{{$i}}
+    name: yb-ysql-{{$i}}
+  name: yb-ysql-{{$i}}
+spec:
+  ports:
+    - name: http-ysql-met
+      port: 13000
+      targetPort: 13000
+  publishNotReadyAddresses: true
+  selector:
+    app: yb-tserver
+    apps.kubernetes.io/pod-index: '{{$i}}'
+  type: ClusterIP
+  clusterIP: None
+{{- end }}
+{{- end }}
