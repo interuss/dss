@@ -124,7 +124,7 @@ type Authorizer struct {
 	logger            *zap.Logger
 	keys              []interface{}
 	keyGuard          sync.RWMutex
-	acceptedAudiences map[string]bool
+	acceptedAudiences []string
 }
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
@@ -143,13 +143,8 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 		return nil, stacktrace.Propagate(err, "Unable to resolve keys")
 	}
 
-	auds := make(map[string]bool)
-	for _, s := range configuration.AcceptedAudiences {
-		auds[s] = true
-	}
-
 	authorizer := &Authorizer{
-		acceptedAudiences: auds,
+		acceptedAudiences: configuration.AcceptedAudiences,
 		logger:            logger,
 		keys:              keys,
 	}
@@ -205,7 +200,18 @@ func (a *Authorizer) Authorize(_ http.ResponseWriter, r *http.Request, authOptio
 		return api.AuthorizationResult{Error: stacktrace.Propagate(err, "Error retrieving claims from context")}
 	}
 
-	if !a.acceptedAudiences[keyClaims.Audience] {
+	validAudience := false
+
+	for _, audience := range a.acceptedAudiences {
+
+		if keyClaims.VerifyAudience(audience, true) {
+			validAudience = true
+			break
+		}
+
+	}
+
+	if !validAudience {
 		return api.AuthorizationResult{Error: stacktrace.NewErrorWithCode(dsserr.Unauthenticated, "Invalid access token audience: %v", keyClaims.Audience)}
 	}
 
