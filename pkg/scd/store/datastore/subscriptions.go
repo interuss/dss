@@ -10,6 +10,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"go.opentelemetry.io/otel"
 
 	"github.com/golang/geo/s2"
 )
@@ -19,6 +20,8 @@ var (
 	subscriptionFieldsWithPrefix    string
 	subscriptionFieldsWithoutPrefix string
 )
+
+var tracer = otel.Tracer("scd/datastore/subscriptions")
 
 // TODO Update database schema and fields below.
 func init() {
@@ -50,6 +53,10 @@ func init() {
 }
 
 func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (s2.CellUnion, error) {
+
+	ctx, span := tracer.Start(ctx, "fetchCellsForSubscription")
+	defer span.End()
+
 	var (
 		cellsQuery = `
 			SELECT
@@ -89,6 +96,10 @@ func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable
 }
 
 func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "fetchSubscriptions")
+	defer span.End()
+
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -135,6 +146,10 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 }
 
 func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "fetchSubscription")
+	defer span.End()
+
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
 	if err != nil {
 		return nil, err
@@ -149,6 +164,10 @@ func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query 
 }
 
 func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "fetchSubscriptionByID")
+	defer span.End()
+
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -177,6 +196,10 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 }
 
 func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "pushSubscription")
+	defer span.End()
+
 	var (
 		upsertQuery = fmt.Sprintf(`
 		WITH v AS (
@@ -248,6 +271,10 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 
 // GetSubscription returns the subscription identified by "id".
 func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "GetSubscription")
+	defer span.End()
+
 	sub, err := c.fetchSubscriptionByID(ctx, c.q, id)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
@@ -259,6 +286,10 @@ func (c *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels
 
 // Implements repos.Subscription.UpsertSubscription
 func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "UpsertSubscription")
+	defer span.End()
+
 	newSubscription, err := c.pushSubscription(ctx, c.q, s)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
@@ -271,6 +302,10 @@ func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 // DeleteSubscription deletes the subscription identified by "id" and
 // returns the deleted subscription.
 func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
+
+	ctx, span := tracer.Start(ctx, "DeleteSubscription")
+	defer span.End()
+
 	const (
 		query = `
 		DELETE FROM
@@ -297,6 +332,10 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 
 // Implements SubscriptionStore.SearchSubscriptions
 func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "SearchSubscriptions")
+	defer span.End()
+
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -334,6 +373,10 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 
 // Implements scd.repos.Subscription.IncrementNotificationIndices
 func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
+
+	ctx, span := tracer.Start(ctx, "IncrementNotificationIndices")
+	defer span.End()
+
 	var updateQuery = `
 			UPDATE scd_subscriptions
 			SET notification_index = notification_index + 1
@@ -380,6 +423,9 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error {
 
+	ctx, span := tracer.Start(ctx, "LockSubscriptionsOnCells")
+	defer span.End()
+
 	const query = `
         SELECT
             id
@@ -408,6 +454,10 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 // ListExpiredSubscriptions lists all subscriptions older than the threshold.
 // Their age is determined by their end time, or by their update time if they do not have an end time.
 func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "ListExpiredSubscriptions")
+	defer span.End()
+
 	expiredSubsQuery := fmt.Sprintf(`
         SELECT
             %s
