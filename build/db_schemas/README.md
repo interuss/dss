@@ -9,8 +9,10 @@ and named according to what the changes do.  schema_versions.schema_version
 should be updated as the last step of each transition; see existing .sql files
 for examples.
 
-The two new .sql files must be added to scd.libsonnet or rid.libsonnet
-(for remote ID) in this folder.
+You will need to create as well yugabyte migrations in the same way, in `yugabyte/` folder.
+
+The two new .sql files must be added to scd.libsonnet, rid.libsonnet or aux_.libsonnet
+ in this folder.
 
 When a new database version is created, it needs to be targeted in a number of
 places:
@@ -18,9 +20,12 @@ places:
   schema_versions.schema_version
 * [DSS main.jsonnet](../../deploy/services/tanka/examples/minimum/main.jsonnet)
 * [Schema manager main.jsonnet](../../deploy/services/tanka/examples/schema_manager/main.jsonnet)
-* /pkg/{rid|scd}/store/datastore/store.go
+* [Minikube main.jsonnet](../../deploy/services/tanka/examples/minikube/main.jsonnet)
+* /pkg/{rid|scd|aux_}/store/datastore/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
 * /deploy/services/helm-charts/dss/templates/schema-manager.yaml
+
+You can use `update_latest_version.sh` to do that automatically.
 
 ## Yugabyte schema versions
 
@@ -28,3 +33,5 @@ Versions 1.0.0 of the schemas reflect the latest versions of the crdb schemas. I
 some adaptations are required during the development phase until the first release,
 changes should be done using version 1.0.1. This paragraph may be removed after the
 first release.
+
+`aux` versions are expected to be the same between Yugabyte and CockroachDB.

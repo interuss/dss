@@ -39,7 +39,7 @@ local metadata = metadataBase {
     image: 'docker.io/interuss-local/dss:latest',
     desired_rid_db_version: '1.0.1',
     desired_scd_db_version: '1.0.1',
-    desired_aux_db_version: '1.0.0',
+    desired_aux_db_version: '1.1.0',
   },
   evict+: {
     scd+: {
