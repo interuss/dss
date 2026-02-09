@@ -14,7 +14,10 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/stacktrace"
+	"go.opentelemetry.io/otel"
 )
+
+var tracer = otel.Tracer("scd/operational_intents_handler")
 
 // subscriptionIsImplicitAndOnlyAttachedToOIR will check if:
 // - the subscription is defined and is implicit
@@ -28,6 +31,10 @@ import (
 //
 //	See https://github.com/interuss/dss/issues/1059 for more details
 func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID dssmodels.ID, subscription *scdmodels.Subscription) (bool, error) {
+
+	ctx, span := tracer.Start(ctx, "subscriptionIsImplicitAndOnlyAttachedToOIR")
+	defer span.End()
+
 	if subscription == nil {
 		return false, nil
 	}
@@ -51,6 +58,10 @@ func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Rep
 // the specified version.
 func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *restapi.DeleteOperationalIntentReferenceRequest,
 ) restapi.DeleteOperationalIntentReferenceResponseSet {
+
+	ctx, span := tracer.Start(ctx, "DeleteOperationalIntentReference")
+	defer span.End()
+
 	if req.Auth.Error != nil {
 		resp := restapi.DeleteOperationalIntentReferenceResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -193,6 +204,10 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 // GetOperationalIntentReference returns a single operation intent ref for the given ID.
 func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi.GetOperationalIntentReferenceRequest,
 ) restapi.GetOperationalIntentReferenceResponseSet {
+
+	ctx, span := tracer.Start(ctx, "GetOperationalIntentReference")
+	defer span.End()
+
 	if req.Auth.Error != nil {
 		resp := restapi.GetOperationalIntentReferenceResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -248,6 +263,10 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 // bounds.
 func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *restapi.QueryOperationalIntentReferencesRequest,
 ) restapi.QueryOperationalIntentReferencesResponseSet {
+
+	ctx, span := tracer.Start(ctx, "QueryOperationalIntentReferences")
+	defer span.End()
+
 	if req.Auth.Error != nil {
 		resp := restapi.QueryOperationalIntentReferencesResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -318,6 +337,10 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 
 func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *restapi.CreateOperationalIntentReferenceRequest,
 ) restapi.CreateOperationalIntentReferenceResponseSet {
+
+	ctx, span := tracer.Start(ctx, "CreateOperationalIntentReference")
+	defer span.End()
+
 	if req.Auth.Error != nil {
 		resp := restapi.CreateOperationalIntentReferenceResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -354,6 +377,10 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 
 func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *restapi.UpdateOperationalIntentReferenceRequest,
 ) restapi.UpdateOperationalIntentReferenceResponseSet {
+
+	ctx, span := tracer.Start(ctx, "UpdateOperationalIntentReference")
+	defer span.End()
+
 	if req.Auth.Error != nil {
 		resp := restapi.UpdateOperationalIntentReferenceResponseSet{}
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
@@ -407,6 +434,7 @@ type validOIRParams struct {
 }
 
 func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber, pastOVNs []scdmodels.OVN) *scdmodels.OperationalIntent {
+
 	// For OIR's in the accepted state, we may not have a attachedSub available,
 	// in such cases the attachedSub ID on scdmodels.OperationalIntent will be nil
 	// and will be replaced with the 'NullV4UUID' when sent over to a client.
@@ -615,6 +643,10 @@ func validateUpsertRequestAgainstPreviousOIR(
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
 func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
+
+	ctx, span := tracer.Start(ctx, "createAndStoreNewImplicitSubscription")
+	defer span.End()
+
 	subToUpsert := scdmodels.Subscription{
 		ID:                          dssmodels.ID(uuid.New().String()),
 		Manager:                     manager,
@@ -672,6 +704,9 @@ func getRelevantSubscriptionsAndIncrementIndices(
 	notifyVolume *dssmodels.Volume4D,
 ) (repos.Subscriptions, error) {
 
+	ctx, span := tracer.Start(ctx, "getRelevantSubscriptionsAndIncrementIndices")
+	defer span.End()
+
 	// Find Subscriptions that may need to be notified
 	allsubs, err := r.SearchSubscriptions(ctx, notifyVolume)
 	if err != nil {
@@ -705,6 +740,9 @@ func validateKeyAndProvideConflictResponse(
 	params *validOIRParams,
 	attachedSubscription *scdmodels.Subscription,
 ) (*restapi.AirspaceConflictResponse, error) {
+
+	ctx, span := tracer.Start(ctx, "validateKeyAndProvideConflictResponse")
+	defer span.End()
 
 	// Identify OperationalIntents missing from the key
 	var missingOps []*scdmodels.OperationalIntent
@@ -779,6 +817,9 @@ func validateKeyAndProvideConflictResponse(
 // After this method returns successfully, the subscription will cover the requested geo-temporal extent.
 func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
 
+	ctx, span := tracer.Start(ctx, "ensureSubscriptionCoversOIR")
+	defer span.End()
+
 	updateSub := false
 	if sub.StartTime != nil && sub.StartTime.After(*params.uExtent.StartTime) {
 		if sub.ImplicitSubscription {
@@ -819,6 +860,10 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.Time, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
+
+	ctx, span := tracer.Start(ctx, "upsertOperationalIntentReference")
+	defer span.End()
+
 	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
 	validParams, err := validateAndReturnUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
