@@ -59,7 +59,7 @@ class API:
         self.data_types = [dt for dt in self.data_types
                            if dt.name in required_data_types]
 
-    def security_scopes(self) -> Set[Tuple[str, operations.Scope]]:
+    def security_scopes(self) -> List[Tuple[str, operations.Scope]]:
         """Returns a set of unique security scopes used by this API.
 
         :return: set of unique tuples containing the authorization scheme and scope
@@ -70,7 +70,7 @@ class API:
             for scheme, scopes in so.option.items():
                 for scope in scopes:
                     scopes_set.add((scheme, scope))
-        return scopes_set
+        return sorted(scopes_set, key=lambda s: s[1].name)
 
 
 def make_api(package: str, api_path: str, spec: Dict) -> API:
