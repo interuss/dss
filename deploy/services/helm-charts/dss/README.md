@@ -1,5 +1,5 @@
 # Helm Chart
-An [Helm Chart](https://helm.sh/) is provided [there](https://github.com/interuss/dss/tree/master/deploy/services/helm-charts/dss) to deploy the DSS and datastore (CockroachDB or Yugabyte) kubernetes resources.
+This directory provides an [Helm Chart](https://helm.sh/) to deploy the DSS and datastore (CockroachDB or Yugabyte) kubernetes resources.
 
 ## Requirements
 1. A Kubernetes cluster should be running and you should be properly authenticated. Requirements and instructions to create a new Kubernetes cluster can be found here:

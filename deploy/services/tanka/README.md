@@ -1,15 +1,29 @@
 # Tanka library
 
-A set of configuration to be used by [tanka](https://tanka.dev/install) to deploy a single DSS instance via
-Kubernetes is provided [there](https://github.com/interuss/dss/tree/master/deploy/services/tanka).
+This folder contains a set of configuration to be used with [tanka](https://tanka.dev/) to deploy a single DSS instance in a Kubernetes cluster.
 
 ## Requirements
 
-This section hasn't been written yet.
+1. A Kubernetes cluster should be running and you should be properly authenticated. Requirements and instructions to create a new Kubernetes cluster can be found here:
+    * [AWS](../../../docs/infrastructure/aws.md)
+    * [Google](../../../docs/infrastructure/google.md)
+    * [Minikube](../../../docs/infrastructure/minikube.md)
+
+2. Create the certificates and apply them to the cluster using the instructions [here](../../../docs/operations/certificates-management.md)
+3. Install [Tanka](https://tanka.dev/install)
 
 ## Usage
 
-This section hasn't been written yet.
+There is a base file in `examples/minikube`. You can directly use it to deploy the service.
+
+Check first that you cluster is using `192.168.49.2` as IP with `minikube ip -p dss-local-cluster`. If that not the case, edit `examples/minikube/spec.json` accordingly.
+
+To apply changes, use the following command:
+
+* `cd examples/minikube`
+* `tk apply .`
+
+You may edit `main.jsonnet` as needed should you want to change configuration, or docker images used.
 
 ## Job cleanup
 
