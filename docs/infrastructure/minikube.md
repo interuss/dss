@@ -34,7 +34,7 @@ You can also use any other tool as needed. You can switch to the cluster's conte
 
 Should you want to run the local docker image that you [built](./google-manual.md#prerequisites), run the following commands to upload / update your image
 
-1. `minikube image -p dss-local-cluster push interuss-local/dss`
+1. `minikube image -p dss-local-cluster load interuss-local/dss`
 
 In the helm charts, use `docker.io/interuss-local/dss:latest` as image and be sure to set the `imagePullPolicy` to `Never`.
 
