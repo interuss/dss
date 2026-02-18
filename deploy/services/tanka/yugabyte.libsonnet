@@ -490,7 +490,7 @@ local volumes = import 'volumes.libsonnet';
                   value: "/mnt/disk0/cores",
                 }, {
                   name: 'SSL_CERTFILE',
-                  value: "/root/.yugabytedb/root.crt",
+                  value: "/root/.yugabytedb/ca.crt",
                 }],
                 livenessProbe: {
                   exec: {

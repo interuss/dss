@@ -12,7 +12,7 @@
 {{ else }}
 - mountPath: /opt/yugabyte-certs/ca.crt
   name: ca-certs
-  subPath: root.crt
+  subPath: ca.crt
 - mountPath: /opt/yugabyte-certs/ca-instance.crt
   name: ca-certs
   subPath: ca-instance.crt
