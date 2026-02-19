@@ -96,6 +96,13 @@ components:
           items:
             type: string
 
+    SCDLockModeResponse:
+      type: object
+      properties:
+        global_lock:
+          description: The value of the 'enable_scd_global_lock' option for this DSS instance
+          type: boolean
+
 paths:
   /aux/v1/version:
     get:
@@ -317,6 +324,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CAsResponse'
+        '501':
+          description: >-
+            The server has not implemented this operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /aux/v1/configuration/scd_lock_mode:
+    get:
+      summary: Return the value of the 'enable_scd_global_lock' lock option. May be used to ensure all participants in a pool are using the same value.
+      operationId: getScdLockMode
+      tags: [ dss ]
+      security:
+      - Auth:
+        - interuss.pool_status.read
+      responses:
+        '200':
+          description: The information is successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SCDLockModeResponse'
         '501':
           description: >-
             The server has not implemented this operation.

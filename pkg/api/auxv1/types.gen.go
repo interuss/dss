@@ -52,3 +52,8 @@ type CAsResponse struct {
 	// A list of certificates, each in PEM format.
 	Cas *[]string `json:"CAs,omitempty"`
 }
+
+type SCDLockModeResponse struct {
+	// The value of the 'enable_scd_global_lock' option for this DSS instance
+	GlobalLock *bool `json:"global_lock,omitempty"`
+}

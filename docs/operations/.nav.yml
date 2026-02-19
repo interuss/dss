@@ -5,4 +5,5 @@ nav:
   - "Pooling (CockroachDB)": pooling-crdb.md
   - "Monitoring": monitoring.md
   - "Migrations": migrations.md
+  - "Performances": performances.md
   - "Troubleshooting": troubleshooting.md

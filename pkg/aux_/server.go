@@ -14,8 +14,9 @@ import (
 
 // Server implements auxv1.Implementation.
 type Server struct {
-	Store    auxstore.Store
-	Locality string
+	Store         auxstore.Store
+	Locality      string
+	ScdGlobalLock bool
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {

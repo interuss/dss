@@ -37,6 +37,11 @@ var (
 	}
 	GetAcceptedCAsSecurity = []api.AuthorizationOption{}
 	GetInstanceCAsSecurity = []api.AuthorizationOption{}
+	GetScdLockModeSecurity = []api.AuthorizationOption{
+		{
+			"Auth": {InterussPoolStatusReadScope},
+		},
+	}
 )
 
 type GetVersionRequest struct {
@@ -177,6 +182,21 @@ type GetInstanceCAsResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetScdLockModeRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+type GetScdLockModeResponseSet struct {
+	// The information is successfully returned.
+	Response200 *SCDLockModeResponse
+
+	// The server has not implemented this operation.
+	Response501 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Queries the version of the DSS.
 	GetVersion(ctx context.Context, req *GetVersionRequest) GetVersionResponseSet
@@ -198,4 +218,7 @@ type Implementation interface {
 
 	// Current certificates of certificate authorities (CAs) that signed the node certificates for this DSS instance. May return more that one certificate (e.g. for rotations).  Other DSS instances in the pool should accept node certificates signed by these CAs.
 	GetInstanceCAs(ctx context.Context, req *GetInstanceCAsRequest) GetInstanceCAsResponseSet
+
+	// Return the value of the 'enable_scd_global_lock' lock option. May be used to ensure all participants in a pool are using the same value.
+	GetScdLockMode(ctx context.Context, req *GetScdLockModeRequest) GetScdLockModeResponseSet
 }
