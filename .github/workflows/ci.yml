@@ -114,3 +114,22 @@ jobs:
         run: make evict-locally
       - name: Bring down local DSS instance
         run: make down-locally
+
+  certificates-management-tests:
+    name: Certificate management tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job information
+      run: |
+        echo "Job information"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Host: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref }}"
+        docker images
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Tests
+      run: cd test/certificates-management/ && python test.py
