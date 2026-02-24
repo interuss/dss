@@ -110,7 +110,7 @@ local util = import 'util.libsonnet';
         ca_certs: [{
           name: 'ca-certs',
           mountPath: '/opt/yugabyte-certs/ca.crt',
-          subPath: 'root.crt',
+          subPath: 'ca.crt',
         }, {
           name: 'ca-certs',
           mountPath: '/opt/yugabyte-certs/ca-instance.crt',
