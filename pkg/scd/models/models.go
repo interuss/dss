@@ -114,3 +114,38 @@ func ValidateUSSBaseURL(s string) error {
 
 	return nil
 }
+
+// ExtentUnionFromRest returns a single volume that bounds all given extents
+// it ensures that
+// - all individual extents are time bounded
+// - resulting extent is not expired
+func ExtentUnionFromRest(extents []restapi.Volume4D, now time.Time) (*dssmodels.Volume4D, error) {
+	volumes := make([]*dssmodels.Volume4D, len(extents))
+	for idx, extent := range extents {
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
+		}
+		if cExtent.StartTime == nil {
+			return nil, stacktrace.NewError("Missing time_start from extent")
+		}
+		if cExtent.EndTime == nil {
+			return nil, stacktrace.NewError("Missing time_end from extent")
+		}
+		if cExtent.StartTime.After(*cExtent.EndTime) {
+			return nil, stacktrace.NewError("Extent time_end must be after time_start")
+		}
+		volumes[idx] = cExtent
+	}
+
+	union, err := dssmodels.UnionVolumes4D(volumes...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to union extents")
+	}
+
+	if now.After(*union.EndTime) {
+		return nil, stacktrace.NewError("Extents union may not end in the past")
+	}
+
+	return union, nil
+}
