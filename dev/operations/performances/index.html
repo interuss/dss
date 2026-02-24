@@ -5,13 +5,13 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/infrastructure/aws/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/performances/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../migrations/">
       
       
-        <link rel="next" href="../google/">
+        <link rel="next" href="../troubleshooting/">
       
       
         
@@ -22,7 +22,7 @@
     
     
       
-        <title>Amazon Web Services with terraform - DSS Deployment User Documentation</title>
+        <title>Performances - DSS Deployment User Documentation</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deploy-a-dss-instance-on-amazon-web-services-to-terraform" class="md-skip">
+        <a href="#performances" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon Web Services with terraform
+              Performances
             
           </span>
         </div>
@@ -292,20 +292,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -326,12 +324,208 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
     Deploy a DSS instance to
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/aws/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Amazon Web Services with terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/google/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Cloud Platform with terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/google-manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Cloud Platform manually
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/minikube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minikube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate a DSS instance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate a DSS instance
   
 
           </label>
@@ -351,7 +545,147 @@
   <span class="md-ellipsis">
     
   
-    Introduction
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../certificates-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Certificates management (Yugabyte)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling (Yugabyte)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pooling-crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling (CockroachDB)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrations
   
 
     
@@ -388,7 +722,7 @@
   <span class="md-ellipsis">
     
   
-    Amazon Web Services with terraform
+    Performances
   
 
     
@@ -406,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    Amazon Web Services with terraform
+    Performances
   
 
     
@@ -432,60 +766,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#the-scd-global-lock-option" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting started
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Getting started">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deployment-of-the-kubernetes-cluster" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deployment of the Kubernetes cluster
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deployment-of-the-dss-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deployment of the DSS services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#clean-up" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clean up
+        The SCD global lock option
       
     </span>
   </a>
@@ -508,341 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../google/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Google Cloud Platform with terraform
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../google-manual/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Google Cloud Platform manually
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../minikube/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Minikube
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Operate a DSS instance
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Operate a DSS instance
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/certificates-management/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Certificates management (Yugabyte)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/pooling/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pooling (Yugabyte)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/pooling-crdb/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pooling (CockroachDB)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/monitoring/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Monitoring
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/migrations/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migrations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/performances/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Performances
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../operations/troubleshooting/" class="md-nav__link">
+      <a href="../troubleshooting/" class="md-nav__link">
         
   
   
@@ -897,60 +847,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#the-scd-global-lock-option" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting started
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Getting started">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deployment-of-the-kubernetes-cluster" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deployment of the Kubernetes cluster
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deployment-of-the-dss-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deployment of the DSS services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#clean-up" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clean up
+        The SCD global lock option
       
     </span>
   </a>
@@ -1003,7 +903,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Deploy a DSS instance to
+    Operate a DSS instance
   </span>
 
         </a>
@@ -1022,7 +922,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/infrastructure/aws.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/operations/performances.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1031,193 +931,33 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/infrastructure/aws.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/operations/performances.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="deploy-a-dss-instance-on-amazon-web-services-to-terraform">Deploy a DSS instance on Amazon Web Services to terraform<a class="headerlink" href="#deploy-a-dss-instance-on-amazon-web-services-to-terraform" title="Permanent link">¶</a></h1>
-<p>This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS)
-and generates the tanka files to deploy a DSS instance.</p>
-<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">¶</a></h2>
-<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¶</a></h3>
-<p>Download &amp; install the following tools to your workstation:</p>
-<ol>
-<li>Install <a href="https://developer.hashicorp.com/terraform/downloads">terraform</a>.</li>
-<li>Install tools from <a href="../">Prerequisites</a></li>
-<li>Install AWS specific tools:</li>
-<li>Install and initialize <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions">AWS CLI</a>.<ol>
-<li>Confirm successful installation with <code>aws --version</code>.</li>
-</ol>
-</li>
-<li>If you don't have an account, sign-up: https://aws.amazon.com/free/</li>
-<li>Configure terraform to connect to AWS using your account.<ol>
-<li>We recommend to create an AWS_PROFILE using for instance <code>aws configure --profile aws-interuss-dss</code>
-     Before running <code>terraform</code> commands, run once in your shell: <code>export AWS_PROFILE=aws-interuss-dss</code>
-     Other methods are described here: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration</li>
-</ol>
-</li>
-</ol>
-<h3 id="deployment-of-the-kubernetes-cluster">Deployment of the Kubernetes cluster<a class="headerlink" href="#deployment-of-the-kubernetes-cluster" title="Permanent link">¶</a></h3>
-<div class="admonition tip">
-<p class="admonition-title">Paths in the documentation</p>
-<p>In the documentation, we often refer to path starting from the root (prefixed with <code>/</code>). This is to indicate that the path is relative to the root of the repository.</p>
+<h1 id="performances">Performances<a class="headerlink" href="#performances" title="Permanent link">¶</a></h1>
+<h2 id="the-scd-global-lock-option">The SCD global lock option<a class="headerlink" href="#the-scd-global-lock-option" title="Permanent link">¶</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.</p>
+<p>You can use the <code>/aux/v1/configuration/scd_lock_mode</code> endpoint to retrive the current value for a specifc DSS instance.</p>
 </div>
-<ol>
-<li>Create a new folder in <code>/deploy/infrastructure/personal/</code> for the deployment named for example: <code>terraform-aws-dss-dev</code></li>
-<li>From <code>/deploy/infrastructure/modules/terraform-aws-dss</code>, copy <code>main.tf</code>, <code>output.tf</code>, <code>variables.gen.tf</code> and <code>terraform.dev.example.tfvars</code> to the infrastructure personal folder.</li>
-<li>In the infrastructure personal folder (eg /deploy/infrastructure/personal/terraform-aws-dss-dev):<ol>
-<li>Rename <code>terraform.dev.example.tfvars</code> to <code>terraform.tfvars</code>.</li>
-<li>Check that the directory contains the following files:<ol>
-<li>main.tf</li>
-<li>output.tf</li>
-<li>terraform.tfvars</li>
-<li>variables.gen.tf</li>
-</ol>
-</li>
-<li>Set the variables in <code>terraform.tfvars</code> according to your environment. See <a href="https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md">TFVARS.gen.md</a> for variables descriptions.</li>
-<li>Initialize terraform: <code>terraform init</code>.</li>
-<li>Run <code>terraform plan</code> to check that the configuration is valid. It will display the resources which will be provisioned.</li>
-<li>Run <code>terraform apply</code> to deploy the cluster. (This operation may take up to 15 min.)</li>
-</ol>
-</li>
-<li>Configure the DNS resolution according to these instructions:</li>
-</ol>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="terraform-managed" name="__tabbed_1" type="radio"><input id="manual-setup" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="terraform-managed">Terraform managed</label><label for="manual-setup">Manual setup</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p>If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage it with the rest of the infrastructure.</p>
-<p><strong>For Elastic Kubernetes Service (AWS)</strong>, create the zone in your aws account and set the <code>aws_route53_zone_id</code>
-variable with the zone id. Entries will be automatically created by terraform.
-Note that the domain or the sub-domain managed by the zone must be properly delegated by the parent domain.
-See instructions for <a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html#UpdateDNSParentDomain">subdomains delegation</a></p>
-</div>
-<div class="tabbed-block">
-<p>If DNS entries are managed manually, set them up manually using the following steps:
-1. Retrieve IP addresses and expected hostnames: <code>terraform output</code>
-    Example of expected output:
-       </p><div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
-<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
-<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
-<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
-<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
-<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
-<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
-<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
-<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-0-10">10</a></span>
-<span class="normal"><a href="#__codelineno-0-11">11</a></span>
-<span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>crdb_addresses = [
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    {
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>        "address" = "34.65.15.23"
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>        "expected_dns" = "0.interuss.example.com"
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    },
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    {
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        "address" = "34.65.146.56"
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        "expected_dns" = "1.interuss.example.com"
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    },
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    {
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>        "address" = "34.65.191.145"
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        "expected_dns" = "2.interuss.example.com"
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    },
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>]
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>gateway_address = {
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    "address" = "35.186.236.146"
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    "expected_dns" = "dss.interuss.example.com"  
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    "certificate_validation_dns" = [
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>     {
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>       "managed_by_terraform" = false
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>       "name" = "_6e246283563dcf58e7ed.interuss.example.com."
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>       "records" = [
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>          "_6e246283563dcf58e7ed.xxxxx.acm-validations.aws.",
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>       ]
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>       "type" = "CNAME"
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>     },
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    ]
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>}
-</code></pre></div></td></tr></tbody></table></div>
-2. Create the following DNS A entries to point to the static ips indicated in the output:
-  - <code>crdb_addresses[*].expected_dns</code>
-  - <code>gateway_address.expected_dns</code>
-3. Create the entries for SSL certificate validation according to the information provided
-  in <code>gateway_address.certificate_validation_dns</code>.<p></p>
-</div>
-</div>
-</div>
-<hr>
-<h2 id="deployment-of-the-dss-services">Deployment of the DSS services<a class="headerlink" href="#deployment-of-the-dss-services" title="Permanent link">¶</a></h2>
-<p>During the successful run, the terraform job has created a new <a href="https://github.com/interuss/dss/tree/master/build/workspace">workspace</a>
-for the cluster. The new workspace name corresponds to the cluster context. The cluster context
-can be retrieved by running <code>terraform output</code> in your infrastructure  folder (ie /deploy/infrastructure/personal/terraform-aws-dss-dev).</p>
-<p>It contains scripts to operate the cluster and setup the services.</p>
-<ol>
-<li>
-<p>Go to the new workspace <code>/build/workspace/${cluster_context}</code>.</p>
-<ol>
-<li>Run <code>./get-credentials.sh</code> to login to kubernetes. You can now access the cluster with <code>kubectl</code>.</li>
-</ol>
-</li>
-<li>
-<p>Prepare the datastore certificates:</p>
-</li>
-</ol>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="yugabyte" name="__tabbed_2" type="radio"><input id="cockroachdb" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="yugabyte">Yugabyte</label><label for="cockroachdb">CockroachDB</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<ol>
-<li>Generate the certificates using <code>./dss-certs.sh init</code></li>
-<li>If joining a cluster, check <code>dss-certs.sh</code>'s <a href="../../operations/certificates-management/">help</a> to add others CA in your pool and share your CA with others pools members.</li>
-<li>Deploy the certificates using <code>./dss-certs.sh apply</code>.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<ol>
-<li>Generate the certificates using <code>./make-certs.sh</code>. Follow script instructions if you are not initializing the cluster.</li>
-<li>Deploy the certificates using <code>./apply-certs.sh</code>.</li>
-</ol>
-</div>
-</div>
-</div>
-<hr>
-<ol>
-<li>Go to the tanka workspace in <code>/deploy/services/tanka/workspace/${cluster_context}</code>.</li>
-<li>Run <code>tk apply .</code> to deploy the services to kubernetes. (This may take up to 30 min)</li>
-<li>Wait for services to initialize:<ul>
-<li>On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:<ul>
-<li>On the <a href="https://eu-west-1.console.aws.amazon.com/eks/home">EKS page</a>, the status of the kubernetes cluster should be <code>Active</code>.</li>
-<li>On the <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:">EC2 page</a>, the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state <code>Active</code>.</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Verify that basic services are functioning by navigating to https://your-gateway-domain.com/healthy.</li>
-</ol>
-<h2 id="clean-up">Clean up<a class="headerlink" href="#clean-up" title="Permanent link">¶</a></h2>
-<ol>
-<li>Note that the following operations can't be reverted and all data will be lost.</li>
-<li>To delete all resources, run <code>tk delete .</code> in the workspace folder.</li>
-<li>Make sure that all <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:">load balancers</a> and <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#TargetGroups:">target groups</a> have been deleted from the AWS region before next step.</li>
-<li><code>terraform destroy</code> in your infrastructure folder.</li>
-<li>On the <a href="https://eu-west-1.console.aws.amazon.com/ec2/home#Volumes:">EBS page</a>, make sure to manually clean up the persistent storage. Note that the correct AWS region shall be selected.</li>
-</ol>
+<p>It has been reported in issue <a href="https://github.com/interuss/dss/issues/1311">#1311</a> that creating a lot of overlapping operational intents may increase the datastore load in a way that creates timeouts.</p>
+<p>By default, the code will try to lock on required subscriptions when working on operational intents, and having too many of them may lead to issues.</p>
+<p>A solution to that is to switch to a global lock, that is just globally locking operational intents operations, regardless of subscriptions.</p>
+<p>This will result in lower general throughput for operational intents that don't overlap, as only one of them can be processed at a time, but better performance in the issue's case as lock acquisition is simpler.</p>
+<p>You should enable this option depending on your DSS usage/use case and what you want to maximize:
+* If you have non-overlapping traffic and maximum global throughput, don't enable this flag
+* If you have overlapping traffic and don't need high global throughput, enable this flag</p>
+<p>The following graphs show example throughput without (on the left) and with the flag (on the right). This has been run on a local machine; on a real deployment you can expect lower performance (due to various latency), but similar relative numbers.</p>
+<p>All graphs have been generated with the <a href="https://github.com/interuss/monitoring/blob/main/monitoring/loadtest/README.md">loadtest present in the monitoring repository</a> using <code>SCD.py</code>.</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_overlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_overlapping.png"></a>
+<em>Overlapping requests. Notice the huge spikes on the left, as the datastore struggles to acquire locks.</em></p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_notoverlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_notoverlapping.png"></a>
+<em>Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.</em></p>
 
 
 
@@ -1238,7 +978,7 @@ can be retrieved by running <code>terraform output</code> in your infrastructure
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 12, 2026 15:55:08 UTC">January 12, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="February 24, 2026 12:28:29 UTC">February 24, 2026</span>
   </span>
 
     
@@ -1270,7 +1010,7 @@ can be retrieved by running <code>terraform output</code> in your infrastructure
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction">
+          <a href="../migrations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Migrations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -1280,20 +1020,20 @@ can be retrieved by running <code>terraform output</code> in your infrastructure
                 Previous
               </span>
               <div class="md-ellipsis">
-                Introduction
+                Migrations
               </div>
             </div>
           </a>
         
         
           
-          <a href="../google/" class="md-footer__link md-footer__link--next" aria-label="Next: Google Cloud Platform with terraform">
+          <a href="../troubleshooting/" class="md-footer__link md-footer__link--next" aria-label="Next: Troubleshooting">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Google Cloud Platform with terraform
+                Troubleshooting
               </div>
             </div>
             <div class="md-footer__button md-icon">
