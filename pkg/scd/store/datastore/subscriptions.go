@@ -380,6 +380,26 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error {
 
+	if c.globalLock {
+
+		// Remark: We use a FOR UPDATE, as this works with CockroachDB and Yugabyte.
+		// In the future without CockroachDB, switching to pg_advisory_xact_lock would remove
+		// the need for a dedicated table.
+
+		// Remark: We only use key = 0 for now, but smarter locks could be done by using differents keys
+		// (e.g with key == cells id)
+		// Notice that this requieres key entries to be present to work.
+		const query = `SELECT key FROM scd_locks WHERE key = 0 FOR UPDATE`
+
+		_, err := c.q.Exec(ctx, query)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error in query: %s", query)
+		}
+
+		return nil
+
+	}
+
 	const query = `
         SELECT
             id

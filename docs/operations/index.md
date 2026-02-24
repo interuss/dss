@@ -24,6 +24,10 @@ See [Leaving a pool](pooling.md#leaving-a-pool)
 
 See [Monitoring](monitoring.md)
 
+## Performances
+
+See [Performances](performances.md)
+
 ## Troubleshooting
 
 See [Troubleshooting](troubleshooting.md)

@@ -59,6 +59,8 @@ var (
 	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
+
+	scdGlobalLock = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
 )
 
 const (
@@ -106,7 +108,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context, locality string, publicEndpoint string, logger *zap.Logger) (*aux.Server, error) {
+func createAuxServer(ctx context.Context, locality string, publicEndpoint string, scdGlobalLock bool, logger *zap.Logger) (*aux.Server, error) {
 	connectParameters := flags.ConnectParameters()
 	connectParameters.DBName = "aux"
 	datastore, err := datastore.Dial(ctx, connectParameters)
@@ -138,7 +140,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore, Locality: locality}, nil
+	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
@@ -200,7 +202,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	scdStore, err := scdc.NewStore(ctx, datastore)
+	scdStore, err := scdc.NewStore(ctx, datastore, *scdGlobalLock)
 	if err != nil {
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"scd\" does not exist") {
@@ -233,6 +235,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("version", zap.Any("version", version.Current()))
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
+	logger.Info("config", zap.Bool("scdGlobalLock", *scdGlobalLock))
 
 	if len(*jwtAudiences) == 0 {
 		// TODO: Make this flag required once all parties can set audiences
@@ -250,7 +253,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	)
 
 	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, logger)
+	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}

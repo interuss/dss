@@ -176,7 +176,7 @@ func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 		return nil, fmt.Errorf("failed to connect to SCD database with %+v: %w", logParams, err)
 	}
 
-	scdStore, err := scdc.NewStore(ctx, datastore)
+	scdStore, err := scdc.NewStore(ctx, datastore, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create strategic conflict detection store with %+v: %w", connectParameters, err)
 	}

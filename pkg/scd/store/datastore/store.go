@@ -32,22 +32,25 @@ var (
 // repo is an implementation of repos.Repo using
 // a CockroachDB/Yugabyte transaction.
 type repo struct {
-	q     dsssql.Queryable
-	clock clockwork.Clock
+	q          dsssql.Queryable
+	clock      clockwork.Clock
+	globalLock bool
 }
 
 // Store is an implementation of an scd.Store using
 // a CockroachDB or Yugabyte database.
 type Store struct {
-	db    *datastore.Datastore
-	clock clockwork.Clock
+	db         *datastore.Datastore
+	clock      clockwork.Clock
+	globalLock bool
 }
 
 // NewStore returns a Store instance connected to a cockroach or Yugabyte instance via db.
-func NewStore(ctx context.Context, db *datastore.Datastore) (*Store, error) {
+func NewStore(ctx context.Context, db *datastore.Datastore, globalLock bool) (*Store, error) {
 	store := &Store{
-		db:    db,
-		clock: DefaultClock,
+		db:         db,
+		clock:      DefaultClock,
+		globalLock: globalLock,
 	}
 
 	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
@@ -81,8 +84,9 @@ func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
 // Interact implements store.Interactor interface.
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 	return &repo{
-		q:     s.db.Pool,
-		clock: s.clock,
+		q:          s.db.Pool,
+		clock:      s.clock,
+		globalLock: s.globalLock,
 	}, nil
 }
 
@@ -91,8 +95,9 @@ func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repo
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
-			q:     tx,
-			clock: s.clock,
+			q:          tx,
+			clock:      s.clock,
+			globalLock: s.globalLock,
 		})
 	})
 }

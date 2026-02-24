@@ -5,10 +5,12 @@
     "downfrom-v3.0.0-remove_inverted_indices.sql": importstr "scd/downfrom-v3.0.0-remove_inverted_indices.sql",
     "downfrom-v3.1.0-remove_uss_availability.sql": importstr "scd/downfrom-v3.1.0-remove_uss_availability.sql",
     "downfrom-v3.2.0-remove_ovn_columns.sql": importstr "scd/downfrom-v3.2.0-remove_ovn_columns.sql",
+    "downfrom-v3.3.0-remove_locks.sql": importstr "scd/downfrom-v3.3.0-remove_locks.sql",
     "upto-v1.0.0-create_initial_version.sql": importstr "scd/upto-v1.0.0-create_initial_version.sql",
     "upto-v2.0.0-support_api_1_0_0.sql": importstr "scd/upto-v2.0.0-support_api_1_0_0.sql",
     "upto-v3.0.0-add_inverted_indices.sql": importstr "scd/upto-v3.0.0-add_inverted_indices.sql",
     "upto-v3.1.0-create_uss_availability.sql": importstr "scd/upto-v3.1.0-create_uss_availability.sql",
     "upto-v3.2.0-add_ovn_columns.sql": importstr "scd/upto-v3.2.0-add_ovn_columns.sql",
+    "upto-v3.3.0-add_locks.sql": importstr "scd/upto-v3.3.0-add_locks.sql",
   },
 }

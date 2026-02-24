@@ -266,8 +266,35 @@ func (s *APIRouter) GetInstanceCAs(exp *regexp.Regexp, w http.ResponseWriter, r 
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetScdLockModeRequest
+
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetScdLockModeSecurity)
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response := s.Implementation.GetScdLockMode(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response501 != nil {
+		api.WriteJSON(w, 501, response.Response501)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 7)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 8)}
 
 	pattern := regexp.MustCompile("^/aux/v1/version$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion}
@@ -289,6 +316,9 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 
 	pattern = regexp.MustCompile("^/aux/v1/configuration/ca_certs$")
 	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs}
+
+	pattern = regexp.MustCompile("^/aux/v1/configuration/scd_lock_mode$")
+	router.Routes[7] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetScdLockMode}
 
 	return router
 }
