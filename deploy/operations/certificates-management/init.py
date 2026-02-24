@@ -223,12 +223,13 @@ def do_init(cluster):
 
     make_directories(cluster)
     generate_ca(cluster)
-    generate_clients(cluster)
-
-    do_generate_nodes(cluster)
 
     with open(cluster.ca_cert_file, "r") as f:
         do_add_cas(cluster, f.read())
+
+    generate_clients(cluster)
+
+    do_generate_nodes(cluster)
 
     l.info(
         "The new cluster certificates are ready! Don't forget to 'apply' the configuration."
