@@ -41,9 +41,6 @@ services:
       retries: 10
 
   local-dss-rid-bootstrapper-ybdb:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/rid --db_version "latest" --datastore_host local-dss-ybdb --datastore_user yugabyte --datastore_port 5433
     depends_on:
@@ -54,9 +51,6 @@ services:
     profiles: ["with-yugabyte"]
 
   local-dss-scd-bootstrapper-ybdb:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/scd --db_version "latest" --datastore_host local-dss-ybdb --datastore_user yugabyte --datastore_port 5433
     depends_on:
@@ -67,9 +61,6 @@ services:
     profiles: ["with-yugabyte"]
 
   local-dss-aux-bootstrapper-ybdb:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/yugabyte/aux_ --db_version "latest" --datastore_host local-dss-ybdb --datastore_user yugabyte --datastore_port 5433
     depends_on:
@@ -80,9 +71,6 @@ services:
     profiles: ["with-yugabyte"]
 
   local-dss-rid-bootstrapper:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
@@ -92,9 +80,6 @@ services:
       - dss_sandbox_default_network
 
   local-dss-scd-bootstrapper:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
@@ -104,9 +89,6 @@ services:
       - dss_sandbox_default_network
 
   local-dss-aux-bootstrapper:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: interuss-local/dss
     entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/aux_ --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
