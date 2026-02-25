@@ -58,6 +58,24 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D, opts Volume4DOpts) (*Volume4D, 
 	}, nil
 }
 
+// UnionVolume4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
+func UnionVolume4DFromSCDRest(vol4s []restapi.Volume4D, opts Volume4DOpts) (*Volume4D, error) {
+	volumes := make([]*Volume4D, len(vol4s))
+	for idx, vol4 := range vol4s {
+		volume, err := Volume4DFromSCDRest(&vol4, opts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
+		}
+		volumes[idx] = volume
+	}
+	union, err := UnionVolumes4D(volumes...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to union volumes")
+	}
+
+	return union, nil
+}
+
 type Volume3DOpts struct {
 	RequireAltitudeBounds bool
 }

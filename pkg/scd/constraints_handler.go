@@ -362,7 +362,6 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 
 type validConstraintParams struct {
 	id         dssmodels.ID
-	extents    []*dssmodels.Volume4D
 	uExtent    *dssmodels.Volume4D
 	cells      s2.CellUnion
 	ussBaseURL string
@@ -414,20 +413,11 @@ func validateAndReturnConstraintUpsertParams(
 		}
 	}
 
-	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
-	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
-	for idx, extent := range params.Extents {
-		// Start and end times are required for each volume
-		opts := dssmodels.Volume4DOpts{RequireTimeBounds: true}
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent, opts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
-		}
-		valid.extents[idx] = cExtent
-	}
-	valid.uExtent, err = dssmodels.UnionVolumes4D(valid.extents...)
+	// Start and end times are required for each volume
+	opts := dssmodels.Volume4DOpts{RequireTimeBounds: true}
+	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(params.Extents, opts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to union extents")
+		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
 
 	if now.After(*valid.uExtent.EndTime) {

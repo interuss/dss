@@ -393,7 +393,6 @@ type validOIRParams struct {
 	ovn                  scdmodels.OVN
 	newOVN               scdmodels.OVN
 	state                scdmodels.OperationalIntentState
-	extents              []*dssmodels.Volume4D
 	uExtent              *dssmodels.Volume4D
 	cells                s2.CellUnion
 	subscriptionID       dssmodels.ID
@@ -503,20 +502,12 @@ func validateAndReturnOIRUpsertParams(
 		return nil, stacktrace.NewError("Invalid OperationalIntent state: %s", params.State)
 	}
 
-	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
-	for idx, extent := range params.Extents {
-		// Start and end times, as well as lower and upper altitudes, are required for each volume
-		opts := dssmodels.Volume4DOpts{RequireAltitudeBounds: true, RequireTimeBounds: true}
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent, opts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
-		}
-		valid.extents[idx] = cExtent
-	}
+	// Start and end times, as well as lower and upper altitudes, are required for each volume
+	opts := dssmodels.Volume4DOpts{RequireAltitudeBounds: true, RequireTimeBounds: true}
 
-	valid.uExtent, err = dssmodels.UnionVolumes4D(valid.extents...)
+	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(params.Extents, opts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to union extents")
+		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
 
 	if now.After(*valid.uExtent.EndTime) {
