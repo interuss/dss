@@ -112,13 +112,13 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 // * geo.ErrRadiusMustBeLargerThan0
 func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	result := &Volume4D{}
-	var unboundedStartTime, unboundedEndTime bool
+	unbounded := struct{ startTime, endTime, altitudeLo, altitudeHi bool }{}
 
 	for _, volume := range volumes {
 		if volume.EndTime == nil {
-			unboundedEndTime = true
+			unbounded.endTime = true
 			result.EndTime = nil
-		} else if !unboundedEndTime {
+		} else if !unbounded.endTime {
 			if result.EndTime != nil {
 				if volume.EndTime.After(*result.EndTime) {
 					*result.EndTime = *volume.EndTime
@@ -129,9 +129,9 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 		}
 
 		if volume.StartTime == nil {
-			unboundedStartTime = true
+			unbounded.startTime = true
 			result.StartTime = nil
-		} else if !unboundedStartTime {
+		} else if !unbounded.startTime {
 			if result.StartTime != nil {
 				if volume.StartTime.Before(*result.StartTime) {
 					*result.StartTime = *volume.StartTime
@@ -146,7 +146,10 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 				result.SpatialVolume = &Volume3D{}
 			}
 
-			if volume.SpatialVolume.AltitudeLo != nil {
+			if volume.SpatialVolume.AltitudeLo == nil {
+				unbounded.altitudeLo = true
+				result.SpatialVolume.AltitudeLo = nil
+			} else if !unbounded.altitudeLo {
 				if result.SpatialVolume.AltitudeLo != nil {
 					if *volume.SpatialVolume.AltitudeLo < *result.SpatialVolume.AltitudeLo {
 						*result.SpatialVolume.AltitudeLo = *volume.SpatialVolume.AltitudeLo
@@ -156,7 +159,10 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 				}
 			}
 
-			if volume.SpatialVolume.AltitudeHi != nil {
+			if volume.SpatialVolume.AltitudeHi == nil {
+				unbounded.altitudeHi = true
+				result.SpatialVolume.AltitudeHi = nil
+			} else if !unbounded.altitudeHi {
 				if result.SpatialVolume.AltitudeHi != nil {
 					if *volume.SpatialVolume.AltitudeHi > *result.SpatialVolume.AltitudeHi {
 						*result.SpatialVolume.AltitudeHi = *volume.SpatialVolume.AltitudeHi

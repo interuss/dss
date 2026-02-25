@@ -123,3 +123,71 @@ func TestUnionVolumes4D_Time(t *testing.T) {
 		})
 	}
 }
+
+func TestUnionVolumes4D_Altitude(t *testing.T) {
+	var (
+		lower  float32 = 100.0
+		low    float32 = 200.0
+		high   float32 = 300.0
+		higher float32 = 400.0
+	)
+
+	tests := []struct {
+		name    string
+		volumes []*Volume4D
+		wantLo  *float32
+		wantHi  *float32
+	}{
+		{
+			name:    "unbounded",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{}}},
+			wantLo:  nil,
+			wantHi:  nil,
+		},
+		{
+			name:    "single bounded",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeLo: &low, AltitudeHi: &high}}},
+			wantLo:  &low,
+			wantHi:  &high,
+		},
+		{
+			name:    "single unbounded low",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeHi: &high}}},
+			wantLo:  nil,
+			wantHi:  &high,
+		},
+		{
+			name:    "single unbounded high",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeLo: &low}}},
+			wantLo:  &low,
+			wantHi:  nil,
+		},
+		{
+			name:    "single bounded",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeLo: &lower, AltitudeHi: &low}}, {SpatialVolume: &Volume3D{AltitudeLo: &high, AltitudeHi: &higher}}},
+			wantLo:  &lower,
+			wantHi:  &higher,
+		},
+		{
+			name:    "multiple unbounded",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeLo: &lower, AltitudeHi: &low}}, {SpatialVolume: &Volume3D{}}},
+			wantLo:  nil,
+			wantHi:  nil,
+		},
+		{
+			name:    "multiple unbounded combination",
+			volumes: []*Volume4D{{SpatialVolume: &Volume3D{AltitudeLo: &low}}, {SpatialVolume: &Volume3D{AltitudeHi: &high}}},
+			wantLo:  nil,
+			wantHi:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			union, err := UnionVolumes4D(tt.volumes...)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantLo, union.SpatialVolume.AltitudeLo)
+			assert.Equal(t, tt.wantHi, union.SpatialVolume.AltitudeHi)
+		})
+	}
+}
