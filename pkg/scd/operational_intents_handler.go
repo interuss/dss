@@ -267,7 +267,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDRest(aoi, dssmodels.Volume4DOpts{})
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -504,9 +504,10 @@ func validateAndReturnOIRUpsertParams(
 	}
 
 	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
-
 	for idx, extent := range params.Extents {
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
+		// Start and end times, as well as lower and upper altitudes, are required for each volume
+		opts := dssmodels.Volume4DOpts{RequireAltitudeBounds: true, RequireTimeBounds: true}
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent, opts)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
 		}
@@ -518,19 +519,8 @@ func validateAndReturnOIRUpsertParams(
 		return nil, stacktrace.Propagate(err, "Failed to union extents")
 	}
 
-	if valid.uExtent.StartTime == nil {
-		return nil, stacktrace.NewError("Missing time_start from extents")
-	}
-	if valid.uExtent.EndTime == nil {
-		return nil, stacktrace.NewError("Missing time_end from extents")
-	}
-
 	if now.After(*valid.uExtent.EndTime) {
 		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
-	}
-
-	if valid.uExtent.StartTime.After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewError("Operation time_end must be after time_start")
 	}
 
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
