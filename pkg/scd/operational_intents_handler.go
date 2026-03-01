@@ -267,7 +267,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDRest(aoi, dssmodels.Volume4DOpts{})
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -434,10 +434,10 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 	}
 }
 
-// validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
+// validateAndReturnOIRUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
-func validateAndReturnUpsertParams(
+func validateAndReturnOIRUpsertParams(
 	now time.Time,
 	entityid restapi.EntityID,
 	ovn restapi.EntityOVN,
@@ -504,9 +504,10 @@ func validateAndReturnUpsertParams(
 	}
 
 	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
-
 	for idx, extent := range params.Extents {
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
+		// Start and end times, as well as lower and upper altitudes, are required for each volume
+		opts := dssmodels.Volume4DOpts{RequireAltitudeBounds: true, RequireTimeBounds: true}
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent, opts)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
 		}
@@ -518,19 +519,8 @@ func validateAndReturnUpsertParams(
 		return nil, stacktrace.Propagate(err, "Failed to union extents")
 	}
 
-	if valid.uExtent.StartTime == nil {
-		return nil, stacktrace.NewError("Missing time_start from extents")
-	}
-	if valid.uExtent.EndTime == nil {
-		return nil, stacktrace.NewError("Missing time_end from extents")
-	}
-
 	if now.After(*valid.uExtent.EndTime) {
 		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
-	}
-
-	if valid.uExtent.StartTime.After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewError("Operation time_end must be after time_start")
 	}
 
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
@@ -819,9 +809,9 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.Time, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
-	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
+	// Note: validateAndReturnOIRUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
-	validParams, err := validateAndReturnUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
+	validParams, err := validateAndReturnOIRUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
 	}
