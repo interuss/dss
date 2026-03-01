@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -37,6 +38,7 @@ import (
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
 	"github.com/robfig/cron/v3"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/zap"
 )
 
@@ -49,10 +51,11 @@ var (
 	locality          = flag.String("locality", "", "self-identification string of this DSS instance")
 	publicEndpoint    = flag.String("public_endpoint", "", "Public endpoint to access this DSS instance. Must be an absolute URI")
 
-	logFormat       = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel        = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests    = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
-	profServiceName = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	logFormat           = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel            = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	dumpRequests        = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
+	profServiceName     = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	enableOpenTelemetry = flag.Bool("enable_opentelemetry", false, "Enable OpenTelemetry")
 
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -314,6 +317,14 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 	handler = authorizer.TokenMiddleware(handler)
 
+	if *enableOpenTelemetry {
+		httpSpanName := func(operation string, req *http.Request) string {
+			return operation
+		}
+
+		handler = otelhttp.NewHandler(handler, "http", otelhttp.WithSpanNameFormatter(httpSpanName))
+	}
+
 	httpServer := &http.Server{
 		Addr:              address,
 		Handler:           handler,
@@ -401,6 +412,18 @@ func main() {
 		if err := profiler.Start(profiler.Config{Service: *profServiceName}); err != nil {
 			logger.Panic("Failed to start the profiler ", zap.Error(err))
 		}
+	}
+
+	// Set up OpenTelemetry.
+	if *enableOpenTelemetry {
+		otelShutdown, err := setupOTelSDK(ctx)
+		if err != nil {
+			logger.Panic("Failed to initialize OpenTelemetry", zap.Error(err))
+		}
+		// Handle shutdown properly so nothing leaks.
+		defer func() {
+			err = errors.Join(err, otelShutdown(context.Background()))
+		}()
 	}
 
 	backoffs := []time.Duration{
