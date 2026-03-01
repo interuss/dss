@@ -2,6 +2,7 @@ package scd
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api"
@@ -260,67 +261,23 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 // If the ovn argument is empty (""), it will attempt to create a new Constraint.
 func (a *Server) PutConstraintReference(ctx context.Context, manager string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutConstraintReferenceParameters,
 ) (*restapi.ChangeConstraintReferenceResponse, error) {
-	id, err := dssmodels.IDFromString(string(entityid))
-
+	validParams, err := validateAndReturnConstraintUpsertParams(time.Now(), entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", entityid)
-	}
-
-	var extents = make([]*dssmodels.Volume4D, len(params.Extents))
-
-	if len(params.UssBaseUrl) == 0 {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required UssBaseUrl")
-	}
-
-	if !a.AllowHTTPBaseUrls {
-		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
-		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
-		}
-	}
-
-	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
-	for idx, extent := range params.Extents {
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
-		if err != nil {
-			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to parse extent %d", idx)
-		}
-		extents[idx] = cExtent
-	}
-	uExtent, err := dssmodels.UnionVolumes4D(extents...)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to union extents")
-	}
-
-	if uExtent.StartTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_start from extents")
-	}
-	if uExtent.EndTime == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing time_end from extents")
-	}
-
-	if uExtent.StartTime.After(*uExtent.EndTime) {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Constraint time_end must be after time_start")
-	}
-
-	cells, err := uExtent.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters")
 	}
 
 	var response *restapi.ChangeConstraintReferenceResponse
 	action := func(ctx context.Context, r repos.Repository) (err error) {
-		var version int32 // Version of the Constraint (0 means creation requested).
+		version := scdmodels.VersionNumber(1)
 
 		// Get existing Constraint, if any, and validate request
-		old, err := r.GetConstraint(ctx, id)
+		old, err := r.GetConstraint(ctx, validParams.id)
 		switch {
 		case err == pgx.ErrNoRows:
 			// No existing Constraint; verify that creation was requested
 			if ovn != "" {
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %s does not exist", ovn)
 			}
-			version = 0
 		case err != nil:
 			return stacktrace.Propagate(err, "Could not get Constraint from repo")
 		}
@@ -333,13 +290,13 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 				return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 					"Current version is %s but client specified version %s", old.OVN, ovn)
 			}
-			version = int32(old.Version)
+			version = old.Version + 1
 		}
 
 		// Compute total affected Volume4D for notification purposes
 		var notifyVol4 *dssmodels.Volume4D
 		if old == nil {
-			notifyVol4 = uExtent
+			notifyVol4 = validParams.uExtent
 		} else {
 			oldVol4 := &dssmodels.Volume4D{
 				StartTime: old.StartTime,
@@ -351,26 +308,17 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 						return old.Cells, nil
 					}),
 				}}
-			notifyVol4, err = dssmodels.UnionVolumes4D(uExtent, oldVol4)
+			notifyVol4, err = dssmodels.UnionVolumes4D(validParams.uExtent, oldVol4)
 			if err != nil {
 				return stacktrace.Propagate(err, "Error constructing 4D volumes union")
 			}
 		}
 
+		// Construct the new Constraint
+		constraint := validParams.toConstraint(dssmodels.Manager(manager), version)
+
 		// Upsert the Constraint
-		constraint, err := r.UpsertConstraint(ctx, &scdmodels.Constraint{
-			ID:      id,
-			Manager: dssmodels.Manager(manager),
-			Version: scdmodels.VersionNumber(version + 1),
-
-			StartTime:     uExtent.StartTime,
-			EndTime:       uExtent.EndTime,
-			AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
-			AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
-
-			USSBaseURL: string(params.UssBaseUrl),
-			Cells:      cells,
-		})
+		constraint, err = r.UpsertConstraint(ctx, constraint)
 		if err != nil {
 			return err
 		}
@@ -412,6 +360,78 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 	return response, nil
 }
 
+type validConstraintParams struct {
+	id         dssmodels.ID
+	uExtent    *dssmodels.Volume4D
+	cells      s2.CellUnion
+	ussBaseURL string
+}
+
+func (vp *validConstraintParams) toConstraint(manager dssmodels.Manager, version scdmodels.VersionNumber) *scdmodels.Constraint {
+	return &scdmodels.Constraint{
+		ID:      vp.id,
+		Manager: manager,
+		Version: version,
+
+		StartTime:     vp.uExtent.StartTime,
+		EndTime:       vp.uExtent.EndTime,
+		AltitudeLower: vp.uExtent.SpatialVolume.AltitudeLo,
+		AltitudeUpper: vp.uExtent.SpatialVolume.AltitudeHi,
+
+		USSBaseURL: vp.ussBaseURL,
+		Cells:      vp.cells,
+	}
+}
+
+// validateAndReturnConstraintUpsertParams checks that the parameters for an Constraint Reference upsert are valid.
+// Note that this does NOT check for anything related to access controls: any error returned should be labeled
+// as a dsserr.BadRequest.
+func validateAndReturnConstraintUpsertParams(
+	now time.Time,
+	entityid restapi.EntityID,
+	ovn restapi.EntityOVN,
+	params *restapi.PutConstraintReferenceParameters,
+	allowHTTPBaseUrls bool,
+) (*validConstraintParams, error) {
+	valid := &validConstraintParams{}
+	var err error
+
+	valid.id, err = dssmodels.IDFromString(string(entityid))
+	if err != nil {
+		return nil, stacktrace.NewError("Invalid ID format: `%s`", entityid)
+	}
+
+	if len(params.UssBaseUrl) == 0 {
+		return nil, stacktrace.NewError("Missing required UssBaseUrl")
+	}
+	valid.ussBaseURL = string(params.UssBaseUrl)
+
+	if !allowHTTPBaseUrls {
+		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to validate base URL")
+		}
+	}
+
+	// Start and end times are required for each volume
+	opts := dssmodels.Volume4DOpts{RequireTimeBounds: true}
+	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(params.Extents, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid extents")
+	}
+
+	if now.After(*valid.uExtent.EndTime) {
+		return nil, stacktrace.NewError("Constraint may not end in the past")
+	}
+
+	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid area")
+	}
+
+	return valid, nil
+}
+
 // QueryConstraintReferences queries existing contraint refs in the given
 // bounds.
 func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.QueryConstraintReferencesRequest,
@@ -435,7 +455,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.Que
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := dssmodels.Volume4DFromSCDRest(aoi, dssmodels.Volume4DOpts{})
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
