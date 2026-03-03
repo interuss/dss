@@ -434,10 +434,10 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 	}
 }
 
-// validateAndReturnUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
+// validateAndReturnOIRUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
-func validateAndReturnUpsertParams(
+func validateAndReturnOIRUpsertParams(
 	now time.Time,
 	entityid restapi.EntityID,
 	ovn restapi.EntityOVN,
@@ -819,9 +819,9 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.Time, authorizedManager *api.AuthorizationResult, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters,
 ) (*restapi.ChangeOperationalIntentReferenceResponse, *restapi.AirspaceConflictResponse, error) {
-	// Note: validateAndReturnUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
+	// Note: validateAndReturnOIRUpsertParams and checkUpsertPermissionsAndReturnManager could be moved out of this method and only the valid params passed,
 	// but this requires some changes in the caller that go beyond the immediate scope of #1088 and can be done later.
-	validParams, err := validateAndReturnUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
+	validParams, err := validateAndReturnOIRUpsertParams(now, entityid, ovn, params, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return nil, nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
 	}
