@@ -60,7 +60,7 @@ var (
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 
-	scdGlobalLock = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+	scdGlobalLock = flag.Bool("enable_scd_global_lock", true, "Use a global lock when working with SCD subscriptions. Improves performance when there are many subscriptions in overlapping areas by reducing lock contention.")
 )
 
 const (

@@ -9,9 +9,11 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
 
 	"github.com/golang/geo/s2"
+	"go.uber.org/zap"
 )
 
 var (
@@ -297,6 +299,15 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 
 // Implements SubscriptionStore.SearchSubscriptions
 func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		if duration > 50*time.Millisecond {
+			logging.Logger(ctx).Warn("SCD subscription search took longer than expected", 
+				zap.Duration("duration", duration))
+		}
+	}()
+
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -379,6 +390,17 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		if duration > 100*time.Millisecond {
+			logging.Logger(ctx).Warn("SCD subscription locking took longer than expected", 
+				zap.Duration("duration", duration),
+				zap.Bool("global_lock", c.globalLock),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("subscription_count", len(subscriptionIds)))
+		}
+	}()
 
 	if c.globalLock {
 

@@ -38,3 +38,6 @@ U-Space specific:
 - [Contributing](./CONTRIBUTING.md)
 - [Release process](./RELEASE.md)
 - [Governance](https://github.com/interuss/tsc)
+
+## Operations and Performance
+- [SCD Performance Optimization](./docs/scd_performance_optimization.md) - Guidelines for monitoring and optimizing SCD subscription performance
