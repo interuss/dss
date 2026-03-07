@@ -108,7 +108,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
 		}
 
-		err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds)
+		err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds, old.StartTime, old.EndTime)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
@@ -853,7 +853,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 			subscriptionIds = append(subscriptionIds, validParams.subscriptionID)
 		}
 
-		err = r.LockSubscriptionsOnCells(ctx, validParams.cells, subscriptionIds)
+		err = r.LockSubscriptionsOnCells(ctx, validParams.cells, subscriptionIds, validParams.uExtent.StartTime, validParams.uExtent.EndTime)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
