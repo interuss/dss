@@ -44,7 +44,9 @@ local cockroachLB(metadata, name, ip) =
               args_:: {
                 'certs-dir': '/cockroach/cockroach-certs',
                 host: 'cockroachdb-0.cockroachdb.' + metadata.namespace,
-              },
+              } + if metadata.cockroach.clusterName != "" then {
+                'cluster-name': metadata.cockroach.clusterName,
+              } else {},
               volumeMounts: volumes.all(metadata).mounts.caCert + volumes.all(metadata).mounts.clientCert,
             },
           },
