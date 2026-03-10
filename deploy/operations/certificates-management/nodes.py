@@ -25,7 +25,7 @@ distinguished_name = my_distinguished_name
 
 [ my_distinguished_name ]
 organizationName = {cluster.organization}
-commonName = {full_name}
+commonName = {short_name}
 
 # Multiple subject alternative names (SANs) such as IP Address,
 # DNS Name, Email, URI, and so on, can be specified under this section
