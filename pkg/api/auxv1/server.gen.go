@@ -56,8 +56,7 @@ func (s *APIRouter) ValidateOauth(exp *regexp.Regexp, w http.ResponseWriter, r *
 
 	// Copy query parameters
 	query := r.URL.Query()
-	// TODO: Change to query.Has after Go 1.17
-	if query.Get("owner") != "" {
+	if query.Has("owner") {
 		v := query.Get("owner")
 		req.Owner = &v
 	}
@@ -165,16 +164,15 @@ func (s *APIRouter) PutDSSInstancesHeartbeat(exp *regexp.Regexp, w http.Response
 
 	// Copy query parameters
 	query := r.URL.Query()
-	// TODO: Change to query.Has after Go 1.17
-	if query.Get("source") != "" {
+	if query.Has("source") {
 		v := query.Get("source")
 		req.Source = &v
 	}
-	if query.Get("timestamp") != "" {
+	if query.Has("timestamp") {
 		v := query.Get("timestamp")
 		req.Timestamp = &v
 	}
-	if query.Get("next_heartbeat_expected_before") != "" {
+	if query.Has("next_heartbeat_expected_before") {
 		v := query.Get("next_heartbeat_expected_before")
 		req.NextHeartbeatExpectedBefore = &v
 	}
