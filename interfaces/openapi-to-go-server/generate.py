@@ -12,26 +12,47 @@ import rendering
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description='Autogenerate Go code from an OpenAPI YAML')
+    parser = argparse.ArgumentParser(
+        description="Autogenerate Go code from an OpenAPI YAML"
+    )
 
     # Input/output specifications
-    parser.add_argument('--api', dest='apis', type=str, action='append',
-                        help='Source YAML to preprocess along with tags (if applicable) and the name of the API.  Form of --api PATH_TO_YAML#TAG1,TAG2@API_NAME[/PATH_PREFIX]')
-    parser.add_argument('--api_folder', dest='api_folder', type=str,
-                        default=None,
-                        help='Folder that will hold the generated output for APIs')
-    parser.add_argument('--example_folder', dest='example_folder', type=str,
-                        default=None,
-                        help='Folder that will hold the generated output for an example entrypoint and implementations')
+    parser.add_argument(
+        "--api",
+        dest="apis",
+        type=str,
+        action="append",
+        help="Source YAML to preprocess along with tags (if applicable) and the name of the API.  Form of --api PATH_TO_YAML#TAG1,TAG2@API_NAME[/PATH_PREFIX]",
+    )
+    parser.add_argument(
+        "--api_folder",
+        dest="api_folder",
+        type=str,
+        default=None,
+        help="Folder that will hold the generated output for APIs",
+    )
+    parser.add_argument(
+        "--example_folder",
+        dest="example_folder",
+        type=str,
+        default=None,
+        help="Folder that will hold the generated output for an example entrypoint and implementations",
+    )
 
     # General generation options
-    parser.add_argument('--api_import', dest='api_import', type=str,
-                        help='Full Go import path for the API package')
+    parser.add_argument(
+        "--api_import",
+        dest="api_import",
+        type=str,
+        help="Full Go import path for the API package",
+    )
 
     return parser.parse_args()
 
 
-def _generate_apis(api_list: List[apis.API], apis_folder: str, api_import: str, ensure_500: bool):
+def _generate_apis(
+    api_list: List[apis.API], apis_folder: str, api_import: str, ensure_500: bool
+):
     """Generate Go libraries for APIs.
 
     :param api_list: APIs implemented and hosted in example
@@ -45,14 +66,14 @@ def _generate_apis(api_list: List[apis.API], apis_folder: str, api_import: str, 
     os.makedirs(apis_folder, exist_ok=True)
     common_package = os.path.split(apis_folder)[-1]
     common_template_vars = {
-        '<PACKAGE>': common_package,
-        '<IMPORTS>': rendering.imports([api_import]),
-        '<API_PACKAGE>': api_package,
+        "<PACKAGE>": common_package,
+        "<IMPORTS>": rendering.imports([api_import]),
+        "<API_PACKAGE>": api_package,
     }
-    with open(os.path.join(apis_folder, 'common.gen.go'), 'w') as f:
-        f.write(rendering.template_content('header', common_template_vars))
-        f.write(rendering.template_content('common', common_template_vars))
-        f.write('\n')
+    with open(os.path.join(apis_folder, "common.gen.go"), "w") as f:
+        f.write(rendering.template_content("header", common_template_vars))
+        f.write(rendering.template_content("common", common_template_vars))
+        f.write("\n")
 
     # Generate a package for each API
     for api in api_list:
@@ -60,34 +81,44 @@ def _generate_apis(api_list: List[apis.API], apis_folder: str, api_import: str, 
         os.makedirs(api_folder, exist_ok=True)
 
         # Generate Go type definitions
-        with open(os.path.join(api_folder, 'types.gen.go'), 'w') as f:
-            types_template_vars = {'<PACKAGE>': api.package}
-            f.write(rendering.template_content('header', types_template_vars))
+        with open(os.path.join(api_folder, "types.gen.go"), "w") as f:
+            types_template_vars = {"<PACKAGE>": api.package}
+            f.write(rendering.template_content("header", types_template_vars))
             for data_type in api.data_types:
-                f.write('\n'.join(rendering.data_type(data_type)) + '\n'*2)
+                f.write("\n".join(rendering.data_type(data_type)) + "\n" * 2)
 
         # Generate Go handler implementation interface
         interface_template_vars = {
-            '<PACKAGE>': api.package,
-            '<IMPORTS>': rendering.imports([api_import]),
-            '<INTERFACES>': '\n'.join(rendering.implementation_interface(api, api_package, ensure_500)),
+            "<PACKAGE>": api.package,
+            "<IMPORTS>": rendering.imports([api_import]),
+            "<INTERFACES>": "\n".join(
+                rendering.implementation_interface(api, api_package, ensure_500)
+            ),
         }
-        with open(os.path.join(api_folder, 'interface.gen.go'), 'w') as f:
-            f.write(rendering.template_content('header', interface_template_vars))
-            f.write(rendering.template_content('interface', interface_template_vars))
+        with open(os.path.join(api_folder, "interface.gen.go"), "w") as f:
+            f.write(rendering.template_content("header", interface_template_vars))
+            f.write(rendering.template_content("interface", interface_template_vars))
 
         # Generate Go server factory
         routes, new_imports = rendering.routes(api, api_package, ensure_500)
         server_template_vars = {
-            '<PACKAGE>': api.package,
-            '<IMPORTS>': rendering.imports(list(new_imports) + [api_import]),
-            '<API_PACKAGE>': api_package,
-            '<ROUTES>': '\n'.join(routes),
-            '<ROUTING>': '\n'.join(rendering.routing(api, api_package)),
+            "<PACKAGE>": api.package,
+            "<IMPORTS>": rendering.imports(
+                list(new_imports)
+                + [
+                    api_import,
+                    "fmt",
+                    "go.opentelemetry.io/otel",
+                    "go.opentelemetry.io/otel/trace",
+                ]
+            ),
+            "<API_PACKAGE>": api_package,
+            "<ROUTES>": "\n".join(routes),
+            "<ROUTING>": "\n".join(rendering.routing(api, api_package)),
         }
-        with open(os.path.join(api_folder, 'server.gen.go'), 'w') as f:
-            f.write(rendering.template_content('header', server_template_vars))
-            f.write(rendering.template_content('server', server_template_vars))
+        with open(os.path.join(api_folder, "server.gen.go"), "w") as f:
+            f.write(rendering.template_content("header", server_template_vars))
+            f.write(rendering.template_content("server", server_template_vars))
 
 
 def _generate_example(api_list: List[apis.API], output_folder: str, api_import: str):
@@ -103,25 +134,29 @@ def _generate_example(api_list: List[apis.API], output_folder: str, api_import: 
     implementations: Dict[str, str] = {}
     implementation_lines: List[str] = []
     for api in api_list:
-        implementation = formatting.snake_case_to_pascal_case(api.package) + 'Implementation'
-        implementation_lines.extend(rendering.example_implementation(api, implementation) + [''])
+        implementation = (
+            formatting.snake_case_to_pascal_case(api.package) + "Implementation"
+        )
+        implementation_lines.extend(
+            rendering.example_implementation(api, implementation) + [""]
+        )
         implementations[api.package] = implementation
 
     # Generate Go router definitions
     router_def_lines = rendering.example_router_defs(implementations, api_package)
 
     # Write main.gen.go using main.go.template
-    imports = [api_import + '/' + api.package for api in api_list] + [api_import]
+    imports = [api_import + "/" + api.package for api in api_list] + [api_import]
     template_vars = {
-        '<PACKAGE>': 'main',
-        '<IMPORTS>': rendering.imports(imports),
-        '<API_PACKAGE>': formatting.package_of_import(api_import),
-        '<IMPLEMENTATIONS>': '\n'.join(implementation_lines),
-        '<ROUTER_DEFS>': '\n'.join(router_def_lines),
+        "<PACKAGE>": "main",
+        "<IMPORTS>": rendering.imports(imports),
+        "<API_PACKAGE>": formatting.package_of_import(api_import),
+        "<IMPLEMENTATIONS>": "\n".join(implementation_lines),
+        "<ROUTER_DEFS>": "\n".join(router_def_lines),
     }
-    with open(os.path.join(output_folder, 'main.gen.go'), 'w') as f:
-        f.write(rendering.template_content('header', template_vars))
-        f.write(rendering.template_content('main', template_vars))
+    with open(os.path.join(output_folder, "main.gen.go"), "w") as f:
+        f.write(rendering.template_content("header", template_vars))
+        f.write(rendering.template_content("main", template_vars))
 
 
 def main():
@@ -130,25 +165,25 @@ def main():
     # Parse API definitions
     api_list: List[apis.API] = []
     for api_declaration in args.apis:
-        if '@' in api_declaration:
-            input_yaml, package = api_declaration.split('@')
-            if '/' in package:
-                package, api_path = package.split('/', 1)
+        if "@" in api_declaration:
+            input_yaml, package = api_declaration.split("@")
+            if "/" in package:
+                package, api_path = package.split("/", 1)
             else:
                 api_path = package
         else:
             input_yaml = api_declaration
-            package = os.path.split(api_declaration)[-1].split('.')[0]
-            api_path = ''
-            package = package.replace('-', '').replace('_', '')
+            package = os.path.split(api_declaration)[-1].split(".")[0]
+            api_path = ""
+            package = package.replace("-", "").replace("_", "")
 
-        if '#' in input_yaml:
-            input_yaml, tag_list = input_yaml.split('#')
-            tags = {t.strip() for t in tag_list.split(',')}
+        if "#" in input_yaml:
+            input_yaml, tag_list = input_yaml.split("#")
+            tags = {t.strip() for t in tag_list.split(",")}
         else:
             tags = set()
 
-        with open(input_yaml, mode='r') as f:
+        with open(input_yaml, mode="r") as f:
             spec = yaml.full_load(f)
 
         api = apis.make_api(package, api_path, spec)
@@ -159,11 +194,11 @@ def main():
     # Render Go code
     if args.api_folder:
         _generate_apis(api_list, args.api_folder, args.api_import, True)
-        os.system('cd {} && gofmt -s -w .'.format(args.api_folder))
+        os.system("cd {} && gofmt -s -w .".format(args.api_folder))
     if args.example_folder:
         _generate_example(api_list, args.example_folder, args.api_import)
-        os.system('cd {} && gofmt -s -w .'.format(args.example_folder))
+        os.system("cd {} && gofmt -s -w .".format(args.example_folder))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

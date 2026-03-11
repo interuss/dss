@@ -20,12 +20,15 @@ class API:
         for d_type in self.data_types:
             if d_type.name == data_type_name:
                 return self.primitive_go_type_for(d_type.go_type)
-        raise ValueError('No data type named {} found in {} API'.format(data_type_name, self.package))
+        raise ValueError(
+            "No data type named {} found in {} API".format(data_type_name, self.package)
+        )
 
     def filter_operations(self, tags: Set[str]):
         # Select only the applicable operations
-        self.operations = [op for op in self.operations
-                           if not all(tag not in op.tags for tag in tags)]
+        self.operations = [
+            op for op in self.operations if not all(tag not in op.tags for tag in tags)
+        ]
 
         # Determine the necessary data types
         required_data_types: Set[str] = set()
@@ -38,11 +41,17 @@ class API:
                 if response.json_body_type:
                     required_data_types.add(response.json_body_type)
 
-        data_types_by_name: Dict[str, data_types.DataType] = {dt.name: dt for dt in self.data_types}
+        data_types_by_name: Dict[str, data_types.DataType] = {
+            dt.name: dt for dt in self.data_types
+        }
         data_types_to_check = [dt for dt in required_data_types]
         while data_types_to_check:
             data_type_name = data_types_to_check.pop()
-            base_data_type = data_type_name[2:] if data_type_name.startswith('[]') else data_type_name
+            base_data_type = (
+                data_type_name[2:]
+                if data_type_name.startswith("[]")
+                else data_type_name
+            )
             required_data_types.add(base_data_type)
             data_type = data_types_by_name.get(base_data_type, None)
             if not data_type:
@@ -56,8 +65,9 @@ class API:
                     data_types_to_check.append(field.go_type)
 
         # Select only the necessary data types
-        self.data_types = [dt for dt in self.data_types
-                           if dt.name in required_data_types]
+        self.data_types = [
+            dt for dt in self.data_types if dt.name in required_data_types
+        ]
 
     def security_scopes(self) -> List[Tuple[str, operations.Scope]]:
         """Returns a set of unique security scopes used by this API.
@@ -81,25 +91,30 @@ def make_api(package: str, api_path: str, spec: Dict) -> API:
     :param spec: OpenAPI specification of the API
     :return: Representation of API
     """
-    if 'components' not in spec:
-        raise ValueError('Missing `components` in YAML for {}'.format(package))
-    components = spec['components']
-    if 'schemas' not in components:
-        raise ValueError('Missing `schemas` in `components` for {}'.format(package))
+    if "components" not in spec:
+        raise ValueError("Missing `components` in YAML for {}".format(package))
+    components = spec["components"]
+    if "schemas" not in components:
+        raise ValueError("Missing `schemas` in `components` for {}".format(package))
     declared_types = []
-    for name, schema in components['schemas'].items():
+    for name, schema in components["schemas"].items():
         data_type, additional_types = data_types.make_data_types(name, schema)
         declared_types.extend(additional_types)
         declared_types.append(data_type)
 
     # Parse all endpoints
-    if 'paths' not in spec:
-        raise ValueError('Missing `paths` in YAML for {}'.format(package))
-    paths = spec['paths']
+    if "paths" not in spec:
+        raise ValueError("Missing `paths` in YAML for {}".format(package))
+    paths = spec["paths"]
     declared_operations = []
     for name, schema in paths.items():
         new_operations, further_data_tyes = operations.make_operations(name, schema)
         declared_types.extend(further_data_tyes)
         declared_operations.extend(new_operations)
 
-    return API(package=package, path_prefix=api_path, data_types=declared_types, operations=declared_operations)
+    return API(
+        package=package,
+        path_prefix=api_path,
+        data_types=declared_types,
+        operations=declared_operations,
+    )
