@@ -72,7 +72,7 @@ class Response:
     @property
     def response_set_field(self) -> str:
         """Name of the field in the Operation's `response_type_name` where this response can be set"""
-        return 'Response{}'.format(self.code)
+        return "Response{}".format(self.code)
 
 
 @dataclasses.dataclass
@@ -119,25 +119,30 @@ class Operation:
             return formatting.capitalize_first_letter(self.operation_id)
         else:
             return formatting.capitalize_first_letter(
-                self.verb.lower()) + formatting.snake_case_to_pascal_case(
-                self.path.replace('{', '').replace('}', '').replace('/', '_'))
+                self.verb.lower()
+            ) + formatting.snake_case_to_pascal_case(
+                self.path.replace("{", "").replace("}", "").replace("/", "_")
+            )
 
     @property
     def response_type_name(self) -> str:
         """Name of the Go type that contains all of the defined responses"""
-        return self.interface_name + 'ResponseSet'
+        return self.interface_name + "ResponseSet"
 
     @property
     def request_type_name(self) -> str:
         """Name of the Go type that contains the non-body request parameters"""
-        return self.interface_name + 'Request'
+        return self.interface_name + "Request"
 
     @property
     def verb_const_name(self) -> str:
         """Name of the Go const that contains the HTTP verb"""
-        return 'http.Method' + formatting.capitalize_first_letter(self.verb.lower())
+        return "http.Method" + formatting.capitalize_first_letter(self.verb.lower())
 
-def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringParameter], List[data_types.DataType]]:
+
+def _parse_parameters(
+    schema: Dict,
+) -> Tuple[List[StringParameter], List[StringParameter], List[data_types.DataType]]:
     """Parse operation parameters from an OpenAPI schema for path or verb
 
     :param schema: Schema for an OpenAPI path or an OpenAPI verb
@@ -148,38 +153,48 @@ def _parse_parameters(schema: Dict) -> Tuple[List[StringParameter], List[StringP
     path_parameters: List[StringParameter] = []
     query_parameters: List[StringParameter] = []
     additional_types: List[data_types.DataType] = []
-    for parameter in schema.get('parameters', []):
-        parameter_name = parameter['name']
-        parameter_description = parameter.get('description', '')
-        parameter_in = parameter['in']
-        if 'schema' in parameter:
+    for parameter in schema.get("parameters", []):
+        parameter_name = parameter["name"]
+        parameter_description = parameter.get("description", "")
+        parameter_in = parameter["in"]
+        if "schema" in parameter:
             parameter_field, further_types = data_types.make_object_field(
-                '', parameter_name, parameter['schema'], set())
+                "", parameter_name, parameter["schema"], set()
+            )
             if further_types:
                 additional_types.extend(further_types)
             parameter_type = parameter_field.go_type
         else:
-            parameter_type = 'string'
-        if parameter_in == 'path':
+            parameter_type = "string"
+        if parameter_in == "path":
             path_parameters.append(
-                StringParameter(name=parameter_name,
-                                description=parameter_description,
-                                go_type=parameter_type))
-        elif parameter_in == 'query':
+                StringParameter(
+                    name=parameter_name,
+                    description=parameter_description,
+                    go_type=parameter_type,
+                )
+            )
+        elif parameter_in == "query":
             query_parameters.append(
-                StringParameter(name=parameter_name,
-                                description=parameter_description,
-                                go_type=parameter_type))
+                StringParameter(
+                    name=parameter_name,
+                    description=parameter_description,
+                    go_type=parameter_type,
+                )
+            )
         else:
             raise NotImplementedError(
                 'Parameter in "{}" (`{}`) not yet implemented'.format(
-                    parameter_in,
-                    parameter_name))
+                    parameter_in, parameter_name
+                )
+            )
 
     return path_parameters, query_parameters, additional_types
 
 
-def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data_types.DataType]]:
+def make_operations(
+    path: str, schema: Dict
+) -> Tuple[List[Operation], List[data_types.DataType]]:
     """Parse all operations defined within the specified path definition.
 
     :param path: Relative path of operations described in `schema`
@@ -190,57 +205,79 @@ def make_operations(path: str, schema: Dict) -> Tuple[List[Operation], List[data
     """
     declared_operations: List[Operation] = []
 
-    summary = schema.get('summary', '')
-    description = schema.get('description', '')
+    summary = schema.get("summary", "")
+    description = schema.get("description", "")
 
     # Parse common parameters for all operations in schema
-    common_path_parameters, common_query_parameters, additional_data_types = _parse_parameters(schema)
+    common_path_parameters, common_query_parameters, additional_data_types = (
+        _parse_parameters(schema)
+    )
 
     # Parse each operation defined in schema
-    for verb in ('get', 'put', 'post', 'delete'):
+    for verb in ("get", "put", "post", "delete"):
         if verb not in schema:
             continue
         action = schema[verb]
-        verb_summary = action.get('summary', summary)
-        verb_description = action.get('description', description)
-        operation_id = action.get('operationId', '')
-        tags = action.get('tags', [])
-        component_name = action.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {}).get('$ref', '')
-        request_body_type = data_types.get_data_type_name(component_name, 'requestBody')
+        verb_summary = action.get("summary", summary)
+        verb_description = action.get("description", description)
+        operation_id = action.get("operationId", "")
+        tags = action.get("tags", [])
+        component_name = (
+            action.get("requestBody", {})
+            .get("content", {})
+            .get("application/json", {})
+            .get("schema", {})
+            .get("$ref", "")
+        )
+        request_body_type = data_types.get_data_type_name(component_name, "requestBody")
 
-        path_parameters, query_parameters, further_data_types = _parse_parameters(action)
+        path_parameters, query_parameters, further_data_types = _parse_parameters(
+            action
+        )
         path_parameters += common_path_parameters
         query_parameters += common_query_parameters
         additional_data_types.extend(further_data_types)
 
         security = Security(options=[])
-        for security_option in action.get('security', []):
+        for security_option in action.get("security", []):
             auth_option = AuthorizationOption(option={})
             for scheme, scopes in security_option.items():
                 auth_option.option[scheme] = [Scope(s) for s in scopes]
             security.options.append(auth_option)
 
         responses: List[Response] = []
-        for code, response in action.get('responses', {}).items():
-            component_name = response.get('content', {}).get('application/json', {}).get('schema', {}).get('$ref', '')
-            json_body_type = data_types.get_data_type_name(component_name, 'response body')
-            responses.append(Response(
-                code=int(code),
-                description=response.get('description', ''),
-                json_body_type=json_body_type))
+        for code, response in action.get("responses", {}).items():
+            component_name = (
+                response.get("content", {})
+                .get("application/json", {})
+                .get("schema", {})
+                .get("$ref", "")
+            )
+            json_body_type = data_types.get_data_type_name(
+                component_name, "response body"
+            )
+            responses.append(
+                Response(
+                    code=int(code),
+                    description=response.get("description", ""),
+                    json_body_type=json_body_type,
+                )
+            )
 
-        declared_operations.append(Operation(
-            path=path,
-            summary=verb_summary,
-            description=verb_description,
-            operation_id=operation_id,
-            tags=tags,
-            security=security,
-            verb=verb,
-            path_parameters=path_parameters,
-            query_parameters=query_parameters,
-            json_request_body_type=request_body_type,
-            responses=responses
-        ))
+        declared_operations.append(
+            Operation(
+                path=path,
+                summary=verb_summary,
+                description=verb_description,
+                operation_id=operation_id,
+                tags=tags,
+                security=security,
+                verb=verb,
+                path_parameters=path_parameters,
+                query_parameters=query_parameters,
+                json_request_body_type=request_body_type,
+                responses=responses,
+            )
+        )
 
     return declared_operations, additional_data_types
