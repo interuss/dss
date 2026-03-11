@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/exaring/otelpgx"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -35,6 +36,8 @@ func Dial(ctx context.Context, connParams ConnectParameters) (*Datastore, error)
 	config.MaxConnIdleTime = (time.Duration(connParams.MaxConnIdleSeconds) * time.Second)
 	config.HealthCheckPeriod = (1 * time.Second)
 	config.MinConns = 1
+
+	config.ConnConfig.Tracer = otelpgx.NewTracer()
 
 	dbPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
