@@ -28,3 +28,24 @@ All graphs have been generated with the [loadtest present in the monitoring repo
 
 ![](../assets/perfs_scd_lock_notoverlapping.png)
 *Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.*
+
+## SCD lock diagnostics logs
+
+To help diagnose latency spikes (for example as discussed in [#1311](https://github.com/interuss/dss/issues/1311)), the SCD subscription lock path emits targeted warning logs when a lock query looks expensive.
+
+The warning is emitted only when one of the following thresholds is met:
+* Lock query duration is greater than or equal to `500ms`
+* Number of matched/locked rows is greater than or equal to `1000`
+
+The log message is `SCD lock query diagnostics` and includes:
+* `global_lock`: Whether global lock mode is enabled for this query
+* `duration`: Time spent executing the lock query
+* `matched_rows`: Number of rows matched by the lock query
+* `cell_count`: Number of S2 cells in the request
+* `explicit_subscription_id_count`: Number of explicitly provided subscription IDs
+
+Failed lock queries also emit warnings with timing and context:
+* `SCD global lock query failed`
+* `SCD subscription lock query failed`
+
+These diagnostics are intended to keep normal logs low-noise while surfacing lock contention or unexpectedly large lock scopes.
