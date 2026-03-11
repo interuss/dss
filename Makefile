@@ -36,7 +36,10 @@ go.mod:
 	go mod tidy
 
 .PHONY: format
-format:
+format: go-format python-format
+
+.PHONY: go-format
+go-format:
 	gofmt -s -w .
 
 .PHONY: lint
@@ -46,8 +49,26 @@ lint: python-lint shell-lint go-lint terraform-lint
 check-hygiene: python-lint hygiene shell-lint go-lint terraform-lint
 
 .PHONY: python-lint
-python-lint:
-	echo "TODO: apply python-lint to interfaces/openapi-to-go-server"
+python-lint: openapi-to-go-server
+	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
+			interuss/openapi-to-go-server \
+            run ruff check
+	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
+			interuss/openapi-to-go-server \
+            run ruff format --check
+
+.PHONY: openapi-to-go-server
+python-format:
+	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
+			interuss/openapi-to-go-server \
+            run ruff check --fix
+	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
+			interuss/openapi-to-go-server \
+            run ruff format
 
 .PHONY: hygiene
 hygiene:
