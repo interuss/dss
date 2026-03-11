@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"example/api"
+	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 )
@@ -15,10 +18,24 @@ type APIRouter struct {
 	Authorizer     api.Authorizer
 }
 
+var tracer = otel.Tracer("scd.api")
+
 // *scd.APIRouter (type defined above) implements the api.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
+
+			span := trace.SpanFromContext(r.Context())
+
+			if span.IsRecording() {
+				// Current span is the one from the otelhttp handler
+				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
+			}
+
+			ctx, span := tracer.Start(r.Context(), route.Name)
+			defer span.End()
+			r = r.WithContext(ctx)
+
 			route.Handler(route.Pattern, w, r)
 			return true
 		}
@@ -953,58 +970,58 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 18)}
 
 	pattern := regexp.MustCompile("^/scd/dss/v1/operational_intent_references/query$")
-	router.Routes[0] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryOperationalIntentReferences}
+	router.Routes[0] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryOperationalIntentReferences, Name: "scd.QueryOperationalIntentReferences", Path: "/scd/dss/v1/operational_intent_references/query"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetOperationalIntentReference}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetOperationalIntentReference, Name: "scd.GetOperationalIntentReference", Path: "/scd/dss/v1/operational_intent_references/{entityid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateOperationalIntentReference}
+	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateOperationalIntentReference, Name: "scd.CreateOperationalIntentReference", Path: "/scd/dss/v1/operational_intent_references/{entityid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateOperationalIntentReference}
+	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateOperationalIntentReference, Name: "scd.UpdateOperationalIntentReference", Path: "/scd/dss/v1/operational_intent_references/{entityid}/{ovn}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteOperationalIntentReference}
+	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteOperationalIntentReference, Name: "scd.DeleteOperationalIntentReference", Path: "/scd/dss/v1/operational_intent_references/{entityid}/{ovn}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/query$")
-	router.Routes[5] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryConstraintReferences}
+	router.Routes[5] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryConstraintReferences, Name: "scd.QueryConstraintReferences", Path: "/scd/dss/v1/constraint_references/query"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetConstraintReference}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetConstraintReference, Name: "scd.GetConstraintReference", Path: "/scd/dss/v1/constraint_references/{entityid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateConstraintReference}
+	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateConstraintReference, Name: "scd.CreateConstraintReference", Path: "/scd/dss/v1/constraint_references/{entityid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateConstraintReference}
+	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateConstraintReference, Name: "scd.UpdateConstraintReference", Path: "/scd/dss/v1/constraint_references/{entityid}/{ovn}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteConstraintReference}
+	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteConstraintReference, Name: "scd.DeleteConstraintReference", Path: "/scd/dss/v1/constraint_references/{entityid}/{ovn}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/query$")
-	router.Routes[10] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QuerySubscriptions}
+	router.Routes[10] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QuerySubscriptions, Name: "scd.QuerySubscriptions", Path: "/scd/dss/v1/subscriptions/query"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[11] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription}
+	router.Routes[11] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription, Name: "scd.GetSubscription", Path: "/scd/dss/v1/subscriptions/{subscriptionid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[12] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription}
+	router.Routes[12] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription, Name: "scd.CreateSubscription", Path: "/scd/dss/v1/subscriptions/{subscriptionid}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[13] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription}
+	router.Routes[13] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription, Name: "scd.UpdateSubscription", Path: "/scd/dss/v1/subscriptions/{subscriptionid}/{version}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[14] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription}
+	router.Routes[14] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription, Name: "scd.DeleteSubscription", Path: "/scd/dss/v1/subscriptions/{subscriptionid}/{version}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/reports$")
-	router.Routes[15] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.MakeDssReport}
+	router.Routes[15] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.MakeDssReport, Name: "scd.MakeDssReport", Path: "/scd/dss/v1/reports"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[16] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetUssAvailability}
+	router.Routes[16] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetUssAvailability, Name: "scd.GetUssAvailability", Path: "/scd/dss/v1/uss_availability/{uss_id}"}
 
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability}
+	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability, Name: "scd.SetUssAvailability", Path: "/scd/dss/v1/uss_availability/{uss_id}"}
 
 	return router
 }

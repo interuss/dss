@@ -62,6 +62,8 @@ type Route struct {
 	Method  string
 	Pattern *regexp.Regexp
 	Handler Handler
+	Name    string
+	Path    string
 }
 
 type PartialRouter interface {
