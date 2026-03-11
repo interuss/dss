@@ -1,0 +1,8 @@
+[project]
+name = "openapi-to-go-server"
+version = "0.1.0"
+readme = "README.md"
+requires-python = "==3.14.*"
+dependencies = [
+    "PyYAML==6.0.3",
+]
