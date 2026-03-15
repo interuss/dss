@@ -24,8 +24,7 @@ var (
 
 const (
 	// These thresholds keep lock diagnostics low-noise in production while still surfacing likely bottlenecks.
-	lockQuerySlowThreshold = 500 * time.Millisecond
-	lockQueryLargeRowCount = 1000
+	lockQuerySlowThreshold = 4 * time.Second
 )
 
 // TODO Update database schema and fields below.
@@ -401,7 +400,7 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 		const query = `SELECT key FROM scd_locks WHERE key = 0 FOR UPDATE`
 
 		start := time.Now()
-		result, err := c.q.Exec(ctx, query)
+		_, err := c.q.Exec(ctx, query)
 		duration := time.Since(start)
 		if err != nil {
 			logger.Warn("SCD global lock query failed",
@@ -411,12 +410,10 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 			return stacktrace.Propagate(err, "Error in query: %s", query)
 		}
 
-		matchedRows := int(result.RowsAffected())
-		if duration >= lockQuerySlowThreshold || matchedRows >= lockQueryLargeRowCount {
-			logger.Warn("SCD lock query diagnostics",
+		if duration >= lockQuerySlowThreshold {
+			logger.Warn("Expensive SCD lock detected",
 				zap.Bool("global_lock", true),
 				zap.Duration("duration", duration),
-				zap.Int("matched_rows", matchedRows),
 				zap.Int("cell_count", len(cells)),
 				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
 			)
@@ -450,7 +447,7 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 	}
 
 	start := time.Now()
-	result, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells), ids, startTime, endTime)
+	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells), ids, startTime, endTime)
 	duration := time.Since(start)
 	if err != nil {
 		logger.Warn("SCD subscription lock query failed",
@@ -462,12 +459,10 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 		return stacktrace.Propagate(err, "Error in query: %s", query)
 	}
 
-	matchedRows := int(result.RowsAffected())
-	if duration >= lockQuerySlowThreshold || matchedRows >= lockQueryLargeRowCount {
-		logger.Warn("SCD lock query diagnostics",
+	if duration >= lockQuerySlowThreshold {
+		logger.Warn("Expensive SCD lock detected",
 			zap.Bool("global_lock", false),
 			zap.Duration("duration", duration),
-			zap.Int("matched_rows", matchedRows),
 			zap.Int("cell_count", len(cells)),
 			zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
 		)
