@@ -30,6 +30,25 @@ for container_name in "${localhost_containers[@]}"; do
 	fi
 done
 
+# Wait for containers with healthchecks to become healthy
+for container_name in "${localhost_containers[@]}"; do
+	if docker container inspect -f '{{.State.Health.Status}}' "$container_name" >/dev/null 2>&1; then
+		echo "Waiting for $container_name to be healthy..."
+		for i in $(seq 1 60); do
+			health="$( docker container inspect -f '{{.State.Health.Status}}' "$container_name" )"
+			if [ "$health" == "healthy" ]; then
+				echo "$container_name is healthy!"
+				break
+			fi
+			if [ "$i" -eq 60 ]; then
+				echo "Error: $container_name did not become healthy within 60 seconds (status: $health)"
+				exit 1
+			fi
+			sleep 1
+		done
+	fi
+done
+
 if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \

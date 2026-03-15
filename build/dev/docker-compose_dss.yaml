@@ -138,7 +138,7 @@ services:
     networks:
       - dss_sandbox_default_network
     healthcheck:
-      test: wget -O - 'http://localhost/healthy' || exit 1
+      test: wget -O - 'http://localhost:8082/healthy' || exit 1
       interval: 3m
       start_period: 30s
       start_interval: 5s
