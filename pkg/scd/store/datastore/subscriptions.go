@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	// These thresholds keep lock diagnostics low-noise in production while still surfacing likely bottlenecks.
+	// This threshold keep lock diagnostics low-noise in production while still surfacing likely bottlenecks.
 	lockQuerySlowThreshold = 4 * time.Second
 )
 
