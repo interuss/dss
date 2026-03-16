@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"go.uber.org/zap"
 
 	"github.com/golang/geo/s2"
 )
@@ -18,6 +20,11 @@ var (
 	subscriptionFieldsWithIndices   [12]string
 	subscriptionFieldsWithPrefix    string
 	subscriptionFieldsWithoutPrefix string
+)
+
+const (
+	// This threshold keep lock diagnostics low-noise in production while still surfacing likely bottlenecks.
+	lockQuerySlowThreshold = 4 * time.Second
 )
 
 // TODO Update database schema and fields below.
@@ -378,7 +385,8 @@ func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds
 	return orderedIndices, nil
 }
 
-func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID) error {
+func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if c.globalLock {
 
@@ -391,9 +399,24 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 		// Notice that this requieres key entries to be present to work.
 		const query = `SELECT key FROM scd_locks WHERE key = 0 FOR UPDATE`
 
+		start := time.Now()
 		_, err := c.q.Exec(ctx, query)
+		duration := time.Since(start)
 		if err != nil {
+			logger.Warn("SCD global lock query failed",
+				zap.Duration("duration", duration),
+				zap.Error(err),
+			)
 			return stacktrace.Propagate(err, "Error in query: %s", query)
+		}
+
+		if duration >= lockQuerySlowThreshold {
+			logger.Warn("Expensive SCD lock detected",
+				zap.Bool("global_lock", true),
+				zap.Duration("duration", duration),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+			)
 		}
 
 		return nil
@@ -406,8 +429,14 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
         FROM
             scd_subscriptions
         WHERE
-            cells && $1
-        OR
+			(
+				cells && $1
+			AND
+				COALESCE(starts_at <= $4, true)
+			AND
+				COALESCE(ends_at >= $3, true)
+			)
+		OR
             id = ANY($2)
         FOR UPDATE
     `
@@ -417,9 +446,26 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 		ids[i] = id.String()
 	}
 
-	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells), ids)
+	start := time.Now()
+	_, err := c.q.Exec(ctx, query, dsssql.CellUnionToCellIds(cells), ids, startTime, endTime)
+	duration := time.Since(start)
 	if err != nil {
+		logger.Warn("SCD subscription lock query failed",
+			zap.Duration("duration", duration),
+			zap.Int("cell_count", len(cells)),
+			zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+			zap.Error(err),
+		)
 		return stacktrace.Propagate(err, "Error in query: %s", query)
+	}
+
+	if duration >= lockQuerySlowThreshold {
+		logger.Warn("Expensive SCD lock detected",
+			zap.Bool("global_lock", false),
+			zap.Duration("duration", duration),
+			zap.Int("cell_count", len(cells)),
+			zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+		)
 	}
 
 	return nil
