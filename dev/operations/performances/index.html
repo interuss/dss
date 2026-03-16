@@ -776,6 +776,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#scd-lock-diagnostics-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCD lock diagnostics logs
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -851,6 +862,17 @@
     <span class="md-ellipsis">
       
         The SCD global lock option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scd-lock-diagnostics-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCD lock diagnostics logs
       
     </span>
   </a>
@@ -958,6 +980,18 @@
 <em>Overlapping requests. Notice the huge spikes on the left, as the datastore struggles to acquire locks.</em></p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_notoverlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_notoverlapping.png"></a>
 <em>Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.</em></p>
+<h2 id="scd-lock-diagnostics-logs">SCD lock diagnostics logs<a class="headerlink" href="#scd-lock-diagnostics-logs" title="Permanent link">¶</a></h2>
+<p>To help diagnose latency spikes (for example as discussed in <a href="https://github.com/interuss/dss/issues/1311">#1311</a>), the SCD subscription lock path emits targeted warning logs when a lock query looks expensive.</p>
+<p>The warning is emitted when lock query duration is greater than or equal to <code>4s</code>.</p>
+<p>The log message is <code>Expensive SCD lock detected</code> and includes:
+* <code>global_lock</code>: Whether global lock mode is enabled for this query
+* <code>duration</code>: Time spent executing the lock query
+* <code>cell_count</code>: Number of S2 cells in the request
+* <code>explicit_subscription_id_count</code>: Number of explicitly provided subscription IDs</p>
+<p>Failed lock queries also emit warnings with timing and context:
+* <code>SCD global lock query failed</code>
+* <code>SCD subscription lock query failed</code></p>
+<p>These diagnostics are intended to keep normal logs low-noise while surfacing lock contention or unexpectedly large lock scopes.</p>
 
 
 
@@ -978,7 +1012,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="February 24, 2026 12:28:29 UTC">February 24, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 16, 2026 10:06:39 UTC">March 16, 2026</span>
   </span>
 
     
