@@ -37,9 +37,6 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-	// TODO: put the context with timeout into an interceptor so it's always set.
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	subscription, err := s.App.DeleteSubscription(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete Subscription")
@@ -90,8 +87,6 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search Subscriptions")
@@ -128,8 +123,6 @@ func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	subscription, err := s.App.GetSubscription(ctx, id)
 	if err != nil {
 		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
@@ -151,9 +144,6 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
 		return resp
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 
 	if req.Auth.ClientID == nil {
 		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
@@ -258,9 +248,6 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 
 	if req.Auth.ClientID == nil {
 		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
