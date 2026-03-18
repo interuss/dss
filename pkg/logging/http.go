@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/interuss/dss/pkg/auth/claims"
@@ -48,8 +49,10 @@ func redactHeaders(headers http.Header) http.Header {
 	newHeaders := headers.Clone()
 
 	for key, values := range newHeaders {
-		for i, val := range values {
-			newHeaders[key][i] = tokenRegex.ReplaceAllString(val, "$1[REDACTED]")
+		if strings.ToLower(key) == "authorization" {
+			for i, val := range values {
+				newHeaders[key][i] = tokenRegex.ReplaceAllString(val, "$1[REDACTED]")
+			}
 		}
 	}
 
