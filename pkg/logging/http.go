@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/interuss/dss/pkg/auth/claims"
@@ -38,6 +39,21 @@ func (w *tracingResponseWriter) Write(data []byte) (int, error) {
 func (w *tracingResponseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.next.WriteHeader(statusCode)
+}
+
+var tokenRegex = regexp.MustCompile(`(?i)(Bearer\s+[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.)([A-Za-z0-9-_]+)`)
+
+func redactHeaders(headers http.Header) http.Header {
+
+	newHeaders := headers.Clone()
+
+	for key, values := range newHeaders {
+		for i, val := range values {
+			newHeaders[key][i] = tokenRegex.ReplaceAllString(val, "$1[REDACTED]")
+		}
+	}
+
+	return newHeaders
 }
 
 // HTTPMiddleware installs a logging http.Handler that logs requests and
@@ -88,7 +104,7 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 
 		logger.Info(
 			fmt.Sprintf("%s %s %s", r.Method, r.URL.Path, r.Proto),
-			zap.Any("req_headers", r.Header),
+			zap.Any("req_headers", redactHeaders(r.Header)),
 			zap.Int("resp_status_code", trw.statusCode),
 			zap.String("resp_status_text", http.StatusText(trw.statusCode)),
 			zap.String("peer_address", r.RemoteAddr),
