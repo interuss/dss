@@ -4,7 +4,10 @@ package ridv2
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/interuss/dss/pkg/api"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 )
@@ -15,10 +18,24 @@ type APIRouter struct {
 	Authorizer     api.Authorizer
 }
 
+var tracer = otel.Tracer("ridv2.api")
+
 // *ridv2.APIRouter (type defined above) implements the api.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
+
+			// We retrieve the current span from the otelhttp handler to set its name property.
+			span := trace.SpanFromContext(r.Context())
+
+			if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
+				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
+			}
+
+			ctx, span := tracer.Start(r.Context(), route.Name)
+			defer span.End()
+			r = r.WithContext(ctx)
+
 			route.Handler(route.Pattern, w, r)
 			return true
 		}
@@ -522,34 +539,34 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 10)}
 
 	pattern := regexp.MustCompile("^/rid/v2/dss/identification_service_areas$")
-	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchIdentificationServiceAreas}
+	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchIdentificationServiceAreas, Name: "ridv2.SearchIdentificationServiceAreas", Path: "/rid/v2/dss/identification_service_areas"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)$")
-	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetIdentificationServiceArea}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetIdentificationServiceArea, Name: "ridv2.GetIdentificationServiceArea", Path: "/rid/v2/dss/identification_service_areas/{id}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)$")
-	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateIdentificationServiceArea}
+	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateIdentificationServiceArea, Name: "ridv2.CreateIdentificationServiceArea", Path: "/rid/v2/dss/identification_service_areas/{id}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateIdentificationServiceArea}
+	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateIdentificationServiceArea, Name: "ridv2.UpdateIdentificationServiceArea", Path: "/rid/v2/dss/identification_service_areas/{id}/{version}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/identification_service_areas/(?P<id>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteIdentificationServiceArea}
+	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteIdentificationServiceArea, Name: "ridv2.DeleteIdentificationServiceArea", Path: "/rid/v2/dss/identification_service_areas/{id}/{version}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions$")
-	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchSubscriptions}
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.SearchSubscriptions, Name: "ridv2.SearchSubscriptions", Path: "/rid/v2/dss/subscriptions"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)$")
-	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription, Name: "ridv2.GetSubscription", Path: "/rid/v2/dss/subscriptions/{id}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)$")
-	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription}
+	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription, Name: "ridv2.CreateSubscription", Path: "/rid/v2/dss/subscriptions/{id}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription}
+	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription, Name: "ridv2.UpdateSubscription", Path: "/rid/v2/dss/subscriptions/{id}/{version}"}
 
 	pattern = regexp.MustCompile("^/rid/v2/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription}
+	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription, Name: "ridv2.DeleteSubscription", Path: "/rid/v2/dss/subscriptions/{id}/{version}"}
 
 	return router
 }
