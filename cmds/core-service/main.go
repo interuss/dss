@@ -317,11 +317,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 
 	if *enableOpenTelemetry {
-		httpSpanName := func(operation string, req *http.Request) string {
-			return fmt.Sprintf("%s %s", req.Method, req.URL.Path)
-		}
-
-		handler = otelhttp.NewHandler(handler, "http", otelhttp.WithSpanNameFormatter(httpSpanName))
+		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
+		handler = otelhttp.NewHandler(handler, "http")
 	}
 
 	httpServer := &http.Server{

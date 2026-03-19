@@ -8,10 +8,24 @@ type APIRouter struct {
     Authorizer <API_PACKAGE>.Authorizer
 }
 
+var tracer = otel.Tracer("<PACKAGE>.<API_PACKAGE>")
+
 // *<PACKAGE>.APIRouter (type defined above) implements the <API_PACKAGE>.PartialRouter interface
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
     for _, route := range s.Routes {
         if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
+
+            // We retrieve the current span from the otelhttp handler to set its name property.
+            span := trace.SpanFromContext(r.Context())
+
+            if span.IsRecording() {  // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
+                span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
+            }
+
+            ctx, span := tracer.Start(r.Context(), route.Name)
+            defer span.End()
+            r = r.WithContext(ctx)
+
             route.Handler(route.Pattern, w, r)
             return true
         }

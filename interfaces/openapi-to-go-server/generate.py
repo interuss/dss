@@ -103,7 +103,15 @@ def _generate_apis(
         routes, new_imports = rendering.routes(api, api_package, ensure_500)
         server_template_vars = {
             "<PACKAGE>": api.package,
-            "<IMPORTS>": rendering.imports(list(new_imports) + [api_import]),
+            "<IMPORTS>": rendering.imports(
+                list(new_imports)
+                + [
+                    api_import,
+                    "fmt",
+                    "go.opentelemetry.io/otel",
+                    "go.opentelemetry.io/otel/trace",
+                ]
+            ),
             "<API_PACKAGE>": api_package,
             "<ROUTES>": "\n".join(routes),
             "<ROUTING>": "\n".join(rendering.routing(api, api_package)),

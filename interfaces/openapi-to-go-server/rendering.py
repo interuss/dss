@@ -458,8 +458,17 @@ def routing(api: apis.API, api_package: str) -> List[str]:
             )
         )
         lines.append(
-            "router.Routes[%d] = &%s.Route{Method: %s, Pattern: pattern, Handler: router.%s}"
-            % (i, api_package, operation.verb_const_name, operation.interface_name)
+            'router.Routes[%d] = &%s.Route{Method: %s, Pattern: pattern, Handler: router.%s, Name: "%s.%s", Path: "%s%s"}'
+            % (
+                i,
+                api_package,
+                operation.verb_const_name,
+                operation.interface_name,
+                api.package,
+                operation.interface_name,
+                prefix,
+                operation.path,
+            )
         )
         lines.append("")
         first_assignment = False
