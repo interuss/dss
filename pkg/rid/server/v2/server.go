@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/ridv2"
@@ -16,7 +15,6 @@ import (
 // Server implements ridv2.Implementation.
 type Server struct {
 	App               application.App
-	Timeout           time.Duration
 	Locality          string
 	AllowHTTPBaseUrls bool
 	Cron              *cron.Cron

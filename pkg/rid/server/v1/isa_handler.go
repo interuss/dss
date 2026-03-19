@@ -31,8 +31,6 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	isa, err := s.App.GetISA(ctx, id)
 	if err != nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response500: &api.InternalServerErrorBody{
@@ -55,9 +53,6 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
 		return resp
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 
 	if req.Auth.ClientID == nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
@@ -145,8 +140,6 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
 	}
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 
 	if req.Auth.ClientID == nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
@@ -238,8 +231,6 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	isa, subscribers, err := s.App.DeleteISA(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete ISA")
@@ -312,8 +303,6 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 		latest = &ts
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	defer cancel()
 	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Unable to search ISAs")

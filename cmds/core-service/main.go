@@ -183,13 +183,11 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
 			App:               app,
-			Timeout:           *timeout,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 			Cron:              ridCron,
 		}, &rid_v2.Server{
 			App:               app,
-			Timeout:           *timeout,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 			Cron:              ridCron,
@@ -226,7 +224,6 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	return &scd.Server{
 		Store:             scdStore,
 		DSSReportHandler:  &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
-		Timeout:           *timeout,
 		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 	}, nil
 }
@@ -315,6 +312,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler := healthyEndpointMiddleware(logger, &multiRouter)
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 	handler = authorizer.TokenMiddleware(handler)
+	handler = timeoutMiddleware(*timeout, handler)
 
 	if *enableOpenTelemetry {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
@@ -378,6 +376,18 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
+	})
+}
+
+func timeoutMiddleware(timeout time.Duration, next http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
 	})
 }
 

@@ -25,10 +25,6 @@ var (
 	writer    = "writer"
 )
 
-func init() {
-	DefaultTimeout = 500 * time.Millisecond
-}
-
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	connectParameters := flags.ConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
