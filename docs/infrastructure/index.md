@@ -44,8 +44,8 @@ Download & install the following tools to your workstation:
     - Confirm successful installation with `tk --version`
 - [Install Docker](https://docs.docker.com/get-docker/).
     - Confirm successful installation with `docker --version`
-- If using CockroachDB as the datastore, 
-  [install CockroachDB](https://www.cockroachlabs.com/get-cockroachdb/) to
+- If using CockroachDB as the datastore,
+  [install CockroachDB](https://www.cockroachlabs.com/docs/v24.1/install-cockroachdb-linux) to
   generate CockroachDB certificates.
     - These instructions assume CockroachDB Core.
     - You may need to run `sudo chmod +x /usr/local/bin/cockroach` after
