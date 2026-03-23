@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
@@ -24,6 +25,11 @@ const (
 var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
+
+	// DefaultTimeout is the timeout applied to the txn retrier.
+	// If a given deadline is already supplied on the context, the earlier
+	// deadline is used.
+	DefaultTimeout = 10 * time.Second
 
 	// DatabaseName is the name of database storing strategic conflict detection data.
 	DatabaseName = "scd"
@@ -92,6 +98,9 @@ func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
 
 // Transact implements store.Transactor interface.
 func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
+	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+	defer cancel()
+
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 		return f(ctx, &repo{
