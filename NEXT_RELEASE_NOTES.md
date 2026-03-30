@@ -48,6 +48,8 @@ The release notes should contain at least the following sections:
 
 ## Important information
 
+* The `timeout` configuration flag is now enforced consistently on all HTTP calls. This means that some slow calls that were previously successful will now be cancelled. Please review the value to be applied (the default is 10 seconds) and, if needed, update it to suit your needs.
+
 ## Minimal database schema version
 
 | Schema  | CockroachDB | Yugabyte |

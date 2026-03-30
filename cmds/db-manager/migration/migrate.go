@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/dss/pkg/datastore"
@@ -38,6 +39,7 @@ var (
 	flags     = pflag.NewFlagSet("migrate", pflag.ExitOnError)
 	path      = flags.String("schemas_dir", "", "path to db migration files directory. the migrations found there will be applied to the database whose name matches the folder name.")
 	dbVersion = flags.String("db_version", "", "the db version to migrate to (ex: 1.0.0) or use \"latest\" to automatically upgrade to the latest version or leave blank to print the current version")
+	timeout   = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
 )
 
 func init() {
@@ -56,6 +58,9 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	if dbName == "aux_" {
 		dbName = "aux"
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, *timeout)
+	defer cancel()
 
 	// Enumerate schema versions
 	steps, err := enumerateMigrationSteps(path)

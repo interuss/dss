@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
 	"github.com/interuss/dss/pkg/datastore/flags"
@@ -28,13 +27,6 @@ const (
 var (
 	// DefaultClock is what is used as the Store's clock, returned from Dial.
 	DefaultClock = clockwork.NewRealClock()
-	// DefaultTimeout is the timeout applied to the txn retrier.
-	// Note that this is not applied everywhere, but only
-	// on the txn retrier.
-	// If a given deadline is already supplied on the context, the earlier
-	// deadline is used
-	// TODO: use this in other function calls
-	DefaultTimeout = 10 * time.Second
 )
 
 type repo struct {
@@ -121,8 +113,6 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
 	// "store" for everything
-	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
-	defer cancel()
 
 	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
 

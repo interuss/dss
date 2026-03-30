@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"time"
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
@@ -37,7 +36,6 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.
 type Server struct {
 	Store             scdstore.Store
 	DSSReportHandler  ReceivedReportHandler
-	Timeout           time.Duration
 	AllowHTTPBaseUrls bool
 }
 
