@@ -36,6 +36,7 @@ var (
 	ridTtl        = flags.Duration("rid_ttl", time.Minute*30, "time-to-live duration used for determining RID entries expiration, defaults to 30 minutes")
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
+	timeout       = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
 )
 
 func init() {
@@ -49,6 +50,9 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ridThreshold = time.Now().Add(-*ridTtl)
 	)
 	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
+
+	ctx, cancel := context.WithTimeout(ctx, *timeout)
+	defer cancel()
 
 	scdStore, err := getSCDStore(ctx)
 	if err != nil {
