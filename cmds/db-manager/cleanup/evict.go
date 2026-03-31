@@ -104,7 +104,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to execute SCD transaction: %w", err)
 	}
 
-	ridAction := func(r ridrepos.Repository) (err error) {
+	ridAction := func(ctx context.Context, r ridrepos.Repository) (err error) {
 		if *checkRidISAs {
 
 			expiredISAs, err = r.ListExpiredISAs(ctx, *locality, ridThreshold)
