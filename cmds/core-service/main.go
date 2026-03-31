@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -69,23 +68,13 @@ const (
 	codeRetryable = stacktrace.ErrorCode(1)
 )
 
-func getDBStats(ctx context.Context, db *datastore.Datastore, databaseName string) {
+func checkDatabase(ctx context.Context, db *datastore.Datastore, databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 	statsPtr := db.Pool.Stat()
-	stats := make(map[string]string)
-	stats["DBName"] = databaseName
-	stats["AcquireCount"] = strconv.Itoa(int(statsPtr.AcquireCount()))
-	stats["AcquiredConns"] = strconv.Itoa(int(statsPtr.AcquiredConns()))
-	stats["CanceledAcquireCount"] = strconv.Itoa(int(statsPtr.CanceledAcquireCount()))
-	stats["ConstructingConns"] = strconv.Itoa(int(statsPtr.ConstructingConns()))
-	stats["EmptyAcquireCount"] = strconv.Itoa(int(statsPtr.EmptyAcquireCount()))
-	stats["IdleConns"] = strconv.Itoa(int(statsPtr.IdleConns()))
-	stats["MaxConns"] = strconv.Itoa(int(statsPtr.MaxConns()))
-	stats["TotalConns"] = strconv.Itoa(int(statsPtr.TotalConns()))
-	if stats["TotalConns"] == "0" {
+	if int(statsPtr.TotalConns()) == 0 {
 		logger.Warn("Failed periodic DB Ping (TotalConns=0)", zap.String("Database", databaseName))
 	} else {
-		logger.Info("Successful periodic DB Ping ", zap.String("Database", databaseName))
+		logger.Info("Successful periodic DB Ping", zap.String("Database", databaseName))
 	}
 }
 
@@ -174,8 +163,8 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
-	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
-	if _, err := ridCron.AddFunc("@every 1m", func() { getDBStats(ctx, datastore, connectParameters.DBName) }); err != nil {
+	// schedule printing of DB status every minute for the underlying storage
+	if _, err := ridCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, connectParameters.DBName) }); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
 	}
 	ridCron.Start()
@@ -214,8 +203,8 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
-	// schedule printing of DB connection stats every minute for the underlying storage for RID Server
-	if _, err := scdCron.AddFunc("@every 1m", func() { getDBStats(ctx, datastore, scdc.DatabaseName) }); err != nil {
+	// schedule printing of DB status every minute for the underlying storage
+	if _, err := scdCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, scdc.DatabaseName) }); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", scdc.DatabaseName)
 	}
 
