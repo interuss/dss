@@ -58,16 +58,17 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-	if connectParameters.DBName != "rid" && connectParameters.DBName != "scd" {
-		connectParameters.DBName = "rid"
-	}
-	ridc.DefaultClock = fakeClock
+
+	connectParameters.DBName = "rid"
+
 	ridDatastore, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 	logger.Info("using datastore.")
 
-	store, err := ridc.NewStore(ctx, ridDatastore, "rid", logger)
+	store, err := ridc.NewStore(ctx, ridDatastore, logger)
 	require.NoError(t, err)
+
+	store.Clock = fakeClock
 
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
