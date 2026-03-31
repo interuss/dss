@@ -17,7 +17,6 @@ func ConnectParameters() datastore.ConnectParameters {
 
 func init() {
 	flag.StringVar(&connectParameters.ApplicationName, "datastore_application_name", "dss", "application name for tagging the connection to the database")
-	flag.StringVar(&connectParameters.DBName, "datastore_db_name", "", "database name to connect to")
 	flag.StringVar(&connectParameters.Host, "datastore_host", "", "database host to connect to")
 	flag.IntVar(&connectParameters.Port, "datastore_port", 26257, "database port to connect to")
 	flag.StringVar(&connectParameters.SSL.Mode, "datastore_ssl_mode", "disable", "database sslmode")
@@ -28,7 +27,6 @@ func init() {
 	flag.IntVar(&connectParameters.MaxRetries, "datastore_max_retries", 100, "maximum number of attempts to retry a query in case of contention, default is 100")
 
 	flag.StringVar(&connectParameters.ApplicationName, "cockroach_application_name", connectParameters.ApplicationName, "DEPRECATED: use 'datastore_application_name' instead")
-	flag.StringVar(&connectParameters.DBName, "cockroach_db_name", connectParameters.DBName, "DEPRECATED: use 'datastore_db_name' instead")
 	flag.StringVar(&connectParameters.Host, "cockroach_host", connectParameters.Host, "DEPRECATED: use 'datastore_host' instead")
 	flag.IntVar(&connectParameters.Port, "cockroach_port", connectParameters.Port, "DEPRECATED: use 'datastore_port' instead")
 	flag.StringVar(&connectParameters.SSL.Mode, "cockroach_ssl_mode", connectParameters.SSL.Mode, "DEPRECATED: use 'datastore_ssl_mode' instead")

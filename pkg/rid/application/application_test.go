@@ -35,8 +35,8 @@ func (s *mockRepo) Interact(ctx context.Context) (repos.Repository, error) {
 	return s, nil
 }
 
-func (s *mockRepo) Transact(ctx context.Context, f func(repo repos.Repository) error) error {
-	return f(s)
+func (s *mockRepo) Transact(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
+	return f(ctx, s)
 }
 
 func (s *mockRepo) Close() error {
@@ -61,13 +61,14 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	if connectParameters.DBName != "rid" && connectParameters.DBName != "scd" {
 		connectParameters.DBName = "rid"
 	}
-	ridc.DefaultClock = fakeClock
 	ridDatastore, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 	logger.Info("using datastore.")
 
-	store, err := ridc.NewStore(ctx, ridDatastore, "rid", logger)
+	store, err := ridc.NewStore(ctx, ridDatastore, logger)
 	require.NoError(t, err)
+
+	store.Clock = fakeClock
 
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))

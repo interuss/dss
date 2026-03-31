@@ -46,15 +46,17 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newStore(ctx context.Context, t *testing.T, connectParameters datastore.ConnectParameters) (*Store, error) {
+	connectParameters.DBName = "rid"
 	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
-	return &Store{
-		db:           db,
-		logger:       logging.Logger,
-		clock:        fakeClock,
-		DatabaseName: "rid",
-	}, nil
+	s, err := NewStore(ctx, db, logging.Logger)
+	if err != nil {
+		return nil, err
+	}
+	s.Clock = fakeClock
+	return s, nil
+
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
@@ -63,7 +65,7 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Pool.Exec(ctx, query)
+	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
 }
 
@@ -101,7 +103,7 @@ func TestTxnRetrier(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
-	err := store.Transact(ctx, func(repo repos.Repository) error {
+	err := store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		isa, err := repo.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
@@ -122,7 +124,7 @@ func TestTxnRetrier(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 	defer cancel()
 	count := 0
-	err = store.Transact(ctx, func(repo repos.Repository) error {
+	err = store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		count++
 		// Postgre retryable error
@@ -145,13 +147,13 @@ func TestTransactor(t *testing.T) {
 	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
-	err := store.Transact(ctx, func(s1 repos.Repository) error {
+	err := store.Transact(ctx, func(ctx context.Context, s1 repos.Repository) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
 			return errors.New("already failed")
 		}
 		txnCount++
-		err := store.Transact(ctx, func(s2 repos.Repository) error {
+		err := store.Transact(ctx, func(ctx context.Context, s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
@@ -203,22 +205,22 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.db.Pool.Begin(ctx)
+	tx1, err := store.DB.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		Queryable: tx1,
 		logger:    logging.Logger,
-		clock:     DefaultClock,
+		clock:     clockwork.NewRealClock(),
 	}
 
-	tx2, err := store.db.Pool.Begin(ctx)
+	tx2, err := store.DB.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 
 		Queryable: tx2,
 		logger:    logging.Logger,
 
-		clock: DefaultClock,
+		clock: clockwork.NewRealClock(),
 	}
 
 	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
