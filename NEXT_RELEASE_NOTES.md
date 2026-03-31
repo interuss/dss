@@ -49,7 +49,7 @@ The release notes should contain at least the following sections:
 ## Important information
 
 * The `timeout` configuration flag is now enforced consistently on all HTTP calls. This means that some slow calls that were previously successful will now be cancelled. Please review the value to be applied (the default is 10 seconds) and, if needed, update it to suit your needs.
-* `--datastore_db_name` (and the depreacated version, `--cockroach_db_name`) has been removed. It was not used expect for tests and can be removed if you use it.
+* `--datastore_db_name` (and the deprecated version, `--cockroach_db_name`) has been removed. It was not used except for tests and can be removed if you use it.
 
 ## Minimal database schema version
 
