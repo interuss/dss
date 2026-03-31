@@ -29,11 +29,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	connectParameters := flags.ConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
-	} else {
-		if connectParameters.DBName != "rid" && connectParameters.DBName != "scd" && connectParameters.DBName != "aux" {
-			connectParameters.DBName = "rid"
-		}
 	}
+	connectParameters.DBName = "rid"
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
@@ -49,12 +46,13 @@ func newStore(ctx context.Context, t *testing.T, connectParameters datastore.Con
 	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
-	return &Store{
-		db:           db,
-		logger:       logging.Logger,
-		clock:        fakeClock,
-		DatabaseName: "rid",
-	}, nil
+	s, err := NewStore(ctx, db, logging.Logger)
+	if err != nil {
+		return nil, err
+	}
+	s.Clock = fakeClock
+
+	return s, nil
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
@@ -63,7 +61,7 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.db.Pool.Exec(ctx, query)
+	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
 }
 
@@ -203,22 +201,22 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.db.Pool.Begin(ctx)
+	tx1, err := store.DB.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		Queryable: tx1,
 		logger:    logging.Logger,
-		clock:     DefaultClock,
+		clock:     clockwork.NewRealClock(),
 	}
 
-	tx2, err := store.db.Pool.Begin(ctx)
+	tx2, err := store.DB.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 
 		Queryable: tx2,
 		logger:    logging.Logger,
 
-		clock: DefaultClock,
+		clock: clockwork.NewRealClock(),
 	}
 
 	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)

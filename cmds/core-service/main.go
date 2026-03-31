@@ -110,7 +110,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Failed to connect to pool information database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	auxStore, err := auxc.NewStore(ctx, datastore, connectParameters.DBName, logger)
+	auxStore, err := auxc.NewStore(ctx, datastore, logger)
 	if err != nil {
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"aux\" does not exist") {
@@ -146,7 +146,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		return nil, nil, stacktrace.Propagate(err, "Failed to connect to remote ID database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	ridStore, err := ridc.NewStore(ctx, datastore, connectParameters.DBName, logger)
+	ridStore, err := ridc.NewStore(ctx, datastore, logger)
 	if err != nil {
 		// TODO: More robustly detect failure to create RID server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
@@ -164,8 +164,8 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	// schedule period tasks for RID Server
 	ridCron := cron.New()
 	// schedule printing of DB status every minute for the underlying storage
-	if _, err := ridCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, connectParameters.DBName) }); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", connectParameters.DBName)
+	if _, err := ridCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, "rid") }); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", "rid")
 	}
 	ridCron.Start()
 
@@ -174,24 +174,22 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 			App:               app,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-			Cron:              ridCron,
 		}, &rid_v2.Server{
 			App:               app,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-			Cron:              ridCron,
 		}, nil
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 	connectParameters := flags.ConnectParameters()
-	connectParameters.DBName = scdc.DatabaseName
+	connectParameters.DBName = "scd"
 	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to connect to strategic conflict detection database; verify your database configuration is current with https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
 	}
 
-	scdStore, err := scdc.NewStore(ctx, datastore, *scdGlobalLock)
+	scdStore, err := scdc.NewStore(ctx, datastore, logger, *scdGlobalLock)
 	if err != nil {
 		// TODO: More robustly detect failure to create SCD server is due to a problem that may be temporary
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "database \"scd\" does not exist") {
@@ -204,8 +202,8 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	// schedule period tasks for SCD Server
 	scdCron := cron.New()
 	// schedule printing of DB status every minute for the underlying storage
-	if _, err := scdCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, scdc.DatabaseName) }); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", scdc.DatabaseName)
+	if _, err := scdCron.AddFunc("@every 1m", func() { checkDatabase(ctx, datastore, "scd") }); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to schedule periodic db stat check to %s", "scd")
 	}
 
 	scdCron.Start()
