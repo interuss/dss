@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastoreutils"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/datastore"
@@ -47,4 +48,13 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger, 
 	}
 	s.BaseStore = base
 	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
+}
+
+func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (*Store, error) {
+
+	store, err := datastoreutils.DialStore(ctx, "scd", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+		return NewStore(ctx, db, logger, globalLock)
+	})
+
+	return store, err
 }

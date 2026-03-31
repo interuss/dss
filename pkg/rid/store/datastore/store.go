@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastoreutils"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/datastore"
@@ -53,4 +54,13 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
+}
+
+func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
+
+	store, err := datastoreutils.DialStore(ctx, "rid", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+		return NewStore(ctx, db, logger)
+	})
+
+	return store, err
 }

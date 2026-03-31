@@ -6,6 +6,7 @@ import (
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastoreutils"
 	"github.com/interuss/dss/pkg/logging"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
@@ -52,4 +53,13 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	const query = `DELETE FROM dss_metadata WHERE locality IS NOT NULL;`
 	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
+}
+
+func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
+
+	store, err := datastoreutils.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+		return NewStore(ctx, db, logger)
+	})
+
+	return store, err
 }
