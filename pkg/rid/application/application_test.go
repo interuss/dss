@@ -7,16 +7,10 @@ import (
 
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
-	dssmodels "github.com/interuss/dss/pkg/models"
-	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/interuss/dss/pkg/rid/store"
+	"github.com/interuss/dss/pkg/logging"
 	ridc "github.com/interuss/dss/pkg/rid/store/datastore"
-	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
-
-	"go.uber.org/zap"
 )
 
 var (
@@ -25,55 +19,35 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-type mockRepo struct {
-	*isaStore
-	*subscriptionStore
-	dssql.Queryable
-}
+func setUpStore(ctx context.Context, t *testing.T) (*ridc.Store, func()) {
 
-func (s *mockRepo) Interact(ctx context.Context) (repos.Repository, error) {
-	return s, nil
-}
-
-func (s *mockRepo) Transact(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
-	return f(ctx, s)
-}
-
-func (s *mockRepo) Close() error {
-	return nil
-}
-
-func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.Store, func()) {
 	DefaultClock = fakeClock
+
 	connectParameters := flags.ConnectParameters()
-
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
-		logger.Info("using the stubbed in memory store.")
-		return &mockRepo{
-			isaStore: &isaStore{
-				isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
-			},
-			subscriptionStore: &subscriptionStore{
-				subs: make(map[dssmodels.ID]*ridmodels.Subscription),
-			},
-		}, func() {}
+		t.Skip()
 	}
-
 	connectParameters.DBName = "rid"
 
-	ridDatastore, err := datastore.Dial(ctx, connectParameters)
+	store, err := newStore(ctx, t, connectParameters)
 	require.NoError(t, err)
-	logger.Info("using datastore.")
-
-	store, err := ridc.NewStore(ctx, ridDatastore, logger)
-	require.NoError(t, err)
-
-	store.Clock = fakeClock
-
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
+}
+
+func newStore(ctx context.Context, t *testing.T, connectParameters datastore.ConnectParameters) (*ridc.Store, error) {
+	db, err := datastore.Dial(ctx, connectParameters)
+	require.NoError(t, err)
+
+	s, err := ridc.NewStore(ctx, db, logging.Logger)
+	if err != nil {
+		return nil, err
+	}
+	s.Clock = fakeClock
+
+	return s, nil
 }
 
 // CleanUp drops all required tables from the store, useful for testing.

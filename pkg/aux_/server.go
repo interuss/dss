@@ -5,7 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
-	auxstore "github.com/interuss/dss/pkg/aux_/store"
+	auxc "github.com/interuss/dss/pkg/aux_/store/datastore"
 	dsserr "github.com/interuss/dss/pkg/errors"
 
 	"github.com/interuss/dss/pkg/version"
@@ -14,7 +14,7 @@ import (
 
 // Server implements auxv1.Implementation.
 type Server struct {
-	Store         auxstore.Store
+	Store         *auxc.Store
 	Locality      string
 	ScdGlobalLock bool
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/go-semver/semver"
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -22,71 +21,8 @@ var (
 
 func setUpISAApp(ctx context.Context, t *testing.T) (*app, func()) {
 	l := zap.L()
-	transactor, cleanup := setUpStore(ctx, t, l)
+	transactor, cleanup := setUpStore(ctx, t)
 	return NewFromTransactor(transactor, l).(*app), cleanup
-}
-
-// TODO:steeling add owner logic.
-type isaStore struct {
-	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
-}
-
-func (store *isaStore) GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
-	if isa, ok := store.isas[id]; ok {
-		return isa, nil
-	}
-	return nil, nil
-}
-
-// Implements repos.ISA.DeleteISA
-func (store *isaStore) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	isa, ok := store.isas[isa.ID]
-	if !ok {
-		return nil, nil
-	}
-	delete(store.isas, isa.ID)
-
-	return isa, nil
-}
-
-// Implements repos.ISA.InsertISA
-func (store *isaStore) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	storedCopy := *isa
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	store.isas[isa.ID] = &storedCopy
-
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-// Implements repos.ISA.UpdateISA
-func (store *isaStore) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	storedCopy := *isa
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	store.isas[isa.ID] = &storedCopy
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-func (store *isaStore) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return semver.NewVersion("v3.1.1")
-}
-
-// Implements repos.ISA.SearchISA
-func (store *isaStore) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	var isas []*ridmodels.IdentificationServiceArea
-
-	for _, isa := range store.isas {
-		if isa.Cells.Intersects(cells) {
-			isas = append(isas, isa)
-		}
-	}
-	return isas, nil
-}
-
-// Implements repos.ISA.ListExpiredISAs
-func (store *isaStore) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }
 
 func TestISAUpdateIdxCells(t *testing.T) {
