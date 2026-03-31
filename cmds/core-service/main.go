@@ -164,15 +164,19 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		versioningV1Server = &versioning.Server{}
 	)
 
+	ctx, ctxCancel := context.WithCancel(ctx) //nolint:govet
+
 	// Initialize aux
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 	if err != nil {
+		ctxCancel()
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
 
 	// Initialize remote ID
 	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
 	if err != nil {
+		ctxCancel()
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
 
@@ -180,6 +184,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	keyResolver, err := createKeyResolver()
 	switch {
 	case err != nil:
+		ctxCancel()
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	case keyResolver == nil:
 		logger.Warn("operating without authorizing interceptor")
@@ -193,6 +198,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		},
 	)
 	if err != nil {
+		ctxCancel()
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
@@ -212,6 +218,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	if *enableSCD {
 		scdV1Server, err = createSCDServer(ctx, logger)
 		if err != nil {
+			ctxCancel()
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
 
@@ -265,16 +272,18 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	// Indicate ready for container health checks
 	readyFile, err := os.Create("service.ready")
 	if err != nil {
+		ctxCancel()
 		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
 	}
 
 	err = readyFile.Close()
 	if err != nil {
+		ctxCancel()
 		return stacktrace.Propagate(err, "Error closing touched file to indicate service ready")
 	}
 
 	logger.Info("Starting DSS HTTP server")
-	return httpServer.ListenAndServe()
+	return httpServer.ListenAndServe() //nolint:govet
 }
 
 // healthyEndpointMiddleware intercepts a request and responds with an "ok" message at the endpoint "/healthy".
