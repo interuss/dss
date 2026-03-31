@@ -19,6 +19,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	}
+	connectParameters.DBName = "scd"
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 

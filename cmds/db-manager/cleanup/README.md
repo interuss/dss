@@ -46,7 +46,6 @@ Flags:
 
 Global Flags:
       --datastore_application_name string   application name for tagging the connection to the database (default "dss")
-      --datastore_db_name string            database name to connect to
       --datastore_host string               database host to connect to
       --datastore_max_conn_idle_secs int    maximum amount of time in seconds a connection may be idle, default is 30 seconds (default 30)
       --datastore_max_open_conns int        maximum number of open connections to the database, default is 4 (default 4)
