@@ -171,7 +171,6 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 	connectParameters := datastoreflags.ConnectParameters()
-	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = scdc.DatabaseName
 	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
@@ -192,7 +191,6 @@ func getRIDStore(ctx context.Context) (*ridc.Store, error) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	connectParameters := datastoreflags.ConnectParameters()
-	connectParameters.ApplicationName = "db-manager"
 	connectParameters.DBName = "rid"
 	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
