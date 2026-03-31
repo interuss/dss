@@ -6,8 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/interuss/dss/pkg/datastore"
-	datastoreflags "github.com/interuss/dss/pkg/datastore/flags"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -54,12 +52,14 @@ func evict(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithTimeout(ctx, *timeout)
 	defer cancel()
 
-	scdStore, err := getSCDStore(ctx)
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	scdStore, err := scdc.Dial(ctx, logger, false, false)
 	if err != nil {
 		return err
 	}
 
-	ridStore, err := getRIDStore(ctx)
+	ridStore, err := ridc.Dial(ctx, logger, false)
 	if err != nil {
 		return err
 	}
@@ -167,43 +167,6 @@ func evict(cmd *cobra.Command, _ []string) error {
 		log.Printf("no entity was deleted, run the command again with the `--delete` flag to do so")
 	}
 	return nil
-}
-
-func getSCDStore(ctx context.Context) (*scdc.Store, error) {
-	connectParameters := datastoreflags.ConnectParameters()
-	connectParameters.DBName = scdc.DatabaseName
-	datastore, err := datastore.Dial(ctx, connectParameters)
-	if err != nil {
-		logParams := connectParameters
-		logParams.Credentials.Password = "[REDACTED]"
-		return nil, fmt.Errorf("failed to connect to SCD database with %+v: %w", logParams, err)
-	}
-
-	scdStore, err := scdc.NewStore(ctx, datastore, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create strategic conflict detection store with %+v: %w", connectParameters, err)
-	}
-	return scdStore, nil
-}
-
-func getRIDStore(ctx context.Context) (*ridc.Store, error) {
-
-	logger := logging.WithValuesFromContext(ctx, logging.Logger)
-
-	connectParameters := datastoreflags.ConnectParameters()
-	connectParameters.DBName = "rid"
-	datastore, err := datastore.Dial(ctx, connectParameters)
-	if err != nil {
-		logParams := connectParameters
-		logParams.Credentials.Password = "[REDACTED]"
-		return nil, fmt.Errorf("failed to connect to remote ID database with %+v: %w", logParams, err)
-	}
-
-	ridStore, err := ridc.NewStore(ctx, datastore, connectParameters.DBName, logger)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create remote ID store with %+v: %w", connectParameters, err)
-	}
-	return ridStore, nil
 }
 
 func logExpiredEntity(entity string, entityID dssmodels.ID, threshold time.Time, deleted, hasEndTime bool) {

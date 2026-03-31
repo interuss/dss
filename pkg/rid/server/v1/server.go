@@ -7,7 +7,6 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
-	"github.com/robfig/cron/v3"
 
 	"github.com/interuss/dss/pkg/rid/application"
 )
@@ -17,7 +16,6 @@ type Server struct {
 	App               application.App
 	Locality          string
 	AllowHTTPBaseUrls bool
-	Cron              *cron.Cron
 }
 
 func setAuthError(ctx context.Context, authErr error, resp401, resp403 **restapi.ErrorResponse, resp500 **api.InternalServerErrorBody) {

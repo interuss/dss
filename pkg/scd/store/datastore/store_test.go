@@ -6,6 +6,7 @@ import (
 
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -35,10 +36,13 @@ func newStore(ctx context.Context, t *testing.T, connectParameters datastore.Con
 	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
-	return &Store{
-		db:    db,
-		clock: fakeClock,
-	}, nil
+	s, err := NewStore(ctx, db, logging.Logger, false)
+	if err != nil {
+		return nil, err
+	}
+	s.Clock = fakeClock
+
+	return s, nil
 }
 
 // CleanUp drops all required tables from the store, useful for testing.
@@ -49,6 +53,6 @@ func CleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM scd_constraints WHERE id IS NOT NULL;
 	DELETE FROM scd_uss_availability WHERE id IS NOT NULL;`
 
-	_, err := s.db.Pool.Exec(ctx, query)
+	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
 }
