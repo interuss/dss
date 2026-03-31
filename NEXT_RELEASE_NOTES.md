@@ -46,6 +46,8 @@ The release notes should contain at least the following sections:
 
 ## Optional migration tasks
 
+* `db-manager`'s `cleanup` and `migrate` commands no longer override the application name parameter. To tag these connections, use the `datastore_application_name` flag, which is now honoured by these commands (defaults to `dss`).
+
 ## Important information
 
 * The `timeout` configuration flag is now enforced consistently on all HTTP calls. This means that some slow calls that were previously successful will now be cancelled. Please review the value to be applied (the default is 10 seconds) and, if needed, update it to suit your needs.
