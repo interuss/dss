@@ -108,7 +108,7 @@ func (s *Store) Interact(ctx context.Context) (repos.Repository, error) {
 // Transact supplies a new repo, that will perform all of the DB accesses
 // in a Txn, and will retry any Txn's that fail due to retry-able errors
 // (typically contention).
-func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) error) error {
+func (s *Store) Transact(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
 	logger := logging.WithValuesFromContext(ctx, s.logger)
 	// TODO: consider what tx opts we want to support.
 	// TODO: we really need to remove the upper cockroach package, and have one
@@ -121,7 +121,7 @@ func (s *Store) Transact(ctx context.Context, f func(repo repos.Repository) erro
 	}, func(tx pgx.Tx) error {
 		// Is this recover still necessary?
 		defer recoverRollbackRepanic(ctx, tx)
-		return f(&repo{
+		return f(ctx, &repo{
 			Queryable: tx,
 			clock:     s.clock,
 			logger:    logger,
