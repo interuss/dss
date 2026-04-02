@@ -14,13 +14,17 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 
 	timeStart := restapi.Time{Value: start.Format(time.RFC3339), Format: TimeFormatRFC3339}
 	timeEnd := restapi.Time{Value: end.Format(time.RFC3339), Format: TimeFormatRFC3339}
-	invalid := restapi.Time{Value: start.Format(time.ANSIC)}
+	timeInvalid := restapi.Time{Value: start.Format(time.ANSIC)}
+	altLower := restapi.Altitude{Value: 100.0, Reference: ReferenceW84, Units: UnitsM}
+	altLo := float32(100.0)
+	altUpper := restapi.Altitude{Value: 200.0, Reference: ReferenceW84, Units: UnitsM}
+	altHi := float32(200.0)
 	testCases := []struct {
-		name    string
-		opts    Volume4DOpts
-		rest    *restapi.Volume4D
-		want    *Volume4D
-		wantErr bool
+		name       string
+		validators []Volume4DValidator
+		rest       *restapi.Volume4D
+		want       *Volume4D
+		wantErr    bool
 	}{
 		{
 			name: "Empty",
@@ -28,9 +32,9 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 			want: &Volume4D{SpatialVolume: &Volume3D{}},
 		},
 		{
-			name: "Times",
-			opts: Volume4DOpts{RequireTimeBounds: true},
-			rest: &restapi.Volume4D{TimeStart: &timeStart, TimeEnd: &timeEnd},
+			name:       "Times",
+			validators: []Volume4DValidator{WithRequireTimeBounds()},
+			rest:       &restapi.Volume4D{TimeStart: &timeStart, TimeEnd: &timeEnd},
 			want: &Volume4D{
 				SpatialVolume: &Volume3D{},
 				StartTime:     &start,
@@ -39,12 +43,12 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 		},
 		{
 			name:    "InvalidTimeStart",
-			rest:    &restapi.Volume4D{TimeStart: &invalid},
+			rest:    &restapi.Volume4D{TimeStart: &timeInvalid},
 			wantErr: true,
 		},
 		{
 			name:    "InvalidTimeEnd",
-			rest:    &restapi.Volume4D{TimeEnd: &invalid},
+			rest:    &restapi.Volume4D{TimeEnd: &timeInvalid},
 			wantErr: true,
 		},
 		{
@@ -53,22 +57,40 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "MissingTimeStart",
-			opts:    Volume4DOpts{RequireTimeBounds: true},
-			rest:    &restapi.Volume4D{TimeEnd: &timeEnd},
-			wantErr: true,
+			name:       "MissingTimeStart",
+			validators: []Volume4DValidator{WithRequireTimeBounds()},
+			rest:       &restapi.Volume4D{TimeEnd: &timeEnd},
+			wantErr:    true,
 		},
 		{
-			name:    "MissingTimeEnd",
-			opts:    Volume4DOpts{RequireTimeBounds: true},
-			rest:    &restapi.Volume4D{TimeStart: &timeStart},
-			wantErr: true,
+			name:       "MissingTimeEnd",
+			validators: []Volume4DValidator{WithRequireTimeBounds()},
+			rest:       &restapi.Volume4D{TimeStart: &timeStart},
+			wantErr:    true,
+		},
+		{
+			name:       "Altitude",
+			validators: []Volume4DValidator{WithRequireAltitudeBounds()},
+			rest:       &restapi.Volume4D{Volume: restapi.Volume3D{AltitudeLower: &altLower, AltitudeUpper: &altUpper}},
+			want:       &Volume4D{SpatialVolume: &Volume3D{AltitudeLo: &altLo, AltitudeHi: &altHi}},
+		},
+		{
+			name:       "MissingLowerAltitude",
+			validators: []Volume4DValidator{WithRequireAltitudeBounds()},
+			rest:       &restapi.Volume4D{Volume: restapi.Volume3D{AltitudeUpper: &altUpper}},
+			wantErr:    true,
+		},
+		{
+			name:       "MissingUpperAltitude",
+			validators: []Volume4DValidator{WithRequireAltitudeBounds()},
+			rest:       &restapi.Volume4D{Volume: restapi.Volume3D{AltitudeLower: &altLower}},
+			wantErr:    true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := Volume4DFromSCDRest(testCase.rest, testCase.opts)
+			actual, err := Volume4DFromSCDRest(testCase.rest, testCase.validators...)
 			if testCase.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -79,23 +101,14 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 }
 
 func TestVolume3DFromSCDRest(t *testing.T) {
-	lower := restapi.Altitude{
-		Value:     100.0,
-		Reference: ReferenceW84,
-		Units:     UnitsM,
-	}
+	lower := restapi.Altitude{Value: 100.0, Reference: ReferenceW84, Units: UnitsM}
 	lo := float32(100.0)
-	upper := restapi.Altitude{
-		Value:     200.0,
-		Reference: ReferenceW84,
-		Units:     UnitsM,
-	}
+	upper := restapi.Altitude{Value: 200.0, Reference: ReferenceW84, Units: UnitsM}
 	hi := float32(200.0)
 	invalid := restapi.Altitude{Value: 0}
 
 	testCases := []struct {
 		name    string
-		opts    Volume3DOpts
 		rest    *restapi.Volume3D
 		want    *Volume3D
 		wantErr bool
@@ -129,7 +142,6 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 		{
 			name: "Altitudes",
 			rest: &restapi.Volume3D{AltitudeLower: &lower, AltitudeUpper: &upper},
-			opts: Volume3DOpts{RequireAltitudeBounds: true},
 			want: &Volume3D{AltitudeLo: &lo, AltitudeHi: &hi},
 		},
 		{
@@ -148,18 +160,6 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "MissingLowerAltitude",
-			opts:    Volume3DOpts{RequireAltitudeBounds: true},
-			rest:    &restapi.Volume3D{AltitudeUpper: &upper},
-			wantErr: true,
-		},
-		{
-			name:    "MissingUpperAltitude",
-			opts:    Volume3DOpts{RequireAltitudeBounds: true},
-			rest:    &restapi.Volume3D{AltitudeLower: &lower},
-			wantErr: true,
-		},
-		{
 			name:    "MuiltiGeom",
 			rest:    &restapi.Volume3D{OutlineCircle: &restapi.Circle{}, OutlinePolygon: &restapi.Polygon{}},
 			wantErr: true,
@@ -168,7 +168,7 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := Volume3DFromSCDRest(testCase.rest, testCase.opts)
+			actual, err := Volume3DFromSCDRest(testCase.rest)
 			if testCase.wantErr {
 				assert.Error(t, err)
 			} else {
