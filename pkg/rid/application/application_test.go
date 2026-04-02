@@ -58,16 +58,17 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 			},
 		}, func() {}
 	}
-	if connectParameters.DBName != "rid" && connectParameters.DBName != "scd" {
-		connectParameters.DBName = "rid"
-	}
-	ridc.DefaultClock = fakeClock
+
+	connectParameters.DBName = "rid"
+
 	ridDatastore, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 	logger.Info("using datastore.")
 
-	store, err := ridc.NewStore(ctx, ridDatastore, "rid", logger)
+	store, err := ridc.NewStore(ctx, ridDatastore, logger)
 	require.NoError(t, err)
+
+	store.Clock = fakeClock
 
 	return store, func() {
 		require.NoError(t, CleanUp(ctx, store))
@@ -77,5 +78,11 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 
 // CleanUp drops all required tables from the store, useful for testing.
 func CleanUp(ctx context.Context, s *ridc.Store) error {
-	return s.CleanUp(ctx)
+	const query = `
+    DELETE FROM subscriptions WHERE id IS NOT NULL;
+    DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
+
+	_, err := s.DB.Pool.Exec(ctx, query)
+	return err
+
 }

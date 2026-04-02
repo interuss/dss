@@ -170,8 +170,10 @@ func evict(cmd *cobra.Command, _ []string) error {
 }
 
 func getSCDStore(ctx context.Context) (*scdc.Store, error) {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
 	connectParameters := datastoreflags.ConnectParameters()
-	connectParameters.DBName = scdc.DatabaseName
+	connectParameters.DBName = "scd"
 	datastore, err := datastore.Dial(ctx, connectParameters)
 	if err != nil {
 		logParams := connectParameters
@@ -179,7 +181,7 @@ func getSCDStore(ctx context.Context) (*scdc.Store, error) {
 		return nil, fmt.Errorf("failed to connect to SCD database with %+v: %w", logParams, err)
 	}
 
-	scdStore, err := scdc.NewStore(ctx, datastore, false)
+	scdStore, err := scdc.NewStore(ctx, datastore, logger, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create strategic conflict detection store with %+v: %w", connectParameters, err)
 	}
@@ -199,7 +201,7 @@ func getRIDStore(ctx context.Context) (*ridc.Store, error) {
 		return nil, fmt.Errorf("failed to connect to remote ID database with %+v: %w", logParams, err)
 	}
 
-	ridStore, err := ridc.NewStore(ctx, datastore, connectParameters.DBName, logger)
+	ridStore, err := ridc.NewStore(ctx, datastore, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create remote ID store with %+v: %w", connectParameters, err)
 	}
