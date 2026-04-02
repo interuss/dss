@@ -3,16 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/cockroachdb/cockroach-go/v2/crdb"
-	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
-	"github.com/coreos/go-semver/semver"
-	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	dssql "github.com/interuss/dss/pkg/sql"
+
+	"github.com/interuss/dss/pkg/datastore"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/scd/repos"
-	dsssql "github.com/interuss/dss/pkg/sql"
-	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 	"github.com/jonboulle/clockwork"
+	"go.uber.org/zap"
 )
 
 const (
@@ -21,95 +19,32 @@ const (
 	currentYugabyteMajorSchemaVersion = 1
 )
 
-var (
-	// DefaultClock is what is used as the Store's clock, returned from Dial.
-	DefaultClock = clockwork.NewRealClock()
-
-	// DatabaseName is the name of database storing strategic conflict detection data.
-	DatabaseName = "scd"
-)
-
-// repo is an implementation of repos.Repo using
-// a CockroachDB/Yugabyte transaction.
 type repo struct {
-	q          dsssql.Queryable
+	q          dssql.Queryable
 	clock      clockwork.Clock
+	logger     *zap.Logger
 	globalLock bool
 }
 
-// Store is an implementation of an scd.Store using
-// a CockroachDB or Yugabyte database.
 type Store struct {
-	db         *datastore.Datastore
-	clock      clockwork.Clock
-	globalLock bool
+	datastore.Store[repos.Repository]
 }
 
-// NewStore returns a Store instance connected to a cockroach or Yugabyte instance via db.
-func NewStore(ctx context.Context, db *datastore.Datastore, globalLock bool) (*Store, error) {
-	store := &Store{
-		db:         db,
-		clock:      DefaultClock,
-		globalLock: globalLock,
-	}
+func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger, globalLock bool) (*Store, error) {
 
-	if err := store.CheckCurrentMajorSchemaVersion(ctx); err != nil {
-		return nil, stacktrace.Propagate(err, "Strategic conflict detection schema version check failed")
-	}
+	s := &Store{}
 
-	return store, nil
-}
-
-// CheckCurrentMajorSchemaVersion returns nil if s supports the current major schema version.
-func (s *Store) CheckCurrentMajorSchemaVersion(ctx context.Context) error {
-	vs, err := s.GetVersion(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get database schema version for strategic conflict detection")
-	}
-	if vs == datastore.UnknownVersion {
-		return stacktrace.NewError("Strategic conflict detection database has not been bootstrapped with Schema Manager, Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas")
-	}
-
-	if s.db.Version.Type == datastore.CockroachDB && currentCrdbMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, currentCrdbMajorSchemaVersion)
-	}
-
-	if s.db.Version.Type == datastore.Yugabyte && currentYugabyteMajorSchemaVersion != vs.Major {
-		return stacktrace.NewError("Unsupported schema version for strategic conflict detection! Got %s, requires major version of %d. Please check https://github.com/interuss/dss/tree/master/build#upgrading-database-schemas", vs, currentYugabyteMajorSchemaVersion)
-	}
-
-	return nil
-}
-
-// Interact implements store.Interactor interface.
-func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
-	return &repo{
-		q:          s.db.Pool,
-		clock:      s.clock,
-		globalLock: s.globalLock,
-	}, nil
-}
-
-// Transact implements store.Transactor interface.
-func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
-	ctx = crdb.WithMaxRetries(ctx, flags.ConnectParameters().MaxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.db.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		return f(ctx, &repo{
-			q:          tx,
-			clock:      s.clock,
-			globalLock: s.globalLock,
-		})
+	base, err := datastore.NewStore(ctx, db, flags.ConnectParameters().MaxRetries, func(q dssql.Queryable) repos.Repository {
+		return &repo{
+			q:          q,
+			clock:      s.Clock,
+			logger:     logging.WithValuesFromContext(ctx, logger),
+			globalLock: globalLock,
+		}
 	})
-}
-
-// Close closes the underlying DB connection.
-func (s *Store) Close() error {
-	s.db.Pool.Close()
-	return nil
-}
-
-// GetVersion returns the Version string for the Database.
-// If the DB was is not bootstrapped using the schema manager we throw and error
-func (s *Store) GetVersion(ctx context.Context) (*semver.Version, error) {
-	return s.db.GetSchemaVersion(ctx, DatabaseName)
+	if err != nil {
+		return nil, err
+	}
+	s.Store = base
+	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
 }
