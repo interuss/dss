@@ -56,8 +56,9 @@ else
     echo "Signing docker image ${TAG} (digest: ${DIGEST})..."
     cosign sign --yes "${DIGEST}"
 
-    echo "Verifying signature of docker image ${TAG} (digest: ${DIGEST})..."
-    cosign verify "${DIGEST}" --certificate-identity="${CERT_IDENTITY}" --certificate-oidc-issuer="${CERT_ISSUER}"
+    echo "Verifying signature of docker image ${TAG} (digest: ${DIGEST}) after a 30 seconds wait..."
+    sleep 30 # the signature may not be returned immediately after being published, so as a mitigation we wait for 30 seconds before verifying
+    cosign verify --certificate-identity="${CERT_IDENTITY}" --certificate-oidc-issuer="${CERT_ISSUER}" "${DIGEST}"
 
     echo "Signed and verified signature of docker image ${TAG} (digest: ${DIGEST})..."
 
