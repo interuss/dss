@@ -47,9 +47,3 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 	s.Store = base
 	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
 }
-
-func (s *Store) CleanUp(ctx context.Context) error {
-	const query = `DELETE FROM dss_metadata WHERE locality IS NOT NULL;`
-	_, err := s.DB.Pool.Exec(ctx, query)
-	return err
-}
