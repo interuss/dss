@@ -112,6 +112,8 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 	}
 
 	// Parse extents
+	// If end time is not specified, the value will be chosen automatically by the DSS.
+	// If start time is not specified, it will default to the time the request is processed.
 	extents, err := dssmodels.Volume4DFromSCDRest(&params.Extents)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to parse extents")

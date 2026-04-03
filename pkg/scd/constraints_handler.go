@@ -416,9 +416,9 @@ func validateAndReturnConstraintUpsertParams(
 
 	// TODO: factor out logic below into common multi-vol4d parser and reuse with PutOperationReference
 	valid.extents = make([]*dssmodels.Volume4D, len(params.Extents))
-
 	for idx, extent := range params.Extents {
-		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent)
+		// Start and end times are required for each volume
+		cExtent, err := dssmodels.Volume4DFromSCDRest(&extent, dssmodels.WithRequireTimeBounds())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to parse extent %d", idx)
 		}
@@ -429,19 +429,8 @@ func validateAndReturnConstraintUpsertParams(
 		return nil, stacktrace.Propagate(err, "Failed to union extents")
 	}
 
-	if valid.uExtent.StartTime == nil {
-		return nil, stacktrace.NewError("Missing time_start from extents")
-	}
-	if valid.uExtent.EndTime == nil {
-		return nil, stacktrace.NewError("Missing time_end from extents")
-	}
-
 	if now.After(*valid.uExtent.EndTime) {
 		return nil, stacktrace.NewError("Constraint may not end in the past")
-	}
-
-	if valid.uExtent.StartTime.After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewError("Constraint time_end must be after time_start")
 	}
 
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
