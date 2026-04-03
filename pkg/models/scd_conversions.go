@@ -7,34 +7,96 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
+type Volume4DValidator func(*Volume4D) error
+
+func WithRequireTimeBounds() Volume4DValidator {
+	return func(v *Volume4D) error {
+		if v.StartTime == nil {
+			return stacktrace.NewError("Missing start time")
+		}
+		if v.EndTime == nil {
+			return stacktrace.NewError("Missing end time")
+		}
+		return nil
+	}
+}
+
+func WithRequireAltitudeBounds() Volume4DValidator {
+	return func(v *Volume4D) error {
+		if v.SpatialVolume == nil {
+			return nil
+		}
+
+		if v.SpatialVolume.AltitudeLo == nil {
+			return stacktrace.NewError("Missing lower altitude")
+		}
+		if v.SpatialVolume.AltitudeHi == nil {
+			return stacktrace.NewError("Missing upper altitude")
+		}
+		return nil
+	}
+}
+
 // Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
-func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
+func Volume4DFromSCDRest(vol4 *restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
 
-	result := &Volume4D{
-		SpatialVolume: vol3,
-	}
-
+	var startTime *time.Time
 	if vol4.TimeStart != nil {
 		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeStart.Value)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting start time")
 		}
-		result.StartTime = &ts
+		startTime = &ts
 	}
 
+	var endTime *time.Time
 	if vol4.TimeEnd != nil {
 		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeEnd.Value)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error converting end time")
 		}
-		result.EndTime = &ts
+		endTime = &ts
 	}
 
-	return result, nil
+	if startTime != nil && endTime != nil && startTime.After(*endTime) {
+		return nil, stacktrace.NewError("Start time cannot be after end time")
+	}
+
+	volume := &Volume4D{
+		SpatialVolume: vol3,
+		StartTime:     startTime,
+		EndTime:       endTime,
+	}
+
+	for _, validator := range validators {
+		if err := validator(volume); err != nil {
+			return nil, err
+		}
+	}
+
+	return volume, nil
+}
+
+// UnionVolume4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
+func UnionVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
+	volumes := make([]*Volume4D, len(vol4s))
+	for idx, vol4 := range vol4s {
+		volume, err := Volume4DFromSCDRest(&vol4, validators...)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
+		}
+		volumes[idx] = volume
+	}
+	union, err := UnionVolumes4D(volumes...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to union volumes")
+	}
+
+	return union, nil
 }
 
 // Volume3DFromSCDRest converts a vol3 SCD v1 REST model to a Volume3D
@@ -63,6 +125,10 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
 			return nil, stacktrace.NewError("Invalid upper altitude reference")
 		}
 		altHi = float32p(float32(vol3.AltitudeUpper.Value))
+	}
+
+	if altLo != nil && altHi != nil && *altLo > *altHi {
+		return nil, stacktrace.NewError("Lower altitude cannot be greater than upper altitude")
 	}
 
 	switch {
