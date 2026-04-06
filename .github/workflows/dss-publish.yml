@@ -25,8 +25,7 @@ jobs:
 
     steps:
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.9.1
-
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003  # v4.1.1
       - name: Job information
         run: |
           echo "Job information"
