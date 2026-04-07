@@ -503,15 +503,16 @@ func validateAndReturnOIRUpsertParams(
 	}
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
-	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(params.Extents, dssmodels.WithRequireTimeBounds(), dssmodels.WithRequireAltitudeBounds())
+	// The end time may not be in the past.
+	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(
+		params.Extents,
+		dssmodels.WithRequireTimeBounds(),
+		dssmodels.WithRequireAltitudeBounds(),
+		dssmodels.WithRequireEndTimeAfter(now),
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
-
-	if now.After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewError("OperationalIntents may not end in the past")
-	}
-
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid area")

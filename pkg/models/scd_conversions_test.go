@@ -33,7 +33,7 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 		},
 		{
 			name:       "Times",
-			validators: []Volume4DValidator{WithRequireTimeBounds()},
+			validators: []Volume4DValidator{WithRequireTimeBounds(), WithRequireEndTimeAfter(end.Add(-time.Minute))},
 			rest:       &restapi.Volume4D{TimeStart: &timeStart, TimeEnd: &timeEnd},
 			want: &Volume4D{
 				SpatialVolume: &Volume3D{},
@@ -55,6 +55,12 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 			name:    "TimeStartAfterTimeEnd",
 			rest:    &restapi.Volume4D{TimeStart: &timeEnd, TimeEnd: &timeStart},
 			wantErr: true,
+		},
+		{
+			name:       "TimeEndExpired",
+			validators: []Volume4DValidator{WithRequireEndTimeAfter(end.Add(time.Minute))},
+			rest:       &restapi.Volume4D{TimeStart: &timeStart, TimeEnd: &timeEnd},
+			wantErr:    true,
 		},
 		{
 			name:       "MissingTimeStart",

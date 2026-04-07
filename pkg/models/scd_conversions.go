@@ -21,6 +21,15 @@ func WithRequireTimeBounds() Volume4DValidator {
 	}
 }
 
+func WithRequireEndTimeAfter(now time.Time) Volume4DValidator {
+	return func(v *Volume4D) error {
+		if v.EndTime != nil && v.EndTime.Before(now) {
+			return stacktrace.NewError("End time may not be in the past")
+		}
+		return nil
+	}
+}
+
 func WithRequireAltitudeBounds() Volume4DValidator {
 	return func(v *Volume4D) error {
 		if v.SpatialVolume.AltitudeLo == nil {
@@ -81,7 +90,7 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D, validators ...Volume4DValidator
 func UnionVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
 	volumes := make([]*Volume4D, len(vol4s))
 	for idx, vol4 := range vol4s {
-		volume, err := Volume4DFromSCDRest(&vol4, validators...)
+		volume, err := Volume4DFromSCDRest(&vol4)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
 		}
@@ -90,6 +99,12 @@ func UnionVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DVa
 	union, err := UnionVolumes4D(volumes...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to union volumes")
+	}
+
+	for _, validator := range validators {
+		if err := validator(union); err != nil {
+			return nil, err
+		}
 	}
 
 	return union, nil
