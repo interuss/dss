@@ -62,7 +62,7 @@ func (s *Store[R]) GetVersion(ctx context.Context) (*semver.Version, error) {
 	return s.version, nil
 }
 
-func (s *Store[R]) CheckMajorSchemaVersion(ctx context.Context, crdbExpected, ybExpected int64, module string) error { // TODO: Make it internal, pass parameters to NewStore
+func (s *Store[R]) CheckMajorSchemaVersion(ctx context.Context, crdbExpected, ybExpected int64, module string) error { // TODO: Make it internal, pass parameters to newStore
 	vs, err := s.GetVersion(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get schema version for %s", module)

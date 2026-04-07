@@ -6,6 +6,7 @@ import (
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastoreutils"
 	"github.com/interuss/dss/pkg/logging"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
@@ -29,7 +30,7 @@ type Store struct {
 	datastore.Store[repos.Repository]
 }
 
-func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) (*Store, error) {
+func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) (*Store, error) {
 
 	s := &Store{}
 
@@ -52,4 +53,13 @@ func (s *Store) CleanUp(ctx context.Context) error {
 	const query = `DELETE FROM dss_metadata WHERE locality IS NOT NULL;`
 	_, err := s.DB.Pool.Exec(ctx, query)
 	return err
+}
+
+func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
+
+	store, err := datastoreutils.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+		return newStore(ctx, db, logger)
+	})
+
+	return store, err
 }
