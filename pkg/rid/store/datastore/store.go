@@ -34,7 +34,7 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 
 	s := &Store{}
 
-	base, err := datastore.NewStore(ctx, db, flags.ConnectParameters().MaxRetries, func(q dssql.Queryable) repos.Repository {
+	base, err := datastore.NewStore(ctx, db, flags.ConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
 		return &repo{
 			Queryable: q,
 			clock:     s.Clock,
@@ -45,7 +45,7 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 		return nil, err
 	}
 	s.Store = base
-	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
+	return s, nil
 }
 
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
