@@ -52,6 +52,9 @@ The release notes should contain at least the following sections:
 
 * The `timeout` configuration flag is now enforced consistently on all HTTP calls. This means that some slow calls that were previously successful will now be cancelled. Please review the value to be applied (the default is 10 seconds) and, if needed, update it to suit your needs.
 * `--datastore_db_name` (and the deprecated version, `--cockroach_db_name`) has been removed. It was not used except for tests and can be removed if you use it.
+* Datastore initialization has been normalized throughout the codebase, with the following changes:
+  * Error messages of `db-manager`'s `cleanup` command are now the same as the `core-service` command.
+  * AUX database is regularly pinged (before that was only the case for the RID and SCD databases).
 
 ## Minimal database schema version
 
