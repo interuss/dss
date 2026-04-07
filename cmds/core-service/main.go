@@ -164,6 +164,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		versioningV1Server = &versioning.Server{}
 	)
 
+	ctx, ctxCancel := context.WithCancel(ctx)
+	defer ctxCancel()
+
 	// Initialize aux
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 	if err != nil {

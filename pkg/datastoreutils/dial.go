@@ -60,6 +60,11 @@ func DialStore[S any](ctx context.Context, dbName string, withCheckCron bool, ne
 			return zero, stacktrace.Propagate(err, "Failed to schedule db check for %s", dbName)
 		}
 		c.Start()
+
+		go func() {
+			<-ctx.Done()
+			c.Stop()
+		}()
 	}
 
 	return s, nil
