@@ -49,12 +49,6 @@ func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
 }
 
-func (s *Store) CleanUp(ctx context.Context) error {
-	const query = `DELETE FROM dss_metadata WHERE locality IS NOT NULL;`
-	_, err := s.DB.Pool.Exec(ctx, query)
-	return err
-}
-
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
 
 	store, err := datastoreutils.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
