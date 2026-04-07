@@ -23,10 +23,6 @@ func WithRequireTimeBounds() Volume4DValidator {
 
 func WithRequireAltitudeBounds() Volume4DValidator {
 	return func(v *Volume4D) error {
-		if v.SpatialVolume == nil {
-			return nil
-		}
-
 		if v.SpatialVolume.AltitudeLo == nil {
 			return stacktrace.NewError("Missing lower altitude")
 		}
