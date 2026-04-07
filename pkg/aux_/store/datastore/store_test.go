@@ -27,7 +27,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	store, err := newTestStore(ctx, t, connectParameters)
 	require.NoError(t, err)
 	return store, func() {
-		require.NoError(t, CleanUp(ctx, store))
+		require.NoError(t, cleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
 }
@@ -45,8 +45,8 @@ func newTestStore(ctx context.Context, t *testing.T, connectParameters datastore
 	return s, nil
 }
 
-// CleanUp drops all required tables from the store, useful for testing.
-func CleanUp(ctx context.Context, s *Store) error {
+// cleanUp drops all required tables from the store, useful for testing.
+func cleanUp(ctx context.Context, s *Store) error {
 	const query = `
 	DELETE FROM dss_metadata WHERE locality IS NOT NULL;
     `

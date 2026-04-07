@@ -48,14 +48,6 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 	return s, s.CheckMajorSchemaVersion(ctx, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, db.Pool.Config().ConnConfig.Database)
 }
 
-func (s *Store) CleanUp(ctx context.Context) error {
-	const query = `
-	DELETE FROM subscriptions WHERE id IS NOT NULL;
-	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
-	_, err := s.DB.Pool.Exec(ctx, query)
-	return err
-}
-
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
 
 	store, err := datastoreutils.DialStore(ctx, "rid", withCheckCron, func(db *datastore.Datastore) (*Store, error) {

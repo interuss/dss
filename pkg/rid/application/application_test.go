@@ -71,12 +71,18 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 	store.Clock = fakeClock
 
 	return store, func() {
-		require.NoError(t, CleanUp(ctx, store))
+		require.NoError(t, cleanUp(ctx, store))
 		require.NoError(t, store.Close())
 	}
 }
 
-// CleanUp drops all required tables from the store, useful for testing.
-func CleanUp(ctx context.Context, s *ridc.Store) error {
-	return s.CleanUp(ctx)
+// cleanUp drops all required tables from the store, useful for testing.
+func cleanUp(ctx context.Context, s *ridc.Store) error {
+	const query = `
+    DELETE FROM subscriptions WHERE id IS NOT NULL;
+    DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
+
+	_, err := s.DB.Pool.Exec(ctx, query)
+	return err
+
 }
