@@ -415,7 +415,7 @@ func validateAndReturnConstraintUpsertParams(
 
 	// Start and end times are required for each volume
 	// The end time may not be in the past
-	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(
+	valid.uExtent, err = dssmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
 		dssmodels.WithRequireTimeBounds(),
 		dssmodels.WithRequireEndTimeAfter(now),

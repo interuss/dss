@@ -86,8 +86,8 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D, validators ...Volume4DValidator
 	return volume, nil
 }
 
-// UnionVolume4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
-func UnionVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
+// UnionVolumes4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
+func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
 	volumes := make([]*Volume4D, len(vol4s))
 	for idx, vol4 := range vol4s {
 		volume, err := Volume4DFromSCDRest(&vol4)

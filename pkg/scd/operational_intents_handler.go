@@ -504,7 +504,7 @@ func validateAndReturnOIRUpsertParams(
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
 	// The end time may not be in the past.
-	valid.uExtent, err = dssmodels.UnionVolume4DFromSCDRest(
+	valid.uExtent, err = dssmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
 		dssmodels.WithRequireTimeBounds(),
 		dssmodels.WithRequireAltitudeBounds(),
