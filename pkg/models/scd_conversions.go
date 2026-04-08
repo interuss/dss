@@ -42,8 +42,33 @@ func WithRequireAltitudeBounds() Volume4DValidator {
 	}
 }
 
+// UnionVolumes4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
+// Validation is applied on the resulting volume union
+func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
+	volumes := make([]*Volume4D, len(vol4s))
+	for idx, vol4 := range vol4s {
+		volume, err := Volume4DFromSCDRest(&vol4)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
+		}
+		volumes[idx] = volume
+	}
+	union, err := UnionVolumes4D(volumes...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to union volumes")
+	}
+
+	for _, validator := range validators {
+		if err := validator(union); err != nil {
+			return nil, stacktrace.Propagate(err, "Invalid volume union")
+		}
+	}
+
+	return union, nil
+}
+
 // Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
-func Volume4DFromSCDRest(vol4 *restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
+func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
@@ -77,37 +102,7 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D, validators ...Volume4DValidator
 		EndTime:       endTime,
 	}
 
-	for _, validator := range validators {
-		if err := validator(volume); err != nil {
-			return nil, err
-		}
-	}
-
 	return volume, nil
-}
-
-// UnionVolumes4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
-func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
-	volumes := make([]*Volume4D, len(vol4s))
-	for idx, vol4 := range vol4s {
-		volume, err := Volume4DFromSCDRest(&vol4)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
-		}
-		volumes[idx] = volume
-	}
-	union, err := UnionVolumes4D(volumes...)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to union volumes")
-	}
-
-	for _, validator := range validators {
-		if err := validator(union); err != nil {
-			return nil, err
-		}
-	}
-
-	return union, nil
 }
 
 // Volume3DFromSCDRest converts a vol3 SCD v1 REST model to a Volume3D
