@@ -424,10 +424,6 @@ func validateAndReturnConstraintUpsertParams(
 		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
 
-	if now.After(*valid.uExtent.EndTime) {
-		return nil, stacktrace.NewError("Constraint may not end in the past")
-	}
-
 	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid area")
