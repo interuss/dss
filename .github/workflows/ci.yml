@@ -18,7 +18,7 @@ jobs:
         echo "Branch: ${{ github.ref }}"
         docker images
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         submodules: true
     - name: Python lint
@@ -49,7 +49,7 @@ jobs:
         docker images
         go env
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         submodules: true
     - name: Deployment infrastructure tests
@@ -97,7 +97,7 @@ jobs:
           docker images
           go env
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build dss image
@@ -128,7 +128,7 @@ jobs:
         echo "Branch: ${{ github.ref }}"
         docker images
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         submodules: true
     - name: Tests
@@ -147,7 +147,7 @@ jobs:
         echo "Branch: ${{ github.ref }}"
         docker images
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         submodules: true
     - name: Check migrations

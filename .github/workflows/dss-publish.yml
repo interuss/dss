@@ -37,7 +37,7 @@ jobs:
           cosign version
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
