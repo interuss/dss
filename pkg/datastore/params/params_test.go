@@ -1,8 +1,9 @@
-package datastore
+package params
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // ConnectParametersFromMap constructs a ConnectParameters instance from m.

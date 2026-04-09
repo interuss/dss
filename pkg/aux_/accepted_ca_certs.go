@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
-	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastore/params"
 )
 
 func (a *Server) GetAcceptedCAs(ctx context.Context, req *restapi.GetAcceptedCAsRequest) restapi.GetAcceptedCAsResponseSet {
 
-	connectParameters := flags.ConnectParameters()
+	connectParameters := params.GetConnectParameters()
 
 	CAFile := connectParameters.GetCAFile()
 

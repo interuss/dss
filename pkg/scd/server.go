@@ -7,7 +7,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	scdstore "github.com/interuss/dss/pkg/scd/store"
+	scdc "github.com/interuss/dss/pkg/scd/store/datastore"
 	"github.com/interuss/stacktrace"
 )
 
@@ -34,7 +34,7 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.
 
 // Server implements scdv1.Implementation.
 type Server struct {
-	Store             scdstore.Store
+	Store             *scdc.Store
 	DSSReportHandler  ReceivedReportHandler
 	AllowHTTPBaseUrls bool
 }

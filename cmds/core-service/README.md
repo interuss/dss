@@ -29,7 +29,7 @@ go run ./cmds/core-service \
 
 #### CockroachDB cluster
 
-To run correctly, core-service must be able to [access](../../pkg/datastore/flags/flags.go) a CockroachDB or a Yugabyte cluster.  Provision of this cluster is handled automatically for a local development environment if following [the instructions for a standalone instance](../../build/dev/standalone_instance.md).
+To run correctly, core-service must be able to [access](../../pkg/datastore/params/params.go) a CockroachDB or a Yugabyte cluster.  Provision of this cluster is handled automatically for a local development environment if following [the instructions for a standalone instance](../../build/dev/standalone_instance.md).
 
 Alternatively, a CockroachDB instance can be created manually with:
 

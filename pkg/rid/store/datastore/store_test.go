@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -26,7 +26,7 @@ var (
 )
 
 func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
-	connectParameters := flags.ConnectParameters()
+	connectParameters := params.GetConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
 	}
@@ -42,7 +42,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters datastore.ConnectParameters) (*Store, error) {
+func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
 	db, err := datastore.Dial(ctx, connectParameters)
 	require.NoError(t, err)
 
