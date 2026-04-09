@@ -112,6 +112,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 accepted_jwt_audiences: metadata.backend.hostname,
                 locality: metadata.locality,
                 enable_scd: metadata.enableScd,
+                enable_scd_global_lock: metadata.enableScdGlobalLock,
               } + datastoreparameters.all(metadata)
               + if metadata.backend.publicEndpoint != '' then {
                 public_endpoint: metadata.backend.publicEndpoint,

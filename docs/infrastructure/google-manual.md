@@ -209,6 +209,11 @@ your chosen provider.
         detection functionality (currently an R&D project tracking an initial
         draft of the upcoming ASTM standard).
 
+    1.  `VAR_ENABLE_SCD_GLOBAL_LOCK`: Set this boolean true to enable
+        experimental global lock when working with SCD subscriptions. Reduc
+        e global throughput but improve throughput with lot of subscriptions in
+        the same areas.
+
     1.  `VAR_LOCALITY`: Unique name for your DSS instance.  Currently, we
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
         allowed.  However, any unique (among all other participating DSS
