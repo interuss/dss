@@ -59,7 +59,7 @@ spec:
             - --datastore_ssl_mode=verify-full
 {{ end }}
             - --dump_requests=true
-            - --enable_scd={{$dss.enableScd | default true}}
+            - --enable_scd={{$dss.conf.enableScd}}
             - --gcp_prof_service_name=
             {{- if $dss.conf.jwksEndpoint }}
             - --jwks_endpoint={{ $dss.conf.jwksEndpoint }}
