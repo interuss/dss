@@ -57,6 +57,7 @@ module "terraform-commons-dss" {
   evict_rid_isas                   = var.evict_rid_isas
   evict_rid_subscriptions          = var.evict_rid_subscriptions
   enable_monitoring                = var.enable_monitoring
+  enable_scd                       = var.enable_scd
   prometheus_hostname              = var.prometheus_hostname
   ip_prometheus                    = module.terraform-google-kubernetes.ip_prometheus
 

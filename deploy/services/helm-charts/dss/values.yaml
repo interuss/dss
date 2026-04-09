@@ -2,6 +2,7 @@
 
 dss:
   conf:
+    enableScd: true
     evict:
       scd:
           enableCron: false
