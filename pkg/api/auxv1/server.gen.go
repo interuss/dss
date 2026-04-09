@@ -297,6 +297,14 @@ func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r 
 		api.WriteJSON(w, 200, response.Response200)
 		return
 	}
+	if response.Response401 != nil {
+		api.WriteJSON(w, 401, response.Response401)
+		return
+	}
+	if response.Response403 != nil {
+		api.WriteJSON(w, 403, response.Response403)
+		return
+	}
 	if response.Response501 != nil {
 		api.WriteJSON(w, 501, response.Response501)
 		return
