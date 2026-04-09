@@ -5,8 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/flags"
-	"github.com/interuss/dss/pkg/datastoreutils"
+	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
@@ -34,7 +33,7 @@ func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 
 	s := &Store{}
 
-	base, err := datastore.NewStore(ctx, db, flags.ConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
+	base, err := datastore.NewStore(ctx, db, params.GetConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
 		return &repo{
 			Queryable: q,
 			clock:     s.Clock,
@@ -51,7 +50,7 @@ func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
 
-	store, err := datastoreutils.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+	store, err := datastore.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
 		return newStore(ctx, db, logger)
 	})
 

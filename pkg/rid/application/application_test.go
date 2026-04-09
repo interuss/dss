@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/flags"
+	"github.com/interuss/dss/pkg/datastore/params"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -45,7 +45,7 @@ func (s *mockRepo) Close() error {
 
 func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.Store, func()) {
 	DefaultClock = fakeClock
-	connectParameters := flags.ConnectParameters()
+	connectParameters := params.GetConnectParameters()
 
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		logger.Info("using the stubbed in memory store.")

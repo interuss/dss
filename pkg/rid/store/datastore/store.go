@@ -3,8 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/interuss/dss/pkg/datastore/flags"
-	"github.com/interuss/dss/pkg/datastoreutils"
+	"github.com/interuss/dss/pkg/datastore/params"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/datastore"
@@ -34,7 +33,7 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 
 	s := &Store{}
 
-	base, err := datastore.NewStore(ctx, db, flags.ConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
+	base, err := datastore.NewStore(ctx, db, params.GetConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
 		return &repo{
 			Queryable: q,
 			clock:     s.Clock,
@@ -50,7 +49,7 @@ func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) 
 
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
 
-	store, err := datastoreutils.DialStore(ctx, "rid", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+	store, err := datastore.DialStore(ctx, "rid", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
 		return NewStore(ctx, db, logger)
 	})
 
