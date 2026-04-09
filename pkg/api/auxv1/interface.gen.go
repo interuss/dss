@@ -190,6 +190,12 @@ type GetScdLockModeResponseSet struct {
 	// The information is successfully returned.
 	Response200 *SCDLockModeResponse
 
+	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
+	Response401 *ErrorResponse
+
+	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
+	Response403 *ErrorResponse
+
 	// The server has not implemented this operation.
 	Response501 *ErrorResponse
 
