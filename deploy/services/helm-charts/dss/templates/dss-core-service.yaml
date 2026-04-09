@@ -60,6 +60,7 @@ spec:
 {{ end }}
             - --dump_requests=true
             - --enable_scd={{$dss.conf.enableScd}}
+            - --enable_scd_global_lock={{$dss.conf.enableScdGlobalLock | default false}}
             - --gcp_prof_service_name=
             {{- if $dss.conf.jwksEndpoint }}
             - --jwks_endpoint={{ $dss.conf.jwksEndpoint }}

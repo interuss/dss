@@ -38,6 +38,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "image_pull_secret",
     "authorization",
     "enable_scd",
+    "enable_scd_global_lock",
     "should_init",
     "desired_rid_db_version",
     "desired_scd_db_version",
