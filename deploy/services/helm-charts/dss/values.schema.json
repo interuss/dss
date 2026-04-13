@@ -263,6 +263,9 @@
             "enableScd": {
               "type": "boolean"
             },
+            "enableScdGlobalLock": {
+              "type": "boolean"
+            },
             "hostname": {
               "type": "string",
               "description": "Public hostname of the dss. Example: dss.example.com"

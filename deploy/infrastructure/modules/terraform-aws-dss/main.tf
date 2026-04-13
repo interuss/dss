@@ -59,6 +59,7 @@ module "terraform-commons-dss" {
   evict_rid_subscriptions          = var.evict_rid_subscriptions
   enable_monitoring                = var.enable_monitoring
   enable_scd                       = var.enable_scd
+  enable_scd_global_lock           = var.enable_scd_global_lock
   prometheus_hostname              = var.prometheus_hostname
   ip_prometheus                    = module.terraform-aws-kubernetes.ip_prometheus
 

@@ -9,6 +9,7 @@ local metadata = metadataBase {
   clusterName: 'dss-local-cluster',
   single_cluster: true,
   enableScd: true,
+  enableScdGlobalLock: false,
   datastore: 'yugabyte',
   locality: 'minikube',
   cockroach+: {
