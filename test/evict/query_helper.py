@@ -25,7 +25,7 @@ class QueryHelper:
         ).read()
         data = json.loads(r)
 
-        if not "access_token":
+        if "access_token" not in data:
             self.logger.error(
                 "❌ Unable to retrieve access token. Is the dummy auth server running?"
             )
