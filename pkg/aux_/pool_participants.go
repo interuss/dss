@@ -86,6 +86,11 @@ func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutD
 		return resp
 	}
 
+	if req.Source == nil {
+		resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Source not set"))}
+		return resp
+	}
+
 	heartbeat := models.Heartbeat{
 		Source:   *req.Source,
 		Reporter: *req.Auth.ClientID,
