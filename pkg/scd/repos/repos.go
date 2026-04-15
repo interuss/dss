@@ -90,7 +90,9 @@ type Constraint interface {
 	DeleteConstraint(ctx context.Context, id dssmodels.ID) error
 }
 
-// Repository aggregates all SCD-specific repo interfaces.
+// scd.repos.Repository aggregates all SCD-specific repo interfaces to perform SCD operations on
+// any data backing.  This is a repository type, generally intended to be obtained/used via a
+// store.Store[Repository] interface.
 type Repository interface {
 	OperationalIntent
 	Subscription

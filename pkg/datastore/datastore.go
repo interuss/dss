@@ -16,6 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// datastore.Datastore is information about database that a datastore.Store is using.
+// (just a subset of datastore.Store fields with methods that only need those fields)
 type Datastore struct {
 	Version *Version
 	Pool    *pgxpool.Pool

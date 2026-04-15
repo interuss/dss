@@ -1,3 +1,4 @@
-// Package datastore provides an implementation of a dss.Store on top of a
-// Cockroach DB or YugabyteDB instance.
+// Package aux_.store.datastore provides a concrete implementation of a
+// store.Store[aux_.repos.Repository] using a database as a data backing (such as CockroachDB or
+// YugabyteDB).
 package datastore

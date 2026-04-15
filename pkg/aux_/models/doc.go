@@ -1,2 +1,2 @@
-// Package models contains business objects and logic for AUX.
+// Package aux_.models contains business objects for AUX operations.
 package models

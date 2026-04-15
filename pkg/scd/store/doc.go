@@ -1,3 +1,3 @@
-// Package store defines interfaces that every RID Store implementation,
-// acting on an SCD Repository, must implement.
+// Package scd.store defines interfaces that every SCD store.Store implementation,
+// acting on/providing an SCD scd.repos.Repository, must implement.
 package store
