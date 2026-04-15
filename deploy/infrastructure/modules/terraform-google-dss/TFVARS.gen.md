@@ -186,15 +186,22 @@ Use <code>latest</code> to use the latest schema version.</p>
 </td>
             </tr><tr>
                 <td>google_kubernetes_storage_class (<code>string</code>)</td>
-                <td><p>GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
-See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
+                <td><p>GCP Kubernetes Storage Class to use for datastores and Prometheus persistent volumes.
+See https://docs.cloud.google.com/compute/docs/disks/persistent-disks#disk-types for more details and
 available options.</p>
-<p>Example: <code>standard</code></p>
+<p>Depending on your use case, performance may be significantly improved with higher-tier storage classes, though this should be balanced against the associated costs.</p>
+<p>Both CockroachDB and YugabyteDB recommend SSDs for production workloads, configured via the <code>premium-rwo</code> storage class. Use <code>standard</code> for testing only.</p>
+<p>See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#gcp and https://docs.yugabyte.com/stable/deploy/checklist/#google-cloud for database-specific recommendations.</p>
+<p>Example: <code>premium-rwo</code> for production and <code>standard</code> for development.</p>
 </td>
             </tr><tr>
                 <td>google_machine_type (<code>string</code>)</td>
                 <td><p>GCP machine type used for the Kubernetes node pool.
-Example: <code>n2-standard-4</code> for production, <code>e2-medium</code> for development</p>
+See https://docs.cloud.google.com/compute/docs/machine-resource for more details and available options.</p>
+<p>Depending on your use case, performance may be significantly improved with higher-tier instances, though this should be balanced against the associated costs.</p>
+<p>Both CockroachDB and YugabyteDB recommend <code>n2</code> instances for production. Use <code>f1</code> and <code>g1</code> instances for testing only.</p>
+<p>See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#gcp and https://docs.yugabyte.com/stable/deploy/checklist/#google-cloud for database-specific recommendations.</p>
+<p>Example: <code>n2-standard-4</code> for production, <code>e2-medium</code> for development.</p>
 </td>
             </tr><tr>
                 <td>google_project_name (<code>string</code>)</td>

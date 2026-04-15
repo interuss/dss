@@ -30,9 +30,19 @@ variable "google_machine_type" {
   type        = string
   description = <<-EOT
   GCP machine type used for the Kubernetes node pool.
-  Example: `n2-standard-4` for production, `e2-medium` for development
+  See https://docs.cloud.google.com/compute/docs/machine-resource for more details and available options.
+
+  Depending on your use case, performance may be significantly improved with higher-tier instances, though this should be balanced against the associated costs.
+
+  Both CockroachDB and YugabyteDB recommend `n2` instances for production. Use `f1` and `g1` instances for testing only.
+
+  See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#gcp and https://docs.yugabyte.com/stable/deploy/checklist/#google-cloud for database-specific recommendations.
+
+  Example: `n2-standard-4` for production, `e2-medium` for development.
+
   EOT
 }
+
 
 variable "app_hostname" {
   type        = string
@@ -128,13 +138,20 @@ variable "kubernetes_version" {
 variable "google_kubernetes_storage_class" {
   type        = string
   description = <<-EOT
-  GCP Kubernetes Storage Class to use for CockroachDB and Prometheus persistent volumes.
-  See https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes for more details and
+  GCP Kubernetes Storage Class to use for datastores and Prometheus persistent volumes.
+  See https://docs.cloud.google.com/compute/docs/disks/persistent-disks#disk-types for more details and
   available options.
 
-  Example: `standard`
+  Depending on your use case, performance may be significantly improved with higher-tier storage classes, though this should be balanced against the associated costs.
+
+  Both CockroachDB and YugabyteDB recommend SSDs for production workloads, configured via the `premium-rwo` storage class. Use `standard` for testing only.
+
+  See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#gcp and https://docs.yugabyte.com/stable/deploy/checklist/#google-cloud for database-specific recommendations.
+
+  Example: `premium-rwo` for production and `standard` for development.
   EOT
 }
+
 
 variable "crdb_hostname_suffix" {
   type        = string
