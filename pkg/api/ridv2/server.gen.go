@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/interuss/dss/pkg/api"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
@@ -43,11 +45,25 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
+
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
+}
+
 func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req SearchIdentificationServiceAreasRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, SearchIdentificationServiceAreasSecurity)
+	var response SearchIdentificationServiceAreasResponseSet
 
 	// Copy query parameters
 	query := r.URL.Query()
@@ -64,10 +80,17 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 		req.LatestTime = &v
 	}
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.SearchIdentificationServiceAreas(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, SearchIdentificationServiceAreasSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.SearchIdentificationServiceAreas(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -99,18 +122,23 @@ func (s *APIRouter) SearchIdentificationServiceAreas(exp *regexp.Regexp, w http.
 
 func (s *APIRouter) GetIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetIdentificationServiceAreaRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetIdentificationServiceAreaSecurity)
+	var response GetIdentificationServiceAreaResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Id = EntityUUID(pathMatch[1])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetIdentificationServiceArea(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetIdentificationServiceAreaSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetIdentificationServiceArea(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -142,9 +170,7 @@ func (s *APIRouter) GetIdentificationServiceArea(exp *regexp.Regexp, w http.Resp
 
 func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateIdentificationServiceAreaRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, CreateIdentificationServiceAreaSecurity)
+	var response CreateIdentificationServiceAreaResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -155,10 +181,17 @@ func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.CreateIdentificationServiceArea(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, CreateIdentificationServiceAreaSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.CreateIdentificationServiceArea(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -194,9 +227,7 @@ func (s *APIRouter) CreateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req UpdateIdentificationServiceAreaRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, UpdateIdentificationServiceAreaSecurity)
+	var response UpdateIdentificationServiceAreaResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -208,10 +239,17 @@ func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.UpdateIdentificationServiceArea(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateIdentificationServiceAreaSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.UpdateIdentificationServiceArea(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -247,19 +285,24 @@ func (s *APIRouter) UpdateIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 func (s *APIRouter) DeleteIdentificationServiceArea(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req DeleteIdentificationServiceAreaRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, DeleteIdentificationServiceAreaSecurity)
+	var response DeleteIdentificationServiceAreaResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Id = EntityUUID(pathMatch[1])
 	req.Version = pathMatch[2]
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.DeleteIdentificationServiceArea(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteIdentificationServiceAreaSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.DeleteIdentificationServiceArea(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -295,9 +338,7 @@ func (s *APIRouter) DeleteIdentificationServiceArea(exp *regexp.Regexp, w http.R
 
 func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req SearchSubscriptionsRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, SearchSubscriptionsSecurity)
+	var response SearchSubscriptionsResponseSet
 
 	// Copy query parameters
 	query := r.URL.Query()
@@ -306,10 +347,17 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 		req.Area = &v
 	}
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.SearchSubscriptions(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, SearchSubscriptionsSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.SearchSubscriptions(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -341,18 +389,23 @@ func (s *APIRouter) SearchSubscriptions(exp *regexp.Regexp, w http.ResponseWrite
 
 func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetSubscriptionSecurity)
+	var response GetSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Id = SubscriptionUUID(pathMatch[1])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -384,9 +437,7 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 
 func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, CreateSubscriptionSecurity)
+	var response CreateSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -397,10 +448,17 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.CreateSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, CreateSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.CreateSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -436,9 +494,7 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req UpdateSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, UpdateSubscriptionSecurity)
+	var response UpdateSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -450,10 +506,17 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.UpdateSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.UpdateSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -489,19 +552,24 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req DeleteSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, DeleteSubscriptionSecurity)
+	var response DeleteSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Id = SubscriptionUUID(pathMatch[1])
 	req.Version = pathMatch[2]
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.DeleteSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.DeleteSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {

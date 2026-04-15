@@ -51,11 +51,6 @@ func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Rep
 // the specified version.
 func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *restapi.DeleteOperationalIntentReferenceRequest,
 ) restapi.DeleteOperationalIntentReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.DeleteOperationalIntentReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	// Retrieve OperationalIntent ID
 	id, err := dssmodels.IDFromString(string(req.Entityid))
@@ -193,11 +188,6 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 // GetOperationalIntentReference returns a single operation intent ref for the given ID.
 func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi.GetOperationalIntentReferenceRequest,
 ) restapi.GetOperationalIntentReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.GetOperationalIntentReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
@@ -248,11 +238,6 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 // bounds.
 func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *restapi.QueryOperationalIntentReferencesRequest,
 ) restapi.QueryOperationalIntentReferencesResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.QueryOperationalIntentReferencesResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
@@ -318,11 +303,6 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 
 func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *restapi.CreateOperationalIntentReferenceRequest,
 ) restapi.CreateOperationalIntentReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.CreateOperationalIntentReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
@@ -354,11 +334,6 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 
 func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *restapi.UpdateOperationalIntentReferenceRequest,
 ) restapi.UpdateOperationalIntentReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.UpdateOperationalIntentReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{

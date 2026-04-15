@@ -3,6 +3,7 @@ package scd
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
@@ -46,11 +47,6 @@ func (h *JSONLoggingReceivedReportHandler) Handle(ctx context.Context, req *rest
 // MakeDssReport creates an error report about a DSS.
 func (a *Server) MakeDssReport(ctx context.Context, req *restapi.MakeDssReportRequest,
 ) restapi.MakeDssReportResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.MakeDssReportResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{

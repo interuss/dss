@@ -19,12 +19,6 @@ import (
 func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.GetIdentificationServiceAreaRequest,
 ) restapi.GetIdentificationServiceAreaResponseSet {
 
-	if req.Auth.Error != nil {
-		resp := restapi.GetIdentificationServiceAreaResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
-
 	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -47,12 +41,6 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 // CreateIdentificationServiceArea creates an ISA
 func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *restapi.CreateIdentificationServiceAreaRequest,
 ) restapi.CreateIdentificationServiceAreaResponseSet {
-
-	if req.Auth.Error != nil {
-		resp := restapi.CreateIdentificationServiceAreaResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.Auth.ClientID == nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
@@ -128,12 +116,6 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 // UpdateIdentificationServiceArea updates an existing ISA.
 func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *restapi.UpdateIdentificationServiceAreaRequest,
 ) restapi.UpdateIdentificationServiceAreaResponseSet {
-
-	if req.Auth.Error != nil {
-		resp := restapi.UpdateIdentificationServiceAreaResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
@@ -211,12 +193,6 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *restapi.DeleteIdentificationServiceAreaRequest,
 ) restapi.DeleteIdentificationServiceAreaResponseSet {
 
-	if req.Auth.Error != nil {
-		resp := restapi.DeleteIdentificationServiceAreaResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
-
 	if req.Auth.ClientID == nil {
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
@@ -259,12 +235,6 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 // SearchIdentificationServiceAreas queries for all ISAs in the bounds.
 func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *restapi.SearchIdentificationServiceAreasRequest,
 ) restapi.SearchIdentificationServiceAreasResponseSet {
-
-	if req.Auth.Error != nil {
-		resp := restapi.SearchIdentificationServiceAreasResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.Area == nil {
 		return restapi.SearchIdentificationServiceAreasResponseSet{Response400: &restapi.ErrorResponse{

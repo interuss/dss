@@ -19,11 +19,6 @@ import (
 // the specified version.
 func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.DeleteConstraintReferenceRequest,
 ) restapi.DeleteConstraintReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.DeleteConstraintReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	// Retrieve Constraint ID
 	id, err := dssmodels.IDFromString(string(req.Entityid))
@@ -131,11 +126,6 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 // GetConstraintReference returns a single constraint ref for the given ID.
 func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetConstraintReferenceRequest,
 ) restapi.GetConstraintReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.GetConstraintReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
@@ -185,11 +175,6 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 
 func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.CreateConstraintReferenceRequest,
 ) restapi.CreateConstraintReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.CreateConstraintReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.CreateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
@@ -222,11 +207,6 @@ func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.Cre
 
 func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.UpdateConstraintReferenceRequest,
 ) restapi.UpdateConstraintReferenceResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.UpdateConstraintReferenceResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.UpdateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
@@ -436,11 +416,6 @@ func validateAndReturnConstraintUpsertParams(
 // bounds.
 func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.QueryConstraintReferencesRequest,
 ) restapi.QueryConstraintReferencesResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.QueryConstraintReferencesResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{

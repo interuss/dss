@@ -22,11 +22,6 @@ var (
 
 func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubscriptionRequest,
 ) restapi.CreateSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.CreateSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
@@ -59,11 +54,6 @@ func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 
 func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubscriptionRequest,
 ) restapi.UpdateSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.UpdateSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
@@ -298,11 +288,6 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 // GetSubscription returns a single subscription for the given ID.
 func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscriptionRequest,
 ) restapi.GetSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.GetSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
@@ -379,11 +364,6 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubscriptionsRequest,
 ) restapi.QuerySubscriptionsResponseSet {
 	nowMarker := time.Now()
-	if req.Auth.Error != nil {
-		resp := restapi.QuerySubscriptionsResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.BodyParseError != nil {
 		return restapi.QuerySubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
@@ -468,11 +448,6 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 // DeleteSubscription deletes a single subscription for a given ID.
 func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubscriptionRequest,
 ) restapi.DeleteSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.DeleteSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(string(req.Subscriptionid))

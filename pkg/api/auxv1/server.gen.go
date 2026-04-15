@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/interuss/dss/pkg/api"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
@@ -42,16 +44,30 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
+
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
+}
+
 func (s *APIRouter) GetVersion(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetVersionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetVersionSecurity)
+	var response GetVersionResponseSet
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	response := s.Implementation.GetVersion(ctx, &req)
+	response = s.Implementation.GetVersion(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -67,9 +83,7 @@ func (s *APIRouter) GetVersion(exp *regexp.Regexp, w http.ResponseWriter, r *htt
 
 func (s *APIRouter) ValidateOauth(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req ValidateOauthRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, ValidateOauthSecurity)
+	var response ValidateOauthResponseSet
 
 	// Copy query parameters
 	query := r.URL.Query()
@@ -78,10 +92,17 @@ func (s *APIRouter) ValidateOauth(exp *regexp.Regexp, w http.ResponseWriter, r *
 		req.Owner = &v
 	}
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.ValidateOauth(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, ValidateOauthSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.ValidateOauth(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -105,14 +126,19 @@ func (s *APIRouter) ValidateOauth(exp *regexp.Regexp, w http.ResponseWriter, r *
 
 func (s *APIRouter) GetPool(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetPoolRequest
+	var response GetPoolResponseSet
 
 	// Authorize request
 	req.Auth = s.Authorizer.Authorize(w, r, GetPoolSecurity)
-
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetPool(ctx, &req)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetPool(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -140,14 +166,19 @@ func (s *APIRouter) GetPool(exp *regexp.Regexp, w http.ResponseWriter, r *http.R
 
 func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetDSSInstancesRequest
+	var response GetDSSInstancesResponseSet
 
 	// Authorize request
 	req.Auth = s.Authorizer.Authorize(w, r, GetDSSInstancesSecurity)
-
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetDSSInstances(ctx, &req)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetDSSInstances(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -175,9 +206,7 @@ func (s *APIRouter) GetDSSInstances(exp *regexp.Regexp, w http.ResponseWriter, r
 
 func (s *APIRouter) PutDSSInstancesHeartbeat(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req PutDSSInstancesHeartbeatRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, PutDSSInstancesHeartbeatSecurity)
+	var response PutDSSInstancesHeartbeatResponseSet
 
 	// Copy query parameters
 	query := r.URL.Query()
@@ -194,10 +223,17 @@ func (s *APIRouter) PutDSSInstancesHeartbeat(exp *regexp.Regexp, w http.Response
 		req.NextHeartbeatExpectedBefore = &v
 	}
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.PutDSSInstancesHeartbeat(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, PutDSSInstancesHeartbeatSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.PutDSSInstancesHeartbeat(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -229,14 +265,12 @@ func (s *APIRouter) PutDSSInstancesHeartbeat(exp *regexp.Regexp, w http.Response
 
 func (s *APIRouter) GetAcceptedCAs(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetAcceptedCAsRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetAcceptedCAsSecurity)
+	var response GetAcceptedCAsResponseSet
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	response := s.Implementation.GetAcceptedCAs(ctx, &req)
+	response = s.Implementation.GetAcceptedCAs(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -256,14 +290,12 @@ func (s *APIRouter) GetAcceptedCAs(exp *regexp.Regexp, w http.ResponseWriter, r 
 
 func (s *APIRouter) GetInstanceCAs(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetInstanceCAsRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetInstanceCAsSecurity)
+	var response GetInstanceCAsResponseSet
 
 	// Call implementation
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	response := s.Implementation.GetInstanceCAs(ctx, &req)
+	response = s.Implementation.GetInstanceCAs(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -283,14 +315,19 @@ func (s *APIRouter) GetInstanceCAs(exp *regexp.Regexp, w http.ResponseWriter, r 
 
 func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetScdLockModeRequest
+	var response GetScdLockModeResponseSet
 
 	// Authorize request
 	req.Auth = s.Authorizer.Authorize(w, r, GetScdLockModeSecurity)
-
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetScdLockMode(ctx, &req)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetScdLockMode(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {

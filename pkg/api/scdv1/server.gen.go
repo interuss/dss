@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/interuss/dss/pkg/api"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
@@ -43,21 +45,42 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
+
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
+}
+
 func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req QueryOperationalIntentReferencesRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, QueryOperationalIntentReferencesSecurity)
+	var response QueryOperationalIntentReferencesResponseSet
 
 	// Parse request body
 	req.Body = new(QueryOperationalIntentReferenceParameters)
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.QueryOperationalIntentReferences(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, QueryOperationalIntentReferencesSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.QueryOperationalIntentReferences(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -93,18 +116,23 @@ func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.
 
 func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetOperationalIntentReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetOperationalIntentReferenceSecurity)
+	var response GetOperationalIntentReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetOperationalIntentReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetOperationalIntentReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetOperationalIntentReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -140,9 +168,7 @@ func (s *APIRouter) GetOperationalIntentReference(exp *regexp.Regexp, w http.Res
 
 func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateOperationalIntentReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, CreateOperationalIntentReferenceSecurity)
+	var response CreateOperationalIntentReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -153,10 +179,17 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.CreateOperationalIntentReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, CreateOperationalIntentReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.CreateOperationalIntentReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -200,9 +233,7 @@ func (s *APIRouter) CreateOperationalIntentReference(exp *regexp.Regexp, w http.
 
 func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req UpdateOperationalIntentReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, UpdateOperationalIntentReferenceSecurity)
+	var response UpdateOperationalIntentReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -214,10 +245,17 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.UpdateOperationalIntentReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateOperationalIntentReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.UpdateOperationalIntentReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -261,19 +299,24 @@ func (s *APIRouter) UpdateOperationalIntentReference(exp *regexp.Regexp, w http.
 
 func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req DeleteOperationalIntentReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, DeleteOperationalIntentReferenceSecurity)
+	var response DeleteOperationalIntentReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 	req.Ovn = EntityOVN(pathMatch[2])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.DeleteOperationalIntentReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteOperationalIntentReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.DeleteOperationalIntentReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -317,19 +360,24 @@ func (s *APIRouter) DeleteOperationalIntentReference(exp *regexp.Regexp, w http.
 
 func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req QueryConstraintReferencesRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, QueryConstraintReferencesSecurity)
+	var response QueryConstraintReferencesResponseSet
 
 	// Parse request body
 	req.Body = new(QueryConstraintReferenceParameters)
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.QueryConstraintReferences(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, QueryConstraintReferencesSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.QueryConstraintReferences(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -365,18 +413,23 @@ func (s *APIRouter) QueryConstraintReferences(exp *regexp.Regexp, w http.Respons
 
 func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetConstraintReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetConstraintReferenceSecurity)
+	var response GetConstraintReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetConstraintReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetConstraintReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetConstraintReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -412,9 +465,7 @@ func (s *APIRouter) GetConstraintReference(exp *regexp.Regexp, w http.ResponseWr
 
 func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateConstraintReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, CreateConstraintReferenceSecurity)
+	var response CreateConstraintReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -425,10 +476,17 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.CreateConstraintReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, CreateConstraintReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.CreateConstraintReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -468,9 +526,7 @@ func (s *APIRouter) CreateConstraintReference(exp *regexp.Regexp, w http.Respons
 
 func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req UpdateConstraintReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, UpdateConstraintReferenceSecurity)
+	var response UpdateConstraintReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -482,10 +538,17 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.UpdateConstraintReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateConstraintReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.UpdateConstraintReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -525,19 +588,24 @@ func (s *APIRouter) UpdateConstraintReference(exp *regexp.Regexp, w http.Respons
 
 func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req DeleteConstraintReferenceRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, DeleteConstraintReferenceSecurity)
+	var response DeleteConstraintReferenceResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Entityid = EntityID(pathMatch[1])
 	req.Ovn = EntityOVN(pathMatch[2])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.DeleteConstraintReference(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteConstraintReferenceSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.DeleteConstraintReference(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -577,19 +645,24 @@ func (s *APIRouter) DeleteConstraintReference(exp *regexp.Regexp, w http.Respons
 
 func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req QuerySubscriptionsRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, QuerySubscriptionsSecurity)
+	var response QuerySubscriptionsResponseSet
 
 	// Parse request body
 	req.Body = new(QuerySubscriptionParameters)
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.QuerySubscriptions(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, QuerySubscriptionsSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.QuerySubscriptions(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -625,18 +698,23 @@ func (s *APIRouter) QuerySubscriptions(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetSubscriptionSecurity)
+	var response GetSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Subscriptionid = SubscriptionID(pathMatch[1])
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -672,9 +750,7 @@ func (s *APIRouter) GetSubscription(exp *regexp.Regexp, w http.ResponseWriter, r
 
 func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, CreateSubscriptionSecurity)
+	var response CreateSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -685,10 +761,17 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.CreateSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, CreateSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.CreateSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -724,9 +807,7 @@ func (s *APIRouter) CreateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req UpdateSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, UpdateSubscriptionSecurity)
+	var response UpdateSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -738,10 +819,17 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.UpdateSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, UpdateSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.UpdateSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -777,19 +865,24 @@ func (s *APIRouter) UpdateSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req DeleteSubscriptionRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, DeleteSubscriptionSecurity)
+	var response DeleteSubscriptionResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.Subscriptionid = SubscriptionID(pathMatch[1])
 	req.Version = pathMatch[2]
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.DeleteSubscription(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, DeleteSubscriptionSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.DeleteSubscription(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -829,19 +922,24 @@ func (s *APIRouter) DeleteSubscription(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req MakeDssReportRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, MakeDssReportSecurity)
+	var response MakeDssReportResponseSet
 
 	// Parse request body
 	req.Body = new(ErrorReport)
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.MakeDssReport(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, MakeDssReportSecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.MakeDssReport(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response201 != nil {
@@ -873,18 +971,23 @@ func (s *APIRouter) MakeDssReport(exp *regexp.Regexp, w http.ResponseWriter, r *
 
 func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req GetUssAvailabilityRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetUssAvailabilitySecurity)
+	var response GetUssAvailabilityResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
 	req.UssId = pathMatch[1]
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.GetUssAvailability(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, GetUssAvailabilitySecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.GetUssAvailability(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -916,9 +1019,7 @@ func (s *APIRouter) GetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 
 func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req SetUssAvailabilityRequest
-
-	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, SetUssAvailabilitySecurity)
+	var response SetUssAvailabilityResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -929,10 +1030,17 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	defer r.Body.Close()
 	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
 
-	// Call implementation
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-	response := s.Implementation.SetUssAvailability(ctx, &req)
+	// Authorize request
+	req.Auth = s.Authorizer.Authorize(w, r, SetUssAvailabilitySecurity)
+	// Verify authorization
+	if req.Auth.Error != nil {
+		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
+	} else {
+		// Call implementation
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		response = s.Implementation.SetUssAvailability(ctx, &req)
+	}
 
 	// Write response to client
 	if response.Response200 != nil {

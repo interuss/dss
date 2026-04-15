@@ -15,11 +15,6 @@ func (a *Server) GetDSSInstances(ctx context.Context, req *restapi.GetDSSInstanc
 
 	resp := restapi.GetDSSInstancesResponseSet{}
 
-	if req.Auth.Error != nil {
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
-
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
 		resp.Response500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with the store"))}
@@ -74,11 +69,6 @@ func (a *Server) GetDSSInstances(ctx context.Context, req *restapi.GetDSSInstanc
 func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutDSSInstancesHeartbeatRequest) restapi.PutDSSInstancesHeartbeatResponseSet {
 
 	resp := restapi.PutDSSInstancesHeartbeatResponseSet{}
-
-	if req.Auth.Error != nil {
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {
