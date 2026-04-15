@@ -69,15 +69,22 @@ Example:</li>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>aws_instance_type (<code>string</code>)</td>
-                <td><p>AWS EC2 instance type used for the Kubernetes node pool.</p>
-<p>Example: <code>m6a.xlarge</code> for production and <code>t3.medium</code> for development</p>
+                <td><p>AWS EC2 instance type used for the Kubernetes node pool.
+See https://aws.amazon.com/ec2/instance-types/ for available options.</p>
+<p>Depending on your use case, performance may be significantly improved with higher-tier instances, though this should be balanced against the associated costs.</p>
+<p>Both CockroachDB and YugabyteDB recommend <code>m6i</code> instances for production. Use <code>t</code> instances for testing only.</p>
+<p>See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#aws and https://docs.yugabyte.com/stable/deploy/checklist/#amazon-web-services-aws for database-specific recommendations.</p>
+<p>Example: <code>m6i.xlarge</code> for production and <code>t3.medium</code> for development.</p>
 </td>
             </tr><tr>
                 <td>aws_kubernetes_storage_class (<code>string</code>)</td>
-                <td><p>AWS Elastic Kubernetes Service Storage Class to use for CockroachDB and Prometheus persistent volumes.
+                <td><p>AWS Elastic Kubernetes Service Storage Class to use for datastores and Prometheus persistent volumes.
 See https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html for more details and
 available options.</p>
-<p>Example: <code>gp2</code></p>
+<p>Depending on your use case, performance may be significantly improved with higher-tier storage classes, though this should be balanced against the associated costs.</p>
+<p>Both CockroachDB and YugabyteDB recommend at least <code>gp3</code> for production workloads. Use <code>gp2</code> for testing only, or consider <code>io2</code> for high-throughput scenarios.</p>
+<p>See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#aws and https://docs.yugabyte.com/stable/deploy/checklist/#amazon-web-services-aws for database-specific recommendations.</p>
+<p>Example: <code>gp3</code> for production and <code>gp2</code> for development.</p>
 </td>
             </tr><tr>
                 <td>aws_region (<code>string</code>)</td>
