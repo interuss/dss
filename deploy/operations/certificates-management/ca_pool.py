@@ -8,7 +8,7 @@ import tempfile
 
 from utils import get_cert_display_name, get_cert_serial
 
-l = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def build_pool_hash(cluster):
@@ -31,7 +31,7 @@ def build_pool_hash(cluster):
 def add_cas(cluster, certificate):
     folder = cluster.ca_pool_dir
 
-    l.debug("Getting new CA metadata")
+    logger.debug("Getting new CA metadata")
 
     with tempfile.NamedTemporaryFile(delete_on_close=False) as tf:
         tf.write(certificate.encode("utf-8"))
@@ -45,17 +45,17 @@ def add_cas(cluster, certificate):
         target_file = os.path.join(folder, filename)
 
         if os.path.exists(target_file):
-            l.info(f"CA {name} already present in the pool")
+            logger.info(f"CA {name} already present in the pool")
             return
 
-        l.info(f"Adding CA {name} in the pool")
+        logger.info(f"Adding CA {name} in the pool")
 
         with open(target_file, "w") as f:
             f.write(certificate)
 
 
 def regenerate_ca_files(cluster):
-    l.debug("Regenerating CA files from all CA in the pool")
+    logger.debug("Regenerating CA files from all CA in the pool")
 
     CAs = []
     for filename in os.listdir(cluster.ca_pool_dir):
@@ -76,7 +76,7 @@ def regenerate_ca_files(cluster):
 
     h = build_pool_hash(cluster)
 
-    l.info(f"Regenerated CA files from the CA pool. Current pool hash: {h}")
+    logger.info(f"Regenerated CA files from the CA pool. Current pool hash: {h}")
 
 
 def do_add_cas(cluster, certificates):
@@ -106,9 +106,9 @@ def do_remove_cas(cluster, certificates_or_serial):
 
             if os.path.isfile(target):
                 os.unlink(target)
-                l.info(f"Removed certificate {name}")
+                logger.info(f"Removed certificate {name}")
             else:
-                l.info(f"Certificate {name} not present in pool")
+                logger.info(f"Certificate {name} not present in pool")
 
     for filename in sorted(os.listdir(cluster.ca_pool_dir)):
         if filename.endswith(".crt") and filename != "ca.crt":
@@ -122,7 +122,7 @@ def do_remove_cas(cluster, certificates_or_serial):
                 or name.startswith(certificates_or_serial)
             ):
                 os.unlink(os.path.join(cluster.ca_pool_dir, filename))
-                l.info(f"Removed certificate {name}")
+                logger.info(f"Removed certificate {name}")
 
     regenerate_ca_files(cluster)
 

@@ -7,11 +7,11 @@ from ca_pool import do_add_cas
 from nodes import do_generate_nodes
 from utils import get_cert_display_name
 
-l = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def generate_ca_config(cluster):
-    l.debug("Creating CA configuration files")
+    logger.debug("Creating CA configuration files")
 
     with open(cluster.ca_conf, "w") as f:
         f.write(
@@ -22,7 +22,7 @@ def generate_ca_config(cluster):
 [ my_ca ]
 default_days = 3650
 
-serial = {cluster.ca_key_dir}/serial.txt
+serial = {cluster.ca_key_dir}/serialogger.txt
 database = {cluster.ca_key_dir}/index.txt
 default_md = sha256
 policy = my_policy
@@ -48,26 +48,26 @@ basicConstraints = critical,CA:true,pathlen:1
 """
         )
 
-    with open(f"{cluster.ca_key_dir}/serial.txt", "w") as f:
+    with open(f"{cluster.ca_key_dir}/serialogger.txt", "w") as f:
         f.write("0001")
 
     with open(f"{cluster.ca_key_dir}/index.txt", "w") as f:
         f.write("")
 
-    l.info("Created CA configuration files")
+    logger.info("Created CA configuration files")
 
 
 def generate_ca_key(cluster):
-    l.debug("Generating CA private key")
+    logger.debug("Generating CA private key")
     subprocess.check_call(
         ["openssl", "genrsa", "-out", cluster.ca_key_file, "4096"],
         stdout=subprocess.DEVNULL,
     )
-    l.info("Generated CA private key")
+    logger.info("Generated CA private key")
 
 
 def generate_ca_cert(cluster):
-    l.debug("Generating CA certificate")
+    logger.debug("Generating CA certificate")
     subprocess.check_call(
         [
             "openssl",
@@ -88,7 +88,7 @@ def generate_ca_cert(cluster):
 
     name = get_cert_display_name(cluster.ca_cert_file)
 
-    l.info(f"Generated CA certificate '{name}'")
+    logger.info(f"Generated CA certificate '{name}'")
 
 
 def generate_ca(cluster):
@@ -98,7 +98,7 @@ def generate_ca(cluster):
 
 
 def make_directories(cluster):
-    l.debug("Creating directories")
+    logger.debug("Creating directories")
 
     if not os.path.exists("workspace"):
         os.makedirs("workspace")
@@ -111,13 +111,13 @@ def make_directories(cluster):
     os.mkdir(cluster.client_certs_dir)
     os.mkdir(cluster.ca_pool_dir)
 
-    l.info("Created directories")
+    logger.info("Created directories")
 
 
 def generate_clients(cluster):
     for client in cluster.clients:
         if cluster.is_client_ready(client):
-            l.info(f"Client '{client}' certificates already generated")
+            logger.info(f"Client '{client}' certificates already generated")
             continue
         generate_client_config(cluster, client)
         generate_client_key(cluster, client)
@@ -126,7 +126,7 @@ def generate_clients(cluster):
 
 
 def generate_client_config(cluster, client):
-    l.debug(f"Creating client '{client}' configuration file")
+    logger.debug(f"Creating client '{client}' configuration file")
 
     with open(cluster.get_client_conf_file(client), "w") as f:
         f.write(
@@ -140,21 +140,21 @@ commonName = {client}
 """
         )
 
-    l.info(f"Created client '{client}' configuration file")
+    logger.info(f"Created client '{client}' configuration file")
 
 
 def generate_client_key(cluster, client):
-    l.debug(f"Generating client '{client}' private key")
+    logger.debug(f"Generating client '{client}' private key")
 
     subprocess.check_call(
         ["openssl", "genrsa", "-out", cluster.get_client_key_file(client), "4096"]
     )
 
-    l.info(f"Generated client '{client}' private key")
+    logger.info(f"Generated client '{client}' private key")
 
 
 def generate_client_csr(cluster, client):
-    l.debug(f"Generating client '{client}' certificate request")
+    logger.debug(f"Generating client '{client}' certificate request")
 
     subprocess.check_call(
         [
@@ -171,11 +171,11 @@ def generate_client_csr(cluster, client):
         stdout=subprocess.DEVNULL,
     )
 
-    l.info(f"Generated client '{client}' certificate request")
+    logger.info(f"Generated client '{client}' certificate request")
 
 
 def generate_client_cert(cluster, client):
-    l.debug(f"Generating client '{client}' certificate")
+    logger.debug(f"Generating client '{client}' certificate")
 
     subprocess.check_call(
         [
@@ -207,19 +207,19 @@ def generate_client_cert(cluster, client):
 
     name = get_cert_display_name(cluster.get_client_cert_file(client))
 
-    l.info(f"Generated client '{client}' certificate '{name}'")
+    logger.info(f"Generated client '{client}' certificate '{name}'")
 
 
 def do_init(cluster):
     """Initialize a new cluster"""
 
-    l.info("Initialization of a new cluster")
+    logger.info("Initialization of a new cluster")
 
     if cluster.is_ready:
-        l.error("Cluster is already initialized, unable to continue")
+        logger.error("Cluster is already initialized, unable to continue")
         sys.exit(1)
     else:
-        l.debug("Cluster is not already initialized, continuing")
+        logger.debug("Cluster is not already initialized, continuing")
 
     make_directories(cluster)
     generate_ca(cluster)
@@ -231,7 +231,7 @@ def do_init(cluster):
 
     do_generate_nodes(cluster)
 
-    l.info(
+    logger.info(
         "The new cluster certificates are ready! Don't forget to 'apply' the configuration."
     )
 
@@ -241,6 +241,6 @@ def do_generate_clients(cluster):
 
     generate_clients(cluster)
 
-    l.info(
+    logger.info(
         f"{len(cluster.clients)} client certificates ready. Don't forget to 'apply' the configuration."
     )

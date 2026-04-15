@@ -3,13 +3,13 @@ import os
 
 import logging
 
-l = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def do_apply(cluster):
-    l.debug("Applying kubernetes configuration")
+    logger.debug("Applying kubernetes configuration")
 
-    l.debug(f"Creating namespace {cluster.namespace}")
+    logger.debug(f"Creating namespace {cluster.namespace}")
 
     try:
         subprocess.check_call(
@@ -25,10 +25,10 @@ def do_apply(cluster):
             stderr=subprocess.DEVNULL,
         )
 
-        l.info(f"Created namespace {cluster.namespace}")
+        logger.info(f"Created namespace {cluster.namespace}")
 
     except subprocess.CalledProcessError:  # We do assume everything else works
-        l.debug(f"Namespace {cluster.namespace} already exists")
+        logger.debug(f"Namespace {cluster.namespace} already exists")
 
     for secret_name in [
         "yb-master-yugabyte-tls-cert",
@@ -54,10 +54,10 @@ def do_apply(cluster):
                 stderr=subprocess.DEVNULL,
             )
 
-            l.info(f"Deleted old secret '{secret_name}'")
+            logger.info(f"Deleted old secret '{secret_name}'")
 
         except subprocess.CalledProcessError:  # We do assume everything else works
-            l.debug(f"Secret '{secret_name}' not present on the cluster")
+            logger.debug(f"Secret '{secret_name}' not present on the cluster")
 
     for secret_name, folder in [
         ("yb-master-yugabyte-tls-cert", cluster.master_certs_dir),
@@ -87,4 +87,4 @@ def do_apply(cluster):
             stdout=subprocess.DEVNULL,
         )
 
-        l.info(f"Created secret '{secret_name}'")
+        logger.info(f"Created secret '{secret_name}'")

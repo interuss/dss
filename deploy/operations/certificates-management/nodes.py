@@ -5,9 +5,11 @@ import shutil
 
 from utils import get_cert_display_name
 
+logger = logging.getLogger(__name__)
+
 
 def generate_node_config(cluster, node_type, node_id):
-    l.debug(f"Creating {node_type} #{node_id} configuration file")
+    logger.debug(f"Creating {node_type} #{node_id} configuration file")
 
     short_name = cluster.get_node_short_name(node_type, node_id)
     short_name_group = cluster.get_node_short_name_group(node_type, node_id)
@@ -46,11 +48,11 @@ DNS.7 = yb-{node_type}s.{cluster.namespace}.svc.cluster.local
             f.write(f"""DNS.8 = {public_address}
 """)
 
-    l.info(f"Created {node_type} #{node_id} configuration file")
+    logger.info(f"Created {node_type} #{node_id} configuration file")
 
 
 def generate_node_key(cluster, node_type, node_id):
-    l.debug(f"Generating {node_type} #{node_id} private key")
+    logger.debug(f"Generating {node_type} #{node_id} private key")
 
     file = cluster.get_node_key_file(node_type, node_id)
 
@@ -69,11 +71,11 @@ def generate_node_key(cluster, node_type, node_id):
     if second_file:
         shutil.copy(file, second_file)
 
-    l.info(f"Generated {node_type} #{node_id} private key")
+    logger.info(f"Generated {node_type} #{node_id} private key")
 
 
 def generate_node_csr(cluster, node_type, node_id):
-    l.debug(f"Generating {node_type} #{node_id} certificate request")
+    logger.debug(f"Generating {node_type} #{node_id} certificate request")
 
     subprocess.check_call(
         [
@@ -90,11 +92,11 @@ def generate_node_csr(cluster, node_type, node_id):
         stdout=subprocess.DEVNULL,
     )
 
-    l.info(f"Generated {node_type} #{node_id} certificate request")
+    logger.info(f"Generated {node_type} #{node_id} certificate request")
 
 
 def generate_node_cert(cluster, node_type, node_id):
-    l.debug(f"Generating {node_type} #{node_id} certificate")
+    logger.debug(f"Generating {node_type} #{node_id} certificate")
 
     file = cluster.get_node_cert_file(node_type, node_id)
 
@@ -135,12 +137,12 @@ def generate_node_cert(cluster, node_type, node_id):
 
     name = get_cert_display_name(cluster.get_node_cert_file(node_type, node_id))
 
-    l.info(f"Generated {node_type} #{node_id} certificate '{name}'")
+    logger.info(f"Generated {node_type} #{node_id} certificate '{name}'")
 
 
 def generate_node(cluster, node_type, node_id):
     if cluster.is_node_ready(node_type, node_id):
-        l.debug(f"{node_type} #{node_id} certificates already generated")
+        logger.debug(f"{node_type} #{node_id} certificates already generated")
         return
 
     generate_node_config(cluster, node_type, node_id)
@@ -151,19 +153,16 @@ def generate_node(cluster, node_type, node_id):
     shutil.copy(cluster.ca_pool_ca, getattr(cluster, f"{node_type}_ca"))
 
 
-l = logging.getLogger(__name__)
-
-
 def do_generate_nodes(cluster):
     """Generate certificates for all nodes (master and tserver)"""
 
-    l.info("Generation of nodes certificates")
+    logger.info("Generation of nodes certificates")
 
     if not cluster.is_ready:
-        l.error("Cluster is not already initialized, unable to continue")
+        logger.error("Cluster is not already initialized, unable to continue")
         sys.exit(1)
     else:
-        l.debug("Cluster is initialized, continuing")
+        logger.debug("Cluster is initialized, continuing")
 
     for node_type in ["master", "tserver"]:
         for node_id in range(0, int(cluster.nodes_count)):
@@ -171,4 +170,4 @@ def do_generate_nodes(cluster):
 
     generate_node(cluster, "prometheus", "")
 
-    l.info("All nodes certificates are ready")
+    logger.info("All nodes certificates are ready")

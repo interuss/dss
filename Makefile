@@ -50,25 +50,41 @@ check-hygiene: python-lint hygiene shell-lint go-lint terraform-lint
 
 .PHONY: python-lint
 python-lint: openapi-to-go-server
-	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
 	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
 			interuss/openapi-to-go-server \
             run ruff check
-	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
 	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
 			interuss/openapi-to-go-server \
             run ruff format --check
+	docker run --rm -u "$(USER_GROUP)" \
+	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
+			ghcr.io/astral-sh/ruff:0.15.10 \
+            check /app/ --no-cache
+	docker run --rm -u "$(USER_GROUP)" \
+	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
+			ghcr.io/astral-sh/ruff:0.15.10 \
+            format --check /app/ --no-cache
 
-.PHONY: openapi-to-go-server
-python-format:
-	docker run -u "$(USER_GROUP)" --entrypoint uv \
+.PHONY: python-format
+python-format: openapi-to-go-server
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
 	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
 			interuss/openapi-to-go-server \
             run ruff check --fix
-	docker run -u "$(USER_GROUP)" --entrypoint uv \
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
 	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
 			interuss/openapi-to-go-server \
             run ruff format
+	docker run --rm -u "$(USER_GROUP)" \
+	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
+			ghcr.io/astral-sh/ruff:0.15.10 \
+            check /app/ --fix --no-cache
+	docker run --rm -u "$(USER_GROUP)" \
+	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
+			ghcr.io/astral-sh/ruff:0.15.10 \
+            format /app/ --no-cache
 
 .PHONY: hygiene
 hygiene:
