@@ -290,17 +290,9 @@ def routes(
 
         body: List[str] = []
 
-        # Create object to hold the processed input to the operation
+        # Create object to hold the processed input and output to the operation
         body.append("var req {}".format(operation.request_type_name))
-        body.append("")
-
-        # Attempt to authorize access to the operation
-        body.extend(comment(["Authorize request"]))
-        body.append(
-            "req.Auth = s.Authorizer.Authorize(w, r, {}Security)".format(
-                operation.interface_name
-            )
-        )
+        body.append("var response {}".format(operation.response_type_name))
         body.append("")
 
         # Parse any path parameters
@@ -385,20 +377,48 @@ def routes(
 
         # Actually invoke the API Implementation with the processed request to obtain the response
         imports.add("context")
-        body.extend(comment(["Call implementation"]))
-        body.append("ctx, cancel := context.WithCancel(r.Context())")
-        body.append("defer cancel()")
-        body.append(
-            "response := s.Implementation.{}(ctx, &req)".format(
-                operation.interface_name
-            )
+
+        body.append("")
+
+        call_block = []
+
+        call_block.extend(comment(["Call implementation"]))
+        call_block.append("ctx, cancel := context.WithCancel(r.Context())")
+        call_block.append("defer cancel()")
+        call_block.append(
+            "response = s.Implementation.{}(ctx, &req)".format(operation.interface_name)
         )
+
+        if operation.security.options:
+            # Authorize & verify the call
+            body.extend(comment(["Authorize request"]))
+            body.append(
+                "req.Auth = s.Authorizer.Authorize(w, r, {}Security)".format(
+                    operation.interface_name
+                )
+            )
+
+            body.extend(comment(["Verify authorization"]))
+            body.append("if req.Auth.Error != nil {")
+            body.extend(
+                indent(
+                    [
+                        'setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)'
+                    ],
+                    1,
+                )
+            )
+            body.append("} else {")
+            body.extend(indent(call_block, 1))
+            body.append("}")
+        else:
+            body.extend(call_block)
         body.append("")
 
         # Write the first populated response discovered and finish the handler
         body.extend(comment(["Write response to client"]))
         responses = [r for r in operation.responses]
-        if ensure_500 and 500 not in {r.code for r in responses}:
+        if ensure_500 and 500 not in {r.code for r in operation.responses}:
             responses.append(
                 operations.Response(
                     code=500,

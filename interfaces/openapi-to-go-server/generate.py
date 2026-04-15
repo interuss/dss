@@ -110,8 +110,10 @@ def _generate_apis(
                     "fmt",
                     "go.opentelemetry.io/otel",
                     "go.opentelemetry.io/otel/trace",
+                    "github.com/interuss/stacktrace",
                 ]
-            ),
+            )
+            + '\n    dsserr "github.com/interuss/dss/pkg/errors"',
             "<API_PACKAGE>": api_package,
             "<ROUTES>": "\n".join(routes),
             "<ROUTING>": "\n".join(rendering.routing(api, api_package)),

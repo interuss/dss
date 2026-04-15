@@ -12,10 +12,6 @@ import (
 
 func (a *Server) GetPool(ctx context.Context, req *restapi.GetPoolRequest) restapi.GetPoolResponseSet {
 	resp := restapi.GetPoolResponseSet{}
-	if req.Auth.Error != nil {
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	repo, err := a.Store.Interact(ctx)
 	if err != nil {

@@ -25,11 +25,6 @@ func GetDefaultAvailabilityResponse(id dssmodels.Manager) *restapi.UssAvailabili
 
 func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvailabilityRequest,
 ) restapi.GetUssAvailabilityResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.GetUssAvailabilityResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	id := dssmodels.ManagerFromString(req.UssId)
 	if id == "" {
@@ -72,11 +67,6 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 
 func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvailabilityRequest,
 ) restapi.SetUssAvailabilityResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.SetUssAvailabilityResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.UssId == "" {
 		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{

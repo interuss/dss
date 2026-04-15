@@ -17,11 +17,6 @@ import (
 // DeleteSubscription deletes an existing subscription.
 func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubscriptionRequest,
 ) restapi.DeleteSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.DeleteSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.Auth.ClientID == nil {
 		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
@@ -62,11 +57,6 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 // SearchSubscriptions queries for existing subscriptions in the given bounds.
 func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSubscriptionsRequest,
 ) restapi.SearchSubscriptionsResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.SearchSubscriptionsResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.Auth.ClientID == nil {
 		return restapi.SearchSubscriptionsResponseSet{Response403: &restapi.ErrorResponse{
@@ -111,11 +101,6 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 // GetSubscription gets a single subscription based on ID.
 func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscriptionRequest,
 ) restapi.GetSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.GetSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	id, err := dssmodels.IDFromString(string(req.Id))
 	if err != nil {
@@ -139,11 +124,6 @@ func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 // CreateSubscription creates a single subscription.
 func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubscriptionRequest,
 ) restapi.CreateSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.CreateSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	if req.Auth.ClientID == nil {
 		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
@@ -232,11 +212,6 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 // UpdateSubscription updates a single subscription.
 func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubscriptionRequest,
 ) restapi.UpdateSubscriptionResponseSet {
-	if req.Auth.Error != nil {
-		resp := restapi.UpdateSubscriptionResponseSet{}
-		setAuthError(ctx, stacktrace.Propagate(req.Auth.Error, "Auth failed"), &resp.Response401, &resp.Response403, &resp.Response500)
-		return resp
-	}
 
 	version, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {

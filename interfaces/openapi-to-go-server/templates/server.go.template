@@ -33,6 +33,23 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
     return false
 }
 
+
+func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+        *resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+        *resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
+
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
+}
+
 <ROUTES>
 
 func MakeAPIRouter(impl Implementation, auth <API_PACKAGE>.Authorizer) APIRouter {
