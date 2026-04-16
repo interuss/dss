@@ -17,7 +17,7 @@ from ca_pool import (
     do_remove_cas,
 )
 
-l = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -149,9 +149,9 @@ def main():
     elif args.action == "destroy":
         if input("Are you sure? You will loose all your certificates! [yN]") == "y":
             shutil.rmtree(cluster.directory)
-            l.warning("Destroyed cluster certificates")
+            logger.warning("Destroyed cluster certificates")
         else:
-            l.info("Cancelled removal")
+            logger.info("Cancelled removal")
 
 
 if __name__ == "__main__":

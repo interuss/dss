@@ -4,7 +4,7 @@ import ssl
 import sys
 import unicodedata
 
-l = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def slugify(text):
@@ -21,7 +21,7 @@ def get_cert_display_name(path):
             path
         )  # We do use an internal function, to avoid installing dependencies
     except Exception as e:
-        l.error(e)
+        logger.error(e)
         sys.exit(1)
 
     serial = cert_dict.get("serialNumber", "")
@@ -45,7 +45,7 @@ def get_cert_serial(path):
             path
         )  # We do use an internal function, to avoid installing dependencies
     except Exception as e:
-        l.error(e)
+        logger.error(e)
         sys.exit(1)
 
     return cert_dict["serialNumber"]
