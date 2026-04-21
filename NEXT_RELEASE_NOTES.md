@@ -48,6 +48,8 @@ The release notes should contain at least the following sections:
 
 ## Important information
 
+* Fixed a bug where the `evict` command ignored entries without a locality. If your DSS instance does not have a locality set, the next `evict` run may be slow while it processes the backlog of old entries.
+
 ## Minimal database schema version
 
 | Schema  | CockroachDB | Yugabyte |

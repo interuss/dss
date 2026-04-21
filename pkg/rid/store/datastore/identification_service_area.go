@@ -213,23 +213,29 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 // ListExpiredISAs lists all expired ISAs based on writer.
 // The function queries both empty writer and null writer when passing empty string as a writer.
 func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	writerQuery := "'" + writer + "'"
 	if len(writer) == 0 {
-		writerQuery = "'' OR writer = NULL"
+		isasInCellsQuery := fmt.Sprintf(`
+            SELECT
+                %s
+            FROM
+                identification_service_areas
+            WHERE
+                ends_at <= $1
+            AND
+                (writer = '' OR writer IS NULL)
+            LIMIT $2`, isaFields)
+		return r.fetchISAs(ctx, isasInCellsQuery, threshold, dssmodels.MaxResultLimit)
 	}
 
-	var (
-		isasInCellsQuery = fmt.Sprintf(`
-	SELECT
-		%s
-	FROM
-		identification_service_areas
-	WHERE
-		ends_at <= $1
-	AND
-		(writer = %s)
-	LIMIT $2`, isaFields, writerQuery)
-	)
-
-	return r.fetchISAs(ctx, isasInCellsQuery, threshold, dssmodels.MaxResultLimit)
+	isasInCellsQuery := fmt.Sprintf(`
+        SELECT
+            %s
+        FROM
+            identification_service_areas
+        WHERE
+            ends_at <= $1
+        AND
+            writer = $2
+        LIMIT $3`, isaFields)
+	return r.fetchISAs(ctx, isasInCellsQuery, threshold, writer, dssmodels.MaxResultLimit)
 }

@@ -274,22 +274,27 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 // ListExpiredSubscriptions lists all expired Subscriptions based on writer.
 // The function queries both empty writer and null writer when passing empty string as a writer.
 func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
-	writerQuery := "'" + writer + "'"
 	if len(writer) == 0 {
-		writerQuery = "'' OR writer = NULL"
+		query := fmt.Sprintf(`
+            SELECT
+                %s
+            FROM
+                subscriptions
+            WHERE
+                ends_at <= $1
+            AND
+                (writer = '' OR writer IS NULL)`, subscriptionFields)
+		return r.process(ctx, query, threshold)
 	}
 
-	var (
-		query = fmt.Sprintf(`
-	SELECT
-		%s
-	FROM
-		subscriptions
-	WHERE
-		ends_at <= $1
-	AND
-		(writer = %s)`, subscriptionFields, writerQuery)
-	)
-
-	return r.process(ctx, query, threshold)
+	query := fmt.Sprintf(`
+        SELECT
+            %s
+        FROM
+            subscriptions
+        WHERE
+            ends_at <= $1
+        AND
+            writer = $2`, subscriptionFields)
+	return r.process(ctx, query, threshold, writer)
 }
