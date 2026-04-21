@@ -12,6 +12,7 @@ import (
 	"github.com/jonboulle/clockwork"
 )
 
+// datastore.Store is a partial implementation of store.Store when the data backing is a database.
 type Store[R any] struct {
 	DB         *Datastore
 	Clock      clockwork.Clock

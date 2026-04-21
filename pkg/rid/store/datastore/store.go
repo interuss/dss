@@ -19,12 +19,16 @@ const (
 	currentYugabyteMajorSchemaVersion = 1
 )
 
+// rid.store.datastore.repo is a full implementation of rid.repos.Repository for data backings that
+// use a database such as CockroachDB or YugabyteDB.
 type repo struct {
 	dssql.Queryable
 	clock  clockwork.Clock
 	logger *zap.Logger
 }
 
+// rid.store.datastore.Store is a a full implementation of store.Store[rid.repos.Repository]
+// for data backings that use a database such as CockroachDB or YugabyteDB.
 type Store struct {
 	datastore.Store[repos.Repository]
 }

@@ -1,3 +1,3 @@
-// Package datastore provides an implementation of a scd.Store on top of a
-// cockroach DB or yugabyte instance.
+// Package scd.store.datastore provides a full implementation of store.Store[scd.repos.Repository]
+// for data backings that use a database such as CockroachDB or YugabyteDB.
 package datastore

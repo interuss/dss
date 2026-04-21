@@ -25,6 +25,8 @@ type repo struct {
 	version *datastore.Version
 }
 
+// aux_.store.datastore.Store is a concrete store.Store[aux_.repos.Repository] providing the
+// ability to interact with a database-backed store of aux information.
 type Store struct {
 	datastore.Store[repos.Repository]
 }

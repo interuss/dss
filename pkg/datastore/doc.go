@@ -1,3 +1,3 @@
-// Package datastore bundles up types and functions required to connect to
-// CRDB or Yugabyte instance.
+// Package datastore bundles up types and functions common to data backings that use a database
+// (such as CRDB or Yugabyte).
 package datastore

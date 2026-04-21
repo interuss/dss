@@ -1,2 +1,2 @@
-// Package repos contains all of the Repository interfaces for AUX.
+// Package aux_.repos contains all of the Repository interfaces for AUX.
 package repos

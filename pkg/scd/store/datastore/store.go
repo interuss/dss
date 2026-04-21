@@ -19,6 +19,8 @@ const (
 	currentYugabyteMajorSchemaVersion = 1
 )
 
+// scd.store.datastore.repo is a full implementation of scd.repos.Repository for data backings that
+// use a database such as CockroachDB or YugabyteDB.
 type repo struct {
 	q          dssql.Queryable
 	clock      clockwork.Clock
@@ -26,6 +28,8 @@ type repo struct {
 	globalLock bool
 }
 
+// scd.store.datastore.Store is a a full implementation of store.Store[scd.repos.Repository]
+// for data backings that use a database such as CockroachDB or YugabyteDB.
 type Store struct {
 	datastore.Store[repos.Repository]
 }
