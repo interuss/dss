@@ -60,6 +60,8 @@ var (
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 
 	scdGlobalLock = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+
+	noDatastore = flag.Bool("no_datastore", false, "Disables the datastore and uses Raft consensus for synchronization instead")
 )
 
 func createKeyResolver() (auth.KeyResolver, error) {
@@ -167,16 +169,20 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create aux server")
-	}
+	if *noDatastore {
+		logger.Warn("Skipping Aux and RID when the datastore is disabled")
+	} else {
+		// Initialize aux
+		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create aux server")
+		}
 
-	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create remote ID server")
+		// Initialize remote ID
+		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create remote ID server")
+		}
 	}
 
 	// Initialize access token validation
@@ -213,9 +219,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
+		if *noDatastore {
+			logger.Info("Starting SCD Server with datastore disabled")
+			logger.Warn("SCD server in this mode is not yet implemented")
+			// TODO
+		} else {
+			scdV1Server, err = createSCDServer(ctx, logger)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
+			}
 		}
 
 		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
