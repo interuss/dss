@@ -13,16 +13,13 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/sqlstore/params"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
-)
-
-const (
-	CodeRetryable = stacktrace.ErrorCode(1)
 )
 
 var UnknownVersion = &semver.Version{}
@@ -128,7 +125,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db, err := Dial[R](ctx, cp)
 	if err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to connect to database server for %s", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to connect to database server for %s", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to %s database", cfg.DBName)
 	}
@@ -141,7 +138,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	if err != nil {
 		db.Pool.Close()
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to create %s store", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to create %s store", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create %s store", cfg.DBName)
 	}
