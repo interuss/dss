@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/aux_/repos"
+	auxraftstore "github.com/interuss/dss/pkg/aux_/store/raftstore"
 	auxsqlstore "github.com/interuss/dss/pkg/aux_/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
@@ -22,6 +23,8 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	switch storeType {
 	case "sql":
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
+	case "raft":
+		return auxraftstore.Init(ctx, logger, withCheckCron)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
 	}
