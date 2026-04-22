@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"io"
+
+	"github.com/interuss/stacktrace"
 )
 
 // store.Store is the generic means to access and interact with any type of data backing the DSS
@@ -16,3 +18,7 @@ type Store[R any] interface {
 	// on the R Repo by f will be applied or rejected atomically.
 	Transact(ctx context.Context, f func(context.Context, R) error) error
 }
+
+const (
+	CodeRetryable = stacktrace.ErrorCode(1)
+)
