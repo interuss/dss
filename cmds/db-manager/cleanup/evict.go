@@ -10,10 +10,10 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	ridrepos "github.com/interuss/dss/pkg/rid/repos"
-	ridc "github.com/interuss/dss/pkg/rid/store/datastore"
+	rids "github.com/interuss/dss/pkg/rid/store"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdrepos "github.com/interuss/dss/pkg/scd/repos"
-	scdc "github.com/interuss/dss/pkg/scd/store/datastore"
+	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -54,12 +54,12 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	scdStore, err := scdc.Dial(ctx, logger, false, false)
+	scdStore, err := scds.Init(ctx, logger, false, false)
 	if err != nil {
 		return err
 	}
 
-	ridStore, err := ridc.Dial(ctx, logger, false)
+	ridStore, err := rids.Init(ctx, logger, false)
 	if err != nil {
 		return err
 	}
