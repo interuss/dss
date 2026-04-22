@@ -92,7 +92,7 @@ hygiene:
 
 .PHONY: shell-lint
 shell-lint:
-	echo "===== Checking DSS shell lint =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | grep -v '^./build/workspace' | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
+	echo "===== Checking DSS shell lint =====" && find . -name '*.sh' | grep -v '^./interfaces/astm-utm' | git check-ignore --stdin --no-index -n -v --non-matching | grep '^::' | cut -f2 | xargs docker run --rm -v $(CURDIR):/dss -w /dss koalaman/shellcheck
 
 .PHONY: go-lint
 go-lint:
