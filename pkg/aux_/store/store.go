@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/aux_/repos"
-	auxdatastore "github.com/interuss/dss/pkg/aux_/store/datastore"
+	auxsqlstore "github.com/interuss/dss/pkg/aux_/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"go.uber.org/zap"
 )
@@ -16,5 +16,5 @@ type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the aux store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
-	return auxdatastore.Init(ctx, logger, withCheckCron)
+	return auxsqlstore.Init(ctx, logger, withCheckCron)
 }

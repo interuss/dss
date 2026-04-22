@@ -23,7 +23,6 @@ import (
 	aux "github.com/interuss/dss/pkg/aux_"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
-	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -31,6 +30,7 @@ import (
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -350,7 +350,7 @@ func main() {
 	backoff := 0
 	for {
 		if err := RunHTTPServer(ctx, cancel, *address, *locality); err != nil {
-			if stacktrace.GetCode(err) == datastore.CodeRetryable {
+			if stacktrace.GetCode(err) == sqlstore.CodeRetryable {
 				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %.fs to retry...", backoffs[backoff].Seconds()), zap.Error(err))
 				time.Sleep(backoffs[backoff])
 				if backoff < len(backoffs)-1 {
