@@ -156,10 +156,10 @@ test-go-units-crdb: cleanup-test-go-units-crdb
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/rid --db_version latest --datastore_host localhost
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/scd --db_version latest --datastore_host localhost
 	go run ./cmds/db-manager/main.go migrate --schemas_dir ./build/db_schemas/aux_ --db_version latest --datastore_host localhost
-	go test -cover -count=1 -v ./pkg/rid/store/datastore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/rid/store/sqlstore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
 	go test -cover -count=1 -v ./pkg/rid/application --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
-	go test -cover -count=1 -v ./pkg/scd/store/datastore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
-	go test -cover -count=1 -v ./pkg/aux_/store/datastore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/scd/store/sqlstore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
+	go test -cover -count=1 -v ./pkg/aux_/store/sqlstore --datastore_host localhost --datastore_port 26257 --datastore_ssl_mode disable --datastore_user root -test.gocoverdir=$(COVERDATA_DIR)
 	@docker stop dss-crdb-for-testing > /dev/null
 	@docker rm dss-crdb-for-testing > /dev/null
 
