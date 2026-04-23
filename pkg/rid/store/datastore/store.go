@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/interuss/dss/pkg/datastore/params"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/datastore"
@@ -27,35 +26,19 @@ type repo struct {
 	logger *zap.Logger
 }
 
-// rid.store.datastore.Store is a a full implementation of store.Store[rid.repos.Repository]
-// for data backings that use a database such as CockroachDB or YugabyteDB.
-type Store struct {
-	datastore.Store[repos.Repository]
-}
-
-func NewStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) (*Store, error) {
-
-	s := &Store{}
-
-	base, err := datastore.NewStore(ctx, db, params.GetConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
-		return &repo{
-			Queryable: q,
-			clock:     s.Clock,
-			logger:    logging.WithValuesFromContext(ctx, logger),
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-	s.Store = base
-	return s, nil
-}
-
-func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
-
-	store, err := datastore.DialStore(ctx, "rid", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
-		return NewStore(ctx, db, logger)
-	})
-
-	return store, err
+// Init initializes the SQL-backed rid store. It return a concrete datastore.Store[rid.repos.Repository] providing the
+// ability to interact with a database-backed store of rid information.
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*datastore.Store[repos.Repository], error) {
+	return datastore.Init(ctx, datastore.Config[repos.Repository]{
+		DBName:                 "rid",
+		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
+		YbMajorSchemaVersion:   currentYugabyteMajorSchemaVersion,
+		NewRepo: func(q dssql.Queryable, clock clockwork.Clock, _ *datastore.Version) repos.Repository {
+			return &repo{
+				Queryable: q,
+				clock:     clock,
+				logger:    logging.WithValuesFromContext(ctx, logger),
+			}
+		},
+	}, withCheckCron)
 }

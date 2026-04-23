@@ -225,11 +225,11 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func connectTo(ctx context.Context, dbName string) (*datastore.Datastore, error) {
+func connectTo(ctx context.Context, dbName string) (*datastore.Store[any], error) {
 	// Connect to database server
 	connectParameters := params.GetConnectParameters()
 	connectParameters.DBName = dbName
-	return datastore.Dial(ctx, connectParameters)
+	return datastore.Dial[any](ctx, connectParameters)
 }
 
 func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {

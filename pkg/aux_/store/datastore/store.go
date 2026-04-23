@@ -5,7 +5,6 @@ import (
 
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/jonboulle/clockwork"
@@ -25,36 +24,20 @@ type repo struct {
 	version *datastore.Version
 }
 
-// aux_.store.datastore.Store is a concrete store.Store[aux_.repos.Repository] providing the
+// Init initializes the SQL-backed rid store. It return a concrete datastore.Store[aux_.repos.Repository] providing the
 // ability to interact with a database-backed store of aux information.
-type Store struct {
-	datastore.Store[repos.Repository]
-}
-
-func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger) (*Store, error) {
-
-	s := &Store{}
-
-	base, err := datastore.NewStore(ctx, db, params.GetConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
-		return &repo{
-			Queryable: q,
-			clock:     s.Clock,
-			logger:    logging.WithValuesFromContext(ctx, logger),
-			version:   db.Version,
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-	s.Store = base
-	return s, nil
-}
-
-func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*Store, error) {
-
-	store, err := datastore.DialStore(ctx, "aux", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
-		return newStore(ctx, db, logger)
-	})
-
-	return store, err
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*datastore.Store[repos.Repository], error) {
+	return datastore.Init(ctx, datastore.Config[repos.Repository]{
+		DBName:                 "aux",
+		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
+		YbMajorSchemaVersion:   currentYugabyteMajorSchemaVersion,
+		NewRepo: func(q dssql.Queryable, clock clockwork.Clock, version *datastore.Version) repos.Repository {
+			return &repo{
+				Queryable: q,
+				clock:     clock,
+				logger:    logging.WithValuesFromContext(ctx, logger),
+				version:   version,
+			}
+		},
+	}, withCheckCron)
 }

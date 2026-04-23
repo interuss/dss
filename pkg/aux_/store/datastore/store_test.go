@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
@@ -15,7 +16,7 @@ var (
 	fakeClock = clockwork.NewFakeClock()
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
+func setUpStore(ctx context.Context, t *testing.T) (*datastore.Store[repos.Repository], func()) {
 	connectParameters := params.GetConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
@@ -32,11 +33,9 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
-	db, err := datastore.Dial(ctx, connectParameters)
-	require.NoError(t, err)
+func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*datastore.Store[repos.Repository], error) {
+	s, err := Init(ctx, logging.Logger, false)
 
-	s, err := newStore(ctx, db, logging.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -46,11 +45,11 @@ func newTestStore(ctx context.Context, t *testing.T, connectParameters params.Co
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *Store) error {
+func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
 	const query = `
 	DELETE FROM dss_metadata WHERE locality IS NOT NULL;
     `
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 }

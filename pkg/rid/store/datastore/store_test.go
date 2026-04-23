@@ -25,7 +25,7 @@ var (
 	writer    = "writer"
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
+func setUpStore(ctx context.Context, t *testing.T) (*datastore.Store[repos.Repository], func()) {
 	connectParameters := params.GetConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
@@ -42,11 +42,9 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
-	db, err := datastore.Dial(ctx, connectParameters)
-	require.NoError(t, err)
+func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*datastore.Store[repos.Repository], error) {
+	s, err := Init(ctx, logging.Logger, false)
 
-	s, err := NewStore(ctx, db, logging.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +54,12 @@ func newTestStore(ctx context.Context, t *testing.T, connectParameters params.Co
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *Store) error {
+func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
 	const query = `
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 }
 
@@ -201,7 +199,7 @@ func TestBasicTxn(t *testing.T) {
 	subscription1 := subscriptionsPool[0].input
 	subscription2 := subscriptionsPool[1].input
 
-	tx1, err := store.DB.Pool.Begin(ctx)
+	tx1, err := store.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s1 := &repo{
 		Queryable: tx1,
@@ -209,7 +207,7 @@ func TestBasicTxn(t *testing.T) {
 		clock:     clockwork.NewRealClock(),
 	}
 
-	tx2, err := store.DB.Pool.Begin(ctx)
+	tx2, err := store.Pool.Begin(ctx)
 	require.NoError(t, err)
 	s2 := &repo{
 

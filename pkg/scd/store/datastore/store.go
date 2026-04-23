@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/interuss/dss/pkg/datastore/params"
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/datastore"
@@ -28,36 +27,20 @@ type repo struct {
 	globalLock bool
 }
 
-// scd.store.datastore.Store is a a full implementation of store.Store[scd.repos.Repository]
-// for data backings that use a database such as CockroachDB or YugabyteDB.
-type Store struct {
-	datastore.Store[repos.Repository]
-}
-
-func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger, globalLock bool) (*Store, error) {
-
-	s := &Store{}
-
-	base, err := datastore.NewStore(ctx, db, params.GetConnectParameters().MaxRetries, currentCrdbMajorSchemaVersion, currentYugabyteMajorSchemaVersion, func(q dssql.Queryable) repos.Repository {
-		return &repo{
-			q:          q,
-			clock:      s.Clock,
-			logger:     logging.WithValuesFromContext(ctx, logger),
-			globalLock: globalLock,
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-	s.Store = base
-	return s, nil
-}
-
-func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (*Store, error) {
-
-	store, err := datastore.DialStore(ctx, "scd", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
-		return newStore(ctx, db, logger, globalLock)
-	})
-
-	return store, err
+// Init initializes the SQL-backed sid store. It return a concrete datastore.Store[sid.repos.Repository] providing the
+// ability to interact with a database-backed store of sid information.
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (*datastore.Store[repos.Repository], error) {
+	return datastore.Init(ctx, datastore.Config[repos.Repository]{
+		DBName:                 "scd",
+		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
+		YbMajorSchemaVersion:   currentYugabyteMajorSchemaVersion,
+		NewRepo: func(q dssql.Queryable, clock clockwork.Clock, _ *datastore.Version) repos.Repository {
+			return &repo{
+				q:          q,
+				clock:      clock,
+				logger:     logging.WithValuesFromContext(ctx, logger),
+				globalLock: globalLock,
+			}
+		},
+	}, withCheckCron)
 }

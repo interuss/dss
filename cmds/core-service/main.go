@@ -21,16 +21,16 @@ import (
 	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
-	auxc "github.com/interuss/dss/pkg/aux_/store/datastore"
+	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
-	ridc "github.com/interuss/dss/pkg/rid/store/datastore"
+	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
-	scdc "github.com/interuss/dss/pkg/scd/store/datastore"
+	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -84,7 +84,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 }
 
 func createAuxServer(ctx context.Context, locality string, publicEndpoint string, scdGlobalLock bool, logger *zap.Logger) (*aux.Server, error) {
-	auxStore, err := auxc.Dial(ctx, logger, true)
+	auxStore, err := auxs.Init(ctx, logger, true)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := ridc.Dial(ctx, logger, true)
+	ridStore, err := rids.Init(ctx, logger, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -129,7 +129,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 
-	scdStore, err := scdc.Dial(ctx, logger, true, *scdGlobalLock)
+	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock)
 	if err != nil {
 		return nil, err
 	}

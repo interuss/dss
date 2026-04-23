@@ -61,12 +61,9 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 
 	connectParameters.DBName = "rid"
 
-	ridDatastore, err := datastore.Dial(ctx, connectParameters)
+	store, err := ridc.Init(ctx, logger, false)
 	require.NoError(t, err)
 	logger.Info("using datastore.")
-
-	store, err := ridc.NewStore(ctx, ridDatastore, logger)
-	require.NoError(t, err)
 
 	store.Clock = fakeClock
 
@@ -77,12 +74,12 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *ridc.Store) error {
+func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
 	const query = `
     DELETE FROM subscriptions WHERE id IS NOT NULL;
     DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 
 }

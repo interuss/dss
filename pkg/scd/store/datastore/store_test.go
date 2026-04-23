@@ -7,6 +7,7 @@ import (
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +16,7 @@ var (
 	fakeClock = clockwork.NewFakeClock()
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
+func setUpStore(ctx context.Context, t *testing.T) (*datastore.Store[repos.Repository], func()) {
 	connectParameters := params.GetConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
@@ -32,11 +33,9 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
-	db, err := datastore.Dial(ctx, connectParameters)
-	require.NoError(t, err)
+func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*datastore.Store[repos.Repository], error) {
+	s, err := Init(ctx, logging.Logger, false, false)
 
-	s, err := newStore(ctx, db, logging.Logger, false)
 	if err != nil {
 		return nil, err
 	}
@@ -46,13 +45,13 @@ func newTestStore(ctx context.Context, t *testing.T, connectParameters params.Co
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *Store) error {
+func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
 	const query = `
 	DELETE FROM scd_subscriptions WHERE id IS NOT NULL;
 	DELETE FROM scd_operations WHERE id IS NOT NULL;
 	DELETE FROM scd_constraints WHERE id IS NOT NULL;
 	DELETE FROM scd_uss_availability WHERE id IS NOT NULL;`
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 }
