@@ -34,7 +34,7 @@ type Store struct {
 	datastore.Store[repos.Repository]
 }
 
-func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger, globalLock bool) (*Store, error) {
+func newStore(ctx context.Context, db *datastore.Store[repos.Repository], logger *zap.Logger, globalLock bool) (*Store, error) {
 
 	s := &Store{}
 
@@ -55,7 +55,7 @@ func newStore(ctx context.Context, db *datastore.Datastore, logger *zap.Logger, 
 
 func Dial(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (*Store, error) {
 
-	store, err := datastore.DialStore(ctx, "scd", withCheckCron, func(db *datastore.Datastore) (*Store, error) {
+	store, err := datastore.DialStore(ctx, "scd", withCheckCron, func(db *datastore.Store[repos.Repository]) (*Store, error) {
 		return newStore(ctx, db, logger, globalLock)
 	})
 

@@ -7,6 +7,7 @@ import (
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +34,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
-	db, err := datastore.Dial(ctx, connectParameters)
+	db, err := datastore.Dial[repos.Repository](ctx, connectParameters)
 	require.NoError(t, err)
 
 	s, err := newStore(ctx, db, logging.Logger, false)
@@ -53,6 +54,6 @@ func cleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM scd_constraints WHERE id IS NOT NULL;
 	DELETE FROM scd_uss_availability WHERE id IS NOT NULL;`
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 }

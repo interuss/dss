@@ -61,7 +61,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 
 	connectParameters.DBName = "rid"
 
-	ridDatastore, err := datastore.Dial(ctx, connectParameters)
+	ridDatastore, err := datastore.Dial[repos.Repository](ctx, connectParameters)
 	require.NoError(t, err)
 	logger.Info("using datastore.")
 
@@ -82,7 +82,7 @@ func cleanUp(ctx context.Context, s *ridc.Store) error {
     DELETE FROM subscriptions WHERE id IS NOT NULL;
     DELETE FROM identification_service_areas WHERE id IS NOT NULL;`
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 
 }
