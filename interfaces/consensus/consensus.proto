@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package consensus;
+
+option go_package = "github.com/interuss/dss/pkg/consensus;consensus";
+
+import "google/protobuf/empty.proto";
+
+service Consensus {
+  rpc SyncRaft(stream RaftMessage) returns (google.protobuf.Empty);
+} 
+
+message RaftMessage {
+    string from = 1;
+    string to = 2;
+    bytes data = 3;
+}
+
+message Ack {
+    bool success = 1;
+}
