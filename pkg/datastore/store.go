@@ -38,38 +38,13 @@ type Store[R any] struct {
 	maxRetries    int
 }
 
-func NewStore[R any](ctx context.Context, db *Store[R], maxRetries int, crdbExpected int64, ybExpected int64, newRepo func(dsssql.Queryable) R) (Store[R], error) {
-
-	dbName := db.Pool.Config().ConnConfig.Database
-
-	vs, err := db.GetSchemaVersion(ctx, dbName)
-	if err != nil {
-		return Store[R]{}, stacktrace.Propagate(err, "Failed to get schema version for %s", dbName)
-	}
-
-	if err := checkMajorSchemaVersion(ctx, db, vs, crdbExpected, ybExpected); err != nil {
-		return Store[R]{}, err
-	}
-
-	return Store[R]{
-		Pool:          db.Pool,
-		Version:       db.Version,
-		Clock:         clockwork.NewRealClock(),
-		schemaVersion: vs,
-		newRepo:       newRepo,
-		maxRetries:    maxRetries,
-	}, nil
-}
-
-func (s *Store[R]) Interact(_ context.Context) (R, error) {
-	return s.newRepo(s.Pool), nil
-}
-
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
-	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		return f(ctx, s.newRepo(tx))
-	})
+// Config describes everything a SQL-backed store needs to be initialized for a
+// given specific package (rid, scd, aux, ...).
+type Config[R any] struct {
+	DBName                 string
+	CrdbMajorSchemaVersion int64
+	YbMajorSchemaVersion   int64
+	NewRepo                func(q dsssql.Queryable, clock clockwork.Clock, v *Version) R
 }
 
 func checkMajorSchemaVersion[R any](ctx context.Context, db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
@@ -85,11 +60,6 @@ func checkMajorSchemaVersion[R any](ctx context.Context, db *Store[R], vs *semve
 	return nil
 }
 
-func (s *Store[R]) Close() error {
-	s.Pool.Close()
-	return nil
-}
-
 func checkDatabase[R any](ctx context.Context, db *Store[R], databaseName string) {
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 	statsPtr := db.Pool.Stat()
@@ -98,47 +68,6 @@ func checkDatabase[R any](ctx context.Context, db *Store[R], databaseName string
 	} else {
 		logger.Info("Successful periodic DB Ping", zap.String("Database", databaseName))
 	}
-}
-
-func DialStore[R any, S any](ctx context.Context, dbName string, withCheckCron bool, newStore func(*Store[R]) (S, error)) (S, error) {
-
-	var zero S
-
-	cp := params.GetConnectParameters()
-	cp.DBName = dbName
-
-	db, err := Dial[R](ctx, cp)
-
-	if err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") {
-			return zero, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to connect to datastore server for %s", dbName)
-		}
-		return zero, stacktrace.Propagate(err, "Failed to connect to %s database", dbName)
-	}
-	s, err := newStore(db)
-	if err != nil {
-		db.Pool.Close()
-		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", dbName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-			return zero, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to create %s store", dbName)
-		}
-		return zero, stacktrace.Propagate(err, "Failed to create %s store", dbName)
-	}
-
-	if withCheckCron {
-		c := cron.New()
-		if _, err := c.AddFunc("@every 1m", func() { checkDatabase(ctx, db, dbName) }); err != nil {
-			db.Pool.Close()
-			return zero, stacktrace.Propagate(err, "Failed to schedule db check for %s", dbName)
-		}
-		c.Start()
-
-		go func() {
-			<-ctx.Done()
-			c.Stop()
-		}()
-	}
-
-	return s, nil
 }
 
 func Dial[R any](ctx context.Context, connParams params.ConnectParameters) (*Store[R], error) {
@@ -187,6 +116,73 @@ func Dial[R any](ctx context.Context, connParams params.ConnectParameters) (*Sto
 	}
 
 	return nil, stacktrace.NewError("%s is not implemented yet", version.Type)
+}
+
+// Init dials the database described by the global connect parameters (plus
+// cfg.DBName), checks its schema version, and returns a ready-to-use Store[R].
+// If withCheckCron is true, a periodic health-check cron is started.
+func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store[R], error) {
+	cp := params.GetConnectParameters()
+	cp.DBName = cfg.DBName
+
+	db, err := Dial[R](ctx, cp)
+	if err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to connect to datastore server for %s", cfg.DBName)
+		}
+		return nil, stacktrace.Propagate(err, "Failed to connect to %s database", cfg.DBName)
+	}
+
+	vs, err := db.GetSchemaVersion(ctx, cfg.DBName)
+
+	if err == nil {
+		err = checkMajorSchemaVersion(ctx, db, vs, cfg.CrdbMajorSchemaVersion, cfg.YbMajorSchemaVersion)
+	}
+	if err != nil {
+		db.Pool.Close()
+		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
+			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to create %s store", cfg.DBName)
+		}
+		return nil, stacktrace.Propagate(err, "Failed to create %s store", cfg.DBName)
+	}
+
+	db.Clock = clockwork.NewRealClock()
+	db.schemaVersion = vs
+	db.maxRetries = cp.MaxRetries
+	db.newRepo = func(q dsssql.Queryable) R {
+		return cfg.NewRepo(q, db.Clock, db.Version)
+	}
+
+	if withCheckCron {
+		c := cron.New()
+		if _, err := c.AddFunc("@every 1m", func() { checkDatabase(ctx, db, cfg.DBName) }); err != nil {
+			db.Pool.Close()
+			return nil, stacktrace.Propagate(err, "Failed to schedule db check for %s", cfg.DBName)
+		}
+		c.Start()
+		go func() {
+			<-ctx.Done()
+			c.Stop()
+		}()
+	}
+
+	return db, nil
+}
+
+func (s *Store[R]) Interact(_ context.Context) (R, error) {
+	return s.newRepo(s.Pool), nil
+}
+
+func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
+	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+		return f(ctx, s.newRepo(tx))
+	})
+}
+
+func (s *Store[R]) Close() error {
+	s.Pool.Close()
+	return nil
 }
 
 func (s *Store[R]) CreateDatabase(ctx context.Context, dbName string) error {

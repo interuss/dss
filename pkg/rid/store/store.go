@@ -1,10 +1,19 @@
 package store
 
 import (
+	"context"
+
 	"github.com/interuss/dss/pkg/rid/repos"
+	riddatastore "github.com/interuss/dss/pkg/rid/store/datastore"
 	dssstore "github.com/interuss/dss/pkg/store"
+	"go.uber.org/zap"
 )
 
 // rid.store.Store is a generic means to obtain an RID rid.repos.Repository to perform RID-specific
 // operations on any type of data backing the DSS may ever use.
 type Store = dssstore.Store[repos.Repository]
+
+// Init selects and initializes the rid store backend.
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
+	return riddatastore.Init(ctx, logger, withCheckCron)
+}
