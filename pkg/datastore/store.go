@@ -160,7 +160,10 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 			return nil, stacktrace.Propagate(err, "Failed to schedule db check for %s", cfg.DBName)
 		}
 		c.Start()
-		go func() { <-ctx.Done(); c.Stop() }()
+		go func() {
+		   <-ctx.Done()
+		   c.Stop()
+		}()
 	}
 
 	return db, nil
