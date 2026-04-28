@@ -73,12 +73,12 @@ YBDB_RID_MAJOR=$(echo "$YBDB_RID" | cut -d. -f1)
 YBDB_SCD_MAJOR=$(echo "$YBDB_SCD" | cut -d. -f1)
 AUX_MAJOR=$(echo "$AUX" | cut -d. -f1)
 
-# Replace major versions in datastore files
-sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$CRDB_SCD_MAJOR/" "${BASEDIR}/pkg/scd/store/datastore/store.go"
-sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$YBDB_SCD_MAJOR/" "${BASEDIR}/pkg/scd/store/datastore/store.go"
+# Replace major versions in sqlstore files
+sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$CRDB_SCD_MAJOR/" "${BASEDIR}/pkg/scd/store/sqlstore/store.go"
+sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$YBDB_SCD_MAJOR/" "${BASEDIR}/pkg/scd/store/sqlstore/store.go"
 
-sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$CRDB_RID_MAJOR/" "${BASEDIR}/pkg/rid/store/datastore/store.go"
-sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$YBDB_RID_MAJOR/" "${BASEDIR}/pkg/rid/store/datastore/store.go"
+sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$CRDB_RID_MAJOR/" "${BASEDIR}/pkg/rid/store/sqlstore/store.go"
+sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$YBDB_RID_MAJOR/" "${BASEDIR}/pkg/rid/store/sqlstore/store.go"
 
-sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$AUX_MAJOR/" "${BASEDIR}/pkg/aux_/store/datastore/store.go"
-sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$AUX_MAJOR/" "${BASEDIR}/pkg/aux_/store/datastore/store.go"
+sed -i -E "s/(currentCrdbMajorSchemaVersion.*= )[0-9]/\1$AUX_MAJOR/" "${BASEDIR}/pkg/aux_/store/sqlstore/store.go"
+sed -i -E "s/(currentYugabyteMajorSchemaVersion.*= )[0-9]/\1$AUX_MAJOR/" "${BASEDIR}/pkg/aux_/store/sqlstore/store.go"

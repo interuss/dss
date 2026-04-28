@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/params"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/rid/store"
-	ridc "github.com/interuss/dss/pkg/rid/store/datastore"
+	ridc "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/dss/pkg/sqlstore"
+	"github.com/interuss/dss/pkg/sqlstore/params"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
@@ -63,7 +63,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 
 	store, err := ridc.Init(ctx, logger, false)
 	require.NoError(t, err)
-	logger.Info("using datastore.")
+	logger.Info("using sqlstore.")
 
 	store.Clock = fakeClock
 
@@ -74,7 +74,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
+func cleanUp(ctx context.Context, s *sqlstore.Store[repos.Repository]) error {
 	const query = `
     DELETE FROM subscriptions WHERE id IS NOT NULL;
     DELETE FROM identification_service_areas WHERE id IS NOT NULL;`

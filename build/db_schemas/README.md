@@ -21,7 +21,7 @@ places:
 * [DSS main.jsonnet](../../deploy/services/tanka/examples/minimum/main.jsonnet)
 * [Schema manager main.jsonnet](../../deploy/services/tanka/examples/schema_manager/main.jsonnet)
 * [Minikube main.jsonnet](../../deploy/services/tanka/examples/minikube/main.jsonnet)
-* /pkg/{rid|scd|aux_}/store/datastore/store.go
+* /pkg/{rid|scd|aux_}/store/sqlstore/store.go
 * /deploy/infrastructure/dependencies/terraform-commons-dss/default_latest.tf
 * /deploy/services/helm-charts/dss/templates/schema-manager.yaml
 

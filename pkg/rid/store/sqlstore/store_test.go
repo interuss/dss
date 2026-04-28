@@ -1,4 +1,4 @@
-package datastore
+package sqlstore
 
 import (
 	"context"
@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/sqlstore"
+	"github.com/interuss/dss/pkg/sqlstore/params"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ var (
 	writer    = "writer"
 )
 
-func setUpStore(ctx context.Context, t *testing.T) (*datastore.Store[repos.Repository], func()) {
+func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Repository], func()) {
 	connectParameters := params.GetConnectParameters()
 	if connectParameters.Host == "" || connectParameters.Port == 0 {
 		t.Skip()
@@ -42,7 +42,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*datastore.Store[repos.Repos
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*datastore.Store[repos.Repository], error) {
+func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*sqlstore.Store[repos.Repository], error) {
 	s, err := Init(ctx, logging.Logger, false)
 
 	if err != nil {
@@ -54,7 +54,7 @@ func newTestStore(ctx context.Context, t *testing.T, connectParameters params.Co
 }
 
 // cleanUp drops all required tables from the store, useful for testing.
-func cleanUp(ctx context.Context, s *datastore.Store[repos.Repository]) error {
+func cleanUp(ctx context.Context, s *sqlstore.Store[repos.Repository]) error {
 	const query = `
 	DELETE FROM subscriptions WHERE id IS NOT NULL;
 	DELETE FROM identification_service_areas WHERE id IS NOT NULL;`

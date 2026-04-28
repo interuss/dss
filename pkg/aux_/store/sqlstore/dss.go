@@ -1,12 +1,12 @@
-package datastore
+package sqlstore
 
 import (
 	"context"
 	"time"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
-	"github.com/interuss/dss/pkg/datastore"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/stacktrace"
 )
 
@@ -145,16 +145,16 @@ func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbea
 
 }
 
-// GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the Datastore represents.
+// GetDSSAirspaceRepresentationID gets the ID of the common DSS Airspace Representation the sqlstore represents.
 func (r *repo) GetDSSAirspaceRepresentationID(ctx context.Context) (string, error) {
 	switch r.version.Type {
-	case datastore.CockroachDB:
+	case sqlstore.CockroachDB:
 		var darID string
 		if err := r.QueryRow(ctx, "SELECT crdb_internal.cluster_id()").Scan(&darID); err != nil {
 			return darID, stacktrace.Propagate(err, "Error getting CockroachDB cluster ID")
 		}
 		return darID, nil
-	case datastore.Yugabyte:
+	case sqlstore.Yugabyte:
 
 		var darID string
 
@@ -173,6 +173,6 @@ func (r *repo) GetDSSAirspaceRepresentationID(ctx context.Context) (string, erro
 		return darID, nil
 
 	default:
-		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current Datastore type '%s'", r.version.Type)
+		return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID is not yet supported in current sqlstore type '%s'", r.version.Type)
 	}
 }

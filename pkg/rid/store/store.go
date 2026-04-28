@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/rid/repos"
-	riddatastore "github.com/interuss/dss/pkg/rid/store/datastore"
+	ridsqlstore "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"go.uber.org/zap"
 )
@@ -15,5 +15,5 @@ type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the rid store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
-	return riddatastore.Init(ctx, logger, withCheckCron)
+	return ridsqlstore.Init(ctx, logger, withCheckCron)
 }

@@ -1,4 +1,4 @@
-package datastore
+package sqlstore
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/exaring/otelpgx"
-	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/dss/pkg/sqlstore/params"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -102,13 +102,13 @@ func Dial[R any](ctx context.Context, connParams params.ConnectParameters) (*Sto
 	var fullVersion string
 	err = dbPool.QueryRow(ctx, versionDbQuery).Scan(&fullVersion)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error querying datastore version")
+		return nil, stacktrace.Propagate(err, "Error querying store version")
 	}
 
 	version, err := NewVersion(fullVersion)
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error querying datastore version")
+		return nil, stacktrace.Propagate(err, "Error querying store version")
 	}
 
 	if version.Type == CockroachDB || version.Type == Yugabyte {
@@ -128,7 +128,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db, err := Dial[R](ctx, cp)
 	if err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to connect to datastore server for %s", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, CodeRetryable, "Failed to connect to database server for %s", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to %s database", cfg.DBName)
 	}

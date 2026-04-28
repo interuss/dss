@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/interuss/dss/pkg/datastore"
-	"github.com/interuss/dss/pkg/datastore/params"
+	"github.com/interuss/dss/pkg/sqlstore"
+	"github.com/interuss/dss/pkg/sqlstore/params"
 
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
@@ -97,8 +97,8 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	log.Printf("Datastore server type and version: %s@%s", ds.Version.Type, ds.Version.SemVer.String())
 
 	var (
-		isCockroach = ds.Version.Type == datastore.CockroachDB
-		isYugabyte  = ds.Version.Type == datastore.Yugabyte
+		isCockroach = ds.Version.Type == sqlstore.CockroachDB
+		isYugabyte  = ds.Version.Type == sqlstore.Yugabyte
 	)
 
 	// Make sure specified database exists
@@ -225,11 +225,11 @@ func migrate(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func connectTo(ctx context.Context, dbName string) (*datastore.Store[any], error) {
+func connectTo(ctx context.Context, dbName string) (*sqlstore.Store[any], error) {
 	// Connect to database server
 	connectParameters := params.GetConnectParameters()
 	connectParameters.DBName = dbName
-	return datastore.Dial[any](ctx, connectParameters)
+	return sqlstore.Dial[any](ctx, connectParameters)
 }
 
 func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {

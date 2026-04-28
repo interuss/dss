@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/scd/repos"
-	scddatastore "github.com/interuss/dss/pkg/scd/store/datastore"
+	scdsqlstore "github.com/interuss/dss/pkg/scd/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"go.uber.org/zap"
 )
@@ -15,5 +15,5 @@ type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the scd store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (Store, error) {
-	return scddatastore.Init(ctx, logger, withCheckCron, globalLock)
+	return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock)
 }

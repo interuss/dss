@@ -1,10 +1,11 @@
-package datastore
+package sqlstore
 
 import (
+	"regexp"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/multierr"
-	"regexp"
 )
 
 type Type string

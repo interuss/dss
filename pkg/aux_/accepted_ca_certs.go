@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
-	"github.com/interuss/dss/pkg/datastore/params"
+	"github.com/interuss/dss/pkg/sqlstore/params"
 )
 
 func (a *Server) GetAcceptedCAs(ctx context.Context, req *restapi.GetAcceptedCAsRequest) restapi.GetAcceptedCAsResponseSet {
