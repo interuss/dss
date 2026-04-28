@@ -161,8 +161,8 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 		}
 		c.Start()
 		go func() {
-		   <-ctx.Done()
-		   c.Stop()
+			<-ctx.Done()
+			c.Stop()
 		}()
 	}
 
