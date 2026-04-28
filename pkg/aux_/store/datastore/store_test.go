@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/datastore"
 	"github.com/interuss/dss/pkg/datastore/params"
 	"github.com/interuss/dss/pkg/logging"
@@ -33,7 +34,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*Store, func()) {
 }
 
 func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*Store, error) {
-	db, err := datastore.Dial(ctx, connectParameters)
+	db, err := datastore.Dial[repos.Repository](ctx, connectParameters)
 	require.NoError(t, err)
 
 	s, err := newStore(ctx, db, logging.Logger)
@@ -51,6 +52,6 @@ func cleanUp(ctx context.Context, s *Store) error {
 	DELETE FROM dss_metadata WHERE locality IS NOT NULL;
     `
 
-	_, err := s.DB.Pool.Exec(ctx, query)
+	_, err := s.Pool.Exec(ctx, query)
 	return err
 }
