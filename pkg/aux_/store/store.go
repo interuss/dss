@@ -18,8 +18,7 @@ type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the aux store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
-	storeType := params.GetStoreParameters().StoreType
-	switch storeType {
+	switch storeType := params.GetStoreParameters().StoreType; storeType {
 	case "sql":
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
 	default:
