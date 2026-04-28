@@ -6,6 +6,8 @@ import (
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridsqlstore "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/store/params"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -15,5 +17,11 @@ type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the rid store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
-	return ridsqlstore.Init(ctx, logger, withCheckCron)
+	storeType := params.GetStoreParameters().StoreType
+	switch storeType {
+	case "sql":
+		return ridsqlstore.Init(ctx, logger, withCheckCron)
+	default:
+		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
+	}
 }
