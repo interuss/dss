@@ -22,7 +22,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLoc
 	switch storeType {
 	case "sql":
 		return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock)
-	case "raft":
+	case params.RaftStoreType:
 		return raftstore.Init(logger)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for scd", storeType)

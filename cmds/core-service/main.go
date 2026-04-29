@@ -169,7 +169,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	defer ctxCancel()
 
 	// Initialize aux and remote ID if implemented by the store
-	if params.GetStoreParameters().StoreType != "raft" {
+	if params.GetStoreParameters().StoreType != params.RaftStoreType {
 		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create aux server")
@@ -205,7 +205,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		Routers: []api.PartialRouter{&versioningV1Router},
 	}
 
-	if params.GetStoreParameters().StoreType != "raft" {
+	if params.GetStoreParameters().StoreType != params.RaftStoreType {
 		auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
 		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
