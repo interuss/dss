@@ -31,6 +31,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -167,16 +168,16 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create aux server")
-	}
-
-	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create remote ID server")
+	// Initialize aux and remote ID if implemented by the store
+	if params.GetStoreParameters().StoreType != params.RaftStoreType {
+		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create aux server")
+		}
+		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create remote ID server")
+		}
 	}
 
 	// Initialize access token validation
@@ -199,17 +200,20 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
-	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
 	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
-	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
-	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
 	multiRouter := api.MultiRouter{
-		Routers: []api.PartialRouter{
-			&auxV1Router,
-			&versioningV1Router,
-			&ridV1Router,
-			&ridV2Router,
-		}}
+		Routers: []api.PartialRouter{&versioningV1Router},
+	}
+
+	if params.GetStoreParameters().StoreType != params.RaftStoreType {
+		auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
+		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
+		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router, &ridV1Router, &ridV2Router)
+	} else {
+		logger.Warn("aux and remote ID not supported by current store type, those endpoints will not be registered",
+			zap.String("store_type", params.GetStoreParameters().StoreType))
+	}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {

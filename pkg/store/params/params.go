@@ -4,6 +4,8 @@ import (
 	"flag"
 )
 
+const RaftStoreType = "raft"
+
 type (
 	// StoreParameters bundles up parameters used to configure store at a generic/top level.
 	StoreParameters struct {
