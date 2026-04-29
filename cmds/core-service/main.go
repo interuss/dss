@@ -89,15 +89,16 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, err
 	}
 
-	repo, err := auxStore.Interact(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to interact with store")
-	}
-
-	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
-
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
+	if auxStore != nil {
+		repo, err := auxStore.Interact(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to interact with store")
+		}
+		if err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint); err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to store current metadata")
+		}
+	} else {
+		logger.Warn("aux store not available for this store type, skipping metadata save")
 	}
 
 	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock}, nil
@@ -110,9 +111,12 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		return nil, nil, err
 	}
 
-	_, err = ridStore.Interact(ctx)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
+	if ridStore != nil {
+		if _, err = ridStore.Interact(ctx); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
+		}
+	} else {
+		logger.Warn("RID store not available for this store type, RID functionality will not work")
 	}
 
 	app := application.NewFromTransactor(ridStore, logger)
