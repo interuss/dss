@@ -31,6 +31,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -89,34 +90,27 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, err
 	}
 
-	if auxStore != nil {
-		repo, err := auxStore.Interact(ctx)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Unable to interact with store")
-		}
-		if err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint); err != nil {
-			return nil, stacktrace.Propagate(err, "Unable to store current metadata")
-		}
-	} else {
-		logger.Warn("aux store not available for this store type, skipping metadata save")
+	repo, err := auxStore.Interact(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+	}
+
+	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
 	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
-
 	ridStore, err := rids.Init(ctx, logger, true)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if ridStore != nil {
-		if _, err = ridStore.Interact(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
-		}
-	} else {
-		logger.Warn("RID store not available for this store type, RID functionality will not work")
+	if _, err = ridStore.Interact(ctx); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
 	app := application.NewFromTransactor(ridStore, logger)
@@ -171,16 +165,18 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create aux server")
-	}
-
-	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create remote ID server")
+	if params.GetStoreParameters().StoreType != "raft" {
+		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create aux server")
+		}
+		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create remote ID server")
+		}
+	} else {
+		logger.Warn("aux and rid not supported by current store type, those endpoints will not be registered",
+			zap.String("store_type", params.GetStoreParameters().StoreType))
 	}
 
 	// Initialize access token validation
@@ -203,17 +199,17 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
-	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
 	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
-	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
-	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
 	multiRouter := api.MultiRouter{
-		Routers: []api.PartialRouter{
-			&auxV1Router,
-			&versioningV1Router,
-			&ridV1Router,
-			&ridV2Router,
-		}}
+		Routers: []api.PartialRouter{&versioningV1Router},
+	}
+
+	if params.GetStoreParameters().StoreType != "raft" {
+		auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
+		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
+		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router, &ridV1Router, &ridV2Router)
+	}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
