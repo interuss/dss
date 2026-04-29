@@ -15,7 +15,3 @@ message RaftMessage {
     string to = 2;
     bytes data = 3;
 }
-
-message Ack {
-    bool success = 1;
-}

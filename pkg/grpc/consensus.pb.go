@@ -82,50 +82,6 @@ func (x *RaftMessage) GetData() []byte {
 	return nil
 }
 
-type Ack struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Ack) Reset() {
-	*x = Ack{}
-	mi := &file_consensus_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Ack) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Ack) ProtoMessage() {}
-
-func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_consensus_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Ack.ProtoReflect.Descriptor instead.
-func (*Ack) Descriptor() ([]byte, []int) {
-	return file_consensus_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Ack) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
 var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
@@ -134,9 +90,7 @@ const file_consensus_proto_rawDesc = "" +
 	"\vRaftMessage\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\x1f\n" +
-	"\x03Ack\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2I\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data2I\n" +
 	"\tConsensus\x12<\n" +
 	"\bSyncRaft\x12\x16.consensus.RaftMessage\x1a\x16.google.protobuf.Empty(\x01B1Z/github.com/interuss/dss/pkg/consensus;consensusb\x06proto3"
 
@@ -152,15 +106,14 @@ func file_consensus_proto_rawDescGZIP() []byte {
 	return file_consensus_proto_rawDescData
 }
 
-var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_consensus_proto_goTypes = []any{
 	(*RaftMessage)(nil),   // 0: consensus.RaftMessage
-	(*Ack)(nil),           // 1: consensus.Ack
-	(*emptypb.Empty)(nil), // 2: google.protobuf.Empty
+	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
 }
 var file_consensus_proto_depIdxs = []int32{
 	0, // 0: consensus.Consensus.SyncRaft:input_type -> consensus.RaftMessage
-	2, // 1: consensus.Consensus.SyncRaft:output_type -> google.protobuf.Empty
+	1, // 1: consensus.Consensus.SyncRaft:output_type -> google.protobuf.Empty
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -179,7 +132,7 @@ func file_consensus_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_consensus_proto_rawDesc), len(file_consensus_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
