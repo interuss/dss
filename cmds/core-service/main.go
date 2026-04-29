@@ -96,6 +96,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 	}
 
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
+
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
@@ -104,12 +105,14 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+
 	ridStore, err := rids.Init(ctx, logger, true)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if _, err = ridStore.Interact(ctx); err != nil {
+	_, err = ridStore.Interact(ctx)
+	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
@@ -165,6 +168,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
+	// Initialize aux and remote ID if implemented by the store
 	if params.GetStoreParameters().StoreType != "raft" {
 		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 		if err != nil {
@@ -174,9 +178,6 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create remote ID server")
 		}
-	} else {
-		logger.Warn("aux and rid not supported by current store type, those endpoints will not be registered",
-			zap.String("store_type", params.GetStoreParameters().StoreType))
 	}
 
 	// Initialize access token validation
@@ -209,6 +210,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
 		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router, &ridV1Router, &ridV2Router)
+	} else {
+		logger.Warn("aux and remote ID not supported by current store type, those endpoints will not be registered",
+			zap.String("store_type", params.GetStoreParameters().StoreType))
 	}
 
 	// Initialize strategic conflict detection
