@@ -2,6 +2,12 @@ package params
 
 import (
 	"flag"
+	"fmt"
+)
+
+const (
+	RaftStoreType = "raft"
+	SQLStoreType  = "sql"
 )
 
 type (
@@ -16,7 +22,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&storeParameters.StoreType, "store_type", "sql", "Store type. Use 'sql' for CockroachDB/YugabyteDB")
+	flag.StringVar(&storeParameters.StoreType, "store_type", SQLStoreType, fmt.Sprintf("Store type. Use '%s' for CockroachDB/YugabyteDB and '%s' for Raft-based store.", SQLStoreType, RaftStoreType))
 }
 
 // ConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.

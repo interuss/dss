@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/rid/repos"
+	ridraftstore "github.com/interuss/dss/pkg/rid/store/raftstore"
 	ridsqlstore "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
@@ -19,8 +20,10 @@ type Store = dssstore.Store[repos.Repository]
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
-	case "sql":
+	case params.SQLStoreType:
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
+	case params.RaftStoreType:
+		return ridraftstore.Init()
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
 	}

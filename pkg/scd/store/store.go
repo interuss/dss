@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/scd/repos"
+	scdraftstore "github.com/interuss/dss/pkg/scd/store/raftstore"
 	scdsqlstore "github.com/interuss/dss/pkg/scd/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
@@ -19,8 +20,10 @@ type Store = dssstore.Store[repos.Repository]
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
-	case "sql":
+	case params.SQLStoreType:
 		return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock)
+	case params.RaftStoreType:
+		return scdraftstore.Init()
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for scd", storeType)
 	}
