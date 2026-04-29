@@ -8,11 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Store implements store.Store[repos.Repository] for Raft-based in-memory storage.
-type Store struct {
-	logger *zap.Logger
-}
-
 // repo is a full implementation of scd.repos.Repository for Raft-based in-memory storage.
 type repo struct {
 	store *Store
@@ -20,6 +15,11 @@ type repo struct {
 
 func Init(logger *zap.Logger) (dssstore.Store[repos.Repository], error) {
 	return &Store{logger: logger}, nil
+}
+
+// Store implements store.Store[repos.Repository] for Raft-based in-memory storage.
+type Store struct {
+	logger *zap.Logger
 }
 
 func (s *Store) Close() error {
