@@ -23,16 +23,13 @@ func Init(logger *zap.Logger) (dssstore.Store[repos.Repository], error) {
 }
 
 func (s *Store) Close() error {
-	s.logger.Warn("raft store Close not yet implemented")
-	return nil
+	panic("Close not yet implemented in raft store")
 }
 
 func (s *Store) Interact(_ context.Context) (repos.Repository, error) {
-	s.logger.Warn("raft store Interact not yet implemented")
-	return &repo{store: s}, nil
+	panic("Interact not yet implemented in raft store")
 }
 
-func (s *Store) Transact(ctx context.Context, f func(context.Context, repos.Repository) error) error {
-	s.logger.Warn("raft store Transact not yet implemented")
-	return f(ctx, &repo{store: s})
+func (s *Store) Transact(_ context.Context, _ func(context.Context, repos.Repository) error) error {
+	panic("Transact not yet implemented in raft store")
 }
