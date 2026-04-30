@@ -20,7 +20,7 @@ type Store = dssstore.Store[repos.Repository]
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
-	case "sql":
+	case params.SQLStoreType:
 		return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock)
 	case params.RaftStoreType:
 		return raftstore.Init(logger)

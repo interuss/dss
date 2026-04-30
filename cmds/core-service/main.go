@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -168,16 +169,17 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux and remote ID if implemented by the store
-	if params.GetStoreParameters().StoreType != params.RaftStoreType {
-		auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to create aux server")
-		}
-		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to create remote ID server")
-		}
+	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+	if errors.Is(err, params.ErrUnsupportedStoreType) {
+		logger.Warn("aux not supported by current store, those endpoints will not be registered")
+	} else if err != nil {
+		return stacktrace.Propagate(err, "Failed to create aux server")
+	}
+	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+	if errors.Is(err, params.ErrUnsupportedStoreType) {
+		logger.Warn("remote ID not supported by current store, those endpoints will not be registered")
+	} else if err != nil {
+		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
 
 	// Initialize access token validation
@@ -205,14 +207,14 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		Routers: []api.PartialRouter{&versioningV1Router},
 	}
 
-	if params.GetStoreParameters().StoreType != params.RaftStoreType {
-		auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+	if ridV1Server != nil {
 		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
 		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
-		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router, &ridV1Router, &ridV2Router)
-	} else {
-		logger.Warn("aux and remote ID not supported by current store type, those endpoints will not be registered",
-			zap.String("store_type", params.GetStoreParameters().StoreType))
+		multiRouter.Routers = append(multiRouter.Routers, &ridV1Router, &ridV2Router)
+	}
+	if auxV1Server != nil {
+		auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
+		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router)
 	}
 
 	// Initialize strategic conflict detection

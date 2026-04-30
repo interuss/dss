@@ -19,8 +19,10 @@ type Store = dssstore.Store[repos.Repository]
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
-	case "sql":
+	case params.SQLStoreType:
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
+	case params.RaftStoreType:
+		return nil, params.ErrUnsupportedStoreType
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
 	}
