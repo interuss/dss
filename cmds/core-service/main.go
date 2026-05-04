@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -32,7 +31,6 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store"
-	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -170,13 +168,13 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	defer ctxCancel()
 
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-	if errors.Is(err, params.ErrUnsupportedStoreType) {
+	if stacktrace.GetCode(err) == store.CodeUnsupported {
 		logger.Warn("aux not supported by current store, those endpoints will not be registered")
 	} else if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
 	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if errors.Is(err, params.ErrUnsupportedStoreType) {
+	if stacktrace.GetCode(err) == store.CodeUnsupported {
 		logger.Warn("remote ID not supported by current store, those endpoints will not be registered")
 	} else if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")

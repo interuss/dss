@@ -1,7 +1,6 @@
 package params
 
 import (
-	"errors"
 	"flag"
 )
 
@@ -9,8 +8,6 @@ const (
 	RaftStoreType = "raft"
 	SQLStoreType  = "sql"
 )
-
-var ErrUnsupportedStoreType = errors.New("unsupported store type")
 
 type (
 	// StoreParameters bundles up parameters used to configure store at a generic/top level.

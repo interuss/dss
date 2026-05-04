@@ -20,5 +20,6 @@ type Store[R any] interface {
 }
 
 const (
-	CodeRetryable = stacktrace.ErrorCode(1)
+	CodeRetryable   = stacktrace.ErrorCode(1)
+	CodeUnsupported = stacktrace.ErrorCode(2)
 )

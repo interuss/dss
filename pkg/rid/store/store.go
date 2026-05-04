@@ -21,9 +21,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	switch storeType {
 	case params.SQLStoreType:
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
-	case params.RaftStoreType:
-		return nil, params.ErrUnsupportedStoreType
 	default:
-		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
+		return nil, stacktrace.NewErrorWithCode(dssstore.CodeUnsupported, "Unsupported store type %q for rid", storeType)
 	}
 }

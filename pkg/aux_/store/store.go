@@ -21,9 +21,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	switch storeType := params.GetStoreParameters().StoreType; storeType {
 	case params.SQLStoreType:
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
-	case params.RaftStoreType:
-		return nil, params.ErrUnsupportedStoreType
 	default:
-		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
+		return nil, stacktrace.NewErrorWithCode(dssstore.CodeUnsupported, "Unsupported store type %q for aux", storeType)
 	}
 }
