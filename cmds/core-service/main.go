@@ -167,12 +167,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
+	// Initialize aux
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
 	if stacktrace.GetCode(err) == store.CodeUnsupported {
 		logger.Warn("aux not supported by current store, those endpoints will not be registered")
 	} else if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
+
+	// Initialize remote ID
 	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
 	if stacktrace.GetCode(err) == store.CodeUnsupported {
 		logger.Warn("remote ID not supported by current store, those endpoints will not be registered")
