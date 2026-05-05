@@ -183,6 +183,16 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
 
+	// Initialize strategic conflict detection
+	if *enableSCD {
+		scdV1Server, err = createSCDServer(ctx, logger)
+		if stacktrace.GetCode(err) == store.CodeUnsupported {
+			logger.Warn("strategic conflict detection not supported by current store, those endpoints will not be registered")
+		} else if err != nil {
+			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
+		}
+	}
+
 	// Initialize access token validation
 	keyResolver, err := createKeyResolver()
 	switch {
@@ -218,13 +228,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &auxV1Router)
 	}
 
-	// Initialize strategic conflict detection
-	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
-		}
-
+	if scdV1Server != nil {
 		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}

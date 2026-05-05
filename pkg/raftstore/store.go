@@ -15,7 +15,7 @@ func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) erro
 	panic("not implemented")
 }
 
-// Interact returns a read-only repository that can be used to query the store without proposing a Raft entry.
+// Interact returns a repository that can be used to query the store without proposing a Raft entry.
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	panic("not implemented")
 }
