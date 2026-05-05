@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridsqlstore "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -21,7 +22,9 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	switch storeType {
 	case params.SQLStoreType:
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
+	case params.RaftStoreType:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "Raft store not yet implemented for remote ID")
 	default:
-		return nil, stacktrace.NewErrorWithCode(dssstore.CodeUnsupported, "Unsupported store type %q for rid", storeType)
+		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
 	}
 }

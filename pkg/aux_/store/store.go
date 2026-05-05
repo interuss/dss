@@ -5,6 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/aux_/repos"
 	auxsqlstore "github.com/interuss/dss/pkg/aux_/store/sqlstore"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/stacktrace"
@@ -21,7 +22,9 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	switch storeType := params.GetStoreParameters().StoreType; storeType {
 	case params.SQLStoreType:
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
+	case params.RaftStoreType:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "Raft store not yet implemented for aux")
 	default:
-		return nil, stacktrace.NewErrorWithCode(dssstore.CodeUnsupported, "Unsupported store type %q for aux", storeType)
+		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
 	}
 }

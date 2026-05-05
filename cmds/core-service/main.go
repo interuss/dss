@@ -23,6 +23,7 @@ import (
 	aux "github.com/interuss/dss/pkg/aux_"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -169,7 +170,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize aux
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
-	if stacktrace.GetCode(err) == store.CodeUnsupported {
+	if stacktrace.GetCode(err) == dsserr.NotImplemented {
 		logger.Warn("aux not supported by current store, those endpoints will not be registered")
 	} else if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
@@ -177,7 +178,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize remote ID
 	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if stacktrace.GetCode(err) == store.CodeUnsupported {
+	if stacktrace.GetCode(err) == dsserr.NotImplemented {
 		logger.Warn("remote ID not supported by current store, those endpoints will not be registered")
 	} else if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
@@ -186,7 +187,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	// Initialize strategic conflict detection
 	if *enableSCD {
 		scdV1Server, err = createSCDServer(ctx, logger)
-		if stacktrace.GetCode(err) == store.CodeUnsupported {
+		if stacktrace.GetCode(err) == dsserr.NotImplemented {
 			logger.Warn("strategic conflict detection not supported by current store, those endpoints will not be registered")
 		} else if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
