@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package consensus;
+package grpc;
 
-option go_package = "github.com/interuss/dss/pkg/consensus;consensus";
+option go_package = "github.com/interuss/dss/pkg/grpc;grpc";
 
 import "google/protobuf/empty.proto";
 

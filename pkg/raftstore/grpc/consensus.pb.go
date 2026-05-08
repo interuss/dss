@@ -4,7 +4,7 @@
 // 	protoc        v7.34.1
 // source: consensus.proto
 
-package consensus
+package grpc
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -86,13 +86,13 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\tconsensus\x1a\x1bgoogle/protobuf/empty.proto\"E\n" +
+	"\x0fconsensus.proto\x12\x04grpc\x1a\x1bgoogle/protobuf/empty.proto\"E\n" +
 	"\vRaftMessage\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data2I\n" +
-	"\tConsensus\x12<\n" +
-	"\bSyncRaft\x12\x16.consensus.RaftMessage\x1a\x16.google.protobuf.Empty(\x01B1Z/github.com/interuss/dss/pkg/consensus;consensusb\x06proto3"
+	"\x04data\x18\x03 \x01(\fR\x04data2D\n" +
+	"\tConsensus\x127\n" +
+	"\bSyncRaft\x12\x11.grpc.RaftMessage\x1a\x16.google.protobuf.Empty(\x01B'Z%github.com/interuss/dss/pkg/grpc;grpcb\x06proto3"
 
 var (
 	file_consensus_proto_rawDescOnce sync.Once
@@ -108,12 +108,12 @@ func file_consensus_proto_rawDescGZIP() []byte {
 
 var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_consensus_proto_goTypes = []any{
-	(*RaftMessage)(nil),   // 0: consensus.RaftMessage
+	(*RaftMessage)(nil),   // 0: grpc.RaftMessage
 	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
 }
 var file_consensus_proto_depIdxs = []int32{
-	0, // 0: consensus.Consensus.SyncRaft:input_type -> consensus.RaftMessage
-	1, // 1: consensus.Consensus.SyncRaft:output_type -> google.protobuf.Empty
+	0, // 0: grpc.Consensus.SyncRaft:input_type -> grpc.RaftMessage
+	1, // 1: grpc.Consensus.SyncRaft:output_type -> google.protobuf.Empty
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

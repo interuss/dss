@@ -4,7 +4,7 @@
 // - protoc             v7.34.1
 // source: consensus.proto
 
-package consensus
+package grpc
 
 import (
 	context "context"
@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Consensus_SyncRaft_FullMethodName = "/consensus.Consensus/SyncRaft"
+	Consensus_SyncRaft_FullMethodName = "/grpc.Consensus/SyncRaft"
 )
 
 // ConsensusClient is the client API for Consensus service.
@@ -101,7 +101,7 @@ type Consensus_SyncRaftServer = grpc.ClientStreamingServer[RaftMessage, emptypb.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Consensus_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "consensus.Consensus",
+	ServiceName: "grpc.Consensus",
 	HandlerType: (*ConsensusServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
