@@ -5,51 +5,44 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/stacktrace"
 )
 
 func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetSubscription not implemented for raftstore")
 }
 
 func (r *repo) DeleteSubscription(_ context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteSubscription not implemented for raftstore")
 }
 
 func (r *repo) InsertSubscription(_ context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "InsertSubscription not implemented for raftstore")
 }
 
 func (r *repo) UpdateSubscription(_ context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpdateSubscription not implemented for raftstore")
 }
 
 func (r *repo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchSubscriptions not implemented for raftstore")
 }
 
 func (r *repo) SearchSubscriptionsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchSubscriptionsByOwner not implemented for raftstore")
 }
 
 func (r *repo) UpdateNotificationIdxsInCells(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpdateNotificationIdxsInCells not implemented for raftstore")
 }
 
 func (r *repo) MaxSubscriptionCountInCellsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	// TODO: implement
-	return 0, nil
+	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "MaxSubscriptionCountInCellsByOwner not implemented for raftstore")
 }
 
 func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredSubscriptions not implemented for raftstore")
 }

@@ -4,24 +4,23 @@ import (
 	"context"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/stacktrace"
 )
 
+// SaveOwnMetadata returns nil instead of dsserr.NotImplemented because it is needed to allow the server to startup.
 func (r *repo) SaveOwnMetadata(_ context.Context, locality string, publicEndpoint string) error {
-	// TODO: implement
 	return nil
 }
 
 func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, error) {
-	// TODO: implement
-	return nil, nil
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSMetadata not implemented for raftstore")
 }
 
 func (r *repo) RecordHeartbeat(_ context.Context, heartbeat auxmodels.Heartbeat) error {
-	// TODO: implement
-	return nil
+	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "RecordHeartbeat not implemented for raftstore")
 }
 
 func (r *repo) GetDSSAirspaceRepresentationID(_ context.Context) (string, error) {
-	// TODO: implement
-	return "", nil
+	return "", stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDSSAirspaceRepresentationID not implemented for raftstore")
 }
