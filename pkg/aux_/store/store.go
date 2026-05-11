@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/aux_/repos"
+	auxraftstore "github.com/interuss/dss/pkg/aux_/store/raftstore"
 	auxsqlstore "github.com/interuss/dss/pkg/aux_/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
@@ -19,8 +20,10 @@ type Store = dssstore.Store[repos.Repository]
 // Init selects and initializes the aux store backend.
 func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
 	switch storeType := params.GetStoreParameters().StoreType; storeType {
-	case "sql":
+	case params.SQLStoreType:
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
+	case params.RaftStoreType:
+		return auxraftstore.Init()
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
 	}
