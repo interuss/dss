@@ -111,9 +111,11 @@ def _generate_apis(
                     "go.opentelemetry.io/otel",
                     "go.opentelemetry.io/otel/trace",
                     "github.com/interuss/stacktrace",
+                    "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp",
                 ]
             )
-            + '\n    dsserr "github.com/interuss/dss/pkg/errors"',
+            + '\n    dsserr "github.com/interuss/dss/pkg/errors"'
+            + '\n    semconv "go.opentelemetry.io/otel/semconv/v1.40.0"',
             "<API_PACKAGE>": api_package,
             "<ROUTES>": "\n".join(routes),
             "<ROUTING>": "\n".join(rendering.routing(api, api_package)),

@@ -92,6 +92,9 @@ func Dial[R any](ctx context.Context, connParams params.ConnectParameters) (*Sto
 	if err != nil {
 		return nil, err
 	}
+	if err := otelpgx.RecordStats(dbPool); err != nil {
+		return nil, err
+	}
 
 	const versionDbQuery = `
       SELECT version();
