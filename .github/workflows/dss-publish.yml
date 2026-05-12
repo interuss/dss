@@ -13,13 +13,13 @@ on:
       # pattern matches more often than it should.  A more correct regex would
       # be the one found in scripts/tag.sh.
       # [1] https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
-      - "interuss/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
+      - "skyguide-ansp/dss/v[0-9]+.[0-9]+.[0-9]+-?*"
 jobs:
   docker-hub-push:
     name: DSS Build and Push to Docker Hub
     runs-on: ubuntu-latest
     # To modify to enable the job for forked repository
-    if: github.repository == 'interuss/dss'
+    if: github.repository == 'skyguide-ansp/dss'
     permissions:
         id-token: write # needed for signing the images with GitHub OIDC Token
 
@@ -41,17 +41,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+      - name: Log in to ACR
+        uses: docker/login-action@v4
         with:
-          registry: docker.io
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: utmready.azurecr.io
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Build, push and sign image
         env:
+          IMAGE: skyguide-ansp-dss
           DOCKER_URL: ${{ secrets.DOCKER_URL }}
-          DOCKER_UPDATE_LATEST: true
+          DOCKER_UPDATE_LATEST: false
           DOCKER_SIGN: true
           CERT_IDENTITY: https://github.com/${{ github.workflow_ref }}
           CERT_ISSUER: https://token.actions.githubusercontent.com

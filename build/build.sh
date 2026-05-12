@@ -28,8 +28,8 @@ else
 fi
 cd "${BASEDIR}"
 
+IMAGE="${IMAGE:-dss}"
 VERSION=$(./scripts/git/version.sh dss)
-LATEST_TAG="latest"
 
 if [[ -z "${DOCKER_URL}" ]]; then
   echo "DOCKER_URL environment variable is not set; building image to interuss-local/dss..."
@@ -40,7 +40,7 @@ if [[ -z "${DOCKER_URL}" ]]; then
 
   echo "DOCKER_URL environment variable was not set; built images to interuss-local/dss and interuss-local/dummy-oauth"
 else
-  TAG="${DOCKER_URL}/dss:${VERSION}"
+  TAG="${DOCKER_URL}/${IMAGE}:${VERSION}"
 
   echo "Building image ${TAG}"
   docker image build . -t "${TAG}"
@@ -65,14 +65,15 @@ else
   fi
 
   if [[ "${DOCKER_UPDATE_LATEST}" == "true" ]]; then
+    LATEST_TAG="${DOCKER_URL}/${IMAGE}:latest"
 
-    echo "Tagging docker image ${DOCKER_URL}/dss:${LATEST_TAG}..."
-    docker tag "${TAG}" "${DOCKER_URL}/dss:${LATEST_TAG}"
+    echo "Tagging docker image ${LATEST_TAG}..."
+    docker tag "${TAG}" "${LATEST_TAG}"
 
-    echo "Pushing docker image ${DOCKER_URL}/dss:${LATEST_TAG}..."
-    docker image push "${DOCKER_URL}/dss:${LATEST_TAG}"
+    echo "Pushing docker image ${LATEST_TAG}..."
+    docker image push "${LATEST_TAG}"
 
-    echo "Built and pushed docker image ${DOCKER_URL}/dss:${LATEST_TAG}"
+    echo "Built and pushed docker image ${LATEST_TAG}"
 
   fi
 
