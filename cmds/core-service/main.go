@@ -39,7 +39,7 @@ import (
 )
 
 var (
-	address           = flag.String("addr", ":8080", "Local address that the service binds to and listens on for incoming connections")
+	address           = flag.String("addr", ":8080", "Address and port that the service binds to and listens on for incoming connections")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	allowHTTPBaseUrls = flag.Bool("allow_http_base_urls", false, "Enables http scheme for Strategic Conflict Detection API")
 	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
@@ -47,11 +47,12 @@ var (
 	locality          = flag.String("locality", "", "self-identification string of this DSS instance")
 	publicEndpoint    = flag.String("public_endpoint", "", "Public endpoint to access this DSS instance. Must be an absolute URI")
 
-	logFormat           = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
-	logLevel            = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
-	dumpRequests        = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
-	profServiceName     = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	enableOpenTelemetry = flag.Bool("enable_opentelemetry", false, "Enable OpenTelemetry")
+	logFormat               = flag.String("log_format", logging.DefaultFormat, "The log format in {json, console}")
+	logLevel                = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
+	dumpRequests            = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
+	profServiceName         = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
+	enableOpenTelemetry     = flag.Bool("enable_opentelemetry", false, "Enable OpenTelemetry, including traces and activation metric endpoint")
+	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the OpenTelemetry prometheus service binds to and listens on for incoming connections")
 
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -336,7 +337,7 @@ func main() {
 
 	// Set up OpenTelemetry.
 	if *enableOpenTelemetry {
-		otelShutdown, err := setupOTelSDK(ctx)
+		otelShutdown, err := setupOTelSDK(ctx, *metricsListeningAddress)
 		if err != nil {
 			logger.Panic("Failed to initialize OpenTelemetry", zap.Error(err))
 		}

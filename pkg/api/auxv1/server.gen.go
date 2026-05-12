@@ -4,13 +4,16 @@ package auxv1
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"regexp"
+
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
-	"net/http"
-	"regexp"
 )
 
 type APIRouter struct {
@@ -25,6 +28,10 @@ var tracer = otel.Tracer("auxv1.api")
 func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
+
+			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+				labeler.Add(semconv.HTTPRoute(route.Path))
+			}
 
 			// We retrieve the current span from the otelhttp handler to set its name property.
 			span := trace.SpanFromContext(r.Context())

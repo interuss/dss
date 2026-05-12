@@ -15,6 +15,10 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
     for _, route := range s.Routes {
         if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
 
+			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+				labeler.Add(semconv.HTTPRoute(route.Path))
+			}
+
             // We retrieve the current span from the otelhttp handler to set its name property.
             span := trace.SpanFromContext(r.Context())
 
