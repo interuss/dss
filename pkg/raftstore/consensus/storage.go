@@ -5,6 +5,7 @@ import (
 	"go.etcd.io/etcd/server/v3/storage/wal"
 )
 
+// storage persists the Raft log and snapshots.
 type storage struct {
 	wal         *wal.WAL
 	snapshotter *snap.Snapshotter
