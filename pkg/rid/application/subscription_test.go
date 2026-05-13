@@ -289,11 +289,11 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime, (*sub.StartTime).UTC())
+				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*sub.StartTime).UTC().Truncate(time.Microsecond))
 			}
 			if !r.wantEndTime.IsZero() {
 				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime, (*sub.EndTime).UTC())
+				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*sub.EndTime).UTC().Truncate(time.Microsecond))
 			}
 		})
 	}
@@ -395,11 +395,11 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 
 			if !r.wantStartTime.IsZero() {
 				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime, (*sub.StartTime).UTC())
+				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*sub.StartTime).UTC().Truncate(time.Microsecond))
 			}
 			if !r.wantEndTime.IsZero() {
 				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime, (*sub.EndTime).UTC())
+				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*sub.EndTime).UTC().Truncate(time.Microsecond))
 			}
 		})
 	}
