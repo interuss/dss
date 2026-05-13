@@ -4,9 +4,6 @@ package auxv1
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"regexp"
-
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
@@ -14,6 +11,8 @@ import (
 	"go.opentelemetry.io/otel"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
+	"net/http"
+	"regexp"
 )
 
 type APIRouter struct {
@@ -49,22 +48,6 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 		}
 	}
 	return false
-}
-
-func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
-	switch stacktrace.GetCode(authErr) {
-	case dsserr.Unauthenticated:
-		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
-	case dsserr.PermissionDenied:
-		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
-	default:
-
-		if authErr == nil {
-			authErr = stacktrace.NewError("Unknown error")
-		}
-
-		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
-	}
 }
 
 func (s *APIRouter) GetVersion(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -358,6 +341,20 @@ func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r 
 		return
 	}
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
+func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+	switch stacktrace.GetCode(authErr) {
+	case dsserr.Unauthenticated:
+		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+	case dsserr.PermissionDenied:
+		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+	default:
+		if authErr == nil {
+			authErr = stacktrace.NewError("Unknown error")
+		}
+		*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}
+	}
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {

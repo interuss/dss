@@ -29,7 +29,9 @@ def indent(lines: List[str], level: int) -> List[str]:
 
 
 def imports(import_list: List[str]) -> str:
-    return "\n".join(indent(['"{}"'.format(i) for i in import_list], 2))
+    return "\n".join(
+        indent(['"{}"'.format(i) if '"' not in i else i for i in import_list], 2)
+    )
 
 
 def template_content(template_name: str, template_vars: Dict[str, str]) -> str:
@@ -277,6 +279,7 @@ def routes(
     """
     lines: List[str] = []
     imports: Set[str] = set()
+    need_auth_error = False
 
     # Define a top-level routed HTTP handler function for each operation
     for operation in api.operations:
@@ -390,6 +393,7 @@ def routes(
         )
 
         if operation.security.options:
+            need_auth_error = True
             # Authorize & verify the call
             body.extend(comment(["Authorize request"]))
             body.append(
@@ -449,6 +453,54 @@ def routes(
 
         lines.append("}")
         lines.append("")
+
+    if need_auth_error:
+        lines.append(
+            "func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {"
+        )
+
+        body: List[str] = []
+
+        body.append("switch stacktrace.GetCode(authErr) {")
+        body.append("case dsserr.Unauthenticated:")
+        body.extend(
+            indent(
+                [
+                    '*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}'
+                ],
+                1,
+            )
+        )
+        body.append("case dsserr.PermissionDenied:")
+        body.extend(
+            indent(
+                [
+                    '*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}'
+                ],
+                1,
+            )
+        )
+        body.append("default:")
+        body.extend(indent(["if authErr == nil {"], 1))
+        body.extend(indent(['authErr = stacktrace.NewError("Unknown error")'], 2))
+        body.extend(indent(["}"], 1))
+        body.extend(
+            indent(
+                [
+                    '*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}'
+                ],
+                1,
+            )
+        )
+        body.append("}")
+
+        lines.extend(indent(body, 1))
+        lines.append("}")
+        lines.append("")
+
+        imports.add("github.com/interuss/stacktrace")
+        imports.add('dsserr "github.com/interuss/dss/pkg/errors"')
+
     if lines:
         lines.pop()
 
