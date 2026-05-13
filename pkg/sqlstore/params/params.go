@@ -63,7 +63,7 @@ func init() {
 	flag.IntVar(&connectParameters.MaxRetries, "cockroach_max_retries", connectParameters.MaxRetries, "DEPRECATED: use 'datastore_max_retries' instead")
 }
 
-// ConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
+// GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
 func GetConnectParameters() ConnectParameters {
 	return connectParameters
 }

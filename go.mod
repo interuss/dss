@@ -5,7 +5,6 @@ go 1.26.2
 require (
 	cloud.google.com/go/profiler v0.4.0
 	github.com/cockroachdb/cockroach-go/v2 v2.3.8
-	github.com/coreos/etcd v3.3.27+incompatible
 	github.com/coreos/go-semver v0.3.1
 	github.com/exaring/otelpgx v0.10.0
 	github.com/go-jose/go-jose/v4 v4.1.4
@@ -21,7 +20,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
-	go.etcd.io/etcd v3.3.27+incompatible
+	go.etcd.io/etcd/client/pkg/v3 v3.6.11
 	go.etcd.io/etcd/server/v3 v3.6.11
 	go.etcd.io/raft/v3 v3.6.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
@@ -43,8 +42,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/coreos/pkg v0.0.0-20240122114842-bbd7aa9bf6fb // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -70,7 +67,6 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xiang90/probing v0.0.0-20221125231312-a49e3df8f510 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.11 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.6.11 // indirect
 	go.etcd.io/etcd/pkg/v3 v3.6.11 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect

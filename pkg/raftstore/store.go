@@ -2,14 +2,48 @@ package raftstore
 
 import (
 	"context"
+	"sync"
+
+	"github.com/interuss/dss/pkg/raftstore/consensus"
+	raftparams "github.com/interuss/dss/pkg/raftstore/params"
+	"github.com/interuss/stacktrace"
+	"go.uber.org/zap"
+)
+
+var (
+	sharedConsensus     *consensus.Consensus
+	sharedConsensusOnce sync.Once
+	sharedConsensusErr  error
 )
 
 type Store[R any] struct {
-	newRepo func() R
+	newRepo   func() R
+	consensus *consensus.Consensus
 }
 
-func Init[R any](newRepo func() R) *Store[R] {
-	return &Store[R]{newRepo: newRepo}
+func Init[R any](logger *zap.Logger, newRepo func() R) (*Store[R], error) {
+	// scd, rid and aux will share the same consensus instance, so we initialize it once.
+	sharedConsensusOnce.Do(func() {
+		params := raftparams.GetConnectParameters()
+		peers, err := params.PeerMap()
+		if err != nil {
+			sharedConsensusErr = stacktrace.Propagate(err, "failed to parse peer map")
+			return
+		}
+
+		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(logger, params.ID, peers)
+		if sharedConsensusErr != nil {
+			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
+		}
+	})
+	if sharedConsensusErr != nil {
+		return nil, sharedConsensusErr
+	}
+
+	return &Store[R]{
+		newRepo:   newRepo,
+		consensus: sharedConsensus,
+	}, nil
 }
 
 // Transact proposes the entry to Raft and blocks until it is committed and applied.
