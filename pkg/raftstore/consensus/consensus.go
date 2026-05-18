@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
@@ -16,11 +17,14 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultClusterID uint64 = 1
+const (
+	defaultClusterID uint64 = 1
+)
 
 type Consensus struct {
-	node        raft.Node
-	raftStorage *raft.MemoryStorage
+	logger *zap.Logger
+
+	node raft.Node
 
 	transport *rafthttp.Transport
 	server    *http.Server
@@ -29,12 +33,20 @@ type Consensus struct {
 	errorC  chan error
 }
 
-func NewConsensus(logger *zap.Logger, nodeID uint64, peers map[uint64]*url.URL) (*Consensus, error) {
-	consensus := &Consensus{
-		errorC: make(chan error, 1),
+func NewConsensus(ctx context.Context, logger *zap.Logger, nodeID uint64, peers map[uint64]*url.URL, dataDir string, snapshotCatchupEntries uint64) (*Consensus, error) {
+	storage, _, err := newStorage(ctx, logger.With(zap.String("component", "storage")), dataDir, nodeID, snapshotCatchupEntries)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
 
-	err := consensus.initTransport(logger.With(zap.String("component", "transport")), nodeID, defaultClusterID, peers)
+	consensus := &Consensus{
+		logger: logging.WithValuesFromContext(ctx, logger),
+
+		storage: storage,
+		errorC:  make(chan error, 1),
+	}
+
+	err = consensus.initTransport(ctx, nodeID, defaultClusterID, peers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -42,16 +54,16 @@ func NewConsensus(logger *zap.Logger, nodeID uint64, peers map[uint64]*url.URL) 
 	return consensus, nil
 }
 
-func (c *Consensus) initTransport(logger *zap.Logger, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 
 	transport := &rafthttp.Transport{
-		Logger:      logger,
+		Logger:      logging.WithValuesFromContext(ctx, c.logger.With(zap.String("component", "transport"))),
 		ID:          types.ID(nodeID),
 		ClusterID:   types.ID(clusterID),
 		Raft:        c,
 		ServerStats: v2stats.NewServerStats(nodeIDStr, nodeIDStr),
-		LeaderStats: v2stats.NewLeaderStats(logger, nodeIDStr),
+		LeaderStats: v2stats.NewLeaderStats(c.logger, nodeIDStr),
 		ErrorC:      c.errorC,
 	}
 
@@ -82,7 +94,7 @@ func (c *Consensus) initTransport(logger *zap.Logger, nodeID uint64, clusterID u
 	go func() {
 		err := c.server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("http server error", zap.Error(err))
+			c.logger.Error("http server error", zap.Error(err))
 			c.errorC <- err
 		}
 	}()
@@ -109,4 +121,9 @@ func (c *Consensus) ReportUnreachable(id uint64) {
 // ReportSnapshot implements the rafthttp.Raft interface.
 func (c *Consensus) ReportSnapshot(id uint64, status raft.SnapshotStatus) {
 	c.node.ReportSnapshot(id, status)
+}
+
+// RegisterStore allows registering a snapshot provider function for a specific store
+func (c *Consensus) RegisterStore(name string, provider snapshotProvider) {
+	c.storage.registerSnapshotProvider(name, provider)
 }

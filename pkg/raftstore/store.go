@@ -21,7 +21,7 @@ type Store[R any] struct {
 	consensus *consensus.Consensus
 }
 
-func Init[R any](logger *zap.Logger, newRepo func() R) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*Store[R], error) {
 	// scd, rid and aux will share the same consensus instance, so we initialize it once.
 	sharedConsensusOnce.Do(func() {
 		params := raftparams.GetConnectParameters()
@@ -31,7 +31,7 @@ func Init[R any](logger *zap.Logger, newRepo func() R) (*Store[R], error) {
 			return
 		}
 
-		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(logger, params.ID, peers)
+		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, params.ID, peers, params.DataDir, params.SnapshotCatchupEntries)
 		if sharedConsensusErr != nil {
 			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
 		}
@@ -39,6 +39,11 @@ func Init[R any](logger *zap.Logger, newRepo func() R) (*Store[R], error) {
 	if sharedConsensusErr != nil {
 		return nil, sharedConsensusErr
 	}
+
+	// TODO: implement
+	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
+		return nil, nil
+	})
 
 	return &Store[R]{
 		newRepo:   newRepo,
