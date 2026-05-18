@@ -16,11 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultClusterID uint64 = 1
+const (
+	defaultClusterID uint64 = 1
+)
 
 type Consensus struct {
-	node        raft.Node
-	raftStorage *raft.MemoryStorage
+	logger *zap.Logger
+
+	node raft.Node
 
 	transport *rafthttp.Transport
 	server    *http.Server
@@ -29,12 +32,20 @@ type Consensus struct {
 	errorC  chan error
 }
 
-func NewConsensus(logger *zap.Logger, nodeID uint64, peers map[uint64]*url.URL) (*Consensus, error) {
-	consensus := &Consensus{
-		errorC: make(chan error, 1),
+func NewConsensus(logger *zap.Logger, nodeID uint64, peers map[uint64]*url.URL, dataDir string) (*Consensus, error) {
+	storage, _, err := newStorage(logger.With(zap.String("component", "storage")), dataDir, nodeID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
 
-	err := consensus.initTransport(logger.With(zap.String("component", "transport")), nodeID, defaultClusterID, peers)
+	consensus := &Consensus{
+		logger: logger,
+
+		storage: storage,
+		errorC:  make(chan error, 1),
+	}
+
+	err = consensus.initTransport(logger.With(zap.String("component", "transport")), nodeID, defaultClusterID, peers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -109,4 +120,9 @@ func (c *Consensus) ReportUnreachable(id uint64) {
 // ReportSnapshot implements the rafthttp.Raft interface.
 func (c *Consensus) ReportSnapshot(id uint64, status raft.SnapshotStatus) {
 	c.node.ReportSnapshot(id, status)
+}
+
+// RegisterStore allows registering a snapshot provider function for a specific store
+func (c *Consensus) RegisterStore(name string, provider snapshotProvider) {
+	c.storage.registerSnapshotProvider(name, provider)
 }

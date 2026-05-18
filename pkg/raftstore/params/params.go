@@ -9,11 +9,14 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
+const defaultDataDir = "raft_data"
+
 type (
 	// ConnectParameters bundles up parameters used for connecting nodes in a raftstore cluster.
 	ConnectParameters struct {
-		ID    uint64
-		Peers string
+		ID      uint64
+		Peers   string
+		DataDir string
 	}
 )
 
@@ -58,6 +61,7 @@ var (
 func init() {
 	flag.Uint64Var(&connectParameters.ID, "raft_node_id", 0, "raft node ID for this instance (must be non-zero and unique within the cluster)")
 	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `comma-separated "nodeID=peerURL" pairs for all cluster members, including the current node, e.g. "1=http://node1:9021,2=http://node2:9021,3=http://node3:9021"`)
+	flag.StringVar(&connectParameters.DataDir, "raft_data_directory", defaultDataDir, "directory for raft data (snapshot and WAL storage)")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
