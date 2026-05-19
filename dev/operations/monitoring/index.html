@@ -11,7 +11,7 @@
         <link rel="prev" href="../pooling-crdb/">
       
       
-        <link rel="next" href="../migrations/">
+        <link rel="next" href="../healthchecks/">
       
       
         
@@ -721,16 +721,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grafana-prometheus" class="md-nav__link">
+  <a href="#grafana-prometheus-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grafana / Prometheus
+        Grafana / Prometheus stack
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Grafana / Prometheus">
+    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#grafana-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grafana access
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#prometheus-access" class="md-nav__link">
@@ -787,466 +798,38 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#health-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Health checks
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Health checks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#healthy-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        /healthy check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="/healthy check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#normal-usage-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Normal usage metrics
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Normal usage metrics">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dar-identity-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DAR identity check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DAR identity check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure-option-1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure, Option 1
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria-option-1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria, Option 1
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure-option-2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure, Option 2
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria-option-2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria, Option 2
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#per-uss-heartbeat-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Per-USS heartbeat check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Per-USS heartbeat check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nonce-exchange-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nonce exchange check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Nonce exchange check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#implementation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implementation
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dss-entity-injection-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DSS entity injection check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DSS entity injection check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#database-metrics-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Database metrics check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Database metrics check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#failure-detection-capability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Failure detection capability
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Failure detection capability">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#potential-failures" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Potential failures
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-detection-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Check detection capabilities
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Check detection capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#legend" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Legend
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../healthchecks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1381,16 +964,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grafana-prometheus" class="md-nav__link">
+  <a href="#grafana-prometheus-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grafana / Prometheus
+        Grafana / Prometheus stack
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Grafana / Prometheus">
+    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#grafana-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grafana access
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#prometheus-access" class="md-nav__link">
@@ -1439,462 +1033,6 @@
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#health-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Health checks
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Health checks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#healthy-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        /healthy check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="/healthy check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#normal-usage-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Normal usage metrics
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Normal usage metrics">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dar-identity-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DAR identity check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DAR identity check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure-option-1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure, Option 1
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria-option-1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria, Option 1
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure-option-2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure, Option 2
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria-option-2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria, Option 2
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#per-uss-heartbeat-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Per-USS heartbeat check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Per-USS heartbeat check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nonce-exchange-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nonce exchange check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Nonce exchange check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#implementation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implementation
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dss-entity-injection-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DSS entity injection check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DSS entity injection check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#database-metrics-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Database metrics check
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Database metrics check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#summary_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#procedure_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Procedure
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#alert-criteria_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alert criteria
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#failure-detection-capability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Failure detection capability
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Failure detection capability">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#potential-failures" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Potential failures
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-detection-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Check detection capabilities
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Check detection capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#legend" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Legend
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1987,11 +1125,20 @@
 <h1 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">¶</a></h1>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¶</a></h2>
 <p>Some of these <a href="../../infrastructure/#prerequisites">tools</a> are required to interact with monitoring services.</p>
-<h2 id="grafana-prometheus">Grafana / Prometheus<a class="headerlink" href="#grafana-prometheus" title="Permanent link">¶</a></h2>
-<p>By default, an instance of Grafana and Prometheus are deployed along with the
-core DSS services; this combination allows you to view (Grafana) CRDB metrics
-(collected by Prometheus).  To view Grafana, first ensure that the appropriate
-cluster context is selected (<code>kubectl config current-context</code>).  Then, run the
+<h2 id="grafana-prometheus-stack">Grafana / Prometheus stack<a class="headerlink" href="#grafana-prometheus-stack" title="Permanent link">¶</a></h2>
+<p>When enabled, an instance of Grafana and Prometheus are deployed along with the
+core DSS services; this combination allows you to view (Grafana) metrics
+(collected by Prometheus).</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_grafana_stack.png" data-desc-position="bottom"><img alt="Monitoring stack diagram" src="../../assets/generated/prometheus_grafana_stack.png"></a></p>
+<p>This can be enabled via:</p>
+<ul>
+<li>The <code>enable_monitoring</code> option in terraform</li>
+<li>The <code>monitoring.enabled</code> option in helm</li>
+<li>By using tanka, which always enables it</li>
+</ul>
+<h3 id="grafana-access">Grafana access<a class="headerlink" href="#grafana-access" title="Permanent link">¶</a></h3>
+<p>To access the Grafana interface, first ensure that the appropriate
+cluster context is selected (<code>kubectl config current-context</code>). Then, run the
 following command:</p>
 <div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>grafana<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="m">3000</span>
 </code></pre></div></td></tr></tbody></table></div>
@@ -2029,339 +1176,74 @@ following command:</p>
 </ul>
 <p>Next time you access the interface, select the certificate you just imported.</p>
 <h2 id="prometheus-federation-multi-cluster-monitoring">Prometheus Federation (Multi Cluster Monitoring)<a class="headerlink" href="#prometheus-federation-multi-cluster-monitoring" title="Permanent link">¶</a></h2>
-<p>The DSS can use <a href="https://prometheus.io/docs/introduction/overview/">Prometheus</a> to
-gather metrics from the binaries deployed with this project, by scraping
-formatted metrics from an application's endpoint.
-<a href="https://prometheus.io/docs/prometheus/latest/federation/">Prometheus Federation</a>
+<p><a href="https://prometheus.io/docs/prometheus/latest/federation/">Prometheus Federation</a>
 enables you to easily monitor multiple clusters of the DSS that you operate,
 unifying all the metrics into a single Prometheus instance where you can build
-Grafana Dashboards for. Enabling Prometheus Federation is optional. To enable
-you need to do 2 things:
-1. Externally expose the Prometheus service of the DSS clusters.
-2. Deploy a "Global Prometheus" instance to unify metrics.</p>
+Grafana Dashboards. Enabling Prometheus Federation is optional.</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_federation.png" data-desc-position="bottom"><img alt="Federation stack diagram" src="../../assets/generated/prometheus_federation.png"></a></p>
+<p>To enable it, you need to do two things:</p>
+<ol>
+<li>Externally expose the Prometheus service of the DSS clusters.</li>
+<li>Deploy a "Global Prometheus" instance to unify metrics.</li>
+</ol>
 <h3 id="externally-exposing-prometheus">Externally Exposing Prometheus<a class="headerlink" href="#externally-exposing-prometheus" title="Permanent link">¶</a></h3>
-<p>You will need to change the values in the <code>prometheus</code> fields in your metadata tuples:
-1. <code>expose_external</code> set to <code>true</code>
-2. [Optional] Supply a static external IP Address to <code>IP</code>
-3. [Highly Recommended] Supply whitelists of <a href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing">IP Blocks in CIDR form</a>, leaving an empty list mean everyone can publicly access your metrics.
-4. Then Run <code>tk apply ...</code> to deploy the changes on your DSS clusters.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="terraform-managed" name="__tabbed_2" type="radio"><input id="helm-managed" name="__tabbed_2" type="radio"><input id="tanka-managed" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="terraform-managed">Terraform managed</label><label for="helm-managed">Helm managed</label><label for="tanka-managed">Tanka managed</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<ol>
+<li>Set the option <code>prometheus_hostname</code> to the value of the public hostname that will be used to access your instance.</li>
+<li>Apply changes as usual, first by running terraform, and then tanka or helm</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<ol>
+<li>Set <code>monitoring.externalService.enabled</code> to <code>true</code></li>
+<li>[Optional] Set <code>monitoring.externalService.ip</code> set to a static external IP</li>
+<li>[Optional] Set <code>monitoring.externalService.subnet</code> if you use AWS.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<ol>
+<li>Set <code>expose_external</code> to <code>true</code></li>
+<li>[Optional] Supply a static external IP Address to <code>IP</code></li>
+</ol>
+</div>
+</div>
+</div>
 <h3 id="deploy-global-prometheus-instance">Deploy "Global Prometheus" instance<a class="headerlink" href="#deploy-global-prometheus-instance" title="Permanent link">¶</a></h3>
 <ol>
 <li>Follow guide to deploy Prometheus https://prometheus.io/docs/introduction/first_steps/</li>
-<li>The scrape rules for this global instance will scrape other prometheus <code>/federate</code> endpoint and rather simple, please look at the <a href="https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation">example configuration</a>.</li>
-</ol>
-<h2 id="health-checks">Health checks<a class="headerlink" href="#health-checks" title="Permanent link">¶</a></h2>
-<p>This section describes various monitoring activities a USS may perform to verify various characteristics of their DSS instance and its pool.  In general, they rely on a DSS operator's monitoring infrastructure querying particular endpoints, evaluating the results of those queries, and producing alerts under certain conditions.  Not all checks listed below are fully implemented in the current InterUSS implementation.</p>
-<p>One or more procedures below could be implemented into a single, more-accessible endpoint in monitoring middleware.</p>
-<h3 id="healthy-check">/healthy check<a class="headerlink" href="#healthy-check" title="Permanent link">¶</a></h3>
-<h4 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">¶</a></h4>
-<p>Checks whether a DSS instance is responsive to HTTPS requests.</p>
-<h4 id="procedure">Procedure<a class="headerlink" href="#procedure" title="Permanent link">¶</a></h4>
-<p>For each expected DSS instance in the pool, query <a href="https://github.com/interuss/dss/blob/master/cmds/core-service/main.go"><code>/healthy</code></a></p>
-<h4 id="alert-criteria">Alert criteria<a class="headerlink" href="#alert-criteria" title="Permanent link">¶</a></h4>
+<li>The scrape rules for this global instance will scrape other prometheus <code>/federate</code> endpoints and are rather simple, please look at the <a href="https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation">example configuration</a> as a starting point.</li>
+<li>
+<p>You will need to enable a client certificate, as this is used to protect the endpoint.</p>
 <ul>
-<li>Any query failed or returned a code other than 200</li>
+<li>This uses the same CAs in a cluster. You can use any generated certificate with all Prometheus instances in a cluster.</li>
+<li>Copy the private (<code>client.grafana.key</code>), public (<code>client.grafana.crt</code>), and CA (<code>ca.crt</code>) keys and make them available to your Prometheus instance, next to the config. Folders are:</li>
 </ul>
-<h3 id="normal-usage-metrics">Normal usage metrics<a class="headerlink" href="#normal-usage-metrics" title="Permanent link">¶</a></h3>
-<h4 id="summary_1">Summary<a class="headerlink" href="#summary_1" title="Permanent link">¶</a></h4>
-<p>Checks whether normal calls to USS's DSS instance generally succeed.</p>
-<h4 id="procedure_1">Procedure<a class="headerlink" href="#procedure_1" title="Permanent link">¶</a></h4>
-<p>USS notifies its monitoring system whenever a normal ASTM-API call to its DSS instance fails due to an error indicating a failed service like timeout, 5xx, 405, 408, 418, 451, and possibly others.</p>
-<h4 id="alert-criteria_1">Alert criteria<a class="headerlink" href="#alert-criteria_1" title="Permanent link">¶</a></h4>
-<ul>
-<li>Number of failures per time period crosses threshold</li>
-</ul>
-<h3 id="dar-identity-check">DAR identity check<a class="headerlink" href="#dar-identity-check" title="Permanent link">¶</a></h3>
-<h4 id="summary_2">Summary<a class="headerlink" href="#summary_2" title="Permanent link">¶</a></h4>
-<p>Checks whether a set of DSS instances indicate that they are using the same DSS Airspace Representation (DAR).</p>
-<h4 id="procedure-option-1">Procedure, Option 1<a class="headerlink" href="#procedure-option-1" title="Permanent link">¶</a></h4>
-<p>For each expected DSS instance in the pool, query <a href="https://github.com/interuss/dss/tree/master/interfaces/aux_#aux-interface"><code>/aux/v1/pool</code></a> and collect <code>dar_id</code></p>
-<h4 id="alert-criteria-option-1">Alert criteria, Option 1<a class="headerlink" href="#alert-criteria-option-1" title="Permanent link">¶</a></h4>
-<ul>
-<li>Any query failed</li>
-<li>Any collected <code>dar_id</code> value is different from any other collected <code>dar_id</code> value</li>
-</ul>
-<h4 id="procedure-option-2">Procedure, Option 2<a class="headerlink" href="#procedure-option-2" title="Permanent link">¶</a></h4>
-<p>Prior to ongoing operations, exchange the expected DAR ID for the environment among all DSS operators.</p>
-<p>On an ongoing basis, query <a href="https://github.com/interuss/dss/tree/master/interfaces/aux_#aux-interface"><code>/aux/v1/pool</code></a> on DSS operator's DSS instance and collect <code>dar_id</code></p>
-<h4 id="alert-criteria-option-2">Alert criteria, Option 2<a class="headerlink" href="#alert-criteria-option-2" title="Permanent link">¶</a></h4>
-<ul>
-<li>Query failed</li>
-<li>Collected <code>dar_id</code> differs from expected DAR ID for the environment</li>
-</ul>
-<h3 id="per-uss-heartbeat-check">Per-USS heartbeat check<a class="headerlink" href="#per-uss-heartbeat-check" title="Permanent link">¶</a></h3>
-<p><em>Note: the implementation of this functionality is not yet complete.</em></p>
-<h4 id="summary_3">Summary<a class="headerlink" href="#summary_3" title="Permanent link">¶</a></h4>
-<p>Checks whether all DSS instance operators have recently verified their ability to synchronize data to another DSS instance operator.</p>
-<h4 id="procedure_2">Procedure<a class="headerlink" href="#procedure_2" title="Permanent link">¶</a></h4>
-<p>DSS instance operators agree to all configure their monitoring and alerting systems to execute this procedure, with an agreed-upon maximum time interval:</p>
-<p>Assert a new heartbeat for the DSS operator's DSS instance via <a href="https://github.com/interuss/dss/tree/master/interfaces/aux_#aux-interface"><code>PUT /aux/v1/pool/dss_instances/heartbeat</code></a> which returns the list of <code>dss_instances</code> including each one's <code>most_recent_heartbeat</code></p>
-<h4 id="alert-criteria_2">Alert criteria<a class="headerlink" href="#alert-criteria_2" title="Permanent link">¶</a></h4>
-<ul>
-<li><code>PUT</code> query fails</li>
-<li>Any expected DSS instance in the pool does not have an entry in <code>dss_instances</code></li>
-<li>The current time is past any DSS instance's <code>next_heartbeat_expected_before</code></li>
-<li>The difference between <code>next_heartbeat_expected_before</code> and <code>timestamp</code> is larger than the agreed-upon maximum time interval for any DSS instance</li>
-</ul>
-<h3 id="nonce-exchange-check">Nonce exchange check<a class="headerlink" href="#nonce-exchange-check" title="Permanent link">¶</a></h3>
-<p><em>Note: none of this functionality has been implemented yet.</em></p>
-<h4 id="summary_4">Summary<a class="headerlink" href="#summary_4" title="Permanent link">¶</a></h4>
-<p>Definitively checks whether pool data written into one DSS instance can be read from another DSS instance.</p>
-<h4 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">¶</a></h4>
-<p>This check would involve establishing the ability to read and write (client USS ID, DSS instance writer ID, nonce value) triplets in a database table describing pool information.</p>
-<h4 id="procedure_3">Procedure<a class="headerlink" href="#procedure_3" title="Permanent link">¶</a></h4>
-<ol>
-<li>For each expected DSS instance in the pool, write a nonce value</li>
-<li>For each expected DSS instance in the pool, read all (DSS instance writer ID, nonce value) pairs written by the DSS instance operator's client USS ID</li>
-</ol>
-<h4 id="alert-criteria_3">Alert criteria<a class="headerlink" href="#alert-criteria_3" title="Permanent link">¶</a></h4>
-<ul>
-<li>Any query failed</li>
-<li>The nonce value written to DSS instance i does not match the nonce value that DSS instance j reports was written to DSS instance i by the DSS instance operator</li>
-</ul>
-<h3 id="dss-entity-injection-check">DSS entity injection check<a class="headerlink" href="#dss-entity-injection-check" title="Permanent link">¶</a></h3>
-<h4 id="summary_5">Summary<a class="headerlink" href="#summary_5" title="Permanent link">¶</a></h4>
-<p>Actual DSS entities (subscriptions, operational intents) are manipulated in a geographically-isolated test area.</p>
-<h4 id="procedure_4">Procedure<a class="headerlink" href="#procedure_4" title="Permanent link">¶</a></h4>
-<p>Run <a href="https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier">uss_qualifier</a> with a suitable configuration.</p>
-<p>The suitable configuration would cause DSS entities to be created, read, updated, and deleted within an isolated geographical test area, likely via a subset of the <a href="https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/suites/interuss/dss/all_tests.yaml">dss all_tests</a> automated test suite with uss_qualifier possessing USS-level credentials.</p>
-<h4 id="alert-criteria_4">Alert criteria<a class="headerlink" href="#alert-criteria_4" title="Permanent link">¶</a></h4>
-<ul>
-<li>Tested requirements artifact does not indicate Pass</li>
-</ul>
-<h3 id="database-metrics-check">Database metrics check<a class="headerlink" href="#database-metrics-check" title="Permanent link">¶</a></h3>
-<h4 id="summary_6">Summary<a class="headerlink" href="#summary_6" title="Permanent link">¶</a></h4>
-<p>Certain metrics exposed by the underlying database software are monitored.</p>
-<h4 id="procedure_5">Procedure<a class="headerlink" href="#procedure_5" title="Permanent link">¶</a></h4>
-<p>Each USS queries metrics of underlying database software (<a href="https://www.cockroachlabs.com/docs/stable/metrics">CRDB</a>, <a href="https://docs.yugabyte.com/preview/launch-and-manage/monitor-and-alert/metrics/">YugabyteDB</a>) using their database node(s).</p>
-<h4 id="alert-criteria_5">Alert criteria<a class="headerlink" href="#alert-criteria_5" title="Permanent link">¶</a></h4>
-<ul>
-<li>Any Raft quorum unavailability</li>
-<li>Resource usage within threshold of ceiling for resource (e.g., 90% of storage/memory/CPU on node in use)</li>
-<li>Any SQL failures</li>
-</ul>
-<h2 id="failure-detection-capability">Failure detection capability<a class="headerlink" href="#failure-detection-capability" title="Permanent link">¶</a></h2>
-<p>This section summarizes the preceding health checks and their ability to detect failures.</p>
-<h3 id="potential-failures">Potential failures<a class="headerlink" href="#potential-failures" title="Permanent link">¶</a></h3>
-<p><em>This list of failures and potential causes is not exhaustive in either respect.</em></p>
-<ol>
-<li>DSS instance is not accepting incoming HTTPS requests<ol>
-<li>Deployment not complete</li>
-<li>HTTP(S) ingress/certificates/routing/etc not configured correctly</li>
-<li>DNS not configured correctly</li>
-</ol>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="yugabyte_1" name="__tabbed_3" type="radio"><input id="cockroachdb_1" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="yugabyte_1">Yugabyte</label><label for="cockroachdb_1">CockroachDB</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><code>deploy/operations/certificates-management/workspace/demo/clients/</code></p>
+</div>
+<div class="tabbed-block">
+<p><code>build/workspace/demo/client_certs_dir/</code></p>
+</div>
+</div>
+</div>
 </li>
-<li>Database components of DSS instance are non-functional<ol>
-<li>Database container not deployed correctly</li>
-<li>Database functionality failing</li>
-<li>Database software not behaving as expected</li>
-<li>Connectivity (e.g., username/password) between core-service and database not configured correctly</li>
-<li>System-range quorum of database nodes not met</li>
-<li>Trusted certificates for the pool not exchanged or configured correctly</li>
 </ol>
-</li>
-<li>USS initializes a stand-alone DSS instance or connects to a different pool rather than joining the intended pool<ol>
-<li>Database initialization parameter not set properly during deployment + nodes to join omitted</li>
-<li>Nodes to join + trusted certificates specified incorrectly</li>
-</ol>
-</li>
-<li>USS shared the wrong base URL for their DSS instance with other pool participants<ol>
-<li>I.e., USS deployed and uses fully-functional DSS instance at https://dss_q.uss.example.com connected to the DSS pool for environment Q, but indicates to other USSs that the DSS instance for environment Q is located at https://dss_r.uss.example.com (another fully-functional DSS instance connected to a different pool)</li>
-<li><em>Note: the likelihood of this failure could be reduced to negligible if DSS base URLs were included in <a href="https://github.com/interuss/dss/issues/1140">#1140</a></em></li>
-</ol>
-</li>
-<li>DSS instance can interact with the database, but cannot read from/write to any tables<ol>
-<li>DSS instance operator executed InterUSS-unsupported manual commands directly to the database to change the access rights of database users used by DSS instances</li>
-</ol>
-</li>
-<li>DSS instance can read from and write to pool table, but cannot read from/write to SCD/RID tables<ol>
-<li>DSS instance operator executed InterUSS-unsupported manual commands directly to the database to change the access rights of database users used by DSS instances on a per-table basis</li>
-<li>SCD/RID tables not initialized</li>
-<li>SCD/RID tables corrupt or not at appropriate schema version</li>
-</ol>
-</li>
-<li>The DSS instance connected to the pool is not used by the USS in the pool's environment<ol>
-<li>USS specified the wrong DSS base URL in the rest of their system in the pool environment<ol>
-<li>E.g., DSS instance at https://dss_x.uss.example.com is fully functional, connects to the DSS pool for environment X and is the base URL USS shares with other USSs, but the USS specifies https://dss_y.uss.example.com as the DSS instance for the rest of their system to use in environment X</li>
-</ol>
-</li>
-<li>USS did not configure their system to use features (e.g., ASTM F3548-21 strategic coordination) requiring a DSS in the test of their system in the pool environment</li>
-</ol>
-</li>
-<li>DSS instance is working, but another part of the owning USS's system has failed<ol>
-<li>USS deploys their DSS instance differently than/separately from the rest of their system, and the rest-of-system deployment failed while the DSS instance deployment is unaffected</li>
-<li>A component in the rest of the USS's system failed</li>
-</ol>
-</li>
-<li>Database software indicates success to the core-service client, but does not correctly synchronize data to other DSS instances<ol>
-<li>There is a critical bug in the database software (this would seem to be a product problem rather than a configuration problem)</li>
-</ol>
-</li>
-<li>Aux API works but SCD/RID API does not work or is disabled<ol>
-<li>DSS instance configuration does not enable SCD/RID APIs as needed</li>
-<li>SCD/RID endpoint routing does not work (though other routing does work)</li>
-</ol>
-</li>
-<li>Database nodes are unavailable such that quorum is not met for certain ranges<ol>
-<li>Database node container(s) run out of disk space</li>
-<li>Database node container(s) are shut down due to resource shortage</li>
-<li>System maintenance conducted improperly (for instance, multiple USSs bring down nodes contributing to the same range for maintenance simultaneously)</li>
-</ol>
-</li>
-<li>Everything is working properly, but the system lacks the capacity to handle the volume of traffic</li>
-</ol>
-<h3 id="check-detection-capabilities">Check detection capabilities<a class="headerlink" href="#check-detection-capabilities" title="Permanent link">¶</a></h3>
-<table>
-    <tbody><tr>
-        <th rowspan="2">Check (+readiness)</th>
-        <th colspan="12">Failure</th>
-    </tr>
-    <tr>
-        <th>1</th>
-        <th>2</th>
-        <th>3</th>
-        <th>4</th>
-        <th>5</th>
-        <th>6</th>
-        <th>7</th>
-        <th>8</th>
-        <th>9</th>
-        <th>10</th>
-        <th>11</th>
-        <th>12</th>
-    </tr>
-    <tr>
-        <td>🚀 /healthy</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-    </tr>
-    <tr>
-        <td>🛠️ Normal usage metrics</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>🔶</td>
-        <td>🔶</td>
-    </tr>
-    <tr>
-        <td>✅ DAR identity</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>🔶↓↓</td>
-    </tr>
-    <tr>
-        <td>🚧 Per-USS heartbeat</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>🔶</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>🔶↓</td>
-    </tr>
-    <tr>
-        <td>🚧 Nonce exchange</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>🔶↓</td>
-    </tr>
-    <tr>
-        <td>🚀 DSS entity injection</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td>🔶</td>
-        <td>🔶</td>
-    </tr>
-    <tr>
-        <td>🛠️ Database metrics</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>❌</td>
-        <td>🔶</td>
-        <td>❌</td>
-        <td>✅</td>
-        <td>✅</td>
-    </tr>
-</tbody></table>
+<ol start="4"><li>Add encryption to your config:
 
-<h4 id="legend">Legend<a class="headerlink" href="#legend" title="Permanent link">¶</a></h4>
-<table>
-    <tbody><tr>
-        <td rowspan="4">Readiness</td>
-        <td>🚀</td><td>Released</td>
-        <td rowspan="5">Failure detection</td>
-        <td>✅</td><td>Detects failure</td>
-    </tr>
-    <tr>
-        <td>✅</td><td>Complete (not yet released)</td>
-        <td>🔶</td><td>May detect failure</td>
-    </tr>
-    <tr>
-        <td>🚧</td><td>Not complete</td>
-        <td>🔶↓</td><td>Might rarely detect failure</td>
-    </tr>
-    <tr>
-        <td>🛠️</td><td>Requires user involvement</td>
-        <td>🔶↓↓</td><td>Might very rarely detect failure</td>
-    </tr>
-    <tr>
-        <td colspan="3"></td>
-        <td>❌</td><td>Does not detect failure</td>
-    </tr>
-</tbody></table>
+<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span>
+<span class="normal"><a href="#__codelineno-4-3">3</a></span>
+<span class="normal"><a href="#__codelineno-4-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>tls_config:
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>    ca_file:   ca.pem
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a>    cert_file: client.grafana.crt
+<a id="__codelineno-4-4" name="__codelineno-4-4"></a>    key_file:  client.grafana.key
+</code></pre></div></td></tr></tbody></table></div>
+
+</li></ol>
 
 
 
@@ -2382,7 +1264,7 @@ you need to do 2 things:
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 20, 2026 10:28:23 UTC">January 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 19, 2026 09:01:23 UTC">May 19, 2026</span>
   </span>
 
     
@@ -2431,13 +1313,13 @@ you need to do 2 things:
         
         
           
-          <a href="../migrations/" class="md-footer__link md-footer__link--next" aria-label="Next: Migrations">
+          <a href="../healthchecks/" class="md-footer__link md-footer__link--next" aria-label="Next: Health checks">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Migrations
+                Health checks
               </div>
             </div>
             <div class="md-footer__button md-icon">
