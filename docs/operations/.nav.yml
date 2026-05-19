@@ -4,6 +4,7 @@ nav:
   - "Pooling (Yugabyte)": pooling.md
   - "Pooling (CockroachDB)": pooling-crdb.md
   - "Monitoring": monitoring.md
+  - "Health checks": healthchecks.md
   - "Migrations": migrations.md
   - "Performances": performances.md
   - "Troubleshooting": troubleshooting.md

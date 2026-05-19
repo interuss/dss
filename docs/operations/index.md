@@ -24,6 +24,10 @@ See [Leaving a pool](pooling.md#leaving-a-pool)
 
 See [Monitoring](monitoring.md)
 
+## Health checks
+
+See [Health checks](healthchecks.md)
+
 ## Performances
 
 See [Performances](performances.md)

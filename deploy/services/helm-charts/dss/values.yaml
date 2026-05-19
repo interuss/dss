@@ -74,9 +74,6 @@ monitoring:
     enabled: false
     ip: ""
     subnet: ""
-    hostname: ""
-    allowedIPs: []
-    allowedIPsPolicy: ""
 
 prometheus:
   server:
