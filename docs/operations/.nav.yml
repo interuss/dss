@@ -7,4 +7,5 @@ nav:
   - "Health checks": healthchecks.md
   - "Migrations": migrations.md
   - "Performances": performances.md
+  - "Cleanup": cleanup.md
   - "Troubleshooting": troubleshooting.md

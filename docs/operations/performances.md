@@ -1,5 +1,11 @@
 # Performances
 
+## Entries accumulation
+
+Overtime, old entries should be removed to ensure the system is not overloaded processing unrelevent data.
+
+See the detailed [section about cleanup](cleanup.md).
+
 ## The SCD global lock option
 
 !!! danger
