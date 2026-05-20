@@ -127,3 +127,81 @@ tls_config:
 ```
 
 </li></ol>
+
+## OpenTelemetry
+
+[OpenTelemetry](https://opentelemetry.io/) is an open-source observability framework for cloud-native software.
+
+You can enable it on the DSS server to get:
+
+* Tracing for all queries
+* A Prometheus endpoint with some metrics
+
+Currently, this setting is not yet available in Terraform, Helm or Tanka.
+
+!!! warning
+
+    By default, when OpenTelemetry is enabled, the metrics service listens on all addresses.
+
+
+### Metrics
+
+Point any Prometheus server to the endpoint (by default on port 8079).
+
+You can use the `--metrics_addr` flag to change the listening port and address.
+
+No dashboard has been created yet, but one is planned.
+
+### Tracing
+
+Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include [Jaeger](https://www.jaegertracing.io/), [OpenObserve](https://github.com/openobserve/openobserve), [Grafana Tempo](https://grafana.com/docs/tempo/latest/), and [SigNoz](https://github.com/SigNoz/signoz). Multiple SaaS solutions are also available (including some of the previously mentioned tools).
+
+You need to use the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to configure it. Point it toward your server by following its specific documentation.
+
+[Other variables for telemetry](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) (and [variables in general](https://opentelemetry.io/docs/languages/sdk-configuration/general/)) supported by the Go language are available as well if needed.
+
+As an example for local debugging, when using the local Docker Compose file, you can patch it as shown below to add a Jaeger server and point the DSS toward it.
+
+```diff
+diff --git a/build/dev/docker-compose_dss.yaml b/build/dev/docker-compose_dss.yaml
+index e66d2ba4..d204104b 100644
+--- a/build/dev/docker-compose_dss.yaml
++++ b/build/dev/docker-compose_dss.yaml
+@@ -133,6 +133,7 @@ services:
+       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
+       GOCOVERDIR: "/startup/coverdata"
++      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+     command: /startup/core_service.sh ${DEBUG_ON:-0}
+     ports:
+       - "4000:4000"
+@@ -178,6 +179,16 @@ services:
+       start_period: 30s
+       start_interval: 5s
+
++  jaeger:
++    image: jaegertracing/jaeger:2.14.0
++    ports:
++      - "16686:16686"
++      - "4317:4317"
++      - "4318:4318"
++      - "5778:5778"
++      - "9411:9411"
++    networks:
++      - dss_sandbox_default_network
+ networks:
+   dss_sandbox_default_network:
+     name: dss_sandbox-default
+diff --git a/build/dev/startup/core_service.sh b/build/dev/startup/core_service.sh
+index f09bda59..8c96cf3e 100755
+--- a/build/dev/startup/core_service.sh
++++ b/build/dev/startup/core_service.sh
+@@ -44,5 +44,6 @@ else
+   -enable_scd \
+   -allow_http_base_urls \
+   -locality local_dev \
+-  -public_endpoint http://127.0.0.1:8082
++  -public_endpoint http://127.0.0.1:8082 \
++  -enable_opentelemetry
+ fi
+```
