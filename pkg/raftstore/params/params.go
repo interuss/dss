@@ -5,8 +5,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/interuss/stacktrace"
+	"go.etcd.io/raft/v3"
 )
 
 const (
@@ -14,13 +16,26 @@ const (
 
 	// the default Raft related parameters are the same as the default values used by etcd for the moment.
 	// TODO - review and adjust these parameters as needed based on testing and performance tuning.
-	defaultSnapshotCatchupEntries = 10000
+
+	defaultSnapshotCatchupEntries  = 5000
+	defaultSnapshotIntervalEntries = 10000
+	defaultTickInterval            = 100 * time.Millisecond
+
+	// follower waits 10 x defaultTickInterval without a heartbeat before starting an election
+	defaultElectionTick = 10
+	// leader sends a heartbeat every tick, must be < defaultElectionTick
+	defaultHeartbeatTick = 1
+
+	defaultMaxSizePerMsg   = 1024 * 1024
+	defaultMaxInflightMsgs = 4096 / 8
 )
 
 type (
 	// ConnectParameters bundles up parameters used for connecting nodes in a raftstore cluster.
 	ConnectParameters struct {
-		ID    uint64
+		// unique node identifier within the cluster, 0 is invalid
+		NodeID uint64
+		// comma-separated "nodeID=peerURL" pairs defining all cluster members including this node
 		Peers string
 
 		// DataDir is the directory where the node persists its Raft state (WAL segments and snapshots).
@@ -29,10 +44,26 @@ type (
 		// across restarts unless the node is being permanently shut down.
 		// If the directory is lost, the node will recover by receiving a snapshot from the leader.
 		DataDir string
+		// discriminates this cluster from others sharing the same network, must be identical on all nodes
+		ClusterID uint64
 
-		// SnapshotCatchupEntries is the number of entries for a slow follower to catch-up after compacting.
+		// number of entries for a slow follower to catch-up after compacting.
 		// This gives the follower a buffer of entries while avoiding the need to send a full snapshot.
 		SnapshotCatchupEntries uint64
+		// number of entries applied before triggering a snapshot
+		SnapshotIntervalEntries uint64
+		// base time unit for Raft's logical clock, scales both election and heartbeat timers
+		TickInterval time.Duration
+
+		// ticks without a heartbeat before a follower promotes to candidate, effective timeout = ElectionTick × TickInterval
+		ElectionTick int
+		// ticks between leader heartbeats, must be < ElectionTick
+		HeartbeatTick int
+
+		// max byte size of a message sent to a peer
+		MaxSizePerMsg uint64
+		// max number of in-flight messages during optimistic replication phase
+		MaxInflightMsgs int
 	}
 )
 
@@ -70,16 +101,40 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 	return peers, nil
 }
 
+func (c ConnectParameters) RaftConfig(storage raft.Storage) *raft.Config {
+	return &raft.Config{
+		ID:              c.NodeID,
+		ElectionTick:    c.ElectionTick,
+		HeartbeatTick:   c.HeartbeatTick,
+		MaxSizePerMsg:   c.MaxSizePerMsg,
+		MaxInflightMsgs: c.MaxInflightMsgs,
+		Storage:         storage,
+	}
+}
+
 var (
 	connectParameters ConnectParameters
 )
 
 func init() {
-	flag.Uint64Var(&connectParameters.ID, "raft_node_id", 0, "raft node ID for this instance (must be non-zero and unique within the cluster)")
-	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `comma-separated "nodeID=peerURL" pairs for all cluster members, including the current node, e.g. "1=http://node1:9021,2=http://node2:9021,3=http://node3:9021"`)
-	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
+	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
+	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
+	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `Comma-separated "nodeID=peerURL" pairs for all cluster members, including the current node, e.g. "1=http://node1:9021,2=http://node2:9021,3=http://node3:9021"`)
+	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
 
-	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries, "number of entries for a slow follower to catch-up after compacting")
+	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
+		"Log entries retained after compaction so a slow follower can catch up via replication rather than a full snapshot. Higher values tolerate slower followers but increase disk usage.")
+	flag.Uint64Var(&connectParameters.SnapshotIntervalEntries, "raft_snapshot_interval_entries", defaultSnapshotIntervalEntries,
+		"Applied Raft log entries to accumulate before triggering a snapshot. Lower values reduce recovery time but increase I/O frequency.")
+	flag.DurationVar(&connectParameters.TickInterval, "raft_tick_interval", defaultTickInterval,
+		"Base time unit for Raft's logical clock. Election timeout = raft_election_tick x this value; heartbeat interval = raft_heartbeat_tick x this value. Smaller values improve responsiveness but increase network traffic.")
+
+	flag.IntVar(&connectParameters.ElectionTick, "raft_election_tick", defaultElectionTick,
+		"Ticks a follower waits without a leader heartbeat before starting an election. Effective timeout = raft_election_tick x raft_tick_interval. Must be greater than raft_heartbeat_tick. Higher values tolerate slow leaders but delay failover.")
+	flag.IntVar(&connectParameters.HeartbeatTick, "raft_heartbeat_tick", defaultHeartbeatTick,
+		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
+	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
+	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
