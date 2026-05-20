@@ -31,6 +31,14 @@ jobs:
       run: make go-lint
     - name: Terraform lint
       run: make terraform-lint
+    - name: Ensure files don't change when generating apis
+      run: |
+        git diff --exit-code -- '*.gen.go'  # Should not have been changed by previous steps
+        make apis
+        git diff --exit-code -- '*.gen.go'  # Should not have been changed my make apis
+    - name: Ensure files don't change when running hygiene
+      run: |
+        git diff --exit-code
 
   dss-tests:
     name: DSS tests

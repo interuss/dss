@@ -115,7 +115,7 @@ openapi-to-go-server:
 	docker image build -t interuss/openapi-to-go-server ./interfaces/openapi-to-go-server
 
 dss_apis: openapi-to-go-server
-	docker container run -u "$(USER_GROUP)" -it \
+	docker container run -u "$(USER_GROUP)" --rm \
       	-v "$(CURDIR)/interfaces/aux_/aux_.yaml:/resources/auxv1.yaml" \
       	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/scdv1.yaml" \
       	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/ridv1.yaml" \
@@ -133,7 +133,7 @@ example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
 
 dummy_oauth_api: openapi-to-go-server
-	docker container run -it \
+	docker container run --rm \
 		-v $(CURDIR)/interfaces/dummy-oauth/dummy-oauth.yaml:/resources/dummy-oauth.yaml \
 		-v $(CURDIR)/cmds/dummy-oauth:/resources/output \
 		interuss/openapi-to-go-server \
