@@ -10,6 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// storeCount is the number of stores (aux_, rid, scd) that must call
+// RegisterStore before the consensus ready loop is allowed to start.
+const storeCount = 3
+
 var (
 	sharedConsensus     *consensus.Consensus
 	sharedConsensusOnce sync.Once
@@ -31,7 +35,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*St
 			return
 		}
 
-		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, peers, params)
+		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, peers, params, storeCount)
 		if sharedConsensusErr != nil {
 			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
 		}
@@ -40,10 +44,11 @@ func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*St
 		return nil, sharedConsensusErr
 	}
 
-	// TODO: implement
+	// TODO: start consumer goroutine before calling RegisterStore
+	commitC := make(chan consensus.EntryCommit)
 	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
 		return nil, nil
-	})
+	}, commitC)
 
 	return &Store[R]{
 		newRepo:   newRepo,
