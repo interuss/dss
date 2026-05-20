@@ -2,10 +2,12 @@ package consensus
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/interuss/dss/pkg/logging"
@@ -17,6 +19,7 @@ import (
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type Consensus struct {
@@ -29,7 +32,10 @@ type Consensus struct {
 	transport    *rafthttp.Transport
 	server       *http.Server
 
-	storage *storage
+	storage   *storage
+	commitChs map[string]chan EntryCommit
+
+	tracker *proposalsTracker
 
 	confState     raftpb.ConfState
 	snapshotIndex uint64
@@ -58,7 +64,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 
 		removedPeers: make(map[uint64]bool),
 
-		storage: storage,
+		storage:   storage,
+		commitChs: make(map[string]chan EntryCommit),
+		tracker:   newProposalsTracker(),
 	}
 
 	err = consensus.initTransport(ctx, connectParams.ID, connectParams.ClusterID, peers)
@@ -76,7 +84,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 	consensus.appliedIndex = snap.Metadata.Index
 
 	go func() {
-		err := consensus.handleReady(connectParams.TickInterval)
+		err := consensus.handleReady(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
 		if err != nil {
 			consensus.logger.Error("handleReady exited with error, shutting down consensus", zap.Error(err))
 		}
@@ -92,6 +100,31 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 	}()
 
 	return consensus, nil
+}
+
+// ProposeValue blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
+func (c *Consensus) ProposeValue(ctx context.Context, proposal Proposal) (any, error) {
+	buf, err := json.Marshal(proposal)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
+	}
+
+	applied := c.tracker.track(proposal.ID)
+
+	err = c.node.Propose(ctx, buf)
+	if err != nil {
+		c.tracker.untrack(proposal.ID, ProposalResult{Error: err})
+		return nil, stacktrace.Propagate(err, "failed to propose value to Raft")
+	}
+
+	select {
+	case res := <-applied:
+		return res.Result, res.Error
+
+	case <-ctx.Done():
+		c.tracker.untrack(proposal.ID, ProposalResult{Error: ctx.Err()})
+		return nil, ctx.Err()
+	}
 }
 
 func peersList(peers map[uint64]*url.URL) []raft.Peer {
@@ -152,7 +185,7 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 }
 
 // handleReady processes the Ready channel of the Raft node and applies committed entries to the state machine
-func (c *Consensus) handleReady(tickInterval time.Duration) error {
+func (c *Consensus) handleReady(tickInterval time.Duration, snapshotInterval uint64) error {
 	ticker := time.NewTicker(tickInterval)
 	defer ticker.Stop()
 
@@ -194,7 +227,7 @@ func (c *Consensus) handleReady(tickInterval time.Duration) error {
 				return stacktrace.Propagate(err, "failed to get entries to apply")
 			}
 
-			err = c.publishEntries(entries)
+			err = c.publishEntries(entries, snapshotInterval)
 			if err != nil {
 				return stacktrace.Propagate(err, "failed to publish entries")
 			}
@@ -204,14 +237,133 @@ func (c *Consensus) handleReady(tickInterval time.Duration) error {
 	}
 }
 
-// TODO implement
-func (c *Consensus) publishEntries(_ []raftpb.Entry) error {
+func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint64) error {
+	if len(entries) == 0 {
+		return nil
+	}
+
+	c.logger.Info("publishing entries", zap.Int("numEntries", len(entries)), zap.Uint64("firstIndex", entries[0].Index), zap.Uint64("lastIndex", entries[len(entries)-1].Index))
+
+	var triggerSnapshot bool
+	var err error
+	var wg sync.WaitGroup
+	for _, entry := range entries {
+		switch entry.Type {
+		case raftpb.EntryNormal:
+			err := c.processNormalEntry(entry.Data, &wg)
+			if err != nil {
+				return stacktrace.Propagate(err, "failed to process normal entry")
+			}
+		case raftpb.EntryConfChange:
+			err := c.processConfigChangeEntry(entry.Data)
+			if err != nil {
+				return stacktrace.Propagate(err, "failed to process config change entry")
+			}
+		case raftpb.EntryConfChangeV2:
+			triggerSnapshot, err = c.processConfigChangeV2Entry(entry.Data)
+			if err != nil {
+				return stacktrace.Propagate(err, "failed to process config change v2 entry")
+			}
+		}
+	}
+
+	// wait for all entries to be applied before updating the applied index and potentially triggering a snapshot
+	wg.Wait()
+	c.appliedIndex = entries[len(entries)-1].Index
+
+	if triggerSnapshot || c.appliedIndex-c.snapshotIndex >= snapshotInterval {
+		err := c.storage.triggerSnapshot(c.appliedIndex, &c.confState)
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to trigger snapshot")
+		}
+
+		c.snapshotIndex = c.appliedIndex
+	}
+
 	return nil
 }
 
-// TODO implement
-func (c *Consensus) dispatchSnapshot(_ []byte) error {
+// processNormalEntry passes the proposal to the store and waits for the result to be returned before untracking it.
+func (c *Consensus) processNormalEntry(data []byte, wg *sync.WaitGroup) error {
+	if len(data) <= 0 {
+		return nil
+	}
+
+	prop := Proposal{}
+	err := json.Unmarshal(data, &prop)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
+	}
+
+	//if readOnly proposal and we did not initiate it, skip it (noop)
+	if prop.ReadOnly && !c.tracker.isPending(prop.ID) {
+		return nil
+	}
+
+	applyDoneC := make(chan ProposalResult, 1)
+	wg.Go(func() {
+		res := <-applyDoneC
+		if c.tracker.isPending(prop.ID) {
+			c.tracker.untrack(prop.ID, res)
+		}
+	})
+
+	ch, ok := c.commitChs[prop.DBName]
+	if !ok {
+		return stacktrace.NewError("no commit channel found for %s", prop.DBName)
+	}
+
+	ch <- EntryCommit{Prop: prop, Done: applyDoneC}
 	return nil
+}
+
+func (c *Consensus) dispatchSnapshot(snapshotData []byte) error {
+	var snapshot map[string][]byte
+	err := json.Unmarshal(snapshotData, &snapshot)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal snapshot data")
+	}
+
+	var eg errgroup.Group
+	for name, data := range snapshot {
+		eg.Go(func() error {
+			ch, ok := c.commitChs[name]
+			if !ok {
+				return stacktrace.NewError("no commit channel found for %s", name)
+			}
+
+			ch <- EntryCommit{SnapshotData: data}
+			return nil
+		})
+	}
+
+	return eg.Wait()
+}
+
+// raftpb.ConfChange is still used internally by Raft, we just need to apply the change to the node.
+// Changes requested by clients are processed by processConfigChangeV2Entry.
+func (c *Consensus) processConfigChangeEntry(data []byte) error {
+	var cc raftpb.ConfChange
+	err := cc.Unmarshal(data)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal config change data")
+	}
+
+	c.confState = *c.node.ApplyConfChange(cc)
+	return nil
+}
+
+func (c *Consensus) processConfigChangeV2Entry(data []byte) (bool, error) {
+	var cc raftpb.ConfChangeV2
+	err := cc.Unmarshal(data)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "failed to unmarshal config change data")
+	}
+
+	c.confState = *c.node.ApplyConfChange(cc)
+
+	// TODO - implement config changes when triggered by a proposal
+	return false, nil
 }
 
 func (c *Consensus) entriesToApply(entries []raftpb.Entry) ([]raftpb.Entry, error) {
@@ -265,6 +417,10 @@ func (c *Consensus) ReportSnapshot(id uint64, status raft.SnapshotStatus) {
 }
 
 // RegisterStore allows registering a snapshot provider function for a specific store
-func (c *Consensus) RegisterStore(name string, provider snapshotProvider) {
+// and returns the channel on which committed entries for that store will be sent.
+func (c *Consensus) RegisterStore(name string, provider snapshotProvider) chan EntryCommit {
 	c.storage.registerSnapshotProvider(name, provider)
+	ch := make(chan EntryCommit)
+	c.commitChs[name] = ch
+	return ch
 }

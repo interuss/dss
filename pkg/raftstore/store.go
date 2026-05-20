@@ -41,7 +41,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*St
 	}
 
 	// TODO: implement
-	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
+	_ = sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
 		return nil, nil
 	})
 
