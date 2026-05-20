@@ -31,6 +31,7 @@ import (
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -149,6 +150,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	logger.Info("config", zap.Bool("scdGlobalLock", *scdGlobalLock))
+	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
+	if params.GetStoreParameters().StoreType == params.RaftStoreType {
+		logger.Warn("The raft datastore is experimental and its implementation is in progress. See issue for more details: https://github.com/interuss/dss/issues/1463")
+	}
 
 	if len(*jwtAudiences) == 0 {
 		// TODO: Make this flag required once all parties can set audiences
