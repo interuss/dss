@@ -1,8 +1,14 @@
 package consensus
 
 import (
+	"context"
+	"encoding/json"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
 )
 
 type EntryCommit struct {
@@ -23,6 +29,26 @@ type Proposal struct {
 type ProposalResult struct {
 	Result any
 	Error  error
+}
+
+func newProposal(ctx context.Context, requestType string, payload any, readOnly bool) (Proposal, error) {
+	proposalTimestamp := timestamp.NowFromContext(ctx)
+	if proposalTimestamp.IsZero() {
+		proposalTimestamp = time.Now().UTC()
+	}
+
+	value, err := json.Marshal(payload)
+	if err != nil {
+		return Proposal{}, stacktrace.Propagate(err, "failed to serialize proposal payload")
+	}
+
+	return Proposal{
+		ID:          uuid.NewString(),
+		Timestamp:   proposalTimestamp,
+		RequestType: requestType,
+		Value:       value,
+		ReadOnly:    readOnly,
+	}, nil
 }
 
 type proposalsTracker struct {

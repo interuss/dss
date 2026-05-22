@@ -33,7 +33,8 @@ type Consensus struct {
 	storage *storage
 	commitC chan<- EntryCommit
 
-	tracker *proposalsTracker
+	tracker  *proposalsTracker
+	stopOnce sync.Once
 
 	once            sync.Once
 	shutdownTimeout time.Duration
@@ -126,7 +127,12 @@ func (c *Consensus) Stop(ctx context.Context) {
 }
 
 // ProposeValue blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
-func (c *Consensus) ProposeValue(ctx context.Context, proposal Proposal) (any, error) {
+func (c *Consensus) ProposeValue(ctx context.Context, requestType string, payload any, readOnly bool) (any, error) {
+	proposal, err := newProposal(ctx, requestType, payload, readOnly)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to create proposal")
+	}
+
 	buf, err := json.Marshal(proposal)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
