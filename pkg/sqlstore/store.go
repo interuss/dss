@@ -176,13 +176,13 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.newRepo(s.Pool), nil
 }
 
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) Transact(ctx context.Context, _ store.Request, f func(context.Context, R) error) (any, error) {
 	if s.Version.Type == Yugabyte {
-		return s.transactYugabyte(ctx, f)
+		return nil, s.transactYugabyte(ctx, f)
 	}
 
 	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+	return nil, crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 		return f(ctx, s.newRepo(tx))
 	})
 }

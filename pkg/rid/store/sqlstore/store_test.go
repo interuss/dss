@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/sqlstore/params"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -97,7 +98,7 @@ func TestTxnRetrier(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
-	err := store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := store.Transact(ctx, dssstore.Request{}, func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		isa, err := repo.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
@@ -118,7 +119,7 @@ func TestTxnRetrier(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 	defer cancel()
 	count := 0
-	err = store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err = store.Transact(ctx, dssstore.Request{}, func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		count++
 		// Postgre retryable error
@@ -141,13 +142,13 @@ func TestTransactor(t *testing.T) {
 	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
-	err := store.Transact(ctx, func(ctx context.Context, s1 repos.Repository) error {
+	_, err := store.Transact(ctx, dssstore.Request{}, func(ctx context.Context, s1 repos.Repository) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
 			return errors.New("already failed")
 		}
 		txnCount++
-		err := store.Transact(ctx, func(ctx context.Context, s2 repos.Repository) error {
+		_, err := store.Transact(ctx, dssstore.Request{}, func(ctx context.Context, s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
 			require.Len(t, subs, 0)
