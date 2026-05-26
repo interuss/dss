@@ -55,6 +55,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       rid_isa: metadata.evict.rid.ISAs,
                       rid_sub: metadata.evict.rid.subscriptions,
                       rid_ttl: metadata.evict.rid.ttl,
+                      locality: metadata.locality,
                   } + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).schemaMounts,
                 }],
