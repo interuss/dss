@@ -26,6 +26,7 @@ spec:
                 - --rid_isa=false
                 - --rid_sub=false
                 - --scd_ttl={{ $.Values.dss.conf.evict.scd.ttl }}
+                - --locality={{ $.Values.dss.conf.locality }}
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}
@@ -77,6 +78,7 @@ spec:
                 - --rid_isa={{ $.Values.dss.conf.evict.rid.ISAs }}
                 - --rid_sub={{ $.Values.dss.conf.evict.rid.subscriptions }}
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
+                - --locality={{ $.Values.dss.conf.locality }}
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}
