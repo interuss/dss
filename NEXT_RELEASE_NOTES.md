@@ -49,6 +49,7 @@ The release notes should contain at least the following sections:
 ## Important information
 
 * Fixed a bug where the `evict` command ignored entries without a locality. If your DSS instance does not have a locality set, the next `evict` run may be slow while it processes the backlog of old entries.
+* Fixed a bug where Helm charts and Tanka files didn't set locality on the `evict` command run via cron jobs. If you have a lot of entries, the next run may be slow while it processes the backlog of old entries.
 
 ## Minimal database schema version
 
