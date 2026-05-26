@@ -159,20 +159,12 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 		return nil, stacktrace.Propagate(err, "Error validating polygon")
 	}
 	loop := s2.LoopFromPoints(points)
+	loop.Normalize()
 	err = loop.Validate()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error validating loop")
 	}
 	area := loopAreaKm2(loop)
-	if area > maxAllowedAreaKm2 {
-		// This may have happened because the vertices were not ordered counter-clockwise.
-		// We can try reversing to see if that's the case.
-		for i, j := 0, len(points)-1; i < j; i, j = i+1, j-1 {
-			points[i], points[j] = points[j], points[i]
-		}
-		loop = s2.LoopFromPoints(points)
-		area = loopAreaKm2(loop)
-	}
 	if area > maxAllowedAreaKm2 {
 		return nil, stacktrace.Propagate(
 			ErrAreaTooLarge, "Area is too large (%fkm² > %fkm²)",
