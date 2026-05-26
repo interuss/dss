@@ -95,7 +95,7 @@ func chordSegmentsIntersect(p1a s2.Point, p1b s2.Point, p2a s2.Point, p2b s2.Poi
 	// Normal of plane containing great circle connecting p1a to p1b
 	n1 := p1a.Cross(p1b.Vector)
 
-	// Normal of plane containing great circle connecting p1a to p1b
+	// Normal of plane containing great circle connecting p2a to p2b
 	n2 := p2a.Cross(p2b.Vector)
 
 	// Possible chord intersection point (other one is ip.Mul(-1))
@@ -178,8 +178,9 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 			ErrAreaTooLarge, "Area is too large (%fkm² > %fkm²)",
 			area, maxAllowedAreaKm2)
 	}
-	if area <= 0 {
-		// Since the loop has no area, try a PolyLine
+	if area <= 1e-10 {
+		// Since the loop has close to no area, try a PolyLine
+		// https://github.com/golang/geo/issues/103
 		pl := s2.Polyline(loop.Vertices())
 		return RegionCoverer.Covering(&pl), nil
 	}

@@ -27,6 +27,13 @@ func TestParseAreaSuccessForEvenNumberOfPoints(t *testing.T) {
 	require.NotNil(t, cells)
 }
 
+func TestParseAreaSuccessForSmallArea(t *testing.T) {
+	// L shape polygon
+	cells, err := geo.AreaToCellIDs(`0.000,0.000,0.000,0.005,-0.005,-0.005,0.000,0.005`)
+	require.NoError(t, err)
+	require.NotNil(t, cells)
+}
+
 func TestParseAreaSucceedsForValidLoop(t *testing.T) {
 	cells, err := geo.AreaToCellIDs(testdata.Loop)
 	require.NoError(t, err)
