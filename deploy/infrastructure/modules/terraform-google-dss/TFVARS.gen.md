@@ -180,6 +180,11 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"2688h"</code></td>
             </tr><tr>
+                <td>google_delete_protection (<code>bool</code>)</td>
+                <td><p>Setting this to false make the GKE cluster deletable. Use with caution as this removes deletion protection.
+This setting should only be used to ease the management of test clusters.</p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>google_dns_managed_zone_name (<code>string</code>)</td>
                 <td><p>GCP DNS zone name to automatically manage DNS entries.</p>
 <p>Leave it empty to manage it manually.</p>

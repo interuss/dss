@@ -14,6 +14,8 @@ resource "google_container_cluster" "kubernetes_cluster" {
 
   min_master_version = var.kubernetes_version
 
+  deletion_protection = var.google_delete_protection
+
 }
 
 resource "google_container_node_pool" "dss_pool" {

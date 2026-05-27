@@ -77,6 +77,7 @@ GOOGLE_KUBERNETES_VARIABLES = [
     "google_zone",
     "google_dns_managed_zone_name",
     "google_machine_type",
+    "google_delete_protection",
 ] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-google-dss
