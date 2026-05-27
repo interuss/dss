@@ -4,7 +4,7 @@
 
 This website provides instructions to deploy the InterUSS USS to USS Discovery and Synchronization service.
 
-An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).  
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).
 This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
 
 
@@ -41,3 +41,5 @@ The **Services** are deployed using the following tools:
 - [Helm Chart](https://github.com/interuss/dss/blob/master/deploy/services/helm-charts/dss)
 
 See [Operate a DSS instance](operations/index.md) for more information on tools to perform the **Operations**.
+
+A [deployment check list](deployment_checklist.md) is also available to help you deploy your first instance.
