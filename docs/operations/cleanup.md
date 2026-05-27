@@ -155,7 +155,7 @@ When deploying via terrafrom modules, the parameters are configurable with modul
 
 ## Examples
 
-The examples below assume a DSS running locally via the `run_locally.sh` script].
+The examples below assume a DSS running locally via the `run_locally.sh` script.
 
 ### List all entities older than 1 week
 
