@@ -22,7 +22,7 @@ By default, the tool only lists expired entities. Deletion is opt-in via the `--
     - Ensure a backup of the data is available.
     - Double-check the TTL values passed to `--rid_ttl` and `--scd_ttl`.
 
-Expiration of entities is preferably determined through their end times. When end times are not available, the last update times are used instead.
+Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
 
 ## Why and when to run the cleanup
 
