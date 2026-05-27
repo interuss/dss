@@ -48,7 +48,7 @@ If this becomes a recurring issue, batching removals could be considered as a fu
 
 ## Usage
 
-Extract from `db-manager evict --help`:
+Extracted from `db-manager evict --help`:
 
 ```
 List and evict expired entities
