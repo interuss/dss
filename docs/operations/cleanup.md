@@ -87,7 +87,7 @@ Notes:
 
 ## Regular cleanup
 
-Beyond running `db-manager evict` manually, the DSS deployment tooling can schedule the cleanup as a recurring Kubernetes `CronJob`. Three deployment paths expose the same set of evict knobs, but will always run with the  `--delete` flat set.
+Beyond running `db-manager evict` manually, the DSS deployment tooling can schedule the cleanup as a recurring Kubernetes `CronJob`. Three deployment paths expose the same set of evict knobs, but will always run with the  `--delete` flag set.
 
 Shared default: RID cleanup is enabled by default (`*/30 * * * *`, `ttl = 30m`); SCD cleanup is disabled by default (suggested schedule `0 2 * * *`, `ttl = 2688h` - i.e. 2 x 56 days).
 
