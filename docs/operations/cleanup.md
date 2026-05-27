@@ -28,7 +28,7 @@ Expiration of entities is preferably determined through their end times. In the 
 
 Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:
 
-- Storage growth: unbounded table size on CockroachDB / Yugabytes.
+- Storage growth: unbounded storage usage in data stores (e.g., CockroachDB / YugabyteDB).
 - Query performance: indexes get larger, range scans on `operational_intents` / `subscriptions` / `identification_service_areas` degrade.
 
 There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long you may legitimately need to query historical entities for analysis or audit.
