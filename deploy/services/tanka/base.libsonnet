@@ -258,7 +258,6 @@ local util = import 'util.libsonnet';
         'service.beta.kubernetes.io/aws-load-balancer-nlb-target-type': 'ip',
         'service.beta.kubernetes.io/aws-load-balancer-scheme': 'internet-facing',
         'service.beta.kubernetes.io/aws-load-balancer-eip-allocations': std.join(',', ipNames),
-        'service.beta.kubernetes.io/aws-load-balancer-name': name,
         'service.beta.kubernetes.io/aws-load-balancer-subnets': metadata.subnet,
       },
     },
