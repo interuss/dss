@@ -26,7 +26,7 @@ Expiration of entities is preferably determined through their end times. In the 
 
 ## Why and when to run the cleanup
 
-Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) accumulate over time in the datastore. While the DSS keeps functioning correctly with stale rows present, letting them pile up has real costs:
+Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:
 
 - Storage growth: unbounded table size on CockroachDB / Yugabytes.
 - Query performance: indexes get larger, range scans on `operational_intents` / `subscriptions` / `identification_service_areas` degrade.
