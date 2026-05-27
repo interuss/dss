@@ -1,6 +1,6 @@
 # Database cleanup
 
-With time, data will accumulate overtime in the database, leading to lot of old entries and lower performances.
+Data will accumulate over time in the database if client USSs do not remove their expired entities, and this can lead to lower performance due to quantity of stale entities.  For this reason, InterUSS recommends periodically cleaning up no-longer-relevant entities if USS clients do not always clean up after themselves.
 
 This page describes how to clean up expired entities from the DSS datastore using the `db-manager evict` command.
 
