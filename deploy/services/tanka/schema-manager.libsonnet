@@ -11,6 +11,9 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
         template+: {
           spec+: {
             volumes: volumes.all(metadata).schemaVolumes,
+            initContainers: [
+              base.WaitForDatastore(metadata),
+            ],
             soloContainer:: base.Container('rid-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
@@ -30,6 +33,9 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
         template+: {
           spec+: {
             volumes: volumes.all(metadata).schemaVolumes,
+            initContainers: [
+              base.WaitForDatastore(metadata),
+            ],
             soloContainer:: base.Container('scd-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
@@ -49,6 +55,9 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
         template+: {
           spec+: {
             volumes: volumes.all(metadata).schemaVolumes,
+            initContainers: [
+              base.WaitForDatastore(metadata),
+            ],
             soloContainer:: base.Container('aux-schema-manager') {
               image: metadata.schema_manager.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
