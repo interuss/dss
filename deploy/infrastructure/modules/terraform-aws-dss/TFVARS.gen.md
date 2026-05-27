@@ -250,7 +250,7 @@ For docker hub private repository, use <code>docker.io</code> as <code>DOCKER_RE
             </tr><tr>
                 <td>kubernetes_version (<code>string</code>)</td>
                 <td><p>Desired version of the Kubernetes cluster control plane and nodes.</p>
-<p>Supported versions: 1.28 to 1.34</p>
+<p>Supported versions: 1.28 to 1.35</p>
 </td>
             </tr><tr>
                 <td>locality (<code>string</code>)</td>
