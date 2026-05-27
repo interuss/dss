@@ -31,7 +31,7 @@ Expired entities (operational intents past their end time, stale subscriptions, 
 - Storage growth: unbounded storage usage in data stores (e.g., CockroachDB / YugabyteDB).
 - Query performance: indexes get larger, range scans on `operational_intents` / `subscriptions` / `identification_service_areas` degrade.
 
-There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long you may legitimately need to query historical entities for analysis or audit.
+There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long clients may legitimately need to query historical entities.
 
 The defaults shipped with the deployment tooling (`30m` TTL on RID running every 30 min, `2688h` ≈ 56-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate them against the criteria above and adjust then in production. When in doubt, start with conservative (longer) TTLs and tighten them as you gain confidence.
 
