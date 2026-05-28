@@ -1,0 +1,78 @@
+$content_schema: monitoring/uss_qualifier/configurations/configuration/USSQualifierConfiguration.json
+v1:
+  test_run:
+    resources:
+      resource_declarations:
+        kentland_service_area_volume: {$ref: '../dev/library/resources.yaml#/kentland_service_area_volume'}
+        kentland_service_area: { $ref: '../dev/library/resources.yaml#/kentland_service_area' }
+        kentland_planning_area_volume: { $ref: '../dev/library/resources.yaml#/kentland_planning_area_volume' }
+        kentland_planning_area: { $ref: '../dev/library/resources.yaml#/kentland_planning_area' }
+        kentland_problematically_big_area: { $ref: '../dev/library/resources.yaml#/kentland_problematically_big_area' }
+
+        utm_auth: { $ref: './library/common.yaml#/utm_auth' }
+        second_utm_auth: {$ref: './library/common.yaml#/second_utm_auth'}
+        utm_client_identity: { $ref: '../dev/library/resources.yaml#/utm_client_identity' }
+        id_generator: { $ref: '../dev/library/resources.yaml#/id_generator' }
+        dss_datastore_cluster: { $ref: './library/ybdb.yaml#/dss_datastore_cluster' }
+        scd_dss_instances: { $ref: './library/ybdb.yaml#/scd_dss_instances' }
+        netrid_dss_instances_v22a: { $ref: './library/ybdb.yaml#/netrid_dss_instances_v22a' }
+        netrid_dss_instances_v19: { $ref: './library/ybdb.yaml#/netrid_dss_instances_v19' }
+        che_non_conflicting_flights: {$ref: '../dev/library/resources.yaml#/che_non_conflicting_flights'}
+        test_exclusions: { $ref: '../dev/library/resources.yaml#/test_exclusions' }
+    non_baseline_inputs:
+      - v1.test_run.resources.resource_declarations.utm_auth
+      - v1.test_run.resources.resource_declarations.second_utm_auth
+      - v1.test_run.resources.resource_declarations.dss_datastore_cluster
+      - v1.test_run.resources.resource_declarations.scd_dss_instances
+      - v1.test_run.resources.resource_declarations.netrid_dss_instances_v22a
+      - v1.test_run.resources.resource_declarations.netrid_dss_instances_v19
+    action:
+      test_suite:
+        suite_type: suites.interuss.dss.all_tests
+        resources:
+          f3411v19_dss_instances: netrid_dss_instances_v19
+          f3411v22a_dss_instances: netrid_dss_instances_v22a
+          f3548v21_dss_instances: scd_dss_instances
+          dss_datastore_cluster: dss_datastore_cluster
+          utm_client_identity: utm_client_identity
+          id_generator: id_generator
+          service_area: kentland_service_area
+          planning_area: kentland_planning_area
+          problematically_big_area: kentland_problematically_big_area
+          second_utm_auth: second_utm_auth
+          flight_intents: che_non_conflicting_flights
+          test_exclusions: test_exclusions
+    execution:
+      stop_fast: false
+  artifacts:
+    output_path: output/pooled_dss_probing
+    raw_report: { }
+    sequence_view: { }
+    tested_requirements:
+      - report_name: requirements
+        requirement_collections:
+          all_astm_dss_requirements:
+            requirement_collections:
+              - requirement_sets:
+                  - astm.f3411.v22a.dss_provider
+                  - astm.f3411.v19.dss_provider
+                  - astm.f3548.v21.dss_provider
+                exclude:
+                  requirements:
+                    - astm.f3411.v19.DSS0040
+                    - astm.f3411.v22a.DSS0040
+                    - astm.f3548.v21.DSS0010
+        participant_requirements:
+          uss1: all_astm_dss_requirements
+          uss2: all_astm_dss_requirements
+  validation:
+    criteria:
+      - $ref: ../dev/library/validation.yaml#/execution_error_none
+      - $ref: ../dev/library/validation.yaml#/failed_check_severity_max_low
+      - applicability:
+          skipped_actions: {}
+        pass_condition:
+          elements:
+            count:
+              equal_to: 0
+
