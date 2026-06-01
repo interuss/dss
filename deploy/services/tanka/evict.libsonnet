@@ -13,8 +13,12 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
           spec: {
             template: {
               spec: {
-                volumes: volumes.all(metadata).schemaVolumes,
+                volumes: volumes.all(metadata).backendVolumes,
                 restartPolicy: "Never",
+                initContainers: [
+                  base.WaitForDatastore(metadata),
+                  base.WaitForSchema(metadata, "scd"),
+                ],
                 containers: [base.Container('dss-scd-evict') {
                   image: metadata.schema_manager.image,
                   imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
@@ -28,7 +32,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       locality: metadata.locality,
                       delete: true,
                   } + datastoreparameters.all(metadata),
-                  volumeMounts: volumes.all(metadata).schemaMounts,
+                  volumeMounts: volumes.all(metadata).backendMounts,
                 }],
               },
             },
@@ -45,8 +49,12 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
           spec: {
             template: {
               spec: {
-                volumes: volumes.all(metadata).schemaVolumes,
+                volumes: volumes.all(metadata).backendVolumes,
                 restartPolicy: "Never",
+                initContainers: [
+                  base.WaitForDatastore(metadata),
+                  base.WaitForSchema(metadata, "rid"),
+                ],
                 containers: [base.Container('dss-rid-evict') {
                   image: metadata.schema_manager.image,
                   imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
@@ -60,7 +68,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       locality: metadata.locality,
                       delete: true,
                   } + datastoreparameters.all(metadata),
-                  volumeMounts: volumes.all(metadata).schemaMounts,
+                  volumeMounts: volumes.all(metadata).backendMounts,
                 }],
               },
             },

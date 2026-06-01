@@ -76,6 +76,7 @@ markdown_extensions:
   - def_list # enables 'dl' description lists
   - pymdownx.tasklist: # enables '- [x]'/'- [ ]' task lists
       custom_checkbox: true
+      clickable_checkbox: true
 
   # https://squidfunk.github.io/mkdocs-material/reference/footnotes/
   - footnotes # enables '[^1]' footnotes
@@ -102,3 +103,6 @@ markdown_extensions:
       permalink: true # displays a permalink next to headings
 
   - attr_list  # Enable creation of custom anchors
+
+extra_javascript:
+  - assets/checkbox.js

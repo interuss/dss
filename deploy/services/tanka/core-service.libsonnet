@@ -91,6 +91,11 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
         template+: {
           spec+: {
             volumes: volumes.all(metadata).backendVolumes,
+            initContainers: [
+              base.WaitForDatastore(metadata),
+              base.WaitForSchema(metadata, "rid"),
+              base.WaitForSchema(metadata, "scd"),
+            ],
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
               imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
