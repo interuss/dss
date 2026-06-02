@@ -32,8 +32,12 @@ Fetch the Kubernetes configuration for clusters, generate certificates (trusted 
 
 After this step, services are ready to be deployed.
 
-#### Deploy services (TODO)
+#### Deploy services
 * `./release/scripts/deploy-services.sh`
+
+Deploy services using Helm or Tanka. Wait for the dss /healthy endpoint to return OK.
+
+After this step, services are ready to be tested.
 
 #### Run tests (TODO)
 * `./release/scripts/run-tests.sh`
