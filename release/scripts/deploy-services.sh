@@ -29,8 +29,8 @@ for name in "${CLUSTERS[@]}"; do
         || die "missing $PERSONAL_DIR/$name - run spawn-clusters.sh first"
     ws=$(terraform -chdir="$PERSONAL_DIR/$name" output -raw workspace_location)
     ctx=$(terraform -chdir="$PERSONAL_DIR/$name" output -raw cluster_context)
-    host=$(get_app_hostname "$RELEASE_INFRA_DIR/$name.vars")
-    [[ -n "$host" ]] || die "app_hostname not found in $name.vars"
+    host=$(get_app_hostname "$RELEASE_INFRA_DIR/$name.tfvars")
+    [[ -n "$host" ]] || die "app_hostname not found in $name.tfvars"
     WS[$name]="$ws"
     CTX[$name]="$ctx"
     HOST[$name]="$host"
