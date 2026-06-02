@@ -100,7 +100,7 @@ local notifierConfig(metadata) = {
             containers: [
               {
                 name: 'grafana',
-                image: 'grafana/grafana:latest',
+                image: 'grafana/grafana:13.0-ubuntu-slim',
                 ports: [
                   {
                     name: 'grafana',
