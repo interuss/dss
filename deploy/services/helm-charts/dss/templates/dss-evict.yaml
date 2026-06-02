@@ -40,6 +40,7 @@ spec:
                 - --rid_sub=false
                 - --scd_ttl={{ $.Values.dss.conf.evict.scd.ttl }}
                 - --locality={{ $.Values.dss.conf.locality }}
+                - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}
@@ -95,6 +96,7 @@ spec:
                 - --rid_sub={{ $.Values.dss.conf.evict.rid.subscriptions }}
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
                 - --locality={{ $.Values.dss.conf.locality }}
+                - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}
