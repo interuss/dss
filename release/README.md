@@ -46,7 +46,7 @@ Run the prober and the qualifier against deployed services.
 
 A local 'dummy-oauth' service is spwaned to retrive tokens.
 
-#### Compile results (TODO)
+#### Compile results
 * `./release/scripts/compile-results.sh`
 
 Zip archive containing results will be available in `release/output`.
