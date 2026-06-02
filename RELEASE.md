@@ -4,9 +4,9 @@ Currently, InterUSS publishes two types of release versions: release candidates 
 
 Release candidates can be identified by their suffix `-rc*`. Those versions are published for early adopters.
 
-The source of stable versions is usually a release candidate. 
+The source of stable versions is usually a release candidate.
 
-Release notes can be found on the [releases page](https://github.com/interuss/dss/releases) of this repository. 
+Release notes can be found on the [releases page](https://github.com/interuss/dss/releases) of this repository.
 Keeping track of breaking changes and migration instructions is done through the [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) file, which is updated as features are added or modified and serves as a basis for release notes.
 
 To be promoted to stable, a release must be first tested on a DSS Pool composed by two DSS Instances hosted in two separate clouds. The verification is made by running the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) and the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) on both DSS Instances.
@@ -43,6 +43,7 @@ Releasing a DSS version requires the following steps:
       - Official releases are `interuss/dss/v#.#.#`.
       - Add the pending release notes from [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) to the release notes.
 - The github workflow ([.github/workflows/image-publish.yml](.github/workflows/dss-publish.yml)) is triggered for every new release tag. On the canonical interuss fork, it builds and publishes the DSS image to the [official docker registry](https://hub.docker.com/repository/docker/interuss/dss).
+- Use helpers in [RELEASE](./release/README.md) folder to generate test artefacts and upload the zip with the release.
 - After completing the release, open a PR to remove the pending release notes from [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) and update the anticipated next release version number assuming just a bug fix (e.g., v0.18.3 -> v0.18.4)
 - When a PR with a change larger than the current anticipated next release version number in [NEXT_RELEASE_NOTES.md](./NEXT_RELEASE_NOTES.md) is made, it should ideally also adjust the anticipated next release version number in NEXT_RELEASE_NOTES
   - Example 1: if the most recent release was v0.18.3, NEXT_RELEASE_NOTES indicated v0.18.4, and a PR made a change larger than a bug fix, that PR should change the number in NEXT_RELEASE_NOTES to v0.19.0

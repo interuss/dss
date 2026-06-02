@@ -1,0 +1,44 @@
+# The resources in this file describe the system/environment under test and should not change the test being run.
+# This file defines the environment use to verify releases on a deployment of two DSSs pooled in two different clouds.
+
+# ===== Auth =====
+
+utm_auth:
+  $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+  resource_type: resources.communications.AuthAdapterResource
+  specification:
+    environment_variable_containing_auth_spec: AUTH_SPEC
+    scopes_authorized:
+      # InterUSS RIDv1 automated testing API
+      - rid.inject_test_data
+      - dss.read.identification_service_areas
+      # ASTM F3411-22a USS emulation roles
+      - rid.service_provider
+      - rid.display_provider
+      # ASTM F3411-19 USS emulation roles
+      - dss.write.identification_service_areas
+      - dss.read.identification_service_areas
+      # InterUSS flight_planning v1 automated testing API
+      - interuss.flight_planning.direct_automated_test
+      - interuss.flight_planning.plan
+      # Legacy InterUSS scd injection v1 automated testing API
+      - utm.inject_test_data
+      # ASTM F3548-21 USS emulation roles
+      - utm.strategic_coordination
+      - utm.conformance_monitoring_sa
+      - utm.availability_arbitration
+      - utm.constraint_management
+      # InterUSS versioning automated testing
+      - interuss.versioning.read_system_versions
+      - interuss.geospatial_map.query
+      # For authentication test purposes.
+      # Remove if the authentication provider pointed to by AUTH_SPEC does not support it.
+      - ""
+
+second_utm_auth:
+  $content_schema: monitoring/uss_qualifier/resources/definitions/ResourceDeclaration.json
+  resource_type: resources.communications.AuthAdapterResource
+  specification:
+    environment_variable_containing_auth_spec: AUTH_SPEC_2
+    scopes_authorized:
+      - utm.strategic_coordination
