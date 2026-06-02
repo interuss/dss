@@ -111,24 +111,6 @@ local yugabyteLB(metadata, name, ip) =
           ]
         }
       },
-      MasterHooks: base.ConfigMap(metadata, 'dss-dss-yugabyte-master-hooks') {
-        data: {
-          ['yb-master-%s-pre_debug_hook.sh' % id]: "echo 'hello-from-pre' "
-          for id in std.range(0, std.length(metadata.yugabyte.masterNodeIPs) - 1)
-        } + {
-          ['yb-master-%s-post_debug_hook.sh' % id]: "echo 'hello-from-post' "
-          for id in std.range(0, std.length(metadata.yugabyte.masterNodeIPs) - 1)
-        }
-      },
-      TServerHooks: base.ConfigMap(metadata, 'dss-dss-yugabyte-tserver-hooks') {
-        data: {
-          ['yb-tserver-%s-pre_debug_hook.sh' % id]: "echo 'hello-from-pre' "
-          for id in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
-        } + {
-          ['yb-tserver-%s-post_debug_hook.sh' % id]: "echo 'hello-from-post' "
-          for id in std.range(0, std.length(metadata.yugabyte.tserverNodeIPs) - 1)
-        }
-      },
       masters: base.Service(metadata, 'yb-masters') {
         app:: 'yb-master',
         spec+: {

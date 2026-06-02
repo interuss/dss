@@ -62,12 +62,6 @@ local volumes = import 'volumes.libsonnet';
               podAntiAffinity: {},
             },
             volumes: [{
-              name: "debug-hooks-volume",
-              configMap: {
-                name: "dss-dss-yugabyte-master-hooks",
-                defaultMode: 493, # 0755
-              },
-            }, {
               name: "master-gflags",
               secret: {
                 secretName: "dss-dss-yugabyte-master-gflags",
@@ -230,9 +224,6 @@ local volumes = import 'volumes.libsonnet';
                   name: "master-gflags",
                   mountPath: "/opt/master/conf",
                 }, {
-                  name: "debug-hooks-volume",
-                  mountPath: "/opt/debug_hooks_config",
-                }, {
                   name: "datadir0",
                   mountPath: "/mnt/disk0",
                 }, {
@@ -389,12 +380,6 @@ local volumes = import 'volumes.libsonnet';
               podAntiAffinity: {},
             },
             volumes: [{
-              name: "debug-hooks-volume",
-              configMap: {
-                name: "dss-dss-yugabyte-tserver-hooks",
-                defaultMode: 493, # 0755
-              },
-            }, {
               name: "tserver-gflags",
               secret: {
                 secretName: "dss-dss-yugabyte-tserver-gflags",
@@ -597,9 +582,6 @@ local volumes = import 'volumes.libsonnet';
                 }, {
                   name: "tserver-gflags",
                   mountPath: "/opt/tserver/conf",
-                }, {
-                  name: "debug-hooks-volume",
-                  mountPath: "/opt/debug_hooks_config",
                 }, {
                   name: "datadir0",
                   mountPath: "/mnt/disk0",
