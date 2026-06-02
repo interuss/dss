@@ -56,45 +56,6 @@ func init() {
 	)
 }
 
-func (c *repo) fetchCellsForSubscription(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (s2.CellUnion, error) {
-	var (
-		cellsQuery = `
-			SELECT
-				unnest(cells) as cell_id
-			FROM
-				scd_subscriptions
-			WHERE
-				id = $1
-		`
-	)
-
-	uid, err := id.PgUUID()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
-	}
-	rows, err := q.Query(ctx, cellsQuery, uid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", cellsQuery)
-	}
-	defer rows.Close()
-
-	var (
-		cu   s2.CellUnion
-		cidi int64
-	)
-	for rows.Next() {
-		err := rows.Scan(&cidi)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error scanning Subscription cell row")
-		}
-		cu = append(cu, s2.CellID(cidi))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in rows query result")
-	}
-	return cu, nil
-}
-
 func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
@@ -173,13 +134,7 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription")
 	}
-	if result == nil {
-		return nil, nil
-	}
-	result.Cells, err = c.fetchCellsForSubscription(ctx, q, id)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error fetching cells for Subscription")
-	}
+
 	return result, nil
 }
 
@@ -270,7 +225,6 @@ func (c *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
-	newSubscription.Cells = s.Cells
 
 	return newSubscription, nil
 }
