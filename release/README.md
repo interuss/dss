@@ -39,8 +39,12 @@ Deploy services using Helm or Tanka. Wait for the dss /healthy endpoint to retur
 
 After this step, services are ready to be tested.
 
-#### Run tests (TODO)
+#### Run tests
 * `./release/scripts/run-tests.sh`
+
+Run the prober and the qualifier against deployed services.
+
+A local 'dummy-oauth' service is spwaned to retrive tokens.
 
 #### Compile results (TODO)
 * `./release/scripts/compile-results.sh`
