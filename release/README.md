@@ -17,8 +17,13 @@ Certificates are always regenerated from scratch.
 * `export AWS_PROFILE=...` (if needed)
 
 
-#### Deploy clusters (TODO)
+#### Deploy clusters
 * `./release/scripts/spawn-clusters.sh`
+
+Spawn clusters defined in infrastructure/. Config is copied into the usual 'personal/' folder and the terraform module is built.
+A parallel terraform apply is then run.
+
+After this step, Kubernetes clusters are ready.
 
 #### Configure clusters (TODO)
 * `./release/scripts/configure-clusters.sh`
