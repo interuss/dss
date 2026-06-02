@@ -25,8 +25,12 @@ A parallel terraform apply is then run.
 
 After this step, Kubernetes clusters are ready.
 
-#### Configure clusters (TODO)
+#### Configure clusters
 * `./release/scripts/configure-clusters.sh`
+
+Fetch the Kubernetes configuration for clusters, generate certificates (trusted between clusters), and apply certificates configuration.
+
+After this step, services are ready to be deployed.
 
 #### Deploy services (TODO)
 * `./release/scripts/deploy-services.sh`
