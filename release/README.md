@@ -51,5 +51,13 @@ A local 'dummy-oauth' service is spwaned to retrive tokens.
 
 Zip archive containing results will be available in `release/output`.
 
-#### Destroy clusters (TODO)
+#### Destroy clusters
 * `./release/scripts/destroy-clusters.sh`
+
+Cleanup resources by:
+
+* Uninstalling Helm / Tanka services
+* Removing Kubernetes persistent volumes
+* Applying terraform destroy to release clusters
+
+No manual cleaning operations are needed after this step.
