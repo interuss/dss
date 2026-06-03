@@ -214,6 +214,9 @@ your chosen provider.
         e global throughput but improve throughput with lot of subscriptions in
         the same areas.
 
+    1.  `VAR_ENABLE_DSS_METRICS`: Set this boolean true to enable
+        prometheus-compatible metric endpoint.
+
     1.  `VAR_LOCALITY`: Unique name for your DSS instance.  Currently, we
         recommend "<ORG_NAME>_<CLUSTER_NAME>", and the `=` character is not
         allowed.  However, any unique (among all other participating DSS

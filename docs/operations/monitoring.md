@@ -18,6 +18,8 @@ This can be enabled via:
 - The `monitoring.enabled` option in helm
 - By using tanka, which always enables it
 
+By default, DSS metrics are not enabled; see below, OpenTelemetry section, to activate them.
+
 ### Grafana access
 
 To access the Grafana interface, first ensure that the appropriate
@@ -153,6 +155,9 @@ Point any Prometheus server to the endpoint (by default on port 8079).
 You can use the `--metrics_addr` flag to change the listening port and address.
 
 No dashboard has been created yet, but one is planned.
+
+You can use the `enable_dss_metrics` option in Terraform, `dss.conf.enableDssMetrics` in Helm, or `enableDssMetrics` in Tanka to activate it when using these.
+This will also automatically enable collection by Prometheus if used.
 
 ### Tracing
 

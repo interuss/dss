@@ -60,6 +60,7 @@ module "terraform-commons-dss" {
   enable_monitoring                = var.enable_monitoring
   enable_scd                       = var.enable_scd
   enable_scd_global_lock           = var.enable_scd_global_lock
+  enable_dss_metrics               = var.enable_dss_metrics
   prometheus_hostname              = var.prometheus_hostname
   ip_prometheus                    = module.terraform-aws-kubernetes.ip_prometheus
 

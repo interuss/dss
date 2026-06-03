@@ -89,6 +89,13 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
       },
       spec+: {
         template+: {
+          metadata+: if metadata.enableDssMetrics then {
+            annotations: {
+              'prometheus.io/path': 'metrics',
+              'prometheus.io/port': '8079',
+              'prometheus.io/scrape': 'true',
+            }
+          } else {},
           spec+: {
             volumes: volumes.all(metadata).backendVolumes,
             initContainers: [
@@ -104,7 +111,12 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                   containerPort: metadata.backend.port,
                   name: 'http',
                 },
-              ],
+              ] + if metadata.enableDssMetrics then [
+                {
+                  containerPort: 8079,
+                  name: 'metrics',
+                },
+              ] else [],
               volumeMounts: volumes.all(metadata).backendMounts,
               command: ['core-service'],
               args_:: {
@@ -119,9 +131,11 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 enable_scd: metadata.enableScd,
                 enable_scd_global_lock: metadata.enableScdGlobalLock,
               } + datastoreparameters.all(metadata)
-              + if metadata.backend.publicEndpoint != '' then {
+              + (if metadata.backend.publicEndpoint != '' then {
                 public_endpoint: metadata.backend.publicEndpoint,
-              } else {},
+              } else {}) + (if metadata.enableDssMetrics then {
+                enable_metrics: true,
+              } else {}),
               readinessProbe: {
                 httpGet: {
                   path: '/healthy',
