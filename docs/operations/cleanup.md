@@ -46,6 +46,12 @@ To mitigate this:
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
 If this becomes a recurring issue, batching removals could be considered as a future improvement.
 
+## Changes in locally
+
+There may be cases where a DSS instance changes its locality. A common scenario is that locality was not previously mandatory, though regular updates may also occur.
+
+In such cases, ensure that a cleanup is performed on the older locality, especially since the automatically deployed cron job (see below) will automatically follow the locality settings of the main service.
+
 ## Usage
 
 Extracted from `db-manager evict --help`:
@@ -90,6 +96,8 @@ Notes:
 Beyond running `db-manager evict` manually, the DSS deployment tooling can schedule the cleanup as a recurring Kubernetes `CronJob`. Three deployment paths expose the same set of evict knobs, but will always run with the  `--delete` flag set.
 
 Shared default: RID cleanup is enabled by default (`*/30 * * * *`, `ttl = 30m`); SCD cleanup is disabled by default (suggested schedule `0 2 * * *`, `ttl = 2688h` - i.e. 2 x 56 days).
+
+The current defaults are structured this way because each DSS instance is intended to manage the cleanup of its own RID objects (with deletion restricted to entities created by that specific instance, based on locality). Conversely, SCD cleanup is a global operation; therefore, DSS operators should coordinate to avoid redundant tasks, or potentially designate a single USS to handle the cleanup process.
 
 ### Helm
 
@@ -155,7 +163,7 @@ When deploying via terrafrom modules, the parameters are configurable with modul
 
 ## Examples
 
-The examples below assume a DSS running locally via the `run_locally.sh` script].
+The examples below assume a DSS running locally via the `run_locally.sh` script.
 
 ### List all entities older than 1 week
 
