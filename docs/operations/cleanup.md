@@ -48,7 +48,7 @@ If this becomes a recurring issue, batching removals could be considered as a fu
 
 ## Changes in locality
 
-There may be cases where a DSS instance changes its locality. A common scenario is that locality was not previously mandatory, though regular updates may also occur.
+There may be cases where a DSS instance changes its locality. This commonly occurs if locality wasn't previously required, though routine updates can also trigger a change.
 
 In such cases, ensure that a cleanup is performed on the older locality (if it was not set before, set an empty one), especially since the automatically deployed cron job (see below) will automatically follow the locality settings of the main service.
 
