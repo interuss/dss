@@ -46,7 +46,7 @@ To mitigate this:
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
 If this becomes a recurring issue, batching removals could be considered as a future improvement.
 
-## Changes in locally
+## Changes in locality
 
 There may be cases where a DSS instance changes its locality. A common scenario is that locality was not previously mandatory, though regular updates may also occur.
 
