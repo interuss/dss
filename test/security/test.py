@@ -15,6 +15,7 @@ import http.client
 import base64
 import hmac
 import hashlib
+import jwt
 
 ENDPOINT_WITHOUT_AUTHS = [
     "/aux/v1/configuration/accepted_ca_certs",
@@ -87,6 +88,29 @@ def get_token(scope=None, audience=None, expire=None):
         sys.exit(1)
 
     return data["access_token"]
+
+
+def get_valid_token_without(field):
+
+    valid_token = get_token()
+    _, payload_b64, _ = valid_token.split(".")
+
+    # Strip the claim from the payload
+    pad = "=" * (-len(payload_b64) % 4)
+    payload = json.loads(base64.urlsafe_b64decode(payload_b64 + pad))
+    payload.pop(field, None)
+    payload_b64 = (
+        base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode())
+        .rstrip(b"=")
+        .decode()
+    )
+
+    # Read the public key as the HMAC secret
+    with open("build/test-certs/auth2.key", "rb") as f:
+        private_key = f.read()
+    token = jwt.encode(payload, private_key, algorithm="RS256")
+
+    return token
 
 
 def fill_path(path):
@@ -191,6 +215,25 @@ def test_expired(method, path):
         logger.info("✅ Expired token generated a 401.")
 
 
+def test_expired_to_far(method, path):
+
+    logger.debug("❓ Testing an token that will expire in 2099...")
+
+    invalid_audience = get_token(expire="4070908800")  # 2099.01.01
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(
+        method, fill_path(path), headers={"Authorization": f"Bearer {invalid_audience}"}
+    )
+    resp = conn.getresponse()
+    if resp.status != 401:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 401 with a token valid in the far future."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token with very fare expiration date generated a 401.")
+
+
 def test_hs256_token(method, path):
 
     logger.debug("❓ Testing HS256 algorithm confusion attack...")
@@ -246,6 +289,96 @@ def test_alg_none(method, path):
         logger.info("✅ alg:none attack generated a 401.")
 
 
+def test_no_aud(method, path):
+
+    logger.debug("❓ Testing token without aud")
+
+    token = get_valid_token_without("aud")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path), headers={"Authorization": f"Bearer {token}"})
+    resp = conn.getresponse()
+    if resp.status != 401:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 401 with a token missing aud."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token without aud generated a 401.")
+
+
+def test_no_iss(method, path):
+
+    logger.debug("❓ Testing token without iss")
+
+    token = get_valid_token_without("iss")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path), headers={"Authorization": f"Bearer {token}"})
+    resp = conn.getresponse()
+    if resp.status != 401:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 401 with a token missing iss."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token without iss generated a 401.")
+
+
+def test_no_exp(method, path):
+
+    logger.debug("❓ Testing token without exp")
+
+    token = get_valid_token_without("exp")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path), headers={"Authorization": f"Bearer {token}"})
+    resp = conn.getresponse()
+    if resp.status != 401:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 401 with a token missing exp."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token without exp generated a 401.")
+
+
+def test_no_sub(method, path):
+
+    logger.debug("❓ Testing token without sub")
+
+    token = get_valid_token_without("sub")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path), headers={"Authorization": f"Bearer {token}"})
+    resp = conn.getresponse()
+    if resp.status != 401:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 401 with a token missing sub."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token without sub generated a 401.")
+
+
+def test_no_scope(method, path):
+
+    logger.debug("❓ Testing token without scope")
+
+    token = get_valid_token_without("scope")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path), headers={"Authorization": f"Bearer {token}"})
+    resp = conn.getresponse()
+    if resp.status != 403:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 403 with a token missing scope."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Token without scope generated a 403.")
+
+
 def test_valid_token(method, path):
 
     logger.debug("❓ Testing a valid token...")
@@ -278,6 +411,12 @@ for method, path in sorted(urls):
     test_wrong_scope(method, path)
     test_wrong_audience(method, path)
     test_expired(method, path)
+    test_expired_to_far(method, path)
     test_hs256_token(method, path)
     test_alg_none(method, path)
     test_valid_token(method, path)
+    test_no_aud(method, path)
+    test_no_iss(method, path)
+    test_no_exp(method, path)
+    test_no_sub(method, path)
+    test_no_scope(method, path)
