@@ -13,7 +13,7 @@ import (
 
 var (
 	errMissingOrEmptySubject = errors.New("missing or empty subject")
-	errTokenExpireTooFar     = errors.New("token expiration time is too far in the furture, Max token duration is 1 Hour")
+	errTokenExpireTooFar     = errors.New("token expiration time is too far in the furture or not set, Max token duration is 1 Hour")
 	errMissingIssuer         = errors.New("missing Issuer URI")
 	// Now allows test to override with specific time values
 	Now = time.Now
@@ -101,9 +101,7 @@ func (c *Claims) Valid() error {
 	}
 	now := Now()
 
-	c.VerifyExpiresAt(now, true)
-
-	if c.ExpiresAt.After(now.Add(time.Hour)) {
+	if c.ExpiresAt == nil || c.ExpiresAt.After(now.Add(time.Hour)) {
 		return errTokenExpireTooFar
 	}
 
