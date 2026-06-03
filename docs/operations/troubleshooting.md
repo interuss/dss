@@ -42,3 +42,15 @@ Access the [CockrachDB SQL terminal](#accessing-a-cockroachdb-sql-terminal) then
 
 Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
 warning.
+
+## Accessing a YugabyteDB SQL terminal
+
+To interact with the YugabyteDB database directly via SQL terminal:
+
+
+```
+kubectl \
+  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
+  yb-tserver-0 -- \
+  ysqlsh "host=/tmp/.yb.0.0.0.0:5433 user=yugabyte dbname=postgres"
+```

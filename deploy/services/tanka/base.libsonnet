@@ -1,4 +1,5 @@
 local util = import 'util.libsonnet';
+local volumes = import 'volumes.libsonnet';
 
 {
   _Object(apiVersion, kind, metadata, name):: {
@@ -258,7 +259,6 @@ local util = import 'util.libsonnet';
         'service.beta.kubernetes.io/aws-load-balancer-nlb-target-type': 'ip',
         'service.beta.kubernetes.io/aws-load-balancer-scheme': 'internet-facing',
         'service.beta.kubernetes.io/aws-load-balancer-eip-allocations': std.join(',', ipNames),
-        'service.beta.kubernetes.io/aws-load-balancer-name': name,
         'service.beta.kubernetes.io/aws-load-balancer-subnets': metadata.subnet,
       },
     },
@@ -286,5 +286,30 @@ local util = import 'util.libsonnet';
   },
 
   Secret(metadata, name): $._Object('v1', 'Secret', metadata, name) {
+  },
+
+  WaitForDatastore(metadata): {
+    name: "wait-for-datastore",
+    image: "alpine:3.17.3",
+    command: [
+      'sh',
+      '-c',
+      if metadata.datastore == "cockroachdb" then
+        "until wget -nv http://cockroachdb-balanced." + metadata.namespace + ":8080/health; do echo waiting for datastore; sleep 2; done" else
+        "until wget -nv http://yb-tservers." + metadata.namespace + ":9000/status; do echo waiting for datastore; sleep 2; done"
+    ]
+  },
+
+  WaitForSchema(metadata, table): {
+    name: "wait-for-schema-" + table,
+    image: if metadata.datastore == "cockroachdb" then metadata.cockroach.image else metadata.yugabyte.image,
+    command: [
+      'sh',
+      '-c',
+      if metadata.datastore == "cockroachdb" then
+        "/cockroach/cockroach sql --certs-dir /cockroach/cockroach-certs/ --host cockroachdb-balanced." + metadata.namespace + " --port \"" + metadata.cockroach.grpc_port + "\" --format raw -e \"SELECT * FROM crdb_internal.databases where name = '" + table + "';\" | grep " + table else
+        "ysqlsh --host yb-tservers." + metadata.namespace + " --port \"5433\" \"sslmode=require sslcert=/opt/yugabyte-certs/client.yugabyte.crt sslkey=/opt/yugabyte-certs/client.yugabyte.key sslrootcert=/opt/yugabyte-certs/ca.crt\" -c \"SELECT datname FROM pg_database where datname = '" + table + "';\" | grep " + table
+    ],
+    volumeMounts: volumes.all(metadata).backendMounts,
   },
 }

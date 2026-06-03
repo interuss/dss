@@ -1,7 +1,17 @@
 {{- $image := .Values.dss.image }}
+
+{{- $datastoreImage := (include "datastoreImage" .) -}}
 {{- $datastoreHost := (include "datastoreHost" .) -}}
 {{- $datastorePort := (include "datastorePort" .) -}}
 {{- $datastoreUser := (include "datastoreUser" .) -}}
+
+{{- $waitForDatastore := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $datastoreHost)) -}}
+{{- if .Values.yugabyte.enabled }}
+{{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
+{{- end -}}
+
+{{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
+{{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 
 ---
 apiVersion: batch/v1
@@ -19,6 +29,9 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+            {{- $waitForDatastore | nindent 12 }}
+            {{- $waitForSCDSchema | nindent 12 }}
           containers:
             - args:
                 - --scd_oir={{ $.Values.dss.conf.evict.scd.operationalIntents }}
@@ -26,6 +39,8 @@ spec:
                 - --rid_isa=false
                 - --rid_sub=false
                 - --scd_ttl={{ $.Values.dss.conf.evict.scd.ttl }}
+                - --locality={{ $.Values.dss.conf.locality }}
+                - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}
@@ -70,6 +85,9 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+            {{- $waitForDatastore | nindent 12 }}
+            {{- $waitForRIDSchema | nindent 12 }}
           containers:
             - args:
                 - --scd_oir=false
@@ -77,6 +95,8 @@ spec:
                 - --rid_isa={{ $.Values.dss.conf.evict.rid.ISAs }}
                 - --rid_sub={{ $.Values.dss.conf.evict.rid.subscriptions }}
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
+                - --locality={{ $.Values.dss.conf.locality }}
+                - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
                 - --datastore_user={{ $datastoreUser }}

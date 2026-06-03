@@ -39,6 +39,36 @@ func TestParseAreaFailsForEmptyString(t *testing.T) {
 	require.Nil(t, cells)
 }
 
+func TestParseAreaFailsForIntersectingLoop(t *testing.T) {
+	// hourglass shape polygon
+	// c-b
+	//  X
+	// a-d
+	cells, err := geo.AreaToCellIDs(`0.000,0.000,0.005,0.005,0.000,0.005,0.005,0.000`)
+	require.Error(t, err)
+	require.Nil(t, cells)
+}
+
+func TestParseAreaFailsForSharedVertexLoop(t *testing.T) {
+	// L shape polygon
+	// a-b+d
+	//    |
+	//    c
+	cells, err := geo.AreaToCellIDs(`0.000,0.000,0.000,0.005,-0.005,-0.005,0.000,0.005`)
+	require.Error(t, err)
+	require.Nil(t, cells)
+}
+
+func TestParseAreSucceedsForColinearLoop(t *testing.T) {
+	// s2 implements a consistent perturbation model such
+	// that no three points are ever considered to be collinear
+	// line shape polygon
+	// a-b-c-d
+	cells, err := geo.AreaToCellIDs(`0.000,0.000,0.000,0.005,0.000,0.010,0.000,0.015`)
+	require.NoError(t, err)
+	require.NotNil(t, cells)
+}
+
 func TestParseAreaFailsForLoopWithOnlyTwoPoints(t *testing.T) {
 	cells, err := geo.AreaToCellIDs(testdata.LoopWithOnlyTwoPoints)
 	require.Error(t, err)

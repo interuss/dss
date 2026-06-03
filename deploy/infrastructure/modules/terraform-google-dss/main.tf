@@ -8,6 +8,7 @@ module "terraform-google-kubernetes" {
   datastore_type               = var.datastore_type
   google_dns_managed_zone_name = var.google_dns_managed_zone_name
   google_machine_type          = var.google_machine_type
+  google_delete_protection     = var.google_delete_protection
   node_count                   = var.node_count
   kubernetes_version           = var.kubernetes_version
   prometheus_hostname          = var.prometheus_hostname

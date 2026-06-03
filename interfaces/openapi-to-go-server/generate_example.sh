@@ -12,7 +12,7 @@ cd "${BASEDIR}" || exit
 
 docker image build -t interuss/openapi-to-go-server .
 
-docker container run -it \
+docker container run --rm \
   	-v "$(pwd)/../astm-utm/Protocol/utm.yaml:/resources/utm.yaml" \
   	-v "$(pwd)/../rid/v1/remoteid/augmented.yaml:/resources/rid.yaml" \
 	  -v "$(pwd)/example:/resources/example" \

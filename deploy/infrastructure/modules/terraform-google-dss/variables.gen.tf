@@ -44,6 +44,17 @@ variable "google_machine_type" {
 }
 
 
+variable "google_delete_protection" {
+  type        = bool
+  default     = true
+  description = <<-EOT
+  Setting this to false make the GKE cluster deletable. Use with caution as this removes deletion protection.
+  This setting should only be used to ease the management of test clusters.
+
+  EOT
+}
+
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
@@ -125,12 +136,12 @@ variable "kubernetes_version" {
   description = <<-EOT
   Desired version of the Kubernetes cluster control plane and nodes.
 
-  Supported versions: 1.28 to 1.34
+  Supported versions: 1.28 to 1.35
   EOT
 
   validation {
-    condition     = contains(["1.28", "1.29", "1.30", "1.31", "1.32", "1.33", "1.34"], var.kubernetes_version)
-    error_message = "Supported versions: 1.28 to 1.34"
+    condition     = contains(["1.28", "1.29", "1.30", "1.31", "1.32", "1.33", "1.34", "1.35"], var.kubernetes_version)
+    error_message = "Supported versions: 1.28 to 1.35"
   }
 }
 
