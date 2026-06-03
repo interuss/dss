@@ -12,6 +12,7 @@ local metadata = metadataBase {
   single_cluster: false,
   enableScd: ${VAR_ENABLE_SCD}, // <-- This boolean value is VAR_ENABLE_SCD
   enableScdGlobalLock: ${VAR_ENABLE_SCD_GLOBAL_LOCK}, // <-- This boolean value is VAR_ENABLE_SCD_GLOBAL_LOCK
+  enableDssMetrics: ${VAR_ENABLE_DSS_METRICS}, // <-- This boolean value is VAR_ENABLE_DSS_METRICS
   datastore: '${VAR_DATASTORE}',
   locality: '${VAR_LOCALITY}',
   cockroach+: {

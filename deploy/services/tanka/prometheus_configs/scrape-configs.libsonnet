@@ -187,5 +187,42 @@
         insecure_skip_verify: true,
       },
     },
+    {
+      job_name: 'K8s-Pods',
+      kubernetes_sd_configs: [{ role: 'pod' }],
+      relabel_configs: [
+        {
+          source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
+          action: 'keep',
+          regex: true,
+        },
+        {
+          source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
+          action: 'replace',
+          target_label: '__metrics_path__',
+          regex: '(.+)',
+        },
+        {
+          source_labels: ['__address__', '__meta_kubernetes_pod_annotation_prometheus_io_port'],
+          action: 'replace',
+          target_label: '__address__',
+          regex: '([^:]+)(?::\\d+)?;(\\d+)',
+          replacement: '$1:$2',
+        },
+        {
+          source_labels: ['__meta_kubernetes_namespace'],
+          action: 'replace',
+          target_label: 'kubernetes_namespace',
+        },
+        {
+          source_labels: ['__meta_kubernetes_pod_name'],
+          action: 'replace',
+          target_label: 'pod_name',
+        },
+      ],
+      tls_config: {
+        insecure_skip_verify: true,
+      },
+    },
   ],
 }

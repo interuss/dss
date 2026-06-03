@@ -68,6 +68,7 @@ resource "local_file" "helm_chart_values" {
         publicEndpoint      = "https://${var.app_hostname}"
         enableScd           = var.enable_scd
         enableScdGlobalLock = var.enable_scd_global_lock
+        enableDssMetrics    = var.enable_dss_metrics
         locality            = "zone=${var.locality}"
 
         evict = {
@@ -274,6 +275,7 @@ resource "local_file" "helm_chart_values" {
         publicEndpoint      = "https://${var.app_hostname}"
         enableScd           = var.enable_scd
         enableScdGlobalLock = var.enable_scd_global_lock
+        enableDssMetrics    = var.enable_dss_metrics
         locality            = "zone=${var.locality}"
 
         evict = {
