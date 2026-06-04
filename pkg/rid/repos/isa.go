@@ -31,4 +31,7 @@ type ISA interface {
 
 	// ListExpiredISAs lists all expired ISAs based on writer
 	ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error)
+
+	// Count the number of existing ISA
+	CountISAs(ctx context.Context) (int64, error)
 }

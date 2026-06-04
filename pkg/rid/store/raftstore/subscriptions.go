@@ -46,3 +46,7 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(_ context.Context, cells s2.Ce
 func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredSubscriptions not implemented for raftstore")
 }
+
+func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {
+	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "CountSubscriptions not implemented for raftstore")
+}

@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	ometric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -103,4 +106,35 @@ func serveMetrics(ctx context.Context, listeningAddress string) {
 		return
 	}
 	logger.Info("Prometheus endpoint started", zap.String("listeningAddress", listeningAddress))
+}
+
+// Small helper to cache metrics
+type cachedObservation struct {
+	mu        sync.Mutex
+	last      int64
+	fetchedAt time.Time
+	ttl       time.Duration
+	fetch     func(context.Context) (int64, error)
+}
+
+func (c *cachedObservation) Observe(ctx context.Context, o ometric.Int64Observer) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if time.Since(c.fetchedAt) < c.ttl {
+		o.Observe(c.last)
+		return nil
+	}
+	v, err := c.fetch(ctx)
+	if err != nil {
+		return err
+	}
+	c.last = v
+	c.fetchedAt = time.Now()
+	o.Observe(v)
+	return nil
+}
+
+func newCachedObservation(fetch func(context.Context) (int64, error)) ometric.Int64Callback {
+	g := &cachedObservation{ttl: time.Second, fetch: fetch}
+	return g.Observe
 }

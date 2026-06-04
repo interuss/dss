@@ -375,3 +375,36 @@ func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }
+
+func TestStoreCountSubscription(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	for _, r := range subscriptionsPool {
+		t.Run(r.name, func(t *testing.T) {
+			sub1, err := repo.InsertSubscription(ctx, r.input)
+			require.NoError(t, err)
+			require.NotNil(t, sub1)
+
+			//Cound should be one
+			count, err := repo.CountSubscriptions(ctx)
+			require.NoError(t, err)
+			require.Equal(t, count, int64(1))
+
+			sub4, err := repo.DeleteSubscription(ctx, sub1)
+			require.NoError(t, err)
+			require.NotNil(t, sub4)
+
+			//Cound should be zero
+			count, err = repo.CountSubscriptions(ctx)
+			require.NoError(t, err)
+			require.Equal(t, count, int64(0))
+		})
+	}
+}
