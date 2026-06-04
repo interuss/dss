@@ -384,3 +384,9 @@ func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time
 
 	return result, nil
 }
+
+func (s *repo) CountOperationalIntents(ctx context.Context) (int64, error) {
+	var count int64
+	err := s.q.QueryRow(ctx, "SELECT COUNT(*) FROM scd_operations").Scan(&count)
+	return count, err
+}

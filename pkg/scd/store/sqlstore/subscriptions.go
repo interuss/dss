@@ -451,3 +451,9 @@ func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time
 	return subscriptions, nil
 
 }
+
+func (c *repo) CountSubscriptions(ctx context.Context) (int64, error) {
+	var count int64
+	err := c.q.QueryRow(ctx, "SELECT COUNT(*) FROM scd_subscriptions").Scan(&count)
+	return count, err
+}

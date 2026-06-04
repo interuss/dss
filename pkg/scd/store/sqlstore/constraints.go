@@ -239,3 +239,9 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 
 	return constraints, nil
 }
+
+func (c *repo) CountConstraints(ctx context.Context) (int64, error) {
+	var count int64
+	err := c.q.QueryRow(ctx, "SELECT COUNT(*) FROM scd_constraints").Scan(&count)
+	return count, err
+}
