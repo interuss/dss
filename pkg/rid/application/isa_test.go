@@ -89,6 +89,11 @@ func (store *isaStore) ListExpiredISAs(ctx context.Context, writer string, thres
 	return make([]*ridmodels.IdentificationServiceArea, 0), nil
 }
 
+// Implements repos.ISA.CountISAs
+func (store *isaStore) CountISAs(ctx context.Context) (int64, error) {
+	return int64(len(store.isas)), nil
+}
+
 func TestISAUpdateIdxCells(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpISAApp(ctx, t)

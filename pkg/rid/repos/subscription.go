@@ -41,4 +41,7 @@ type Subscription interface {
 
 	// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
 	ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error)
+
+	// Count the number of existing subscriptions
+	CountSubscriptions(ctx context.Context) (int64, error)
 }

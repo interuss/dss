@@ -36,6 +36,8 @@ import (
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 )
 
@@ -117,6 +119,14 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
+	if *enableOpenTelemetry {
+		err = registerRIDMetrics(ctx, ridStore)
+
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Unable to setup metrics")
+		}
+	}
+
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
 			App:               app,
@@ -141,6 +151,42 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		DSSReportHandler:  &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
 		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 	}, nil
+}
+
+func registerRIDMetrics(ctx context.Context, store rids.Store) error {
+
+	meter := otel.Meter("rid")
+
+	_, err := meter.Int64ObservableUpDownCounter(
+		"rid_subscriptions_total",
+		metric.WithDescription("Number of rid subscriptions"),
+		metric.WithInt64Callback(newCachedObservation(func(ctx context.Context) (int64, error) {
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return 0, stacktrace.Propagate(err, "Unable to interact with store")
+			}
+			count, err := repo.CountSubscriptions(ctx)
+			return count, err
+		})),
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = meter.Int64ObservableUpDownCounter(
+		"rid_identification_service_areas_total",
+		metric.WithDescription("Number of rid ISAs"),
+		metric.WithInt64Callback(newCachedObservation(func(ctx context.Context) (int64, error) {
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return 0, stacktrace.Propagate(err, "Unable to interact with store")
+			}
+			count, err := repo.CountISAs(ctx)
+			return count, err
+		})),
+	)
+
+	return err
 }
 
 // RunHTTPServer starts the DSS HTTP server.

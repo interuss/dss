@@ -298,3 +298,9 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
             writer = $2`, subscriptionFields)
 	return r.process(ctx, query, threshold, writer)
 }
+
+func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.QueryRow(ctx, "SELECT COUNT(*) FROM subscriptions").Scan(&count)
+	return count, err
+}

@@ -162,6 +162,11 @@ func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, wr
 	return make([]*ridmodels.Subscription, 0), nil
 }
 
+// Implements repos.ISA.CountSubscriptions
+func (store *subscriptionStore) CountSubscriptions(ctx context.Context) (int64, error) {
+	return int64(len(store.subs)), nil
+}
+
 func TestBadOwner(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpSubApp(ctx, t)

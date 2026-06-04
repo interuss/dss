@@ -321,3 +321,39 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }
+
+func TestStoreCountISAs(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+	)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	// Insert the ISA.
+	copy := *serviceArea
+	isa, err := repo.InsertISA(ctx, &copy)
+	require.NoError(t, err)
+	require.NotNil(t, isa)
+
+	//Cound should be one
+	count, err := repo.CountISAs(ctx)
+	require.NoError(t, err)
+	require.Equal(t, count, int64(1))
+
+	// Delete the ISA.
+	// Ensure a fresh Get, then delete still updates the sub indexes
+	isa, err = repo.GetISA(ctx, isa.ID, false)
+	require.NoError(t, err)
+
+	serviceAreaOut, err := repo.DeleteISA(ctx, isa)
+	require.NoError(t, err)
+	require.Equal(t, isa, serviceAreaOut)
+
+	//Cound should be zero
+	count, err = repo.CountISAs(ctx)
+	require.NoError(t, err)
+	require.Equal(t, count, int64(0))
+}

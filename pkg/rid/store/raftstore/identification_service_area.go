@@ -34,3 +34,7 @@ func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.
 func (r *repo) ListExpiredISAs(_ context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredISAs not implemented for raftstore")
 }
+
+func (r *repo) CountISAs(_ context.Context) (int64, error) {
+	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "CountISAs not implemented for raftstore")
+}

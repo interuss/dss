@@ -239,3 +239,9 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
         LIMIT $3`, isaFields)
 	return r.fetchISAs(ctx, isasInCellsQuery, threshold, writer, dssmodels.MaxResultLimit)
 }
+
+func (r *repo) CountISAs(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.QueryRow(ctx, "SELECT COUNT(*) FROM identification_service_areas").Scan(&count)
+	return count, err
+}
