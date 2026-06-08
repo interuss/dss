@@ -33,6 +33,9 @@ type OperationalIntent interface {
 	// ListExpiredOperationalIntents lists all operational intents older than the threshold.
 	// Their age is determined by their end time, or by their update time if they do not have an end time.
 	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error)
+
+	// Count the number of existing operational intent
+	CountOperationalIntents(ctx context.Context) (int64, error)
 }
 
 // Subscription abstracts subscription-specific interactions with the backing repository.
@@ -64,6 +67,9 @@ type Subscription interface {
 	// ListExpiredSubscriptions lists all subscriptions older than the threshold.
 	// Their age is determined by their end time, or by their update time if they do not have an end time.
 	ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error)
+
+	// Count the number of existing subscriptions
+	CountSubscriptions(ctx context.Context) (int64, error)
 }
 
 type UssAvailability interface {
@@ -88,6 +94,9 @@ type Constraint interface {
 	// deleted subscription.  Returns nil and an error if the Constraint does
 	// not exist.
 	DeleteConstraint(ctx context.Context, id dssmodels.ID) error
+
+	// Count the number of existing constraint
+	CountConstraints(ctx context.Context) (int64, error)
 }
 
 // scd.repos.Repository aggregates all SCD-specific repo interfaces to perform SCD operations on

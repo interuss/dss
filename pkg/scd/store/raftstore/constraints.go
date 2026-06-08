@@ -24,3 +24,7 @@ func (r *repo) UpsertConstraint(_ context.Context, constraint *scdmodels.Constra
 func (r *repo) DeleteConstraint(_ context.Context, id dssmodels.ID) error {
 	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteConstraint not implemented for raftstore")
 }
+
+func (r *repo) CountConstraints(_ context.Context) (int64, error) {
+	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "CountConstraint not implemented for raftstore")
+}

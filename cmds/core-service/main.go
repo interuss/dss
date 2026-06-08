@@ -146,6 +146,14 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		return nil, err
 	}
 
+	if *enableOpenTelemetry {
+		err = registerSCDMetrics(ctx, scdStore)
+
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to setup metrics")
+		}
+	}
+
 	return &scd.Server{
 		Store:             scdStore,
 		DSSReportHandler:  &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
@@ -182,6 +190,56 @@ func registerRIDMetrics(ctx context.Context, store rids.Store) error {
 				return 0, stacktrace.Propagate(err, "Unable to interact with store")
 			}
 			count, err := repo.CountISAs(ctx)
+			return count, err
+		})),
+	)
+
+	return err
+}
+
+func registerSCDMetrics(ctx context.Context, store scds.Store) error {
+
+	meter := otel.Meter("scd")
+
+	_, err := meter.Int64ObservableUpDownCounter(
+		"scd_subscriptions_total",
+		metric.WithDescription("Number of scd subscriptions"),
+		metric.WithInt64Callback(newCachedObservation(func(ctx context.Context) (int64, error) {
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return 0, stacktrace.Propagate(err, "Unable to interact with store")
+			}
+			count, err := repo.CountSubscriptions(ctx)
+			return count, err
+		})),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = meter.Int64ObservableUpDownCounter(
+		"scd_operational_intents_total",
+		metric.WithDescription("Number of scd operational intents"),
+		metric.WithInt64Callback(newCachedObservation(func(ctx context.Context) (int64, error) {
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return 0, stacktrace.Propagate(err, "Unable to interact with store")
+			}
+			count, err := repo.CountOperationalIntents(ctx)
+			return count, err
+		})),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = meter.Int64ObservableUpDownCounter(
+		"scd_constraints_total",
+		metric.WithDescription("Number of scd constraints"),
+		metric.WithInt64Callback(newCachedObservation(func(ctx context.Context) (int64, error) {
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return 0, stacktrace.Propagate(err, "Unable to interact with store")
+			}
+			count, err := repo.CountConstraints(ctx)
 			return count, err
 		})),
 	)
