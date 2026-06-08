@@ -23,7 +23,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 	case params.SQLStoreType:
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
-		return auxraftstore.Init(logger)
+		return auxraftstore.Init(ctx, logger)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
 	}

@@ -135,3 +135,6 @@ go
 
 # terraform
 .terraform*
+
+# raft
+raft_data/
