@@ -82,7 +82,6 @@ components:
           type: string
           format: date-time
           example: '1985-04-12T23:45:00Z'
-          default: ''
       required:
       - timestamp
       - source
