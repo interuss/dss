@@ -46,7 +46,7 @@ var (
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	allowHTTPBaseUrls = flag.Bool("allow_http_base_urls", false, "Enables http scheme for Strategic Conflict Detection API")
 	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
-	legacyTimeout     = flag.Duration("server timeout", 0, "Default timeout for server calls (legacy)")
+	legacyTimeout     = flag.Duration("server timeout", 10*time.Second, "DEPRECATED (replaced by server_timeout) Default timeout for server calls")
 	timeout           = flag.Duration("server_timeout", 10*time.Second, "Default timeout for server calls")
 	locality          = flag.String("locality", "", "self-identification string of this DSS instance")
 	publicEndpoint    = flag.String("public_endpoint", "", "Public endpoint to access this DSS instance. Must be an absolute URI")
@@ -333,12 +333,6 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
-	if *legacyTimeout != 0 {
-		*timeout = *legacyTimeout
-
-		logger.Warn("'server timeout' has been renamed to 'server_timeout'")
-	}
-
 	// the middlewares are wrapped and, therefore, executed in the opposite order
 	handler := healthyEndpointMiddleware(logger, &multiRouter)
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
@@ -433,6 +427,7 @@ func SetDeprecatingHttpFlag(logger *zap.Logger, newFlag **bool, deprecatedFlag *
 
 func main() {
 	flag.Parse()
+
 	if err := logging.Configure(*logLevel, *logFormat); err != nil {
 		panic(fmt.Sprintf("Failed to configure logging: %s", err.Error()))
 	}
@@ -442,6 +437,13 @@ func main() {
 		logger      = logging.WithValuesFromContext(ctx, logging.Logger)
 	)
 	defer cancel()
+
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "server timeout" {
+			*timeout = *legacyTimeout
+			logger.Warn("'server timeout' has been renamed to 'server_timeout'")
+		}
+	})
 
 	SetDeprecatingHttpFlag(logger, &allowHTTPBaseUrls, &enableHTTP)
 
