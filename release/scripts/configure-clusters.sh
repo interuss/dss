@@ -61,9 +61,9 @@ for ds in "${datastores[@]}"; do
     case "$ds" in
         ybdb)
             section "Yugabyte certs ($aws_name ↔ $goo_name)"
-            ( cd "$aws_ws" && ./dss-certs.sh init ) >"$aws_log" 2>&1
+            ( cd "$aws_ws" && ./dss-certs.sh init || true ) >"$aws_log" 2>&1
             ok "init $aws_name"
-            ( cd "$goo_ws" && ./dss-certs.sh init ) >"$goo_log" 2>&1
+            ( cd "$goo_ws" && ./dss-certs.sh init || true ) >"$goo_log" 2>&1
             ok "init $goo_name"
 
             ( cd "$goo_ws" && ./dss-certs.sh get-ca ) \
