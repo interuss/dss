@@ -335,9 +335,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// the middlewares are wrapped and, therefore, executed in the opposite order
 	handler := healthyEndpointMiddleware(logger, &multiRouter)
-	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 	handler = authorizer.TokenMiddleware(handler)
-	handler = timeoutMiddleware(*timeout, handler)
+	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
+	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 
 	if *enableOpenTelemetry {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
@@ -401,18 +401,6 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
-	})
-}
-
-func timeoutMiddleware(timeout time.Duration, next http.Handler) http.Handler {
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), timeout)
-		defer cancel()
-
-		r = r.WithContext(ctx)
-
-		next.ServeHTTP(w, r)
 	})
 }
 

@@ -113,6 +113,7 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			zap.String("peer_address", r.RemoteAddr),
 			zap.Time("start_time", start),
 			zap.Duration("duration", time.Since(start)),
+			zap.NamedError("ctx_err", r.Context().Err()),
 		)
 	})
 }
