@@ -23,28 +23,42 @@ import (
 
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
-func setupOTelSDK(ctx context.Context, metricsListeningAddress string) (func(context.Context) error, error) {
+func setupOTelSDK(ctx context.Context, enableMetrics bool, enableTracing bool, metricsListeningAddress string) (func(context.Context) error, error) {
 
 	// Set up propagator.
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
 
-	// Set up trace provider.
-	tracerProvider, err := newTracerProvider(ctx)
-	if err != nil {
-		return nil, err
-	}
-	otel.SetTracerProvider(tracerProvider)
+	var tracerProvider *trace.TracerProvider
+	var meterProvider *metric.MeterProvider
 
-	// Set up metrics exporter
-	meterProvider, err := newMeterProvider(ctx, metricsListeningAddress)
-	if err != nil {
-		return nil, err
+	if enableTracing {
+		// Set up trace provider.
+		tracerProvider, err := newTracerProvider(ctx)
+		if err != nil {
+			return nil, err
+		}
+		otel.SetTracerProvider(tracerProvider)
 	}
-	otel.SetMeterProvider(meterProvider)
+
+	if enableMetrics {
+		// Set up metrics exporter
+		meterProvider, err := newMeterProvider(ctx, metricsListeningAddress)
+		if err != nil {
+			return nil, err
+		}
+		otel.SetMeterProvider(meterProvider)
+	}
 
 	shutdown := func(ctx context.Context) error {
-		return errors.Join(tracerProvider.Shutdown(ctx), meterProvider.Shutdown(ctx))
+		var err error
+		if tracerProvider != nil {
+			err = errors.Join(err, tracerProvider.Shutdown(ctx))
+		}
+		if meterProvider != nil {
+			err = errors.Join(err, meterProvider.Shutdown(ctx))
+		}
+		return err
 	}
 	return shutdown, nil
 }

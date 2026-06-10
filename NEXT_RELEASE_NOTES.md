@@ -46,6 +46,8 @@ The release notes should contain at least the following sections:
 
 ## Optional migration tasks
 
+* `enable_opentelemetry` has been splited into two flags: `enable_metrics` and `enable_tracing`
+
 ## Important information
 
 * Fixed a bug where the `evict` command ignored entries without a locality. If your DSS instance does not have a locality set, the next `evict` run may be slow while it processes the backlog of old entries.
