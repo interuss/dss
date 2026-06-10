@@ -897,15 +897,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 			}
 		}
 
-		// Construct the new OperationalIntent
-		op := validParams.toOIR(manager, attachedSub, version, pastOVNs)
-
-		// Upsert the OperationalIntent
-		op, err = r.UpsertOperationalIntent(ctx, op)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
-		}
-
 		// Check if the previously attached subscription should be removed
 		if removePreviousImplicitSubscription {
 			err = r.DeleteSubscription(ctx, previousSub.ID)
@@ -923,6 +914,15 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
+		}
+
+		// Construct the new OperationalIntent
+		op := validParams.toOIR(manager, attachedSub, version, pastOVNs)
+
+		// Upsert the OperationalIntent
+		op, err = r.UpsertOperationalIntent(ctx, op)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
 		}
 
 		// Return response to client

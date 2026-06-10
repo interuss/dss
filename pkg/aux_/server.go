@@ -17,6 +17,7 @@ type Server struct {
 	Store         auxstore.Store
 	Locality      string
 	ScdGlobalLock bool
+	ScdHashLock   bool
 }
 
 // GetVersion returns information about the version of the server.
