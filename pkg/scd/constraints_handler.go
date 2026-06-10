@@ -57,8 +57,15 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 
-		// Find Subscriptions that may overlap the Constraint's Volume4D
-		allsubs, err := r.SearchSubscriptions(ctx, &dssmodels.Volume4D{
+		// Delete Constraint in repo
+		err = r.DeleteConstraint(ctx, id)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to delete Constraint from repo")
+		}
+
+		// Find the Subscriptions interested in Constraints and increment their
+		// notification indices.
+		subs, err := r.IncrementNotificationIndicesForConstraints(ctx, &dssmodels.Volume4D{
 			StartTime: old.StartTime,
 			EndTime:   old.EndTime,
 			SpatialVolume: &dssmodels.Volume3D{
@@ -68,26 +75,6 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 					return old.Cells, nil
 				}),
 			}})
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to search Subscriptions in repo")
-		}
-
-		// Limit Subscription notifications to only those interested in Constraints
-		subs := repos.Subscriptions{}
-		for _, sub := range allsubs {
-			if sub.NotifyForConstraints {
-				subs = append(subs, sub)
-			}
-		}
-
-		// Delete Constraint in repo
-		err = r.DeleteConstraint(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to delete Constraint from repo")
-		}
-
-		// Increment notification indices for relevant Subscriptions
-		err = subs.IncrementNotificationIndices(ctx, r)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to increment notification indices")
 		}
@@ -303,22 +290,9 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 			return err
 		}
 
-		// Find Subscriptions that may need to be notified
-		allsubs, err := r.SearchSubscriptions(ctx, notifyVol4)
-		if err != nil {
-			return err
-		}
-
-		// Limit Subscription notifications to only those interested in Constraints
-		subs := repos.Subscriptions{}
-		for _, sub := range allsubs {
-			if sub.NotifyForConstraints {
-				subs = append(subs, sub)
-			}
-		}
-
-		// Increment notification indices for relevant Subscriptions
-		err = subs.IncrementNotificationIndices(ctx, r)
+		// Find the Subscriptions interested in Constraints and increment their
+		// notification indices.
+		subs, err := r.IncrementNotificationIndicesForConstraints(ctx, notifyVol4)
 		if err != nil {
 			return err
 		}
