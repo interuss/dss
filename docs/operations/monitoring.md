@@ -154,7 +154,7 @@ Point any Prometheus server to the endpoint (by default on port 8079).
 
 You can use the `--metrics_addr` flag to change the listening port and address.
 
-No dashboard has been created yet, but one is planned.
+A dashboard is automatically deployed by Helm and Tanka. If you use you own grafana instance, it can be found [there](https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/dss.json).
 
 You can use the `enable_dss_metrics` option in Terraform, `dss.conf.enableDssMetrics` in Helm, or `enableDssMetrics` in Tanka to activate it when using these.
 This will also automatically enable collection by Prometheus if used.
