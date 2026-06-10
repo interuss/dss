@@ -18,6 +18,8 @@ This can be enabled via:
 - The `monitoring.enabled` option in helm
 - By using tanka, which always enables it
 
+By default, DSS metrics are not enabled; see below, OpenTelemetry section, to activate them.
+
 ### Grafana access
 
 To access the Grafana interface, first ensure that the appropriate
@@ -137,22 +139,29 @@ You can enable it on the DSS server to get:
 * Tracing for all queries
 * A Prometheus endpoint with some metrics
 
-Currently, this setting is not yet available in Terraform, Helm or Tanka.
+Currently, thoses settings are not yet available in Terraform, Helm or Tanka.
 
 !!! warning
 
-    By default, when OpenTelemetry is enabled, the metrics service listens on all addresses.
+    By default, when metrics are enabled, the metrics service listens on all addresses.
 
 
 ### Metrics
+
+Use flag `--enable_metrics` to enable metrics.
 
 Point any Prometheus server to the endpoint (by default on port 8079).
 
 You can use the `--metrics_addr` flag to change the listening port and address.
 
-No dashboard has been created yet, but one is planned.
+A dashboard is automatically deployed by Helm and Tanka. If you use you own grafana instance, it can be found [there](https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/dss.json).
+
+You can use the `enable_dss_metrics` option in Terraform, `dss.conf.enableDssMetrics` in Helm, or `enableDssMetrics` in Tanka to activate it when using these.
+This will also automatically enable collection by Prometheus if used.
 
 ### Tracing
+
+Use flag `--enable_tracing` to enable tracing.
 
 Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include [Jaeger](https://www.jaegertracing.io/), [OpenObserve](https://github.com/openobserve/openobserve), [Grafana Tempo](https://grafana.com/docs/tempo/latest/), and [SigNoz](https://github.com/SigNoz/signoz). Multiple SaaS solutions are also available (including some of the previously mentioned tools).
 
@@ -202,6 +211,6 @@ index f09bda59..8c96cf3e 100755
    -locality local_dev \
 -  -public_endpoint http://127.0.0.1:8082
 +  -public_endpoint http://127.0.0.1:8082 \
-+  -enable_opentelemetry
++  -enable_tracing
  fi
 ```

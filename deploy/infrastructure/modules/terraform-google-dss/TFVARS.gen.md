@@ -127,6 +127,12 @@ Use <code>latest</code> to use the latest schema version.</p>
 <p>Example: <code>3.1.0</code></p>
 <br/>Default value: <code>"latest"</code></td>
             </tr><tr>
+                <td>enable_dss_metrics (<code>bool</code>)</td>
+                <td><p>Enable DSS's prometheus metric.</p>
+<p>Require DSS version to be at least 0.23.0.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>enable_monitoring (<code>bool</code>)</td>
                 <td><p>Set to true to enable monitoring stack with prometheus / grafana.</p>
 <p>Example: <code>true</code></p>

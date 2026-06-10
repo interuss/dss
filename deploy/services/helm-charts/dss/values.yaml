@@ -225,6 +225,41 @@ prometheus:
             target_label: __name__
           kubernetes_sd_configs:
           - role: endpoints
+        - job_name: K8s-Pods
+          kubernetes_sd_configs:
+          - role: pod
+          tls_config:
+            insecure_skip_verify: true
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            separator: ;
+            regex: "true"
+            replacement: $1
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            separator: ;
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: $1
+            action: replace
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            separator: ;
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            target_label: __address__
+            replacement: $1:$2
+            action: replace
+          - source_labels: [__meta_kubernetes_namespace]
+            separator: ;
+            regex: (.*)
+            target_label: kubernetes_namespace
+            replacement: $1
+            action: replace
+          - source_labels: [__meta_kubernetes_pod_name]
+            separator: ;
+            regex: (.*)
+            target_label: pod_name
+            replacement: $1
+            action: replace
 
     recording_rules.yml:
       "groups":
@@ -318,6 +353,9 @@ prometheus:
             "record": "raft_process_commandcommit_latency:rate1m:quantile_99"
 
 grafana:
+
+  image:
+    tag: "13.0-ubuntu-slim"
 
   datasources:
     datasources.yaml:
