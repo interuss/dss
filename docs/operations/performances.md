@@ -11,7 +11,7 @@ See the detailed [section about cleanup](cleanup.md).
 !!! danger
      All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.
 
-     You can use the `/aux/v1/configuration/scd_lock_mode` endpoint to retrive the current value for a specifc DSS instance.
+     You can use the `/aux/v1/configuration/scd_lock_mode` endpoint to retrive the current values of locks for a specifc DSS instance.
 
 It has been reported in issue [#1311](https://github.com/interuss/dss/issues/1311) that creating a lot of overlapping operational intents may increase the datastore load in a way that creates timeouts.
 
@@ -34,6 +34,17 @@ All graphs have been generated with the [loadtest present in the monitoring repo
 
 ![](../assets/perfs_scd_lock_notoverlapping.png)
 *Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.*
+
+## The SCD hash lock option
+
+!!! danger
+     All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.
+
+     You can use the `/aux/v1/configuration/scd_lock_mode` endpoint to retrive the current values of locks for a specifc DSS instance.
+
+Similar to the previous option, but use lock based on hashed cells (with 65k locks).
+
+This should be better than global lock, as long as cells used don't colide and limit number of entries in the database.
 
 ## SCD lock diagnostics logs
 

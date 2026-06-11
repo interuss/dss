@@ -101,6 +101,9 @@ components:
         global_lock:
           description: The value of the 'enable_scd_global_lock' option for this DSS instance
           type: boolean
+        hash_lock:
+          description: The value of the 'enable_scd_hash_lock' option for this DSS instance
+          type: boolean
 
 paths:
   /aux/v1/version:
@@ -332,7 +335,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /aux/v1/configuration/scd_lock_mode:
     get:
-      summary: Return the value of the 'enable_scd_global_lock' lock option. May be used to ensure all participants in a pool are using the same value.
+      summary: Return the value of the 'enable_scd_global_lock' and 'enable_scd_hash_lock' lock option. May be used to ensure all participants in a pool are using the same values.
       operationId: getScdLockMode
       tags: [ dss ]
       security:

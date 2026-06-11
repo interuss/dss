@@ -54,7 +54,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	scdStore, err := scds.Init(ctx, logger, false, false)
+	scdStore, err := scds.Init(ctx, logger, false, false, false)
 	if err != nil {
 		return err
 	}
