@@ -55,8 +55,10 @@ var (
 	logLevel                = flag.String("log_level", logging.DefaultLevel.String(), "The log level")
 	dumpRequests            = flag.Bool("dump_requests", false, "Log full HTTP request and response (note: will dump sensitive information to logs; intended only for debugging and/or development)")
 	profServiceName         = flag.String("gcp_prof_service_name", "", "Service name for the Go profiler")
-	enableOpenTelemetry     = flag.Bool("enable_opentelemetry", false, "Enable OpenTelemetry, including traces and activation metric endpoint")
-	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the OpenTelemetry prometheus service binds to and listens on for incoming connections")
+	enableOpenTelemetry     = flag.Bool("enable_opentelemetry", false, "DEPRECATED (replaced by enable_tracing) Enable tracing")
+	enableMetrics           = flag.Bool("enable_metrics", false, "Enable metric endpoint")
+	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
+	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
 
 	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -120,7 +122,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
-	if *enableOpenTelemetry {
+	if *enableMetrics {
 		err = registerRIDMetrics(ctx, ridStore)
 
 		if err != nil {
@@ -147,7 +149,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 		return nil, err
 	}
 
-	if *enableOpenTelemetry {
+	if *enableMetrics {
 		err = registerSCDMetrics(ctx, scdStore)
 
 		if err != nil {
@@ -339,7 +341,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 
-	if *enableOpenTelemetry {
+	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
 		handler = otelhttp.NewHandler(handler, "http")
 	}
@@ -435,6 +437,11 @@ func main() {
 
 	SetDeprecatingHttpFlag(logger, &allowHTTPBaseUrls, &enableHTTP)
 
+	if *enableOpenTelemetry {
+		logger.Warn("'enable_opentelemetry' has been renamed to 'enable_tracing")
+		*enableTracing = true
+	}
+
 	if *profServiceName != "" {
 		if err := profiler.Start(profiler.Config{Service: *profServiceName}); err != nil {
 			logger.Panic("Failed to start the profiler ", zap.Error(err))
@@ -442,8 +449,8 @@ func main() {
 	}
 
 	// Set up OpenTelemetry.
-	if *enableOpenTelemetry {
-		otelShutdown, err := setupOTelSDK(ctx, *metricsListeningAddress)
+	if *enableMetrics || *enableTracing {
+		otelShutdown, err := setupOTelSDK(ctx, *enableMetrics, *enableTracing, *metricsListeningAddress)
 		if err != nil {
 			logger.Panic("Failed to initialize OpenTelemetry", zap.Error(err))
 		}
