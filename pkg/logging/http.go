@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"regexp"
 	"strings"
@@ -112,8 +113,8 @@ func HTTPMiddleware(logger *zap.Logger, dump bool, handler http.Handler) http.Ha
 			zap.String("resp_status_text", http.StatusText(trw.statusCode)),
 			zap.String("peer_address", r.RemoteAddr),
 			zap.Time("start_time", start),
-			zap.Duration("duration", time.Since(start)),
 			zap.NamedError("ctx_err", r.Context().Err()),
+			zap.Float64("duration_ms", math.Round(float64(time.Since(start).Microseconds())/10)/100),
 		)
 	})
 }
