@@ -319,6 +319,9 @@ prometheus:
 
 grafana:
 
+  image:
+    tag: "13.0-ubuntu-slim"
+
   datasources:
     datasources.yaml:
       apiVersion: 1
