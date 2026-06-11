@@ -46,7 +46,7 @@ The release notes should contain at least the following sections:
 
 ## Optional migration tasks
 
-* `enable_opentelemetry` has been splited into two flags: `enable_metrics` and `enable_tracing`
+* `enable_opentelemetry` has been split into two flags: `enable_metrics` and `enable_tracing`
 
 ## Important information
 
