@@ -293,50 +293,67 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	return subscriptions, nil
 }
 
-// Implements scd.repos.Subscription.IncrementNotificationIndices
-func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
-	var updateQuery = `
-			UPDATE scd_subscriptions
-			SET notification_index = notification_index + 1
-			WHERE id = ANY($1)
-			RETURNING id, notification_index`
+// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in v4d that
+// want operational intent notifications, increments their notification index and returns
+// them with the new index..
+func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	var query = fmt.Sprintf(`
+		UPDATE
+			scd_subscriptions
+		SET
+			notification_index = notification_index + 1
+		WHERE
+			cells && $1
+		AND
+			COALESCE(starts_at <= $3, true)
+		AND
+			COALESCE(ends_at >= $2, true)
+		AND
+			notify_for_operations
+		RETURNING
+			%s`, subscriptionFieldsWithoutPrefix)
 
-	ids := make([]string, len(subscriptionIds))
-	for i, id := range subscriptionIds {
-		ids[i] = id.String()
-	}
-
-	rows, err := c.q.Query(ctx, updateQuery, ids)
+	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", updateQuery)
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
 	}
-	defer rows.Close()
+	if len(cells) == 0 {
+		return nil, nil
+	}
+	return c.fetchSubscriptions(ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
 
-	indices := make(map[dssmodels.ID]int)
-	for rows.Next() {
-		var id string
-		var notificationIndex int
-		err := rows.Scan(&id, &notificationIndex)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error scanning notification index row")
-		}
-		indices[dssmodels.ID(id)] = notificationIndex
+}
+
+// IncrementNotificationIndicesForConstraints finds the Subscriptions in v4d that want
+// constraint notifications, increments their notification index and returns them with the
+// new index.
+func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	var query = fmt.Sprintf(`
+		UPDATE
+			scd_subscriptions
+		SET
+			notification_index = notification_index + 1
+		WHERE
+			cells && $1
+		AND
+			COALESCE(starts_at <= $3, true)
+		AND
+			COALESCE(ends_at >= $2, true)
+		AND
+			notify_for_constraints
+		RETURNING
+			%s`, subscriptionFieldsWithoutPrefix)
+
+	cells, err := v4d.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
 	}
-	if err := rows.Err(); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in rows query result")
+	if len(cells) == 0 {
+		return nil, nil
 	}
 
-	if len(indices) != len(subscriptionIds) {
-		return nil, stacktrace.NewError(
-			"Expected %d notification_index results when incrementing but got %d instead",
-			len(subscriptionIds), len(indices))
-	}
-
-	orderedIndices := make([]int, 0, len(indices))
-	for _, id := range subscriptionIds {
-		orderedIndices = append(orderedIndices, indices[id])
-	}
-	return orderedIndices, nil
+	return c.fetchSubscriptions(
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
