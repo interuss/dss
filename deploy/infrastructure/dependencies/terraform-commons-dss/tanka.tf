@@ -9,6 +9,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CLUSTER_CONTEXT                      = var.kubernetes_context_name
     VAR_ENABLE_SCD                           = var.enable_scd
     VAR_ENABLE_SCD_GLOBAL_LOCK               = var.enable_scd_global_lock
+    VAR_ENABLE_DSS_METRICS                   = var.enable_dss_metrics
     VAR_DB_HOSTNAME_SUFFIX                   = var.db_hostname_suffix
     VAR_LOCALITY                             = var.locality
     VAR_DATASTORE                            = var.datastore_type
