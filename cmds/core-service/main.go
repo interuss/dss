@@ -67,6 +67,7 @@ var (
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 
 	scdGlobalLock = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+	scdHashLock   = flag.Bool("enable_scd_hash_lock", false, "Experimental: Lock based on hashed cells id when working with SCD subscriptions. Better performances than global lock.")
 )
 
 func createKeyResolver() (auth.KeyResolver, error) {
@@ -90,7 +91,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context, locality string, publicEndpoint string, scdGlobalLock bool, logger *zap.Logger) (*aux.Server, error) {
+func createAuxServer(ctx context.Context, locality string, publicEndpoint string, scdGlobalLock bool, scdHashLock bool, logger *zap.Logger) (*aux.Server, error) {
 	auxStore, err := auxs.Init(ctx, logger, true)
 	if err != nil {
 		return nil, err
@@ -107,7 +108,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock}, nil
+	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock, ScdHashLock: scdHashLock}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
@@ -144,7 +145,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 
-	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock)
+	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock, *scdHashLock)
 	if err != nil {
 		return nil, err
 	}
@@ -257,6 +258,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	logger.Info("config", zap.Bool("scdGlobalLock", *scdGlobalLock))
+	logger.Info("config", zap.Bool("scdHashLock", *scdHashLock))
 	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {
 		logger.Warn("The raft datastore is experimental and its implementation is in progress. See issue for more details: https://github.com/interuss/dss/issues/1463")
@@ -281,7 +283,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	defer ctxCancel()
 
 	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, *scdHashLock, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}

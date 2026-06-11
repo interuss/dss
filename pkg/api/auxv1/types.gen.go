@@ -56,4 +56,7 @@ type CAsResponse struct {
 type SCDLockModeResponse struct {
 	// The value of the 'enable_scd_global_lock' option for this DSS instance
 	GlobalLock *bool `json:"global_lock,omitempty"`
+
+	// The value of the 'enable_scd_hash_lock' option for this DSS instance
+	HashLock *bool `json:"hash_lock,omitempty"`
 }

@@ -225,6 +225,6 @@ type Implementation interface {
 	// Current certificates of certificate authorities (CAs) that signed the node certificates for this DSS instance. May return more that one certificate (e.g. for rotations).  Other DSS instances in the pool should accept node certificates signed by these CAs.
 	GetInstanceCAs(ctx context.Context, req *GetInstanceCAsRequest) GetInstanceCAsResponseSet
 
-	// Return the value of the 'enable_scd_global_lock' lock option. May be used to ensure all participants in a pool are using the same value.
+	// Return the value of the 'enable_scd_global_lock' and 'enable_scd_hash_lock' lock option. May be used to ensure all participants in a pool are using the same values.
 	GetScdLockMode(ctx context.Context, req *GetScdLockModeRequest) GetScdLockModeResponseSet
 }

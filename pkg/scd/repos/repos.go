@@ -56,10 +56,15 @@ type Subscription interface {
 	// exist.
 	DeleteSubscription(ctx context.Context, id dssmodels.ID) error
 
-	// IncrementNotificationIndices increments the notification index of each
-	// specified Subscription and returns the resulting corresponding
-	// notification indices.
-	IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error)
+	// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in
+	// v4d that want operational intent notifications, increments their notification
+	// index and returns them with the new index.
+	IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error)
+
+	// IncrementNotificationIndicesForConstraints finds the Subscriptions in
+	// v4d that want constraint notifications, increments their notification
+	// index and returns them with the new index.
+	IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error)
 
 	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells and, optionnaly, specific subscriptions via their IDs
 	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error
@@ -107,22 +112,4 @@ type Repository interface {
 	Subscription
 	Constraint
 	UssAvailability
-}
-
-// IncrementNotificationIndices is a utility function that extracts the IDs from
-// a list of Subscriptions before calling the underlying repo function, and then
-// updates the Subscription objects with the new notification indices.
-func (subs Subscriptions) IncrementNotificationIndices(ctx context.Context, r Repository) error {
-	subIds := make([]dssmodels.ID, len(subs))
-	for i, sub := range subs {
-		subIds[i] = sub.ID
-	}
-	newIndices, err := r.IncrementNotificationIndices(ctx, subIds)
-	if err != nil {
-		return err
-	}
-	for i, newIndex := range newIndices {
-		subs[i].NotificationIndex = newIndex
-	}
-	return nil
 }
