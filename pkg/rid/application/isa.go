@@ -78,6 +78,12 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 				"ISA owned by %s, but %s attempted to delete", old.Owner, owner)
 		}
 
+		err = repo.LockSubscriptionsOnCells(ctx, old.Cells)
+
+		if err != nil {
+			return stacktrace.Propagate(err, "Error locking cells")
+		}
+
 		ret, err = repo.DeleteISA(ctx, old)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error deleting ISA")
@@ -105,6 +111,15 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	)
 	// The following will automatically retry TXN retry errors.
 	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+
+		var err error
+
+		err = repo.LockSubscriptionsOnCells(ctx, isa.Cells)
+
+		if err != nil {
+			return stacktrace.Propagate(err, "Error locking cells")
+		}
+
 		// ensure it doesn't exist yet
 		old, err := repo.GetISA(ctx, isa.ID, false)
 		if err != nil {
@@ -139,6 +154,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 	)
 	// The following will automatically retry TXN retry errors.
 	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+
 		var err error
 
 		old, err := repo.GetISA(ctx, isa.ID, true)
@@ -159,15 +175,24 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 			return stacktrace.Propagate(err, "Error adjusting time range")
 		}
 
+		// TODO steeling, we should change this to a Custom type, to obfuscate
+		// some of these metrics and prevent us from doing the wrong thing.
+		cells := s2.CellUnionFromUnion(old.Cells, isa.Cells)
+		geo.Levelify(&cells)
+
+		// NB: There is a tradeoff between locking first without old cells or now.
+		// Best option hasn't been valided, this just follow SCD logic that does the same
+		err = repo.LockSubscriptionsOnCells(ctx, cells)
+
+		if err != nil {
+			return stacktrace.Propagate(err, "Error locking cells")
+		}
+
 		ret, err = repo.UpdateISA(ctx, isa)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error updating ISA")
 		}
 
-		// TODO steeling, we should change this to a Custom type, to obfuscate
-		// some of these metrics and prevent us from doing the wrong thing.
-		cells := s2.CellUnionFromUnion(old.Cells, isa.Cells)
-		geo.Levelify(&cells)
 		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
 		// they are both modifying the db. Insert a susbcription alone does
 		// not do this, so that does not need to use a txn (in subscription.go).
