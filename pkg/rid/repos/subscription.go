@@ -44,4 +44,7 @@ type Subscription interface {
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)
+
+	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells
+	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error
 }

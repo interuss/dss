@@ -187,3 +187,8 @@ func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, thresh
 func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {
 	return int64(len(r.state.Subscriptions)), nil
 }
+
+func (r *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
+	// Noop on memstore
+	return nil
+}
