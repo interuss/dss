@@ -6,10 +6,12 @@ import (
 	"time"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
+	"go.uber.org/zap"
 
 	"github.com/golang/geo/s2"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -18,6 +20,8 @@ import (
 const (
 	subscriptionFields       = "id, owner, url, notification_index, cells, starts_at, ends_at, writer, updated_at"
 	updateSubscriptionFields = "id, url, notification_index, cells, starts_at, ends_at, writer, updated_at"
+	// This threshold keep lock diagnostics low-noise in production while still surfacing likely bottlenecks.
+	lockQuerySlowThreshold = 4 * time.Second
 )
 
 // process a query that should return one or many subscriptions.
@@ -303,4 +307,44 @@ func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.QueryRow(ctx, "SELECT COUNT(*) FROM subscriptions").Scan(&count)
 	return count, err
+}
+
+func (r *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
+	logger := logging.WithValuesFromContext(ctx, logging.Logger)
+
+	const query = `
+        SELECT
+            id
+        FROM
+            subscriptions
+        WHERE
+			(
+				cells && $1
+				AND ends_at >= $2
+			)
+        FOR UPDATE
+    `
+
+	start := time.Now()
+	_, err := r.Exec(ctx, query, dssql.CellUnionToCellIds(cells), r.clock.Now())
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.Warn("RID subscription lock query failed",
+			zap.Duration("duration", duration),
+			zap.Int("cell_count", len(cells)),
+			zap.Error(err),
+		)
+		return stacktrace.Propagate(err, "Error in query: %s", query)
+	}
+
+	if duration >= lockQuerySlowThreshold {
+		logger.Warn("Expensive RID lock detected",
+			zap.Bool("global_lock", false),
+			zap.Duration("duration", duration),
+			zap.Int("cell_count", len(cells)),
+		)
+	}
+
+	return nil
 }
