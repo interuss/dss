@@ -1,6 +1,6 @@
 nav:
   - "Getting Started": index.md
-  - "Architecture": architecture.md
-  - "Deploy a DSS instance to": infrastructure/
+  - "Deploy a DSS instance": deployment/
   - "Operate a DSS instance": operations/
-  - "Deployment checklist": deployment_checklist.md
+  - "Decommission a DSS instance": decommissioning/
+  - "Background": background/

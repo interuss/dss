@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Some of these [tools](../infrastructure/index.md#prerequisites) are required to interact with monitoring services.
+Some of these [tools](../deployment/services/index.md#prerequisites) are required to interact with monitoring services.
 
 ## Grafana / Prometheus stack
 

@@ -1,0 +1,9 @@
+TO BE CONVERTED TO ISSUE TICKETS AND REMOVED BEFORE MERGING THIS BRANCH
+
+* Ensure deployment/pooling instructions are accurate, especially regarding the expected working directory when calling make_certs.py
+* When linking to the repository, ensure repo version matches documentation version (e.g., 0.22.0 tag)
+* Ensure VAR_* references outside the manual deployment instructions are defined for the terraform approach or harmonized
+* In Minikube documentation, replace `dss-local-cluster` with `${cluster_name}` or similar and have users export/set that once initially
+* Ensure Minikube documentation describes how to accomplish pooling
+* Actually identify which tools are needed in operations/index.md rather than "some of these tools" -- the purpose of this statement is procedural to ensure ops personnel have the right tools installed, so we should identify which tools those are rather than having them guess or figure it out themselves
+* Add/migrate helm documentation if that will be an officially-supported way to deploy services
