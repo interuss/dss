@@ -17,11 +17,11 @@ type EntryCommit struct {
 }
 
 type Proposal struct {
-	ID          string    `json:"id"`
-	NodeID      uint64    `json:"node_id"`
-	Timestamp   time.Time `json:"timestamp"`
-	RequestType string    `json:"request_type"`
-	Value       []byte    `json:"value"`
+	ID          string      `json:"id"`
+	NodeID      uint64      `json:"node_id"`
+	Timestamp   time.Time   `json:"timestamp"`
+	RequestType RequestType `json:"request_type"`
+	Value       []byte      `json:"value"`
 	// ReadOnly proposals do not modify the state machine and,
 	// therefore, do not need to be applied by nodes who did not initiate them.
 	// TODO: This is a temporary solution. In the future, we will use ReadIndex
@@ -29,7 +29,7 @@ type Proposal struct {
 	ReadOnly bool `json:"read_only"`
 }
 
-func (c *Consensus) newProposal(ctx context.Context, requestType string, value []byte, readOnly bool) Proposal {
+func (c *Consensus) newProposal(ctx context.Context, requestType RequestType, value []byte, readOnly bool) Proposal {
 	timestamp := timestamp.MustGetRequestTimestamp(ctx)
 
 	return Proposal{

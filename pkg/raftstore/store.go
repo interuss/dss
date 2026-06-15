@@ -76,7 +76,7 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 	}
-	return s.Consensus.HandleClientRequest(ctx, request.OperationID(), payload, handler.IsReadOnly)
+	return s.Consensus.HandleClientRequest(ctx, consensus.RequestType(request.OperationID()), payload, handler.IsReadOnly)
 }
 
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.

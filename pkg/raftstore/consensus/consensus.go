@@ -132,8 +132,10 @@ func (c *Consensus) Stop(ctx context.Context) {
 	})
 }
 
+type RequestType string
+
 // HandleClientRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
-func (c *Consensus) HandleClientRequest(ctx context.Context, requestType string, value []byte, readOnly bool) (any, error) {
+func (c *Consensus) HandleClientRequest(ctx context.Context, requestType RequestType, value []byte, readOnly bool) (any, error) {
 	proposal := c.newProposal(ctx, requestType, value, readOnly)
 	buf, err := json.Marshal(proposal)
 	if err != nil {

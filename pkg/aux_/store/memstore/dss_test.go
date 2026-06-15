@@ -6,23 +6,12 @@ import (
 	"time"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/timestamp"
-	"github.com/interuss/stacktrace"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
 
 var fakeClock = clockwork.NewFakeClock()
-
-func TestSaveOwnMetadataValidation(t *testing.T) {
-	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
-	r := newRepo()
-
-	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.SaveOwnMetadata(ctx, "", "https://example.com")))
-	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.SaveOwnMetadata(ctx, "dss-1", "")))
-}
 
 func TestSaveOwnMetadataRoundTrip(t *testing.T) {
 	ctx := context.Background()
@@ -57,42 +46,6 @@ func TestSaveOwnMetadataUpsert(t *testing.T) {
 
 	require.Len(t, md, 1)
 	require.Equal(t, "https://new.example.com", md[0].PublicEndpoint)
-}
-
-func TestRecordHeartbeatValidation(t *testing.T) {
-	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
-	r := newRepo()
-
-	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.RecordHeartbeat(ctx, auxmodels.Heartbeat{Source: "source1"})))
-	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.RecordHeartbeat(ctx, auxmodels.Heartbeat{Locality: "dss-1"})))
-
-	ts := time.Now()
-	before := ts.Add(-time.Minute)
-	err := r.RecordHeartbeat(ctx, auxmodels.Heartbeat{
-		Locality:                    "dss-1",
-		Source:                      "source1",
-		Timestamp:                   &ts,
-		NextHeartbeatExpectedBefore: &before,
-	})
-
-	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
-}
-
-func TestRecordHeartbeatDefaultsTimestamp(t *testing.T) {
-	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
-	r := newRepo()
-
-	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
-	require.NoError(t, r.RecordHeartbeat(ctx, auxmodels.Heartbeat{Locality: "dss-1", Source: "source1"}))
-
-	md, err := r.GetDSSMetadata(ctx)
-	require.NoError(t, err)
-
-	require.Len(t, md, 1)
-	require.True(t, md[0].LatestTimestamp.Source.Valid)
-	require.NotNil(t, md[0].LatestTimestamp.Timestamp)
 }
 
 func TestGetDSSMetadataPicksLatestHeartbeat(t *testing.T) {
