@@ -74,6 +74,14 @@ func (s *Store[R]) Restore(cp any) error {
 	return s.memRepo.Restore(cp)
 }
 
+func (s *Store[R]) GetSnapshot() ([]byte, error) {
+	return s.memRepo.GetSnapshot()
+}
+
+func (s *Store[R]) RestoreFromSnapshot(data []byte) error {
+	return s.memRepo.RestoreFromSnapshot(data)
+}
+
 func (s *Store[R]) Close() error {
 	return nil
 }

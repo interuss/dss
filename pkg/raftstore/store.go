@@ -25,18 +25,16 @@ type RaftRepo[R any] interface {
 type Store[R any] struct {
 	logger *zap.Logger
 
-	name     string
 	raftRepo RaftRepo[R]
 	cancel   context.CancelFunc
 
 	Consensus *consensus.Consensus
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, name string, r RaftRepo[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	store := &Store[R]{
-		name:     name,
 		raftRepo: r,
 		logger:   logging.WithValuesFromContext(ctx, logger),
 		cancel:   cancel,

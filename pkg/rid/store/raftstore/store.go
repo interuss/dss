@@ -20,7 +20,7 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get rid raft parameters")
 	}
-	return raftstore.Init(ctx, logger, params, "rid", &repo{})
+	return raftstore.Init(ctx, logger, params, &repo{})
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
