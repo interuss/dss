@@ -78,7 +78,7 @@ docker run -d --name dummy-oauth-for-testing -p 8085:8085 \
 sleep 1
 echo " -------------- PYTEST -------------- "
 echo "Finally Begin Testing"
-docker run --link dummy-oauth-for-testing:oauth \
+docker run --rm --link dummy-oauth-for-testing:oauth \
 	--link core-service-for-testing:core-service \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \

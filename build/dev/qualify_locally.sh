@@ -49,7 +49,7 @@ for container_name in "${localhost_containers[@]}"; do
 	fi
 done
 
-if ! docker run --link "$OAUTH_CONTAINER":oauth \
+if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
 	-v "$(pwd)/build/dev/dss_probing_qualifier_config.yaml:/app/monitoring/uss_qualifier/dss_probing_qualifier_config.yaml" \
