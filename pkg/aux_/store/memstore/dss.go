@@ -18,28 +18,28 @@ func (r *repo) SaveOwnMetadata(_ context.Context, locality string, publicEndpoin
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Public endpoint not set")
 	}
 
-	r.participants[locality] = &participant{
-		publicEndpoint: publicEndpoint,
-		updatedAt:      time.Now(),
+	r.state.Participants[locality] = &participant{
+		PublicEndpoint: publicEndpoint,
+		UpdatedAt:      time.Now().UTC(),
 	}
 	return nil
 }
 
 func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, error) {
-	metadata := make([]*auxmodels.DSSMetadata, 0, len(r.participants))
-	for locality, p := range r.participants {
-		updatedAt := p.updatedAt
+	metadata := make([]*auxmodels.DSSMetadata, 0, len(r.state.Participants))
+	for locality, p := range r.state.Participants {
+		updatedAt := p.UpdatedAt
 		m := &auxmodels.DSSMetadata{
 			Locality:       locality,
-			PublicEndpoint: p.publicEndpoint,
+			PublicEndpoint: p.PublicEndpoint,
 			UpdatedAt:      &updatedAt,
 		}
 
 		// Find the latest heartbeat across all sources for this locality.
 		var latest auxmodels.Heartbeat
 		found := false
-		for key, hb := range r.heartbeats {
-			if key.locality != locality {
+		for key, hb := range r.state.Heartbeats {
+			if key.Locality != locality {
 				continue
 			}
 			if !found || hb.Timestamp.After(*latest.Timestamp) {
@@ -69,7 +69,7 @@ func (r *repo) RecordHeartbeat(_ context.Context, heartbeat auxmodels.Heartbeat)
 	}
 
 	if heartbeat.Timestamp == nil {
-		now := time.Now()
+		now := time.Now().UTC()
 		heartbeat.Timestamp = &now
 	}
 
@@ -77,7 +77,7 @@ func (r *repo) RecordHeartbeat(_ context.Context, heartbeat auxmodels.Heartbeat)
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Cannot expect the timestamp of the next heartbeat before the timestamp of the new heartbeat")
 	}
 
-	r.heartbeats[heartbeatKey{locality: heartbeat.Locality, source: heartbeat.Source}] = heartbeat
+	r.state.Heartbeats[heartbeatKey{Locality: heartbeat.Locality, Source: heartbeat.Source}] = heartbeat
 	return nil
 }
 
