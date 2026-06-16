@@ -7,6 +7,7 @@ import (
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/memstore"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -50,3 +51,33 @@ func Init(ctx context.Context, logger *zap.Logger) (*memstore.Store[repos.Reposi
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
+
+// clone returns a copy of s with independent maps and participant records.
+func (s state) clone() state {
+	ps := make(map[string]*participant, len(s.Participants))
+	for k, v := range s.Participants {
+		cp := *v
+		ps[k] = &cp
+	}
+	hb := make(map[heartbeatKey]auxmodels.Heartbeat, len(s.Heartbeats))
+	for k, v := range s.Heartbeats {
+		hb[k] = v
+	}
+	return state{Participants: ps, Heartbeats: hb}
+}
+
+// Checkpoint returns a fast, restorable in-memory copy of the current state.
+func (r *repo) Checkpoint() any {
+	return r.state.clone()
+}
+
+// Restore replaces the current state with a checkpoint previously returned by
+// Checkpoint. The checkpoint is copied, so it stays reusable.
+func (r *repo) Restore(cp any) error {
+	s, ok := cp.(state)
+	if !ok {
+		return stacktrace.NewError("Invalid checkpoint type %T", cp)
+	}
+	r.state = s.clone()
+	return nil
+}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -16,3 +17,11 @@ func Init(ctx context.Context, logger *zap.Logger) (*memstore.Store[repos.Reposi
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
+
+func (r *repo) Checkpoint() any {
+	return nil
+}
+
+func (r *repo) Restore(any) error {
+	return stacktrace.NewError("Restore not yet implemented for scd")
+}

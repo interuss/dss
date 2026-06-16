@@ -134,3 +134,37 @@ func cloneFloat32(f *float32) *float32 {
 	v := *f
 	return &v
 }
+
+// clone returns a copy of s with independent maps and records. Cell slices and
+// time pointers are shared, as they are never mutated in place.
+func (s state) clone() state {
+	isas := make(map[dssmodels.ID]*isaRecord, len(s.ISAs))
+	for id, rec := range s.ISAs {
+		cp := *rec
+		isas[id] = &cp
+	}
+	subs := make(map[dssmodels.ID]*subscriptionRecord, len(s.Subscriptions))
+	for id, rec := range s.Subscriptions {
+		cp := *rec
+		subs[id] = &cp
+	}
+	return state{ISAs: isas, Subscriptions: subs}
+}
+
+// Checkpoint returns a fast, restorable in-memory copy of the current state.
+// Unlike GetSnapshot it does not serialize, so it is cheap but only valid
+// in-process.
+func (r *repo) Checkpoint() any {
+	return r.state.clone()
+}
+
+// Restore replaces the current state with a checkpoint previously returned by
+// Checkpoint. The checkpoint is copied, so it stays reusable.
+func (r *repo) Restore(cp any) error {
+	s, ok := cp.(state)
+	if !ok {
+		return stacktrace.NewError("Invalid checkpoint type %T", cp)
+	}
+	r.state = s.clone()
+	return nil
+}
