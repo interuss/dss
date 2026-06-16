@@ -5,36 +5,149 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) GetISA(_ context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetISA not implemented for raftstore")
+type getISAPayload struct {
+	ID        dssmodels.ID
+	ForUpdate bool
 }
 
-func (r *repo) DeleteISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteISA not implemented for raftstore")
+func (r *repo) GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, getISA, &getISAPayload{ID: id, ForUpdate: forUpdate}, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.(*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
 }
 
-func (r *repo) InsertISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "InsertISA not implemented for raftstore")
+func (r *repo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, deleteISA, isa, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.(*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
 }
 
-func (r *repo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpdateISA not implemented for raftstore")
+func (r *repo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, insertISA, isa, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.(*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
 }
 
-func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchISAs not implemented for raftstore")
+func (r *repo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, updateISA, isa, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.(*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
 }
 
-func (r *repo) ListExpiredISAs(_ context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredISAs not implemented for raftstore")
+type searchISAsPayload struct {
+	Cells    s2.CellUnion
+	Earliest *time.Time
+	Latest   *time.Time
 }
 
-func (r *repo) CountISAs(_ context.Context) (int64, error) {
-	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "CountISAs not implemented for raftstore")
+func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, searchISAs, &searchISAsPayload{Cells: cells, Earliest: earliest, Latest: latest}, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.([]*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
+}
+
+type listExpiredISAsPayload struct {
+	Writer    string
+	Threshold time.Time
+}
+
+func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	result, err := r.consensus.ProposeValue(ctx, listExpiredISAs, &listExpiredISAsPayload{Writer: writer, Threshold: threshold}, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	isa, ok := result.([]*ridmodels.IdentificationServiceArea)
+	if !ok {
+		return nil, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return isa, nil
+}
+
+func (r *repo) CountISAs(ctx context.Context) (int64, error) {
+	result, err := r.consensus.ProposeValue(ctx, countISAs, nil, true)
+	if err != nil {
+		return 0, err
+	}
+
+	if result == nil {
+		return 0, nil
+	}
+
+	count, ok := result.(int64)
+	if !ok {
+		return 0, stacktrace.NewError("invalid result type: %T", result)
+	}
+
+	return count, nil
 }
