@@ -270,7 +270,7 @@ func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint
 		return nil
 	}
 
-	c.logger.Info("publishing entries", zap.Int("numEntries", len(entries)), zap.Uint64("firstIndex", entries[0].Index), zap.Uint64("lastIndex", entries[len(entries)-1].Index))
+	c.logger.Debug("publishing entries", zap.Int("numEntries", len(entries)), zap.Uint64("firstIndex", entries[0].Index), zap.Uint64("lastIndex", entries[len(entries)-1].Index))
 
 	var triggerSnapshot bool
 	var err error
