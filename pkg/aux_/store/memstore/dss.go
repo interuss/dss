@@ -3,14 +3,14 @@ package memstore
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) SaveOwnMetadata(_ context.Context, locality string, publicEndpoint string) error {
+func (r *repo) SaveOwnMetadata(ctx context.Context, locality string, publicEndpoint string) error {
 	if locality == "" {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
 	}
@@ -20,7 +20,7 @@ func (r *repo) SaveOwnMetadata(_ context.Context, locality string, publicEndpoin
 
 	r.state.Participants[locality] = &participant{
 		PublicEndpoint: publicEndpoint,
-		UpdatedAt:      time.Now().UTC(),
+		UpdatedAt:      timestamp.NowFromContext(ctx),
 	}
 	return nil
 }
@@ -60,7 +60,7 @@ func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, erro
 	return metadata, nil
 }
 
-func (r *repo) RecordHeartbeat(_ context.Context, heartbeat auxmodels.Heartbeat) error {
+func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbeat) error {
 	if heartbeat.Locality == "" {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
 	}
@@ -69,7 +69,7 @@ func (r *repo) RecordHeartbeat(_ context.Context, heartbeat auxmodels.Heartbeat)
 	}
 
 	if heartbeat.Timestamp == nil {
-		now := time.Now().UTC()
+		now := timestamp.NowFromContext(ctx)
 		heartbeat.Timestamp = &now
 	}
 

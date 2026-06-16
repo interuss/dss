@@ -10,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -216,6 +217,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	// The subscription's endTime is 24 hours from now.
 	fakeClock.Advance(23 * time.Hour)
+	ctx = timestamp.WithTimestamp(ctx, fakeClock.Now())
 
 	// We should still be able to find the subscription by searching and by ID.
 	subs, err := repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
@@ -228,6 +230,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	// But now the subscription has expired.
 	fakeClock.Advance(2 * time.Hour)
+	ctx = timestamp.WithTimestamp(ctx, fakeClock.Now())
 
 	subs, err = repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
