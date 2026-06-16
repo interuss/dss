@@ -64,6 +64,10 @@ type (
 		MaxSizePerMsg uint64
 		// max number of in-flight messages during optimistic replication phase
 		MaxInflightMsgs int
+
+		CAFile   string
+		CertFile string
+		KeyFile  string
 	}
 )
 
@@ -93,6 +97,10 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 		peerURL, err := url.Parse(parts[1])
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "invalid peer URL %s", parts[1])
+		}
+
+		if peerURL.Scheme != "https" {
+			return nil, stacktrace.NewError("invalid peer URL %s: must use https scheme", parts[1])
 		}
 
 		peers[id] = peerURL
@@ -135,6 +143,11 @@ func init() {
 		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
+
+	flag.StringVar(&connectParameters.CAFile, "raft_tls_ca", "", `CA certificate, format: ca=/path/to/ca.crt`)
+	flag.StringVar(&connectParameters.CertFile, "raft_tls_crt", "", `node's certificate, format: ca=/path/to/node.crt`)
+	flag.StringVar(&connectParameters.KeyFile, "raft_tls_key", "", `node's private key, format: key=/path/to/node.key`)
+
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.

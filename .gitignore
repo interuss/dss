@@ -138,3 +138,6 @@ go
 
 # raft
 raft_data/
+# local certificates
+build/test-certs/raft-certs/*.crt
+build/test-certs/raft-certs/*.key

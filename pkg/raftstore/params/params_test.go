@@ -17,22 +17,22 @@ func TestPeerMap(t *testing.T) {
 	}{
 		{
 			name:  "valid single peer",
-			peers: "1=http://node1:9021",
-			want:  map[uint64]*url.URL{1: mustParseURL("http://node1:9021")},
+			peers: "1=https://node1:9021",
+			want:  map[uint64]*url.URL{1: mustParseURL("https://node1:9021")},
 		},
 		{
 			name:  "valid multiple peers",
-			peers: "1=http://node1:9021,2=http://node2:9021,3=http://node3:9021",
+			peers: "1=https://node1:9021,2=https://node2:9021,3=https://node3:9021",
 			want: map[uint64]*url.URL{
-				1: mustParseURL("http://node1:9021"),
-				2: mustParseURL("http://node2:9021"),
-				3: mustParseURL("http://node3:9021"),
+				1: mustParseURL("https://node1:9021"),
+				2: mustParseURL("https://node2:9021"),
+				3: mustParseURL("https://node3:9021"),
 			},
 		},
 		{
 			name:  "valid URL with equals sign in query string",
-			peers: "1=http://node1:9021?token=abc123",
-			want:  map[uint64]*url.URL{1: mustParseURL("http://node1:9021?token=abc123")},
+			peers: "1=https://node1:9021?token=abc123",
+			want:  map[uint64]*url.URL{1: mustParseURL("https://node1:9021?token=abc123")},
 		},
 		{
 			name:      "invalid empty peers string",
@@ -46,27 +46,32 @@ func TestPeerMap(t *testing.T) {
 		},
 		{
 			name:      "invalid non-numeric node ID",
-			peers:     "abc=http://node1:9021",
+			peers:     "abc=https://node1:9021",
 			wantError: true,
 		},
 		{
 			name:      "invalid negative node ID",
-			peers:     "-1=http://node1:9021",
+			peers:     "-1=https://node1:9021",
 			wantError: true,
 		},
 		{
 			name:      "mixed valid and invalid entries",
-			peers:     "1=http://node1:9021,badentry",
+			peers:     "1=https://node1:9021,badentry",
 			wantError: true,
 		},
 		{
 			name:      "invalid zero peer ID",
-			peers:     "0=http://node1:9021",
+			peers:     "0=https://node1:9021",
 			wantError: true,
 		},
 		{
 			name:      "duplicate peer IDs",
-			peers:     "1=http://node1:9021,1=http://node2:9021",
+			peers:     "1=https://node1:9021,1=https://node2:9021",
+			wantError: true,
+		},
+		{
+			name:      "invalid URL scheme",
+			peers:     "1=http://node1:9021",
 			wantError: true,
 		},
 	}

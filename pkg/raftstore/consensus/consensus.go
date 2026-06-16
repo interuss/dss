@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,9 +14,11 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
+	"go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
+
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
@@ -146,10 +149,19 @@ func peersList(peers map[uint64]*url.URL) []raft.Peer {
 }
 
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
+	connectParams := params.GetConnectParameters()
+
+	tlsInfo := transport.TLSInfo{
+		TrustedCAFile: connectParams.CAFile,
+		CertFile:      connectParams.CertFile,
+		KeyFile:       connectParams.KeyFile,
+	}
+
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 
 	transport := &rafthttp.Transport{
 		Logger:      logging.WithValuesFromContext(ctx, c.logger.With(zap.String("component", "transport"))),
+		TLSInfo:     tlsInfo,
 		ID:          types.ID(nodeID),
 		ClusterID:   types.ID(clusterID),
 		Raft:        c,
@@ -177,13 +189,20 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		return stacktrace.NewError("node ID %d not found in peers map", nodeID)
 	}
 
+	cfg, err := tlsInfo.ServerConfig()
+	cfg.ClientAuth = tls.RequireAndVerifyClientCert
+	if err != nil {
+		return stacktrace.NewError("failed to create TLS config")
+	}
+
 	c.server = &http.Server{
-		Addr:    listeningAddr,
-		Handler: transport.Handler(),
+		Addr:      listeningAddr,
+		Handler:   transport.Handler(),
+		TLSConfig: cfg,
 	}
 
 	go func() {
-		err := c.server.ListenAndServe()
+		err := c.server.ListenAndServeTLS(tlsInfo.CertFile, tlsInfo.KeyFile)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			c.logger.Error("http server error", zap.Error(err))
 			c.transport.ErrorC <- err
