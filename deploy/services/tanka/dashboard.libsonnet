@@ -5,6 +5,7 @@ local crdbSqlDash = import 'grafana_dashboards/crdb-sql-grafana.json';
 local crdbStorageDash = import 'grafana_dashboards/crdb-storage-grafana.json';
 local promOverview = import 'grafana_dashboards/prometheus-overview.json';
 local kubeOverview = import 'grafana_dashboards/kubernetes-overview.json';
+local dssDash = import 'grafana_dashboards/dss.json';
 local util = import 'util.libsonnet';
 {
     all(metadata): {
@@ -37,6 +38,11 @@ local util = import 'util.libsonnet';
       grafKubeOverview: base.ConfigMap(metadata, 'grafana-kube-overview') {
         data: {
           'kubernetes-overview.json': std.toString(kubeOverview),
+        },
+      },
+      grafDss: base.ConfigMap(metadata, 'grafana-dss') {
+        data: {
+          'dss.json': std.toString(dssDash),
         },
       },
     },
@@ -83,6 +89,13 @@ local util = import 'util.libsonnet';
           name: 'grafana-kube-overview',
         },
       },
+      grafDss: {
+        name: 'grafana-dss',
+        configMap: {
+          defaultMode: 420,
+          name: 'grafana-dss',
+        },
+      },
     },
     volumes: util.mapToList(self.volumeConfigs),
     mountConfigs: {
@@ -115,6 +128,11 @@ local util = import 'util.libsonnet';
         name: 'grafana-kube-overview',
         readOnly: false,
         mountPath: '/var/lib/grafana/dashboards/grafana-kube-overview',
+      },
+      grafDss: {
+        name: 'grafana-dss',
+        readOnly: false,
+        mountPath: '/var/lib/grafana/dashboards/grafana-dss',
       },
     },
     mount: util.mapToList(self.mountConfigs),
