@@ -31,7 +31,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*St
 			return
 		}
 
-		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, params.ID, peers, params.DataDir, params.SnapshotCatchupEntries)
+		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, peers, params)
 		if sharedConsensusErr != nil {
 			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
 		}
@@ -41,7 +41,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*St
 	}
 
 	// TODO: implement
-	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
+	_ = sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
 		return nil, nil
 	})
 
