@@ -11,7 +11,7 @@ fi
 cd "${BASEDIR}"
 
 docker build -t terraform-variables:latest .
-docker run \
+docker run --rm \
     -v "${BASEDIR}/":/app/infrastructure/utils:rw \
     -v "${BASEDIR}/../dependencies":/app/infrastructure/dependencies:rw \
     -v "${BASEDIR}/../modules":/app/infrastructure/modules:rw \
