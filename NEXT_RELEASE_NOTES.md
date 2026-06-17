@@ -47,6 +47,11 @@ The release notes should contain at least the following sections:
 ## Optional migration tasks
 
 * `enable_opentelemetry` has been split into two flags: `enable_metrics` and `enable_tracing`
+* A new pair of migrations for CockroachDB [has been added](https://github.com/interuss/dss/pull/1517) for RID (4.1.0) and SCD (3.4.0) to remove useless indexes.
+  * The DSS will work regardless of the migration status.
+  * This migration will improve performance. If that is not the case for a specific scenario that was missed, please downgrade to the previous version and open an issue.
+  * These indexes are still useful for Yugabyte, so no such migration exists for it.
+  * Details about migrations are available [there](https://interuss.github.io/dss/latest/operations/database-migrations/)
 
 ## Important information
 
