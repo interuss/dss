@@ -26,6 +26,7 @@ type repo struct {
 	clock                      clockwork.Clock
 	logger                     *zap.Logger
 	globalLock                 bool
+	hashLock                   bool
 	timeBasedNotificationIndex bool
 }
 
@@ -43,6 +44,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				clock:                      clock,
 				logger:                     logging.WithValuesFromContext(ctx, logger),
 				globalLock:                 opts.GlobalLock,
+				hashLock:                   opts.HashLock,
 				timeBasedNotificationIndex: opts.TimeBasedNotificationIndex,
 			}
 		},

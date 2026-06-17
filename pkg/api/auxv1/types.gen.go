@@ -57,6 +57,9 @@ type GlobalOptionsResponse struct {
 	// The value of the 'enable_scd_global_lock' option for this DSS instance
 	ScdGlobalLock *bool `json:"scd_global_lock,omitempty"`
 
+	// The value of the 'enable_scd_hash_lock' option for this DSS instance
+	ScdHashLock *bool `json:"scd_hash_lock,omitempty"`
+
 	// The value of the 'enable_time_based_notification_index' option for this DSS instance
 	TimeBasedNotificationIndex *bool `json:"time_based_notification_index,omitempty"`
 }
