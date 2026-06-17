@@ -5,31 +5,31 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/database-migrations/">
       
       
-        <link rel="prev" href="../infrastructure/minikube/">
+        <link rel="prev" href="../migrations/">
       
       
-        <link rel="next" href="certificates-management/">
+        <link rel="next" href="../performances/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
     
     
       
-        <title>Overview - DSS Deployment User Documentation</title>
+        <title>Database migrations - DSS Deployment User Documentation</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -48,13 +48,13 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
     
     
-  <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+  <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
             html.glightbox-open { overflow: initial; height: 100%; }
             .gslide-title { margin-top: 0px; user-select: text; }
             .gslide-desc { color: #666; user-select: text; }
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#operations" class="md-skip">
+        <a href="#database-migrations" class="md-skip">
           Skip to content
         </a>
       
@@ -101,9 +101,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="DSS Deployment User Documentation" class="md-header__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment User Documentation" class="md-header__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
       
-  <img src="../assets/InterUSS_horizontal.svg" alt="logo">
+  <img src="../../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Database migrations
             
           </span>
         </div>
@@ -212,9 +212,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="DSS Deployment User Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
+    <a href="../.." title="DSS Deployment User Documentation" class="md-nav__button md-logo" aria-label="DSS Deployment User Documentation" data-md-component="logo">
       
-  <img src="../assets/InterUSS_horizontal.svg" alt="logo">
+  <img src="../../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
     DSS Deployment User Documentation
@@ -241,7 +241,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -268,7 +268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../../architecture/" class="md-nav__link">
         
   
   
@@ -342,7 +342,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure/" class="md-nav__link">
+      <a href="../../infrastructure/" class="md-nav__link">
         
   
   
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure/aws/" class="md-nav__link">
+      <a href="../../infrastructure/aws/" class="md-nav__link">
         
   
   
@@ -398,7 +398,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure/google/" class="md-nav__link">
+      <a href="../../infrastructure/google/" class="md-nav__link">
         
   
   
@@ -426,7 +426,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure/google-manual/" class="md-nav__link">
+      <a href="../../infrastructure/google-manual/" class="md-nav__link">
         
   
   
@@ -454,7 +454,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure/minikube/" class="md-nav__link">
+      <a href="../../infrastructure/minikube/" class="md-nav__link">
         
   
   
@@ -535,37 +535,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -581,142 +554,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#pooling-procedure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pooling procedure
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pooling procedure">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#creating-a-new-pool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Creating a new pool
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#establishing-a-pool-with-first-instance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Establishing a pool with first instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#joining-an-existing-pool-with-new-instance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Joining an existing pool with new instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#leaving-a-pool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Leaving a pool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Monitoring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#health-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Health checks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#database-migrations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Database migrations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#performances" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Performances
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -729,7 +566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="certificates-management/" class="md-nav__link">
+      <a href="../certificates-management/" class="md-nav__link">
         
   
   
@@ -757,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pooling/" class="md-nav__link">
+      <a href="../pooling/" class="md-nav__link">
         
   
   
@@ -785,7 +622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pooling-crdb/" class="md-nav__link">
+      <a href="../pooling-crdb/" class="md-nav__link">
         
   
   
@@ -813,7 +650,7 @@
   
   
     <li class="md-nav__item">
-      <a href="monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -841,7 +678,7 @@
   
   
     <li class="md-nav__item">
-      <a href="healthchecks/" class="md-nav__link">
+      <a href="../healthchecks/" class="md-nav__link">
         
   
   
@@ -869,7 +706,7 @@
   
   
     <li class="md-nav__item">
-      <a href="migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -894,10 +731,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="database-migrations/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database migrations
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -913,6 +777,65 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#upgrading-database-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrading Database Schemas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrading Database Schemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#target-a-specific-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target a Specific Version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Migrations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -925,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="performances/" class="md-nav__link">
+      <a href="../performances/" class="md-nav__link">
         
   
   
@@ -953,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="cleanup/" class="md-nav__link">
+      <a href="../cleanup/" class="md-nav__link">
         
   
   
@@ -981,7 +904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="troubleshooting/" class="md-nav__link">
+      <a href="../troubleshooting/" class="md-nav__link">
         
   
   
@@ -1016,7 +939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment_checklist/" class="md-nav__link">
+      <a href="../../deployment_checklist/" class="md-nav__link">
         
   
   
@@ -1063,22 +986,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#pooling-procedure" class="md-nav__link">
+  <a href="#upgrading-database-schemas" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pooling procedure
+        Upgrading Database Schemas
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Pooling procedure">
+    <nav class="md-nav" aria-label="Upgrading Database Schemas">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#creating-a-new-pool" class="md-nav__link">
+  <a href="#target-a-specific-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Creating a new pool
+        Target a Specific Version
       
     </span>
   </a>
@@ -1086,32 +1009,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#establishing-a-pool-with-first-instance" class="md-nav__link">
+  <a href="#manual-migrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Establishing a pool with first instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#joining-an-existing-pool-with-new-instance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Joining an existing pool with new instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#leaving-a-pool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Leaving a pool
+        Manual Migrations
       
     </span>
   </a>
@@ -1120,61 +1021,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Monitoring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#health-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Health checks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#database-migrations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Database migrations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#performances" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Performances
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
   
 </li>
       
@@ -1203,7 +1049,7 @@
   
   
     <li class="md-path__item">
-      <a href=".." class="md-path__link">
+      <a href="../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Getting Started
@@ -1221,7 +1067,7 @@
     
     
       <li class="md-path__item">
-        <a href="./" class="md-path__link">
+        <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
     Operate a DSS instance
@@ -1243,7 +1089,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/operations/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/operations/database-migrations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1252,34 +1098,53 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/operations/index.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/operations/database-migrations.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">¶</a></h1>
-<p>This section contains the instructions and related material used to operate a DSS. It is responsible to provide diagnostic capabilities and utilities to operate the DSS instance, such as certificates management.</p>
-<h2 id="pooling-procedure">Pooling procedure<a class="headerlink" href="#pooling-procedure" title="Permanent link">¶</a></h2>
-<h3 id="creating-a-new-pool">Creating a new pool<a class="headerlink" href="#creating-a-new-pool" title="Permanent link">¶</a></h3>
-<p>See <a href="pooling/#creating-a-new-pool">Creating a new pool</a></p>
-<h3 id="establishing-a-pool-with-first-instance">Establishing a pool with first instance<a class="headerlink" href="#establishing-a-pool-with-first-instance" title="Permanent link">¶</a></h3>
-<p>See <a href="pooling/#establishing-a-pool-with-first-instances">Establishing a pool with first instance</a></p>
-<h3 id="joining-an-existing-pool-with-new-instance">Joining an existing pool with new instance<a class="headerlink" href="#joining-an-existing-pool-with-new-instance" title="Permanent link">¶</a></h3>
-<p>See <a href="pooling/#joining-an-existing-pool-with-new-instance">Joining an existing pool with new instance</a></p>
-<h3 id="leaving-a-pool">Leaving a pool<a class="headerlink" href="#leaving-a-pool" title="Permanent link">¶</a></h3>
-<p>See <a href="pooling/#leaving-a-pool">Leaving a pool</a></p>
-<h2 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">¶</a></h2>
-<p>See <a href="monitoring/">Monitoring</a></p>
-<h2 id="health-checks">Health checks<a class="headerlink" href="#health-checks" title="Permanent link">¶</a></h2>
-<p>See <a href="healthchecks/">Health checks</a></p>
-<h2 id="database-migrations">Database migrations<a class="headerlink" href="#database-migrations" title="Permanent link">¶</a></h2>
-<p>See <a href="database-migrations/">Database migrations</a></p>
-<h2 id="performances">Performances<a class="headerlink" href="#performances" title="Permanent link">¶</a></h2>
-<p>See <a href="performances/">Performances</a></p>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">¶</a></h2>
-<p>See <a href="troubleshooting/">Troubleshooting</a></p>
+<h1 id="database-migrations">Database Migrations<a class="headerlink" href="#database-migrations" title="Permanent link">¶</a></h1>
+<h2 id="upgrading-database-schemas">Upgrading Database Schemas<a class="headerlink" href="#upgrading-database-schemas" title="Permanent link">¶</a></h2>
+<p>All schema-related files are located in the <code>db_schemas</code> directory. Any changes you wish to make to the database schema must be done within their respective database folders. The migration files are applied in sequential numeric steps from the current version to the desired version.</p>
+<p>By default, deployment tools target the <code>latest</code> tag and will automatically perform upgrades to the most recent version.</p>
+<h3 id="target-a-specific-version">Target a Specific Version<a class="headerlink" href="#target-a-specific-version" title="Permanent link">¶</a></h3>
+<p>To pin your database to a specific schema version, update the corresponding deployment variables and apply the changes as you would during a standard deployment.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The migration tools also fully support downgrades, should the targeted version be lower than the current one.</p>
+</div>
+<h3 id="manual-migrations">Manual Migrations<a class="headerlink" href="#manual-migrations" title="Permanent link">¶</a></h3>
+<p>When operating outside of the automated deployment tools, you can use the <code>db-manager migrate</code> CLI command to apply migrations directly. Refer to the tool's built-in help (<code>--help</code>) for specific command arguments and flags.</p>
+<hr>
+<div class="admonition warning">
+<p class="admonition-title">Helm Restrictions</p>
+<p>When using Helm (either directly or via Terraform), only the <code>latest</code> version will be installed for now.</p>
+</div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="terraform" name="__tabbed_1" type="radio"><input id="tanka" name="__tabbed_1" type="radio"><input id="helm" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="terraform">Terraform</label><label for="tanka">Tanka</label><label for="helm">Helm</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Controlled by the following variables:</p>
+<ul>
+<li><code>desired_rid_db_version</code></li>
+<li><code>desired_scd_db_version</code></li>
+<li><code>desired_aux_db_version</code></li>
+</ul>
+</div>
+<div class="tabbed-block">
+<p>Controlled by the following variables:</p>
+<ul>
+<li><code>desired_rid_db_version</code></li>
+<li><code>desired_scd_db_version</code></li>
+<li><code>desired_aux_db_version</code></li>
+</ul>
+</div>
+<div class="tabbed-block">
+<p>Manual version targeting is not available for now.</p>
+</div>
+</div>
+</div>
 
 
 
@@ -1332,7 +1197,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../infrastructure/minikube/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Minikube">
+          <a href="../migrations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Migrations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -1342,20 +1207,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Minikube
+                Migrations
               </div>
             </div>
           </a>
         
         
           
-          <a href="certificates-management/" class="md-footer__link md-footer__link--next" aria-label="Next: Certificates management (Yugabyte)">
+          <a href="../performances/" class="md-footer__link md-footer__link--next" aria-label="Next: Performances">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Certificates management (Yugabyte)
+                Performances
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1410,12 +1275,12 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
-        <script src="../assets/checkbox.js"></script>
+        <script src="../../assets/checkbox.js"></script>
       
     
   
