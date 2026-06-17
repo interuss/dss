@@ -24,9 +24,14 @@ See [Leaving a pool](pooling.md#leaving-a-pool)
 
 See [Monitoring](monitoring.md)
 
+
 ## Health checks
 
 See [Health checks](healthchecks.md)
+
+## Database migrations
+
+See [Database migrations](database-migrations.md)
 
 ## Performances
 

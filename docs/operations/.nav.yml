@@ -6,6 +6,7 @@ nav:
   - "Monitoring": monitoring.md
   - "Health checks": healthchecks.md
   - "Migrations": migrations.md
+  - "Database migrations": database-migrations.md
   - "Performances": performances.md
   - "Cleanup": cleanup.md
   - "Troubleshooting": troubleshooting.md
