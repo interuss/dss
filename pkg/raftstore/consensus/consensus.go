@@ -18,6 +18,9 @@ import (
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 )
 
@@ -42,6 +45,9 @@ type Consensus struct {
 	confState     raftpb.ConfState
 	snapshotIndex uint64
 	appliedIndex  uint64
+
+	metricsUnregister     metric.Registration
+	nodeMetricsUnregister metric.Registration
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
@@ -88,6 +94,16 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
 
+	if connectParams.EnableMetrics {
+		if err := consensus.registerPeerMetrics(); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to register raft peer metrics")
+		}
+
+		if err := consensus.registerNodeMetrics(); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to register raft node metrics")
+		}
+	}
+
 	snap, err := consensus.storage.Snapshot()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get snapshot from storage")
@@ -111,7 +127,19 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 func (c *Consensus) Stop(ctx context.Context) {
 	c.once.Do(func() {
+		c.logger.Info("stopping consensus")
+		if c.metricsUnregister != nil {
+			if err := c.metricsUnregister.Unregister(); err != nil {
+				c.logger.Error("failed to unregister raft peer metrics", zap.Error(err))
+			}
+		}
+		if c.nodeMetricsUnregister != nil {
+			if err := c.nodeMetricsUnregister.Unregister(); err != nil {
+				c.logger.Error("failed to unregister raft node metrics", zap.Error(err))
+			}
+		}
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), c.shutdownTimeout)
+
 		defer cancel()
 		if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
 			c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
@@ -214,7 +242,137 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 	return nil
 }
 
-// handleReady processes the Ready channel of the Raft node and applies committed entries to the state machine
+// registerPeerMetrics exposes go.etcd.io/etcd's per-follower transport
+// statistics (latency and send success/failure counts) as OpenTelemetry
+// observable instruments. Stats are read from c.transport.LeaderStats, which
+// rafthttp updates on every AppendEntries round trip.
+func (c *Consensus) registerPeerMetrics() error {
+	meter := otel.GetMeterProvider().Meter("raftstore")
+
+	latencyCurrent, err := meter.Float64ObservableGauge("raft_peer_latency_seconds")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	latencyAverage, err := meter.Float64ObservableGauge("raft_peer_latency_average_seconds")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	latencyStdDev, err := meter.Float64ObservableGauge("raft_peer_latency_stddev_seconds")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	latencyMin, err := meter.Float64ObservableGauge("raft_peer_latency_min_seconds")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	latencyMax, err := meter.Float64ObservableGauge("raft_peer_latency_max_seconds")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	sendSuccess, err := meter.Int64ObservableCounter("raft_peer_send_success_total")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create counter")
+	}
+	sendFail, err := meter.Int64ObservableCounter("raft_peer_send_fail_total")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create counter")
+	}
+
+	reg, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		stats := c.transport.LeaderStats
+		stats.Lock()
+		type peerSnapshot struct {
+			latency v2stats.LatencyStats
+			counts  v2stats.CountsStats
+		}
+		followers := make(map[string]peerSnapshot, len(stats.Followers))
+		for peerID, fs := range stats.Followers {
+			fs.Lock()
+			followers[peerID] = peerSnapshot{latency: fs.Latency, counts: fs.Counts}
+			fs.Unlock()
+		}
+		stats.Unlock()
+
+		const msToSeconds = 1.0 / 1000.0
+		for peerID, fs := range followers {
+			attrs := metric.WithAttributes(attribute.String("peer_id", peerID))
+			o.ObserveFloat64(latencyCurrent, fs.latency.Current*msToSeconds, attrs)
+			o.ObserveFloat64(latencyAverage, fs.latency.Average*msToSeconds, attrs)
+			o.ObserveFloat64(latencyStdDev, fs.latency.StandardDeviation*msToSeconds, attrs)
+			o.ObserveFloat64(latencyMin, fs.latency.Minimum*msToSeconds, attrs)
+			o.ObserveFloat64(latencyMax, fs.latency.Maximum*msToSeconds, attrs)
+			o.ObserveInt64(sendSuccess, int64(fs.counts.Success), attrs)
+			o.ObserveInt64(sendFail, int64(fs.counts.Fail), attrs)
+		}
+		return nil
+	}, latencyCurrent, latencyAverage, latencyStdDev, latencyMin, latencyMax, sendSuccess, sendFail)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to register callback")
+	}
+
+	c.metricsUnregister = reg
+	return nil
+}
+
+// registerNodeMetrics exposes this node's own raft status (term, commit/applied
+// index, current leader, and node state) as OpenTelemetry observable gauges.
+func (c *Consensus) registerNodeMetrics() error {
+	meter := otel.GetMeterProvider().Meter("raftstore")
+
+	term, err := meter.Int64ObservableGauge("raft_term")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	commitIndex, err := meter.Int64ObservableGauge("raft_commit_index")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	appliedIndex, err := meter.Int64ObservableGauge("raft_applied_index")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	leaderID, err := meter.Int64ObservableGauge("raft_leader_id")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	isLeader, err := meter.Int64ObservableGauge("raft_is_leader")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+	state, err := meter.Int64ObservableGauge("raft_state")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create gauge")
+	}
+
+	reg, err := meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		status := c.node.Status()
+		nodeIDAttr := metric.WithAttributes(attribute.String("node_id", fmt.Sprintf("%x", c.nodeID)))
+
+		o.ObserveInt64(term, int64(status.Term), nodeIDAttr)
+		o.ObserveInt64(commitIndex, int64(status.Commit), nodeIDAttr)
+		o.ObserveInt64(appliedIndex, int64(status.Applied), nodeIDAttr)
+		o.ObserveInt64(leaderID, int64(status.Lead), nodeIDAttr)
+
+		isLeaderValue := int64(0)
+		if status.RaftState == raft.StateLeader {
+			isLeaderValue = 1
+		}
+		o.ObserveInt64(isLeader, isLeaderValue, nodeIDAttr)
+
+		o.ObserveInt64(state, 1, metric.WithAttributes(
+			attribute.String("node_id", fmt.Sprintf("%x", c.nodeID)),
+			attribute.String("state", status.RaftState.String()),
+		))
+		return nil
+	}, term, commitIndex, appliedIndex, leaderID, isLeader, state)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to register callback")
+	}
+
+	c.nodeMetricsUnregister = reg
+	return nil
+}
+
 func (c *Consensus) handleReady(tickInterval time.Duration, snapshotInterval uint64) error {
 	ticker := time.NewTicker(tickInterval)
 	defer ticker.Stop()
