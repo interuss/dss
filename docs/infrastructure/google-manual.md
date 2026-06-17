@@ -479,34 +479,6 @@ See [operations monitoring documentation](../operations/monitoring.md).
 
 See [Troubleshooting in `deploy/operations`](../operations/troubleshooting.md).
 
-## Upgrading Database Schemas
-
-All schemas-related files are in `db_schemas` directory.  Any changes you
-wish to make to the database schema should be done in their respective database
-folders.  The files are applied in sequential numeric steps from the current
-version M to the desired version N.
-
-For the first-ever run during the CRDB cluster initialization, the db-manager
-will run once to bootstrap and bring the database up to date.  To upgrade
-existing clusters you will need to:
-
-### If performing this operation on the original cluster
-1. Update the `desired_xyz_db_version` field in `main.jsonnet`
-2. Delete the existing db-manager job in your k8s cluster
-3. Redeploy the newly configured db-manager with `tk apply -t job/<xyz-schema-manager>`. It should automatically up/down grade your database schema to your desired version.
-
-### If performing this operation on any other cluster
-
-1. Create `workspace/$CLUSTER_CONTEXT_schema_manager` in this (build) directory.
-
-1.  From this (build) working directory,
-    `cp -r ../deploy/services/tanka/examples/schema_manager/* workspace/$CLUSTER_CONTEXT_schema_manager`.
-
-1.  Edit `workspace/$CLUSTER_CONTEXT_schema_manager/main.jsonnet` and replace all `VAR_*`
-    instances with appropriate values where applicable as explained in the above section.
-
-1.  Run `tk apply workspace/$CLUSTER_CONTEXT_schema_manager`
-
 ### Garbage collector job
 Only since commit [c789b2b](https://github.com/interuss/dss/commit/c789b2b4a9fa5fb651d202da0a3abc02a03c15d2) on Aug 25, 2020 will the DSS enable automatic garbage collection of records by tracking which DSS instance is responsible for garbage collection of the record. Expired records added with a DSS deployment running code earlier than this must be manually removed.
 
