@@ -627,22 +627,11 @@ func getRelevantSubscriptionsAndIncrementIndices(
 	notifyVolume *dssmodels.Volume4D,
 ) (repos.Subscriptions, error) {
 
-	// Find Subscriptions that may need to be notified
-	allsubs, err := r.SearchSubscriptions(ctx, notifyVolume)
+	// Find the Subscriptions interested in OperationalIntents and increment their
+	// notification indices
+	subs, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to search for impacted subscriptions.")
-	}
-
-	// Limit Subscription notifications to only those interested in OperationalIntents
-	subs := repos.Subscriptions{}
-	for _, sub := range allsubs {
-		if sub.NotifyForOperationalIntents {
-			subs = append(subs, sub)
-		}
-	}
-
-	// Increment notification indices for relevant Subscriptions
-	if err := subs.IncrementNotificationIndices(ctx, r); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to increment notification indices of relevant subscriptions")
 	}
 
