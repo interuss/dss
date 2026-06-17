@@ -34,8 +34,8 @@ type isaRecord struct {
 	URL        string
 	Owner      dssmodels.Owner
 	Cells      s2.CellUnion
-	StartTime  *time.Time
-	EndTime    *time.Time
+	StartTime  time.Time
+	EndTime    time.Time
 	AltitudeHi *float32
 	AltitudeLo *float32
 	Writer     string
@@ -49,8 +49,8 @@ type subscriptionRecord struct {
 	NotificationIndex int
 	Owner             dssmodels.Owner
 	Cells             s2.CellUnion
-	StartTime         *time.Time
-	EndTime           *time.Time
+	StartTime         time.Time
+	EndTime           time.Time
 	AltitudeHi        *float32
 	AltitudeLo        *float32
 	Writer            string
@@ -86,7 +86,13 @@ func validateWriteData(cells s2.CellUnion, start, end *time.Time) error {
 			return stacktrace.Propagate(err, "Error validating cell")
 		}
 	}
-	if start != nil && end != nil && !start.Before(*end) {
+	if start == nil {
+		return stacktrace.NewError("Start time must be provided")
+	}
+	if end == nil {
+		return stacktrace.NewError("End time must be provided")
+	}
+	if !start.Before(*end) {
 		return stacktrace.NewError("Start time must be strictly before end time")
 	}
 	return nil
@@ -119,11 +125,8 @@ func cloneCells(cells s2.CellUnion) s2.CellUnion {
 	return append(s2.CellUnion(nil), cells...)
 }
 
-func cloneTime(t *time.Time) *time.Time {
-	if t == nil {
-		return nil
-	}
-	v := *t
+func timePtr(t time.Time) *time.Time {
+	v := t
 	return &v
 }
 

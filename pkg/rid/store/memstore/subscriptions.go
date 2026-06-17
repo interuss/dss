@@ -19,8 +19,8 @@ func subRecordFromModel(s *ridmodels.Subscription, updatedAt time.Time) *subscri
 		NotificationIndex: s.NotificationIndex,
 		Owner:             s.Owner,
 		Cells:             cloneCells(s.Cells),
-		StartTime:         cloneTime(s.StartTime),
-		EndTime:           cloneTime(s.EndTime),
+		StartTime:         *s.StartTime,
+		EndTime:           *s.EndTime,
 		AltitudeHi:        cloneFloat32(s.AltitudeHi),
 		AltitudeLo:        cloneFloat32(s.AltitudeLo),
 		Writer:            s.Writer,
@@ -35,8 +35,8 @@ func (rec *subscriptionRecord) toModel() *ridmodels.Subscription {
 		NotificationIndex: rec.NotificationIndex,
 		Owner:             rec.Owner,
 		Cells:             cloneCells(rec.Cells),
-		StartTime:         cloneTime(rec.StartTime),
-		EndTime:           cloneTime(rec.EndTime),
+		StartTime:         timePtr(rec.StartTime),
+		EndTime:           timePtr(rec.EndTime),
 		Version:           dssmodels.VersionFromTime(rec.UpdatedAt),
 		AltitudeHi:        cloneFloat32(rec.AltitudeHi),
 		AltitudeLo:        cloneFloat32(rec.AltitudeLo),
@@ -102,7 +102,7 @@ func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*
 	want := cellSet(cells)
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
-		if rec.EndTime == nil || rec.EndTime.Before(now) {
+		if rec.EndTime.Before(now) {
 			continue
 		}
 		if !overlaps(rec.Cells, want) {
@@ -128,7 +128,7 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 		if rec.Owner != owner {
 			continue
 		}
-		if rec.EndTime == nil || rec.EndTime.Before(now) {
+		if rec.EndTime.Before(now) {
 			continue
 		}
 		if !overlaps(rec.Cells, want) {
@@ -150,7 +150,7 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 	want := cellSet(cells)
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
-		if rec.EndTime == nil || rec.EndTime.Before(now) {
+		if rec.EndTime.Before(now) {
 			continue
 		}
 		if !overlaps(rec.Cells, want) {
@@ -170,7 +170,7 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
 		if rec.Owner != owner {
 			continue
 		}
-		if rec.EndTime == nil || rec.EndTime.Before(now) {
+		if rec.EndTime.Before(now) {
 			continue
 		}
 		for _, c := range rec.Cells {
@@ -192,7 +192,7 @@ func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, thresh
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
 		// ends_at <= threshold
-		if rec.EndTime == nil || rec.EndTime.After(threshold) {
+		if rec.EndTime.After(threshold) {
 			continue
 		}
 		if writer == "" {

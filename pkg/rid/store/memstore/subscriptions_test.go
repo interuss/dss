@@ -39,20 +39,7 @@ var (
 			},
 		},
 		{
-			name: "a subscription without startTime and with endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             "myself",
-				URL:               "https://no/place/like/home",
-				EndTime:           &endTime,
-				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
-				},
-			},
-		},
-		{
-			name: "a subscription without startTime and with endTime",
+			name: "a subscription with a different cell",
 			input: &ridmodels.Subscription{
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             "me",
@@ -174,7 +161,6 @@ func TestStoreSearchSubscription(t *testing.T) {
 		}
 		owners = []dssmodels.Owner{
 			"me",
-			"my",
 			"self",
 		}
 	)
@@ -190,7 +176,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 	// Test normal search
 	found, err := repo.SearchSubscriptions(ctx, cells)
 	require.NoError(t, err)
-	require.Len(t, found, 3)
+	require.Len(t, found, 2)
 	for _, owner := range owners {
 		found, err := repo.SearchSubscriptionsByOwner(ctx, cells, owner)
 		require.NoError(t, err)
@@ -205,12 +191,14 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	ctx := context.Background()
 	repo := setUpStore(t)
 
+	startTime := fakeClock.Now()
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
-		ID:      dssmodels.ID(uuid.New().String()),
-		Owner:   dssmodels.Owner("original owner"),
-		Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
-		EndTime: &endTime,
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner("original owner"),
+		Cells:     s2.CellUnion{s2.CellID(12494535866699481088)},
+		StartTime: &startTime,
+		EndTime:   &endTime,
 	}
 	_, err := repo.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
@@ -266,7 +254,7 @@ func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 
 	count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s2.CellUnion{12494535935418957824}, "myself")
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equal(t, 1, count)
 }
 
 func TestListExpiredSubscriptions(t *testing.T) {

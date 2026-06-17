@@ -18,8 +18,8 @@ func isaRecordFromModel(isa *ridmodels.IdentificationServiceArea, updatedAt time
 		URL:        isa.URL,
 		Owner:      isa.Owner,
 		Cells:      cloneCells(isa.Cells),
-		StartTime:  cloneTime(isa.StartTime),
-		EndTime:    cloneTime(isa.EndTime),
+		StartTime:  *isa.StartTime,
+		EndTime:    *isa.EndTime,
 		AltitudeHi: cloneFloat32(isa.AltitudeHi),
 		AltitudeLo: cloneFloat32(isa.AltitudeLo),
 		Writer:     isa.Writer,
@@ -34,8 +34,8 @@ func (rec *isaRecord) toModel() *ridmodels.IdentificationServiceArea {
 		URL:        rec.URL,
 		Owner:      rec.Owner,
 		Cells:      cloneCells(rec.Cells),
-		StartTime:  cloneTime(rec.StartTime),
-		EndTime:    cloneTime(rec.EndTime),
+		StartTime:  timePtr(rec.StartTime),
+		EndTime:    timePtr(rec.EndTime),
 		Version:    dssmodels.VersionFromTime(rec.UpdatedAt),
 		AltitudeHi: cloneFloat32(rec.AltitudeHi),
 		AltitudeLo: cloneFloat32(rec.AltitudeLo),
@@ -105,11 +105,11 @@ func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.
 	var out []*ridmodels.IdentificationServiceArea
 	for _, rec := range r.state.ISAs {
 		// ends_at >= earliest
-		if rec.EndTime == nil || rec.EndTime.Before(*earliest) {
+		if rec.EndTime.Before(*earliest) {
 			continue
 		}
 		// COALESCE(starts_at <= latest, true)
-		if latest != nil && rec.StartTime != nil && rec.StartTime.After(*latest) {
+		if latest != nil && rec.StartTime.After(*latest) {
 			continue
 		}
 		if !overlaps(rec.Cells, want) {
@@ -128,7 +128,7 @@ func (r *repo) ListExpiredISAs(_ context.Context, writer string, threshold time.
 	var out []*ridmodels.IdentificationServiceArea
 	for _, rec := range r.state.ISAs {
 		// ends_at <= threshold
-		if rec.EndTime == nil || rec.EndTime.After(threshold) {
+		if rec.EndTime.After(threshold) {
 			continue
 		}
 		if writer == "" {
