@@ -65,6 +65,8 @@ type (
 		MaxSizePerMsg uint64
 		// max number of in-flight messages during optimistic replication phase
 		MaxInflightMsgs int
+
+		EnableMetrics bool
 	}
 )
 
@@ -148,5 +150,11 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	}
 	p := connectParameters
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)
+
+	// Copy the value from the global flag.
+	if f := flag.Lookup("enable_metrics"); f != nil {
+		connectParameters.EnableMetrics = f.Value.String() == "true"
+	}
+
 	return p, nil
 }
