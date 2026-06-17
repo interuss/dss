@@ -2,39 +2,163 @@ package raftstore
 
 import (
 	"context"
+	"encoding/json"
+	"slices"
+	"time"
 
-	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/memstore"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
 	scdraftparams "github.com/interuss/dss/pkg/scd/store/raftstore/params"
 	"github.com/interuss/stacktrace"
+
 	"go.uber.org/zap"
 )
 
+const (
+	getOperationalIntent           raftstore.RequestType = "getOperationalIntent"
+	deleteOperationalIntent        raftstore.RequestType = "deleteOperationalIntent"
+	upsertOperationalIntent        raftstore.RequestType = "upsertOperationalIntent"
+	searchOperationalIntents       raftstore.RequestType = "searchOperationalIntents"
+	getDependentOperationalIntents raftstore.RequestType = "getDependentOperationalIntents"
+	listExpiredOperationalIntents  raftstore.RequestType = "listExpiredOperationalIntents"
+	countOperationalIntents        raftstore.RequestType = "countOperationalIntents"
+
+	DeleteOperationalIntentTransaction raftstore.RequestType = "deleteOperationalIntentTransaction"
+	GetOperationalIntentTransaction    raftstore.RequestType = "getOperationalIntentTransaction"
+	QueryOperationalIntentTransaction  raftstore.RequestType = "queryOperationalIntentTransaction"
+	UpsertOperationalIntentTransaction raftstore.RequestType = "upsertOperationalIntentTransaction"
+)
+
+var readOnlyRequests = []raftstore.RequestType{
+	getOperationalIntent,
+	searchOperationalIntents,
+	getDependentOperationalIntents,
+	listExpiredOperationalIntents,
+	countOperationalIntents,
+
+	GetOperationalIntentTransaction,
+	QueryOperationalIntentTransaction,
+}
+
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
-type repo struct{}
+type repo struct {
+	consensus *consensus.Consensus
+
+	memStore *memstore.Store[repos.Repository]
+}
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
 	params, err := scdraftparams.GetConnectParameters()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get scd raft parameters")
 	}
-	return raftstore.Init(ctx, logger, params, &repo{})
+
+	memStore, err := scdmemstore.Init(ctx, logger)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize SCD memstore")
+	}
+
+	r := &repo{memStore: memStore}
+	store, err := raftstore.Init(ctx, logger, params, r)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize SCDs raftstore")
+	}
+
+	r.consensus = store.Consensus
+
+	return store, nil
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
 
-func (r *repo) IsReadOnly(_ raftstore.RequestType) bool { return false }
+func (r *repo) IsReadOnly(requestType raftstore.RequestType) bool {
+	return slices.Contains(readOnlyRequests, requestType)
+}
 
 func (r *repo) GetSnapshot() ([]byte, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "not implemented yet")
+	return r.memStore.GetSnapshot()
 }
 
-func (r *repo) RestoreFromSnapshot([]byte) error {
-	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "not implemented yet")
+func (r *repo) RestoreFromSnapshot(data []byte) error {
+	return r.memStore.RestoreFromSnapshot(data)
 }
 
-func (r *repo) Apply(_ context.Context, _ consensus.Proposal) (any, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "not implemented yet")
+func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
+	mem, err := r.memStore.Interact(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain scd memstore repository")
+	}
+
+	switch raftstore.RequestType(proposal.RequestType) {
+	case getOperationalIntent:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", getOperationalIntent)
+		}
+
+		return mem.GetOperationalIntent(ctx, id)
+
+	case deleteOperationalIntent:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", deleteOperationalIntent)
+		}
+
+		return nil, mem.DeleteOperationalIntent(ctx, id)
+
+	case upsertOperationalIntent:
+		var operation *scdmodels.OperationalIntent
+		if err := json.Unmarshal(proposal.Value, &operation); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", upsertOperationalIntent)
+		}
+
+		return mem.UpsertOperationalIntent(ctx, operation)
+
+	case searchOperationalIntents:
+		var v4d *dssmodels.Volume4D
+		if err := json.Unmarshal(proposal.Value, &v4d); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", searchOperationalIntents)
+		}
+
+		return mem.SearchOperationalIntents(ctx, v4d)
+
+	case getDependentOperationalIntents:
+		var subscriptionID dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &subscriptionID); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", getDependentOperationalIntents)
+		}
+
+		return mem.GetDependentOperationalIntents(ctx, subscriptionID)
+
+	case listExpiredOperationalIntents:
+		var threshold time.Time
+		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", listExpiredOperationalIntents)
+		}
+
+		return mem.ListExpiredOperationalIntents(ctx, threshold)
+
+	case countOperationalIntents:
+		return mem.CountOperationalIntents(ctx)
+
+	case DeleteOperationalIntentTransaction:
+		return r.deleteOperationalIntentTransactionApplier(ctx, proposal, mem)
+
+	case GetOperationalIntentTransaction:
+		return r.getOperationalIntentTransactionApplier(ctx, proposal, mem)
+
+	case QueryOperationalIntentTransaction:
+		return r.queryOperationalIntentTransactionApplier(ctx, proposal, mem)
+
+	case UpsertOperationalIntentTransaction:
+		return r.upsertOperationalIntentTransactionApplier(ctx, proposal, mem)
+
+	default:
+		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
+	}
 }
