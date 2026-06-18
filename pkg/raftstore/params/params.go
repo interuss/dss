@@ -65,6 +65,7 @@ type (
 		// max number of in-flight messages during optimistic replication phase
 		MaxInflightMsgs int
 
+		Insecure bool
 		CAFile   string
 		CertFile string
 		KeyFile  string
@@ -99,8 +100,12 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 			return nil, stacktrace.Propagate(err, "invalid peer URL %s", parts[1])
 		}
 
-		if peerURL.Scheme != "https" {
+		if !c.Insecure && peerURL.Scheme != "https" {
 			return nil, stacktrace.NewError("invalid peer URL %s: must use https scheme", parts[1])
+		}
+
+		if c.Insecure && (peerURL.Scheme != "http" && peerURL.Scheme != "https") {
+			return nil, stacktrace.NewError("invalid peer URL %s: must use http or https scheme", parts[1])
 		}
 
 		peers[id] = peerURL
@@ -144,10 +149,10 @@ func init() {
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
 
-	flag.StringVar(&connectParameters.CAFile, "raft_tls_ca", "", `CA certificate, format: ca=/path/to/ca.crt`)
-	flag.StringVar(&connectParameters.CertFile, "raft_tls_crt", "", `node's certificate, format: ca=/path/to/node.crt`)
-	flag.StringVar(&connectParameters.KeyFile, "raft_tls_key", "", `node's private key, format: key=/path/to/node.key`)
-
+	flag.BoolVar(&connectParameters.Insecure, "raft_insecure", false, "Enable insecure connection to the Raft cluster. If certificates are provided, they are not verified. If no certificates are provided, HTTPS is disabled entirely.")
+	flag.StringVar(&connectParameters.CAFile, "raft_tls_ca", "", "Path to the CA certificate file (e.g., /path/to/ca.crt). Required if --raft_insecure is not set.")
+	flag.StringVar(&connectParameters.CertFile, "raft_tls_crt", "", "Path to the node's TLS certificate file (e.g., /path/to/node.crt). Required if --raft_insecure is not set.")
+	flag.StringVar(&connectParameters.KeyFile, "raft_tls_key", "", "Path to the node's TLS private key file (e.g., /path/to/node.key). Required if --raft_insecure is not set.")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.

@@ -151,17 +151,21 @@ func peersList(peers map[uint64]*url.URL) []raft.Peer {
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
 	connectParams := params.GetConnectParameters()
 
+	if connectParams.Insecure {
+		c.logger.Warn("Running in insecure mode: HTTPS is disabled or certificates are not verified. Use only for testing or trusted environments.")
+	}
+
 	tlsInfo := transport.TLSInfo{
-		TrustedCAFile: connectParams.CAFile,
-		CertFile:      connectParams.CertFile,
-		KeyFile:       connectParams.KeyFile,
+		TrustedCAFile:      connectParams.CAFile,
+		CertFile:           connectParams.CertFile,
+		KeyFile:            connectParams.KeyFile,
+		InsecureSkipVerify: connectParams.Insecure,
 	}
 
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 
 	transport := &rafthttp.Transport{
 		Logger:      logging.WithValuesFromContext(ctx, c.logger.With(zap.String("component", "transport"))),
-		TLSInfo:     tlsInfo,
 		ID:          types.ID(nodeID),
 		ClusterID:   types.ID(clusterID),
 		Raft:        c,
@@ -170,8 +174,11 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		ErrorC:      make(chan error),
 	}
 
-	err := transport.Start()
-	if err != nil {
+	if !(connectParams.Insecure && connectParams.CAFile == "" && connectParams.CertFile == "" && connectParams.KeyFile == "") {
+		transport.TLSInfo = tlsInfo
+	}
+
+	if err := transport.Start(); err != nil {
 		return stacktrace.Propagate(err, "failed to start transport")
 	}
 
@@ -181,7 +188,6 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 			listeningAddr = ":" + peerURL.Port()
 			continue
 		}
-
 		transport.AddPeer(types.ID(peerID), []string{peerURL.String()})
 	}
 
@@ -189,28 +195,61 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		return stacktrace.NewError("node ID %d not found in peers map", nodeID)
 	}
 
-	cfg, err := tlsInfo.ServerConfig()
-	cfg.ClientAuth = tls.RequireAndVerifyClientCert
+	var err error
+	c.server, err = c.createServer(listeningAddr, transport.Handler(), tlsInfo, connectParams.Insecure)
 	if err != nil {
-		return stacktrace.NewError("failed to create TLS config")
+		return err
 	}
-
-	c.server = &http.Server{
-		Addr:      listeningAddr,
-		Handler:   transport.Handler(),
-		TLSConfig: cfg,
-	}
-
-	go func() {
-		err := c.server.ListenAndServeTLS(tlsInfo.CertFile, tlsInfo.KeyFile)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			c.logger.Error("http server error", zap.Error(err))
-			c.transport.ErrorC <- err
-		}
-	}()
 
 	c.transport = transport
 	return nil
+}
+
+func (c *Consensus) createServer(addr string, handler http.Handler, tlsInfo transport.TLSInfo, insecure bool) (*http.Server, error) {
+	server := &http.Server{
+		Addr:    addr,
+		Handler: handler,
+	}
+
+	if insecure {
+		if tlsInfo.CertFile == "" || tlsInfo.KeyFile == "" {
+			// Certificates provided: no HTTPS
+			go c.startServer(server, false, "", "")
+		} else {
+			// Certificates provided: HTTPS with no verification
+			cfg, err := tlsInfo.ServerConfig()
+			if err != nil {
+				return nil, stacktrace.NewError("failed to create TLS config")
+			}
+			cfg.ClientAuth = tls.NoClientCert
+			server.TLSConfig = cfg
+			go c.startServer(server, true, tlsInfo.CertFile, tlsInfo.KeyFile)
+		}
+	} else {
+		// Secure mode: HTTPS with full verification
+		cfg, err := tlsInfo.ServerConfig()
+		if err != nil {
+			return nil, stacktrace.NewError("failed to create TLS config")
+		}
+		cfg.ClientAuth = tls.RequireAndVerifyClientCert
+		server.TLSConfig = cfg
+		go c.startServer(server, true, tlsInfo.CertFile, tlsInfo.KeyFile)
+	}
+
+	return server, nil
+}
+
+func (c *Consensus) startServer(server *http.Server, useTLS bool, certFile, keyFile string) {
+	var err error
+	if useTLS {
+		err = server.ListenAndServeTLS(certFile, keyFile)
+	} else {
+		err = server.ListenAndServe()
+	}
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		c.logger.Error("http server error", zap.Error(err))
+		c.transport.ErrorC <- err
+	}
 }
 
 // handleReady processes the Ready channel of the Raft node and applies committed entries to the state machine
