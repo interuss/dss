@@ -13,13 +13,11 @@ type EntryCommit struct {
 }
 
 type Proposal struct {
-	ID          string            `json:"id"`
-	DBName      string            `json:"dbname"`
-	Timestamp   time.Time         `json:"timestamp"`
-	RequestType string            `json:"request_type"`
-	Value       []byte            `json:"value"`
-	ReadOnly    bool              `json:"read_only"`
-	Parameters  map[string][]byte `json:"parameters,omitempty"`
+	ID          string    `json:"id"`
+	Timestamp   time.Time `json:"timestamp"`
+	RequestType string    `json:"request_type"`
+	Value       []byte    `json:"value"`
+	ReadOnly    bool      `json:"read_only"`
 }
 
 type ProposalResult struct {

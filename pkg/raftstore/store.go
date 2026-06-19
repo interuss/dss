@@ -2,7 +2,6 @@ package raftstore
 
 import (
 	"context"
-	"sync"
 
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -10,49 +9,22 @@ import (
 	"go.uber.org/zap"
 )
 
-// storeCount is the number of stores (aux_, rid, scd) that must call
-// RegisterStore before the consensus ready loop is allowed to start.
-const storeCount = 3
-
-var (
-	sharedConsensus     *consensus.Consensus
-	sharedConsensusOnce sync.Once
-	sharedConsensusErr  error
-)
-
 type Store[R any] struct {
 	newRepo   func() R
 	consensus *consensus.Consensus
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*Store[R], error) {
-	// scd, rid and aux will share the same consensus instance, so we initialize it once.
-	sharedConsensusOnce.Do(func() {
-		params := raftparams.GetConnectParameters()
-		peers, err := params.PeerMap()
-		if err != nil {
-			sharedConsensusErr = stacktrace.Propagate(err, "failed to parse peer map")
-			return
-		}
-
-		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, peers, params, storeCount)
-		if sharedConsensusErr != nil {
-			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
-		}
-	})
-	if sharedConsensusErr != nil {
-		return nil, sharedConsensusErr
-	}
-
-	// TODO: start consumer goroutine before calling RegisterStore
+func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, newRepo func() R) (*Store[R], error) {
 	commitC := make(chan consensus.EntryCommit)
-	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
-		return nil, nil
-	}, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, func() ([]byte, error) { return nil, nil }, commitC)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
+	}
+	// TODO: start consumer goroutine reading from commitC
 
 	return &Store[R]{
 		newRepo:   newRepo,
-		consensus: sharedConsensus,
+		consensus: consensusInstance,
 	}, nil
 }
 

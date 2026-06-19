@@ -19,7 +19,6 @@ import (
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 )
 
 type Consensus struct {
@@ -32,26 +31,27 @@ type Consensus struct {
 	server    *http.Server
 
 	storage *storage
-	commitC map[string]chan<- EntryCommit
+	commitC chan<- EntryCommit
 
 	tracker *proposalsTracker
+
+	once            sync.Once
+	shutdownTimeout time.Duration
 
 	confState     raftpb.ConfState
 	snapshotIndex uint64
 	appliedIndex  uint64
-
-	tickInterval     time.Duration
-	snapshotInterval uint64
-	electionInterval time.Duration
-
-	expectedStoreCount int
-	registeredCount    int
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url.URL, connectParams params.ConnectParameters, expectedStoreCount int) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
+func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
+	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, provider, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
+	}
+
+	peers, err := connectParams.PeerMap()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to parse peer map")
 	}
 
 	nodeUrl, ok := peers[connectParams.NodeID]
@@ -76,14 +76,10 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 		node:   node,
 
 		storage: storage,
-		commitC: make(map[string]chan<- EntryCommit),
+		commitC: commitC,
 		tracker: newProposalsTracker(),
 
-		tickInterval:     connectParams.TickInterval,
-		snapshotInterval: connectParams.SnapshotIntervalEntries,
-		electionInterval: connectParams.ElectionInterval(),
-
-		expectedStoreCount: expectedStoreCount,
+		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 	}
 
 	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
@@ -100,7 +96,33 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 	consensus.snapshotIndex = snap.Metadata.Index
 	consensus.appliedIndex = snap.Metadata.Index
 
+	go func() {
+		err := consensus.handleReady(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
+		if err != nil {
+			consensus.logger.Error("handleReady exited with error, shutting down consensus", zap.Error(err))
+		}
+
+		consensus.Stop(context.Background())
+	}()
+
 	return consensus, nil
+}
+
+func (c *Consensus) Stop(ctx context.Context) {
+	c.once.Do(func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), c.shutdownTimeout)
+		defer cancel()
+		if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
+			c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
+		} else {
+			c.logger.Info("http server shutdown complete")
+		}
+
+		c.transport.Stop()
+		c.logger.Info("transport stopped")
+		c.node.Stop()
+		c.logger.Info("raft node stopped")
+	})
 }
 
 // ProposeValue blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
@@ -212,10 +234,7 @@ func (c *Consensus) handleReady(tickInterval time.Duration, snapshotInterval uin
 					return stacktrace.NewError("snapshot index %d shall be greater than current applied index %d", rd.Snapshot.Metadata.Index, c.appliedIndex)
 				}
 
-				err = c.dispatchSnapshot(rd.Snapshot.Data)
-				if err != nil {
-					return stacktrace.Propagate(err, "failed to dispatch snapshot")
-				}
+				c.commitC <- EntryCommit{SnapshotData: rd.Snapshot.Data}
 
 				c.confState = rd.Snapshot.Metadata.ConfState
 				c.snapshotIndex = rd.Snapshot.Metadata.Index
@@ -308,36 +327,8 @@ func (c *Consensus) processNormalEntry(data []byte, wg *sync.WaitGroup) error {
 		c.tracker.untrack(prop.ID, <-applyDoneC)
 	})
 
-	ch, ok := c.commitC[prop.DBName]
-	if !ok {
-		return stacktrace.NewError("no commit channel found for %s", prop.DBName)
-	}
-
-	ch <- EntryCommit{Prop: prop, Done: applyDoneC}
+	c.commitC <- EntryCommit{Prop: prop, Done: applyDoneC}
 	return nil
-}
-
-func (c *Consensus) dispatchSnapshot(snapshotData []byte) error {
-	var snapshot map[string][]byte
-	err := json.Unmarshal(snapshotData, &snapshot)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal snapshot data")
-	}
-
-	var eg errgroup.Group
-	for name, data := range snapshot {
-		eg.Go(func() error {
-			ch, ok := c.commitC[name]
-			if !ok {
-				return stacktrace.NewError("no commit channel found for %s", name)
-			}
-
-			ch <- EntryCommit{SnapshotData: data}
-			return nil
-		})
-	}
-
-	return eg.Wait()
 }
 
 // raftpb.ConfChange is still used internally by Raft, we just need to apply the change to the node.
@@ -414,37 +405,4 @@ func (c *Consensus) ReportUnreachable(id uint64) {
 // ReportSnapshot implements the rafthttp.Raft interface.
 func (c *Consensus) ReportSnapshot(id uint64, status raft.SnapshotStatus) {
 	c.node.ReportSnapshot(id, status)
-}
-
-// RegisterStore registers a snapshot provider and the channel on which consensus will send
-// committed entries for a specific store.
-// Once all expected stores have registered, consensus will start consuming Raft updates.
-func (c *Consensus) RegisterStore(name string, provider snapshotProvider, commitC chan<- EntryCommit) {
-	c.storage.registerSnapshotProvider(name, provider)
-	c.commitC[name] = commitC
-
-	c.registeredCount++
-	if c.registeredCount == c.expectedStoreCount {
-		go c.start()
-	}
-}
-
-func (c *Consensus) start() {
-	err := c.handleReady(c.tickInterval, c.snapshotInterval)
-	if err != nil {
-		c.logger.Error("handleReady exited with error, shutting down consensus", zap.Error(err))
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*c.electionInterval)
-	defer cancel()
-	if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
-		c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
-	} else {
-		c.logger.Info("http server shutdown complete")
-	}
-
-	c.transport.Stop()
-	c.logger.Info("transport stopped")
-	c.node.Stop()
-	c.logger.Info("raft node stopped")
 }
