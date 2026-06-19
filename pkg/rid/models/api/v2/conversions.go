@@ -6,6 +6,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/ridv2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/models/api/common"
 	"github.com/interuss/stacktrace"
 )
 
@@ -120,6 +121,11 @@ func FromPolygon(polygon *restapi.Polygon) *dssmodels.GeoPolygon {
 	}
 
 	return result
+}
+
+// FromGeoPolygonString converts RID v2 REST model to business object
+func FromGeoPolygonString(area restapi.GeoPolygonString) (*dssmodels.GeoPolygon, error) {
+	return common.FromGeoPolygonSring((string)(area))
 }
 
 // FromCircle converts RID v2 REST model to business object
