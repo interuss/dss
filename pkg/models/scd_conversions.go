@@ -235,56 +235,5 @@ func (vol3 *Volume3D) ToSCDRest() *restapi.Volume3D {
 		}
 	}
 
-	switch t := vol3.Footprint.(type) {
-	case nil:
-		// Empty on purpose
-	case *GeoPolygon:
-		result.OutlinePolygon = t.ToSCDRest()
-	case *GeoCircle:
-		result.OutlineCircle = t.ToSCDRest()
-	}
-
-	return result
-}
-
-// ToSCDRest converts the GeoCircle to a SCD v1 REST model
-func (gc *GeoCircle) ToSCDRest() *restapi.Circle {
-	if gc == nil {
-		return nil
-	}
-
-	return &restapi.Circle{
-		Center: gc.Center.ToSCDRest(),
-		Radius: &restapi.Radius{
-			Units: unitMeter.String(),
-			Value: gc.RadiusMeter,
-		},
-	}
-}
-
-// ToSCDRest converts the GeoPolygon to a SCD v1 REST model
-func (gp *GeoPolygon) ToSCDRest() *restapi.Polygon {
-	if gp == nil {
-		return nil
-	}
-
-	result := &restapi.Polygon{
-		Vertices: make([]restapi.LatLngPoint, len(gp.Vertices)),
-	}
-
-	for _, pt := range gp.Vertices {
-		result.Vertices = append(result.Vertices, *pt.ToSCDRest())
-	}
-
-	return result
-}
-
-// ToSCDRest converts the LatLngPoint to a SCD v1 REST model
-func (pt *LatLngPoint) ToSCDRest() *restapi.LatLngPoint {
-	result := &restapi.LatLngPoint{
-		Lat: restapi.Latitude(pt.Lat),
-		Lng: restapi.Longitude(pt.Lng),
-	}
-
 	return result
 }
