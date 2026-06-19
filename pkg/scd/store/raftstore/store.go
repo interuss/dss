@@ -57,6 +57,12 @@ const (
 	GetConstraintTransaction    raftstore.RequestType = "getConstraintTransaction"
 	QueryConstraintTransaction  raftstore.RequestType = "queryConstraintTransaction"
 	UpsertConstraintTransaction raftstore.RequestType = "upsertConstraintTransaction"
+
+	getUSSAvailability    raftstore.RequestType = "getUSSAvailability"
+	upsertUSSAvailability raftstore.RequestType = "upsertUSSAvailability"
+
+	GetUSSAvailabilityTransaction raftstore.RequestType = "getUSSAvailabilityTransaction"
+	SetUSSAvailabilityTransaction raftstore.RequestType = "setUSSAvailabilityTransaction"
 )
 
 var readOnlyRequests = []raftstore.RequestType{
@@ -83,6 +89,9 @@ var readOnlyRequests = []raftstore.RequestType{
 
 	GetConstraintTransaction,
 	QueryConstraintTransaction,
+
+	getUSSAvailability,
+	GetUSSAvailabilityTransaction,
 }
 
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
@@ -315,6 +324,28 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case UpsertConstraintTransaction:
 		return r.upsertConstraintTransactionApplier(ctx, proposal, mem)
+
+	case getUSSAvailability:
+		var id dssmodels.Manager
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", getUSSAvailability)
+		}
+
+		return mem.GetUssAvailability(ctx, id)
+
+	case upsertUSSAvailability:
+		var ussa scdmodels.UssAvailabilityStatus
+		if err := json.Unmarshal(proposal.Value, &ussa); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", upsertUSSAvailability)
+		}
+
+		return mem.UpsertUssAvailability(ctx, &ussa)
+
+	case GetUSSAvailabilityTransaction:
+		return r.getUSSAvailabilityTransactionApplier(ctx, proposal, mem)
+
+	case SetUSSAvailabilityTransaction:
+		return r.setUSSAvailabilityTransactionApplier(ctx, proposal, mem)
 
 	default:
 		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
