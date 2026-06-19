@@ -10,7 +10,6 @@ import (
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/geo"
 	"github.com/interuss/dss/pkg/geo/testdata"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -679,7 +678,10 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 }
 
 func TestDefaultRegionCovererProducesResults(t *testing.T) {
-	cover, err := geo.AreaToCellIDs(testdata.Loop)
+	p, err := apiv1.FromGeoPolygonString((restapi.GeoPolygonString)(testdata.Loop))
 	require.NoError(t, err)
-	require.NotNil(t, cover)
+	require.NotNil(t, p)
+	cu, err := p.CalculateCovering()
+	require.NoError(t, err)
+	require.NotNil(t, cu)
 }
