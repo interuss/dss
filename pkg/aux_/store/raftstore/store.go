@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/aux_/repos"
+	auxraftparams "github.com/interuss/dss/pkg/aux_/store/raftstore/params"
 	"github.com/interuss/dss/pkg/raftstore"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -12,5 +14,9 @@ import (
 type repo struct{}
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
-	return raftstore.Init[repos.Repository](ctx, logger, func() repos.Repository { return &repo{} })
+	params, err := auxraftparams.GetConnectParameters()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to get aux raft parameters")
+	}
+	return raftstore.Init(ctx, logger, params, func() repos.Repository { return &repo{} })
 }
