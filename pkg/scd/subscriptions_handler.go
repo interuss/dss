@@ -12,6 +12,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	scdraftstore "github.com/interuss/dss/pkg/scd/store/raftstore"
 	"github.com/interuss/stacktrace"
 	"github.com/jonboulle/clockwork"
 )
@@ -276,9 +277,21 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 		return nil
 	}
 
-	_, err = a.Store.Transact(ctx, "", nil, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.UpsertSubscriptionTransaction, &scdraftstore.UpsertSubscriptionTransactionPayload{
+		Subreq:  subreq,
+		Extents: extents,
+	}, action)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
+	}
+
+	if raftResult != nil {
+		putSubResp, ok := raftResult.(*restapi.PutSubscriptionResponse)
+		if !ok {
+			return nil, stacktrace.NewError("invalid result type: %T", raftResult)
+		}
+
+		result = putSubResp
 	}
 
 	// Return response to client
@@ -340,7 +353,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 		return nil
 	}
 
-	_, err = a.Store.Transact(ctx, "", nil, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.GetSubscriptionTransaction, req, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -355,6 +368,14 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+	}
+	if raftResult != nil {
+		getSubResponse, ok := raftResult.(*restapi.GetSubscriptionResponse)
+		if !ok {
+			return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.NewError("invalid result type: %T", raftResult))}}
+		}
+		response = getSubResponse
 	}
 
 	return restapi.GetSubscriptionResponseSet{Response200: response}
@@ -424,7 +445,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 		return nil
 	}
 
-	_, err = a.Store.Transact(ctx, "", nil, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.QuerySubscriptionTransaction, req, action)
 	if err != nil {
 
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -440,6 +461,14 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 
 		}
+	}
+	if raftResult != nil {
+		querySubResponse, ok := raftResult.(*restapi.QuerySubscriptionsResponse)
+		if !ok {
+			return restapi.QuerySubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.NewError("invalid result type: %T", raftResult))}}
+		}
+		response = querySubResponse
 	}
 
 	return restapi.QuerySubscriptionsResponseSet{Response200: response}
@@ -517,7 +546,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		return nil
 	}
 
-	_, err = a.Store.Transact(ctx, "", nil, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.DeleteSubscriptionTransaction, req, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -534,6 +563,14 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			return restapi.DeleteSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+	}
+	if raftResult != nil {
+		deleteSubResponse, ok := raftResult.(*restapi.DeleteSubscriptionResponse)
+		if !ok {
+			return restapi.DeleteSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.NewError("invalid result type: %T", raftResult))}}
+		}
+		response = deleteSubResponse
 	}
 
 	return restapi.DeleteSubscriptionResponseSet{Response200: response}

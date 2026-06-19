@@ -32,6 +32,20 @@ const (
 	GetOperationalIntentTransaction    raftstore.RequestType = "getOperationalIntentTransaction"
 	QueryOperationalIntentTransaction  raftstore.RequestType = "queryOperationalIntentTransaction"
 	UpsertOperationalIntentTransaction raftstore.RequestType = "upsertOperationalIntentTransaction"
+
+	searchSubscriptions                 raftstore.RequestType = "searchSubscriptions"
+	getSubscription                     raftstore.RequestType = "getSubscription"
+	upsertSubscription                  raftstore.RequestType = "upsertSubscription"
+	deleteSubscription                  raftstore.RequestType = "deleteSubscription"
+	incrementNotificationForOIs         raftstore.RequestType = "incrementNotificationForOIs"
+	incrementNotificationForConstraints raftstore.RequestType = "incrementNotificationForConstraints"
+	listExpiredSubscriptions            raftstore.RequestType = "listExpiredSubscriptions"
+	countSubscriptions                  raftstore.RequestType = "countSubscriptions"
+
+	DeleteSubscriptionTransaction raftstore.RequestType = "deleteSubscriptionTransaction"
+	GetSubscriptionTransaction    raftstore.RequestType = "getSubscriptionTransaction"
+	QuerySubscriptionTransaction  raftstore.RequestType = "querySubscriptionTransaction"
+	UpsertSubscriptionTransaction raftstore.RequestType = "upsertSubscriptionTransaction"
 )
 
 var readOnlyRequests = []raftstore.RequestType{
@@ -43,6 +57,14 @@ var readOnlyRequests = []raftstore.RequestType{
 
 	GetOperationalIntentTransaction,
 	QueryOperationalIntentTransaction,
+
+	searchSubscriptions,
+	getSubscription,
+	listExpiredSubscriptions,
+	countSubscriptions,
+
+	GetSubscriptionTransaction,
+	QuerySubscriptionTransaction,
 }
 
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
@@ -157,6 +179,77 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case UpsertOperationalIntentTransaction:
 		return r.upsertOperationalIntentTransactionApplier(ctx, proposal, mem)
+
+	case searchSubscriptions:
+		var v4d *dssmodels.Volume4D
+		if err := json.Unmarshal(proposal.Value, &v4d); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", searchSubscriptions)
+		}
+
+		return mem.SearchSubscriptions(ctx, v4d)
+
+	case getSubscription:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", getSubscription)
+		}
+
+		return mem.GetSubscription(ctx, id)
+
+	case upsertSubscription:
+		var sub *scdmodels.Subscription
+		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", upsertSubscription)
+		}
+
+		return mem.UpsertSubscription(ctx, sub)
+
+	case deleteSubscription:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", deleteSubscription)
+		}
+
+		return nil, mem.DeleteSubscription(ctx, id)
+
+	case incrementNotificationForOIs:
+		var v4d *dssmodels.Volume4D
+		if err := json.Unmarshal(proposal.Value, &v4d); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", incrementNotificationForOIs)
+		}
+
+		return mem.IncrementNotificationIndicesForOperationalIntents(ctx, v4d)
+
+	case incrementNotificationForConstraints:
+		var v4d *dssmodels.Volume4D
+		if err := json.Unmarshal(proposal.Value, &v4d); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", incrementNotificationForConstraints)
+		}
+
+		return mem.IncrementNotificationIndicesForConstraints(ctx, v4d)
+
+	case listExpiredSubscriptions:
+		var threshold time.Time
+		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", listExpiredSubscriptions)
+		}
+
+		return mem.ListExpiredSubscriptions(ctx, threshold)
+
+	case countSubscriptions:
+		return mem.CountSubscriptions(ctx)
+
+	case UpsertSubscriptionTransaction:
+		return r.upsertSubscriptionTransactionApplier(ctx, proposal, mem)
+
+	case DeleteSubscriptionTransaction:
+		return r.deleteSubscriptionTransactionApplier(ctx, proposal, mem)
+
+	case GetSubscriptionTransaction:
+		return r.getSubscriptionTransactionApplier(ctx, proposal, mem)
+
+	case QuerySubscriptionTransaction:
+		return r.querySubscriptionTransactionApplier(ctx, proposal, mem)
 
 	default:
 		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
