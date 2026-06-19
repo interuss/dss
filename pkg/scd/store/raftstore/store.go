@@ -46,6 +46,17 @@ const (
 	GetSubscriptionTransaction    raftstore.RequestType = "getSubscriptionTransaction"
 	QuerySubscriptionTransaction  raftstore.RequestType = "querySubscriptionTransaction"
 	UpsertSubscriptionTransaction raftstore.RequestType = "upsertSubscriptionTransaction"
+
+	searchConstraints raftstore.RequestType = "searchConstraints"
+	getConstraint     raftstore.RequestType = "getConstraint"
+	upsertConstraint  raftstore.RequestType = "upsertConstraint"
+	deleteConstraint  raftstore.RequestType = "deleteConstraint"
+	countConstraints  raftstore.RequestType = "countConstraints"
+
+	DeleteConstraintTransaction raftstore.RequestType = "deleteConstraintTransaction"
+	GetConstraintTransaction    raftstore.RequestType = "getConstraintTransaction"
+	QueryConstraintTransaction  raftstore.RequestType = "queryConstraintTransaction"
+	UpsertConstraintTransaction raftstore.RequestType = "upsertConstraintTransaction"
 )
 
 var readOnlyRequests = []raftstore.RequestType{
@@ -65,6 +76,13 @@ var readOnlyRequests = []raftstore.RequestType{
 
 	GetSubscriptionTransaction,
 	QuerySubscriptionTransaction,
+
+	searchConstraints,
+	getConstraint,
+	countConstraints,
+
+	GetConstraintTransaction,
+	QueryConstraintTransaction,
 }
 
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
@@ -250,6 +268,53 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case QuerySubscriptionTransaction:
 		return r.querySubscriptionTransactionApplier(ctx, proposal, mem)
+
+	case searchConstraints:
+		var v4d *dssmodels.Volume4D
+		if err := json.Unmarshal(proposal.Value, &v4d); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", searchConstraints)
+		}
+
+		return mem.SearchConstraints(ctx, v4d)
+
+	case getConstraint:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", getConstraint)
+		}
+
+		return mem.GetConstraint(ctx, id)
+
+	case upsertConstraint:
+		var constraint *scdmodels.Constraint
+		if err := json.Unmarshal(proposal.Value, &constraint); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", upsertConstraint)
+		}
+
+		return mem.UpsertConstraint(ctx, constraint)
+
+	case deleteConstraint:
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s proposal value", deleteConstraint)
+		}
+
+		return nil, mem.DeleteConstraint(ctx, id)
+
+	case countConstraints:
+		return mem.CountConstraints(ctx)
+
+	case DeleteConstraintTransaction:
+		return r.deleteConstraintTransactionApplier(ctx, proposal, mem)
+
+	case GetConstraintTransaction:
+		return r.getConstraintTransactionApplier(ctx, proposal, mem)
+
+	case QueryConstraintTransaction:
+		return r.queryConstraintTransactionApplier(ctx, proposal, mem)
+
+	case UpsertConstraintTransaction:
+		return r.upsertConstraintTransactionApplier(ctx, proposal, mem)
 
 	default:
 		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
