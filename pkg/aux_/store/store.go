@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/aux_/repos"
+	auxmemstore "github.com/interuss/dss/pkg/aux_/store/memstore"
 	auxraftstore "github.com/interuss/dss/pkg/aux_/store/raftstore"
 	auxsqlstore "github.com/interuss/dss/pkg/aux_/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -24,6 +25,8 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
 		return auxraftstore.Init(ctx, logger)
+	case params.MemStoreType:
+		return auxmemstore.Init(ctx, logger)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for aux", storeType)
 	}

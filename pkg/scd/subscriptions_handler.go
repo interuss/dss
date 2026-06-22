@@ -276,7 +276,7 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
@@ -340,7 +340,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -424,7 +424,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -517,7 +517,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
