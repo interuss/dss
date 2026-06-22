@@ -24,6 +24,7 @@ import (
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
@@ -399,6 +400,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
+
+			if params.GetStoreParameters().StoreType == params.RaftStoreType && !raftstore.IsHealthy() {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				if _, err := w.Write([]byte("unhealthy: raft consensus is down")); err != nil {
+					logger.Error("Error writing to /healthy")
+				}
+				return
+			}
+
 			if _, err := w.Write([]byte("ok")); err != nil {
 				logger.Error("Error writing to /healthy")
 			}

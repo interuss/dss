@@ -31,6 +31,8 @@ type Store[R any] struct {
 	Consensus *consensus.Consensus
 }
 
+var initializedConsensuses []*consensus.Consensus
+
 func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -48,6 +50,8 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 	}
 
 	store.Consensus = consensusInstance
+
+	initializedConsensuses = append(initializedConsensuses, consensusInstance)
 
 	return store, nil
 }
@@ -94,4 +98,19 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
 	}
+}
+
+// IsHealthy reports whether the consensus instances are up and has
+// an elected leader. Returns false if no raftstore has been initialized yet.
+func IsHealthy() bool {
+	if len(initializedConsensuses) == 0 {
+		return false
+	}
+
+	for _, consensus := range initializedConsensuses {
+		if !consensus.IsHealthy() {
+			return false
+		}
+	}
+	return true
 }

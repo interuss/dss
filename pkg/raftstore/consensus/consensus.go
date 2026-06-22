@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/interuss/dss/pkg/logging"
@@ -42,6 +43,10 @@ type Consensus struct {
 	confState     raftpb.ConfState
 	snapshotIndex uint64
 	appliedIndex  uint64
+
+	// failed is set once handleReady exits, meaning this node's consensus
+	// loop has stopped running and it can no longer process or apply entries.
+	failed atomic.Bool
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
@@ -103,7 +108,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 			consensus.logger.Error("handleReady exited with error, shutting down consensus", zap.Error(err))
 		}
 
-		consensus.Stop(context.Background())
+		consensus.failed.Store(true)
+		consensus.Stop(ctx)
 	}()
 
 	return consensus, nil
@@ -124,6 +130,16 @@ func (c *Consensus) Stop(ctx context.Context) {
 		c.node.Stop()
 		c.logger.Info("raft node stopped")
 	})
+}
+
+// IsHealthy reports whether this node's consensus loop is still running and
+// the cluster currently has an elected leader. A node with no known leader
+// has lost quorum (or hasn't joined yet) and cannot serve requests.
+func (c *Consensus) IsHealthy() bool {
+	if c.failed.Load() {
+		return false
+	}
+	return c.node.Status().Lead != 0
 }
 
 // ProposeValue blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
