@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/rid/repos"
+	ridmemstore "github.com/interuss/dss/pkg/rid/store/memstore"
 	ridraftstore "github.com/interuss/dss/pkg/rid/store/raftstore"
 	ridsqlstore "github.com/interuss/dss/pkg/rid/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -24,6 +25,8 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, e
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
 		return ridraftstore.Init(ctx, logger)
+	case params.MemStoreType:
+		return ridmemstore.Init(ctx, logger)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for rid", storeType)
 	}
