@@ -32,6 +32,7 @@ import (
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -340,6 +341,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
+	handler = timestamp.Middleware(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
