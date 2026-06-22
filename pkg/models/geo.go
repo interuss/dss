@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -70,6 +72,83 @@ type Volume3D struct {
 	AltitudeLo *float32
 	// Projection of this volume onto the earth's surface.
 	Footprint Geometry
+}
+
+type Volume3DJSON struct {
+	AltitudeHi *float32      `json:"AltitudeHi,omitempty"`
+	AltitudeLo *float32      `json:"AltitudeLo,omitempty"`
+	Footprint  *geometryJSON `json:"Footprint,omitempty"`
+}
+
+type geometryType string
+
+const (
+	circle  geometryType = "circle"
+	polygon geometryType = "polygon"
+	cells   geometryType = "cells"
+)
+
+// geometryJSON is a helper struct for marshaling and unmarshaling Geometry types to/from JSON.
+type geometryJSON struct {
+	Type    geometryType `json:"type"`
+	Polygon *GeoPolygon  `json:"polygon,omitempty"`
+	Circle  *GeoCircle   `json:"circle,omitempty"`
+	Cells   []s2.CellID  `json:"cells,omitempty"`
+}
+
+func (v Volume3D) MarshalJSON() ([]byte, error) {
+	w := Volume3DJSON{AltitudeHi: v.AltitudeHi, AltitudeLo: v.AltitudeLo}
+	if v.Footprint != nil {
+		switch f := v.Footprint.(type) {
+		case *GeoPolygon:
+			w.Footprint = &geometryJSON{Type: polygon, Polygon: f}
+
+		case *GeoCircle:
+			w.Footprint = &geometryJSON{Type: circle, Circle: f}
+
+		case precomputedCellGeometry:
+			cellsResult := make([]s2.CellID, 0, len(f))
+			for id := range f {
+				cellsResult = append(cellsResult, id)
+			}
+			w.Footprint = &geometryJSON{Type: cells, Cells: cellsResult}
+
+		default:
+			return nil, fmt.Errorf("Volume3D: unsupported Footprint type %T for JSON marshaling", v.Footprint)
+		}
+	}
+
+	return json.Marshal(w)
+}
+
+func (v *Volume3D) UnmarshalJSON(data []byte) error {
+	var w Volume3DJSON
+	if err := json.Unmarshal(data, &w); err != nil {
+		return err
+	}
+	v.AltitudeHi = w.AltitudeHi
+	v.AltitudeLo = w.AltitudeLo
+	if w.Footprint != nil {
+		switch w.Footprint.Type {
+		case polygon:
+			v.Footprint = w.Footprint.Polygon
+
+		case circle:
+			v.Footprint = w.Footprint.Circle
+
+		case cells:
+			pcg := make(precomputedCellGeometry, len(w.Footprint.Cells))
+			for _, id := range w.Footprint.Cells {
+				pcg[id] = struct{}{}
+			}
+
+			v.Footprint = pcg
+		default:
+			return fmt.Errorf("Volume3D: unknown geometry type %q", w.Footprint.Type)
+		}
+	}
+
+	return nil
 }
 
 // Geometry models a geometry.

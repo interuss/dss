@@ -8,6 +8,7 @@ import (
 const (
 	RaftStoreType = "raft"
 	SQLStoreType  = "sql"
+	MemStoreType  = "mem"
 )
 
 type (
@@ -22,6 +23,7 @@ var (
 )
 
 func init() {
+	// NB: Memstore not available there on purpose.
 	flag.StringVar(&storeParameters.StoreType, "store_type", SQLStoreType, fmt.Sprintf("Store type. Use '%s' for CockroachDB/YugabyteDB and '%s' for Raft-based store.", SQLStoreType, RaftStoreType))
 }
 

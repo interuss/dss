@@ -123,7 +123,6 @@ var (
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
-	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `Comma-separated "nodeID=peerURL" pairs for all cluster members, including the current node, e.g. "1=http://node1:9021,2=http://node2:9021,3=http://node3:9021"`)
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
@@ -142,6 +141,15 @@ func init() {
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
-func GetConnectParameters() ConnectParameters {
-	return connectParameters
+func GetConnectParameters(subfolder string) (ConnectParameters, error) {
+	if connectParameters.NodeID == 0 {
+		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
+	}
+	p := connectParameters
+	p.DataDir = connectParameters.DataDir + "/" + subfolder
+	return p, nil
+}
+
+func GetClusterID() uint64 {
+	return connectParameters.ClusterID
 }
