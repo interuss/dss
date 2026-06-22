@@ -10,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	scdraftstore "github.com/interuss/dss/pkg/scd/store/raftstore"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 )
@@ -51,7 +52,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.GetUSSAvailabilityTransaction, req, action)
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
@@ -62,6 +63,15 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 				ErrorMessage: *dsserr.Handle(ctx, err)}}
 		}
 	}
+	if raftResult != nil {
+		getAvailResponse, ok := raftResult.(*restapi.UssAvailabilityStatusResponse)
+		if !ok {
+			return restapi.GetUssAvailabilityResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.NewError("invalid result type: %T", raftResult))}}
+		}
+		response = getAvailResponse
+	}
+
 	return restapi.GetUssAvailabilityResponseSet{Response200: response}
 }
 
@@ -121,7 +131,7 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 		}
 		return nil
 	}
-	err = a.Store.Transact(ctx, action)
+	raftResult, err := a.Store.Transact(ctx, scdraftstore.SetUSSAvailabilityTransaction, req, action)
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
@@ -137,6 +147,14 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 					ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 			}
 		}
+	}
+	if raftResult != nil {
+		setAvailResponse, ok := raftResult.(*restapi.UssAvailabilityStatusResponse)
+		if !ok {
+			return restapi.SetUssAvailabilityResponseSet{Response500: &api.InternalServerErrorBody{
+				ErrorMessage: *dsserr.Handle(ctx, stacktrace.NewError("invalid result type: %T", raftResult))}}
+		}
+		result = setAvailResponse
 	}
 
 	// Return response to client
