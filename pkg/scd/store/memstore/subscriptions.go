@@ -17,8 +17,8 @@ func (rec *subscriptionRecord) toModel() *scdmodels.Subscription {
 		Version:                     scdmodels.NewOVNFromTime(rec.UpdatedAt, rec.ID.String()),
 		NotificationIndex:           rec.NotificationIndex,
 		Manager:                     rec.Manager,
-		StartTime:                   cloneTime(rec.StartTime),
-		EndTime:                     cloneTime(rec.EndTime),
+		StartTime:                   timePtr(rec.StartTime),
+		EndTime:                     timePtr(rec.EndTime),
 		USSBaseURL:                  rec.USSBaseURL,
 		NotifyForOperationalIntents: rec.NotifyForOperationalIntents,
 		NotifyForConstraints:        rec.NotifyForConstraints,
@@ -44,11 +44,11 @@ func (r *repo) SearchSubscriptions(_ context.Context, v4d *dssmodels.Volume4D) (
 			continue
 		}
 		// COALESCE(starts_at <= $3, true) with $3 = v4d.EndTime
-		if rec.StartTime != nil && v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
+		if v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
 			continue
 		}
 		// COALESCE(ends_at >= $2, true) with $2 = v4d.StartTime
-		if rec.EndTime != nil && v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
+		if v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
 			continue
 		}
 		out = append(out, rec.toModel())
@@ -70,6 +70,9 @@ func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*scdmodels.S
 
 // UpsertSubscription implements scd.repos.Subscription.UpsertSubscription.
 func (r *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+	if err := requireExtentTimes(s.StartTime, s.EndTime); err != nil {
+		return nil, err
+	}
 	rec := &subscriptionRecord{
 		ID:                          s.ID,
 		Manager:                     s.Manager,
@@ -78,8 +81,8 @@ func (r *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 		NotifyForOperationalIntents: s.NotifyForOperationalIntents,
 		NotifyForConstraints:        s.NotifyForConstraints,
 		ImplicitSubscription:        s.ImplicitSubscription,
-		StartTime:                   cloneTime(s.StartTime),
-		EndTime:                     cloneTime(s.EndTime),
+		StartTime:                   *s.StartTime,
+		EndTime:                     *s.EndTime,
 		Cells:                       cloneCells(s.Cells),
 		UpdatedAt:                   timestamp.NowFromContext(ctx),
 	}
@@ -117,11 +120,11 @@ func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Conte
 			continue
 		}
 		// COALESCE(starts_at <= $3, true) with $3 = v4d.EndTime
-		if rec.StartTime != nil && v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
+		if v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
 			continue
 		}
 		// COALESCE(ends_at >= $2, true) with $2 = v4d.StartTime
-		if rec.EndTime != nil && v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
+		if v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
 			continue
 		}
 		rec.NotificationIndex++
@@ -151,11 +154,11 @@ func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, v4d
 			continue
 		}
 		// COALESCE(starts_at <= $3, true) with $3 = v4d.EndTime
-		if rec.StartTime != nil && v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
+		if v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
 			continue
 		}
 		// COALESCE(ends_at >= $2, true) with $2 = v4d.StartTime
-		if rec.EndTime != nil && v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
+		if v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
 			continue
 		}
 		rec.NotificationIndex++
@@ -174,14 +177,8 @@ func (r *repo) LockSubscriptionsOnCells(_ context.Context, _ s2.CellUnion, _ []d
 func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
 	var out []*scdmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
-		// (ends_at IS NOT NULL AND ends_at <= threshold) OR (ends_at IS NULL AND updated_at <= threshold)
-		var expired bool
-		if rec.EndTime != nil {
-			expired = !rec.EndTime.After(threshold)
-		} else {
-			expired = !rec.UpdatedAt.After(threshold)
-		}
-		if !expired {
+		// ends_at <= threshold
+		if rec.EndTime.After(threshold) {
 			continue
 		}
 		out = append(out, rec.toModel())

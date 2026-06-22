@@ -31,12 +31,12 @@ func (rec *operationalIntentRecord) toModel() *scdmodels.OperationalIntent {
 		State:          rec.State,
 		OVN:            ovn,
 		PastOVNs:       clonePastOVNs(rec.PastOVNs),
-		StartTime:      cloneTime(rec.StartTime),
-		EndTime:        cloneTime(rec.EndTime),
+		StartTime:      timePtr(rec.StartTime),
+		EndTime:        timePtr(rec.EndTime),
 		USSBaseURL:     rec.USSBaseURL,
 		SubscriptionID: cloneID(rec.SubscriptionID),
-		AltitudeLower:  cloneFloat32(rec.AltitudeLower),
-		AltitudeUpper:  cloneFloat32(rec.AltitudeUpper),
+		AltitudeLower:  float32Ptr(rec.AltitudeLower),
+		AltitudeUpper:  float32Ptr(rec.AltitudeUpper),
 		Cells:          cloneCells(rec.Cells),
 	}
 }
@@ -99,17 +99,24 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		ussRequestedOVN = operation.OVN.String()
 	}
 
+	if err := requireExtentTimes(operation.StartTime, operation.EndTime); err != nil {
+		return nil, err
+	}
+	if err := requireAltitudeBounds(operation.AltitudeLower, operation.AltitudeUpper); err != nil {
+		return nil, err
+	}
+
 	rec := &operationalIntentRecord{
 		ID:              operation.ID,
 		Manager:         operation.Manager,
 		Version:         operation.Version,
 		State:           operation.State,
-		StartTime:       cloneTime(operation.StartTime),
-		EndTime:         cloneTime(operation.EndTime),
+		StartTime:       *operation.StartTime,
+		EndTime:         *operation.EndTime,
 		USSBaseURL:      operation.USSBaseURL,
 		SubscriptionID:  cloneID(operation.SubscriptionID),
-		AltitudeLower:   cloneFloat32(operation.AltitudeLower),
-		AltitudeUpper:   cloneFloat32(operation.AltitudeUpper),
+		AltitudeLower:   *operation.AltitudeLower,
+		AltitudeUpper:   *operation.AltitudeUpper,
 		Cells:           cloneCells(operation.Cells),
 		USSRequestedOVN: ussRequestedOVN,
 		PastOVNs:        clonePastOVNs(operation.PastOVNs),
@@ -144,19 +151,19 @@ func (r *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volu
 			continue
 		}
 		// COALESCE(altitude_upper >= $2, true) with $2 = SpatialVolume.AltitudeLo
-		if rec.AltitudeUpper != nil && v4d.SpatialVolume.AltitudeLo != nil && *rec.AltitudeUpper < *v4d.SpatialVolume.AltitudeLo {
+		if v4d.SpatialVolume.AltitudeLo != nil && rec.AltitudeUpper < *v4d.SpatialVolume.AltitudeLo {
 			continue
 		}
 		// COALESCE(altitude_lower <= $3, true) with $3 = SpatialVolume.AltitudeHi
-		if rec.AltitudeLower != nil && v4d.SpatialVolume.AltitudeHi != nil && *rec.AltitudeLower > *v4d.SpatialVolume.AltitudeHi {
+		if v4d.SpatialVolume.AltitudeHi != nil && rec.AltitudeLower > *v4d.SpatialVolume.AltitudeHi {
 			continue
 		}
 		// COALESCE(ends_at >= $4, true) with $4 = v4d.StartTime
-		if rec.EndTime != nil && v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
+		if v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
 			continue
 		}
 		// COALESCE(starts_at <= $5, true) with $5 = v4d.EndTime
-		if rec.StartTime != nil && v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
+		if v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
 			continue
 		}
 		matched = append(matched, rec)
@@ -182,14 +189,8 @@ func (r *repo) GetDependentOperationalIntents(_ context.Context, subscriptionID 
 func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
 	var matched []*operationalIntentRecord
 	for _, rec := range r.state.OperationalIntents {
-		// (ends_at IS NOT NULL AND ends_at <= threshold) OR (ends_at IS NULL AND updated_at <= threshold)
-		var expired bool
-		if rec.EndTime != nil {
-			expired = !rec.EndTime.After(threshold)
-		} else {
-			expired = !rec.UpdatedAt.After(threshold)
-		}
-		if !expired {
+		// ends_at <= threshold
+		if rec.EndTime.After(threshold) {
 			continue
 		}
 		matched = append(matched, rec)

@@ -36,8 +36,8 @@ type constraintRecord struct {
 	ID            dssmodels.ID
 	Manager       dssmodels.Manager
 	Version       scdmodels.VersionNumber
-	StartTime     *time.Time
-	EndTime       *time.Time
+	StartTime     time.Time
+	EndTime       time.Time
 	USSBaseURL    string
 	AltitudeLower *float32
 	AltitudeUpper *float32
@@ -56,8 +56,8 @@ type subscriptionRecord struct {
 	NotifyForOperationalIntents bool
 	NotifyForConstraints        bool
 	ImplicitSubscription        bool
-	StartTime                   *time.Time
-	EndTime                     *time.Time
+	StartTime                   time.Time
+	EndTime                     time.Time
 	Cells                       s2.CellUnion
 	UpdatedAt                   time.Time
 }
@@ -69,12 +69,12 @@ type operationalIntentRecord struct {
 	Manager         dssmodels.Manager
 	Version         scdmodels.VersionNumber
 	State           scdmodels.OperationalIntentState
-	StartTime       *time.Time
-	EndTime         *time.Time
+	StartTime       time.Time
+	EndTime         time.Time
 	USSBaseURL      string
 	SubscriptionID  *dssmodels.ID
-	AltitudeLower   *float32
-	AltitudeUpper   *float32
+	AltitudeLower   float32
+	AltitudeUpper   float32
 	Cells           s2.CellUnion
 	USSRequestedOVN string
 	PastOVNs        []scdmodels.OVN
@@ -137,12 +137,38 @@ func cloneCells(cells s2.CellUnion) s2.CellUnion {
 	return append(s2.CellUnion(nil), cells...)
 }
 
-func cloneTime(t *time.Time) *time.Time {
-	if t == nil {
-		return nil
-	}
-	v := *t
+func timePtr(t time.Time) *time.Time {
+	v := t
 	return &v
+}
+
+// requireExtentTimes enforces the memstore invariant that records always carry
+// both a start and an end time.
+func requireExtentTimes(start, end *time.Time) error {
+	if start == nil {
+		return stacktrace.NewError("Start time must be provided")
+	}
+	if end == nil {
+		return stacktrace.NewError("End time must be provided")
+	}
+	return nil
+}
+
+func float32Ptr(f float32) *float32 {
+	v := f
+	return &v
+}
+
+// requireAltitudeBounds enforces the memstore invariant that operational intent
+// records always carry both altitude bounds.
+func requireAltitudeBounds(lower, upper *float32) error {
+	if lower == nil {
+		return stacktrace.NewError("Lower altitude must be provided")
+	}
+	if upper == nil {
+		return stacktrace.NewError("Upper altitude must be provided")
+	}
+	return nil
 }
 
 func cloneFloat32(f *float32) *float32 {

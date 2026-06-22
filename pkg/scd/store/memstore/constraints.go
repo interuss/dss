@@ -17,8 +17,8 @@ func (rec *constraintRecord) toModel() *scdmodels.Constraint {
 		Manager:       rec.Manager,
 		Version:       rec.Version,
 		OVN:           scdmodels.NewOVNFromTime(rec.UpdatedAt, rec.ID.String()),
-		StartTime:     cloneTime(rec.StartTime),
-		EndTime:       cloneTime(rec.EndTime),
+		StartTime:     timePtr(rec.StartTime),
+		EndTime:       timePtr(rec.EndTime),
 		USSBaseURL:    rec.USSBaseURL,
 		AltitudeLower: cloneFloat32(rec.AltitudeLower),
 		AltitudeUpper: cloneFloat32(rec.AltitudeUpper),
@@ -43,11 +43,11 @@ func (r *repo) SearchConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]
 			continue
 		}
 		// COALESCE(starts_at <= $3, true) with $3 = v4d.EndTime
-		if rec.StartTime != nil && v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
+		if v4d.EndTime != nil && rec.StartTime.After(*v4d.EndTime) {
 			continue
 		}
 		// COALESCE(ends_at >= $2, true) with $2 = v4d.StartTime
-		if rec.EndTime != nil && v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
+		if v4d.StartTime != nil && rec.EndTime.Before(*v4d.StartTime) {
 			continue
 		}
 		out = append(out, rec.toModel())
@@ -72,13 +72,16 @@ func (r *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 	if _, err := dsssql.CellUnionToCellIdsWithValidation(s.Cells); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
+	if err := requireExtentTimes(s.StartTime, s.EndTime); err != nil {
+		return nil, err
+	}
 
 	rec := &constraintRecord{
 		ID:            s.ID,
 		Manager:       s.Manager,
 		Version:       s.Version,
-		StartTime:     cloneTime(s.StartTime),
-		EndTime:       cloneTime(s.EndTime),
+		StartTime:     *s.StartTime,
+		EndTime:       *s.EndTime,
 		USSBaseURL:    s.USSBaseURL,
 		AltitudeLower: cloneFloat32(s.AltitudeLower),
 		AltitudeUpper: cloneFloat32(s.AltitudeUpper),
