@@ -213,13 +213,20 @@ func (r *repo) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
 func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+
+	var notificationIndexIncrement = `notification_index = notification_index + 1`
+	if r.timeBasedNotificationIndex {
+		notificationIndexIncrement = `notification_index = floor(extract(epoch from now() - date_trunc('day', now())) * 1000)`
+	}
+
 	var updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
-			SET notification_index = notification_index + 1
+			SET
+				%s
 			WHERE
 				cells && $1
 				AND ends_at >= $2
-			RETURNING %s`, subscriptionFields)
+			RETURNING %s`, notificationIndexIncrement, subscriptionFields)
 
 	return r.process(
 		ctx, updateQuery, dssql.CellUnionToCellIds(cells), r.clock.Now())

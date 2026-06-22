@@ -297,11 +297,17 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 // want operational intent notifications, increments their notification index and returns
 // them with the new index..
 func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+
+	var notificationIndexIncrement = `notification_index = notification_index + 1`
+	if c.timebasedNotificationIndex {
+		notificationIndexIncrement = `notification_index = floor(extract(epoch from now() - date_trunc('day', now())) * 1000)`
+	}
+
 	var query = fmt.Sprintf(`
 		UPDATE
 			scd_subscriptions
 		SET
-			notification_index = notification_index + 1
+			%s
 		WHERE
 			cells && $1
 		AND
@@ -311,7 +317,7 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 		AND
 			notify_for_operations
 		RETURNING
-			%s`, subscriptionFieldsWithoutPrefix)
+			%s`, notificationIndexIncrement, subscriptionFieldsWithoutPrefix)
 
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
@@ -328,11 +334,16 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 // constraint notifications, increments their notification index and returns them with the
 // new index.
 func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	var notificationIndexIncrement = `notification_index = notification_index + 1`
+	if c.timebasedNotificationIndex {
+		notificationIndexIncrement = `notification_index = floor(extract(epoch from now() - date_trunc('day', now())) * 1000)`
+	}
+
 	var query = fmt.Sprintf(`
 		UPDATE
 			scd_subscriptions
 		SET
-			notification_index = notification_index + 1
+			%s
 		WHERE
 			cells && $1
 		AND
@@ -342,7 +353,7 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v
 		AND
 			notify_for_constraints
 		RETURNING
-			%s`, subscriptionFieldsWithoutPrefix)
+			%s`, notificationIndexIncrement, subscriptionFieldsWithoutPrefix)
 
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
