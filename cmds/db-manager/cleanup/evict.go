@@ -100,7 +100,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		}
 		return nil
 	}
-	if err = scdStore.Transact(ctx, scdAction); err != nil {
+	if _, err = scdStore.Transact(ctx, "", nil, scdAction); err != nil {
 		return fmt.Errorf("failed to execute SCD transaction: %w", err)
 	}
 
@@ -145,7 +145,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 		return nil
 	}
-	if err = ridStore.Transact(ctx, ridAction); err != nil {
+	if _, err = ridStore.Transact(ctx, "", nil, ridAction); err != nil {
 		return fmt.Errorf("failed to execute RID transaction: %w", err)
 	}
 
