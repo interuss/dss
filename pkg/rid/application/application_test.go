@@ -35,8 +35,8 @@ func (s *mockRepo) Interact(ctx context.Context) (repos.Repository, error) {
 	return s, nil
 }
 
-func (s *mockRepo) Transact(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
-	return f(ctx, s)
+func (s *mockRepo) Transact(ctx context.Context, _ string, _ any, f func(ctx context.Context, repo repos.Repository) error) (any, error) {
+	return nil, f(ctx, s)
 }
 
 func (s *mockRepo) Close() error {

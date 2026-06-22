@@ -1,8 +1,14 @@
 package models
 
 import (
-	"github.com/interuss/stacktrace"
 	"net/url"
+
+	"github.com/interuss/stacktrace"
+)
+
+const (
+	// Defined in requirement DSS0030.
+	MaxSubscriptionsPerArea = 10
 )
 
 // ValidateURL ensures https
