@@ -16,7 +16,9 @@ type Store[R any] interface {
 	Interact(context.Context) (R, error)
 	// Attempt to apply the operations in f to the R Repo it is supplied.  All operations performed
 	// on the R Repo by f will be applied or rejected atomically.
-	Transact(ctx context.Context, f func(context.Context, R) error) error
+	// requestType and payload are used by the Raftstore to build the proposal.
+	// The returned any is the proposal result (also Raftstore only).
+	Transact(ctx context.Context, requestType string, payload any, f func(context.Context, R) error) (any, error)
 }
 
 const (

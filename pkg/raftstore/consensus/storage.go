@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -31,8 +30,8 @@ type storage struct {
 
 	wal *wal.WAL
 
-	snapper   *snap.Snapshotter
-	providers map[string]snapshotProvider
+	snapper  *snap.Snapshotter
+	snapshot snapshotProvider
 
 	snapshotCatchUpEntries uint64
 }
@@ -40,7 +39,7 @@ type storage struct {
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
 // and applies them to the Raft memory storage.
 // It returns the initialized storage, a boolean indicating whether the storage was pre-existent or an error.
-func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, snapshotCatchUpEntries uint64) (*storage, bool, error) {
+func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, provider snapshotProvider, snapshotCatchUpEntries uint64) (*storage, bool, error) {
 	logger = logging.WithValuesFromContext(ctx, logger)
 
 	// load the latest snapshot
@@ -124,8 +123,9 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 
 		wal: w,
 
-		snapper:                snapper,
-		providers:              make(map[string]snapshotProvider),
+		snapper:  snapper,
+		snapshot: provider,
+
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
 	}, ok, nil
 }
@@ -177,33 +177,9 @@ func (s *storage) save(snapshot raftpb.Snapshot) error {
 	return s.wal.ReleaseLockTo(snapshot.Metadata.Index)
 }
 
-func (s *storage) registerSnapshotProvider(name string, provider func() ([]byte, error)) {
-	s.providers[name] = provider
-}
-
-// getSnapshot calls all registered snapshot providers and combines their data into a single snapshot.
-func (s *storage) getSnapshot() ([]byte, error) {
-	parts := make(map[string][]byte)
-	for name, provider := range s.providers {
-		data, err := provider()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to get snapshot data from %q", name)
-		}
-
-		parts[name] = data
-	}
-
-	return json.Marshal(parts)
-}
-
-// snapshotter returns the snapshotter used by the storage.
-func (s *storage) snapshotter() *snap.Snapshotter {
-	return s.snapper
-}
-
 func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfState) error {
 	s.logger.Info("triggering snapshot", zap.Uint64("appliedIndex", appliedIndex))
-	data, err := s.getSnapshot()
+	data, err := s.snapshot()
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to get snapshot data")
 	}

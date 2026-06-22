@@ -82,13 +82,13 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 		// Return response to client
 		response = &restapi.ChangeConstraintReferenceResponse{
 			ConstraintReference: *old.ToRest(),
-			Subscribers:         makeSubscribersToNotify(subs),
+			Subscribers:         repos.MakeSubscribersToNotify(subs),
 		}
 
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete constraint")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -147,7 +147,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get constraint")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -300,13 +300,13 @@ func (a *Server) PutConstraintReference(ctx context.Context, manager string, ent
 		// Return response to client
 		response = &restapi.ChangeConstraintReferenceResponse{
 			ConstraintReference: *constraint.ToRest(),
-			Subscribers:         makeSubscribersToNotify(subs),
+			Subscribers:         repos.MakeSubscribersToNotify(subs),
 		}
 
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this is not a useful stacktrace line
 	}
@@ -434,7 +434,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.Que
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, "", nil, action)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
