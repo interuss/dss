@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/interuss/dss/pkg/logging"
@@ -29,16 +30,25 @@ type Consensus struct {
 	server    *http.Server
 
 	storage *storage
+	commitC chan<- EntryCommit
+
+	once            sync.Once
+	shutdownTimeout time.Duration
 
 	confState     raftpb.ConfState
 	snapshotIndex uint64
 	appliedIndex  uint64
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url.URL, connectParams params.ConnectParameters) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
+func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
+	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, provider, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
+	}
+
+	peers, err := connectParams.PeerMap()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to parse peer map")
 	}
 
 	nodeUrl, ok := peers[connectParams.NodeID]
@@ -63,6 +73,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 		node:   node,
 
 		storage: storage,
+		commitC: commitC,
+
+		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 	}
 
 	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
@@ -85,21 +98,27 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, peers map[uint64]*url
 			consensus.logger.Error("handleReady exited with error, shutting down consensus", zap.Error(err))
 		}
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*connectParams.ElectionInterval())
-		defer cancel()
-		if shutdownErr := consensus.server.Shutdown(shutdownCtx); shutdownErr != nil {
-			consensus.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
-		} else {
-			consensus.logger.Info("http server shutdown complete")
-		}
-
-		consensus.transport.Stop()
-		consensus.logger.Info("transport stopped")
-		consensus.node.Stop()
-		consensus.logger.Info("raft node stopped")
+		consensus.Stop(context.Background())
 	}()
 
 	return consensus, nil
+}
+
+func (c *Consensus) Stop(ctx context.Context) {
+	c.once.Do(func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), c.shutdownTimeout)
+		defer cancel()
+		if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
+			c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
+		} else {
+			c.logger.Info("http server shutdown complete")
+		}
+
+		c.transport.Stop()
+		c.logger.Info("transport stopped")
+		c.node.Stop()
+		c.logger.Info("raft node stopped")
+	})
 }
 
 func peersList(peers map[uint64]*url.URL) []raft.Peer {
@@ -185,10 +204,7 @@ func (c *Consensus) handleReady(tickInterval time.Duration) error {
 					return stacktrace.NewError("snapshot index %d shall be greater than current applied index %d", rd.Snapshot.Metadata.Index, c.appliedIndex)
 				}
 
-				err = c.dispatchSnapshot(rd.Snapshot.Data)
-				if err != nil {
-					return stacktrace.Propagate(err, "failed to dispatch snapshot")
-				}
+				c.commitC <- EntryCommit{SnapshotData: rd.Snapshot.Data}
 
 				c.confState = rd.Snapshot.Metadata.ConfState
 				c.snapshotIndex = rd.Snapshot.Metadata.Index
@@ -215,11 +231,6 @@ func (c *Consensus) handleReady(tickInterval time.Duration) error {
 
 // TODO implement
 func (c *Consensus) publishEntries(_ []raftpb.Entry) error {
-	return nil
-}
-
-// TODO implement
-func (c *Consensus) dispatchSnapshot(_ []byte) error {
 	return nil
 }
 
@@ -271,9 +282,4 @@ func (c *Consensus) ReportUnreachable(id uint64) {
 // ReportSnapshot implements the rafthttp.Raft interface.
 func (c *Consensus) ReportSnapshot(id uint64, status raft.SnapshotStatus) {
 	c.node.ReportSnapshot(id, status)
-}
-
-// RegisterStore allows registering a snapshot provider function for a specific store
-func (c *Consensus) RegisterStore(name string, provider snapshotProvider) {
-	c.storage.registerSnapshotProvider(name, provider)
 }
