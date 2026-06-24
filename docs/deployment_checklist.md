@@ -4,7 +4,7 @@ This checklist outlines the major decisions and steps required to deploy a non-l
 
 ## Preparation
 
-* [ ] Review the [architecture requirements](architecture.md).
+* [ ] Review the [architecture requirements](architecture/index.md).
 * [ ] Decide on the datastore you will use (CockroachDB or YugabyteDB). **All participants in a DSS Pool must use the same datastore**, so plan accordingly.
 * [ ] Decide how and where you will deploy your DSS instances:
     * This repository provides Terraform configurations for [Amazon Web Services (EKS)](infrastructure/aws.md) and [Google Cloud (GKE)](infrastructure/google.md) to deploy a Kubernetes cluster (the infrastructure into which the Services will be deployed).
@@ -12,7 +12,7 @@ This checklist outlines the major decisions and steps required to deploy a non-l
     * You may also choose to deploy manually or use custom configuration tools.
 * [ ] Prepare sufficient resources for the services.
     * In particular, review the [CockroachDB recommendations](https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#cloud-specific-recommendations) and [YugabyteDB recommendations](https://docs.yugabyte.com/stable/deploy/checklist/#public-clouds); the datastore will consume the majority of the resources.
-    * Example sizing is also describled in [architecture](architecture.md#sizing).
+    * Example sizing is also describled in [sizing](architecture/sizing.md).
 
 
 ## Deployment

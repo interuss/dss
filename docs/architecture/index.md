@@ -1,10 +1,6 @@
-# Kubernetes deployment
+# Architecture
 
 ## Introduction
-
-See [introduction](operations/pooling.md#introduction)
-
-## Architecture
 
 The expected deployment configuration of a DSS pool supporting a DSS Region is
 multiple organizations to each host one DSS instance that is interoperable with
@@ -17,36 +13,36 @@ _**Note** that the diagrams below shows 2 stateful sets per DSS instance.  Curre
 
 This diagram shows how certificates are shared. It applies to both CockroachDB and Yugabyte deployments.
 
-![Pool architecture diagram](assets/generated/pool_architecture_certs.png)
+![Pool architecture diagram](../assets/generated/pool_architecture_certs.png)
 
 ### CochroachDB
 
-![Pool architecture diagram](assets/generated/pool_architecture.png)
+![Pool architecture diagram](../assets/generated/pool_architecture.png)
 
 ### Yugabyte
 
 Detail on an instance level
-![Pool architecture diagram with Yugabyte](assets/generated/pool_architecture_yugabyte_instance.png)
+![Pool architecture diagram with Yugabyte](../assets/generated/pool_architecture_yugabyte_instance.png)
 
 Top level simplified view, with one replica shown and yugabyte services regrouped in one box.
-![Pool architecture diagram with Yugabyte](assets/generated/pool_architecture_yugabyte.png)
+![Pool architecture diagram with Yugabyte](../assets/generated/pool_architecture_yugabyte.png)
 
 To reduce the number of required public load balancers, we do use an intermediate reverse proxy to expose the ports of Yugabyte master and tserver on a shared public IP per stateful set instance.
 Usual Kubernetes load balancers can't assign connection based on ports out of the box, so we use the reverse proxy to dispatch connections on both services depending on the connected port.
 
 ### Terminology notes
 
-See [teminology notes](operations/pooling.md#terminology-notes).
+See [teminology notes](../operations/pooling.md#terminology-notes).
 
 ## Pooling
 
 ### Objective
 
-See [Pooling Objective](operations/pooling.md#objective) and subsections.
+See [Pooling Objective](../operations/pooling.md#objective) and subsections.
 
 ### Additional requirements
 
-See [Additional requirements](operations/pooling.md#additional-requirements).
+See [Additional requirements](../operations/pooling.md#additional-requirements).
 
 ### Survivability
 
@@ -56,7 +52,7 @@ underlying CockroachDB database technology and how we configure it.  The diagram
 below shows the result of failures (bringing a node down for maintenance, or
 having an entire USS go down) from different starting points, assuming 3 replicas.
 
-![Survivability diagram](assets/generated/survivability_3x2.png)
+![Survivability diagram](../assets/generated/survivability_3x2.png)
 
 The table below summarizes survivable failures with 3 DSS instances configured according
 to the architecture described above.  Each system state is summarized by three
@@ -91,38 +87,6 @@ groups (one group per USS) of two nodes per USS.
 |                                    | (🟩 , 🟠 ) (🟩 , 🟠 ) (🟥 , 🟥 ) | 🔴 No; some ranges may be lost
 |                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟥 , 🟥 ) | 🔴 No; some ranges may be lost
 
-### Sizing
+## Sizing
 
-#### Introduction
-This section contains an estimate of the computational and other resources
-likely necessary to support expected demand in a country similar to the United
-States.
-
-#### Time required to fulfill queries for a single flight
-1. Assume 1 ISA per flight (worst case)
-    1. 2 ISA management queries per flight (create & delete)
-1. Assume 90% of flights are nominal and require 3 strategic deconfliction queries (Accepted, Activated, Ended) while 10% of flights have problems and require 7 strategic deconfliction queries
-    1. 3.4 strategic deconfliction queries per flight
-1. Assume 0.1 seconds to fulfill a query
-    1. Therefore, 0.54 seconds required (on average) to fulfill management queries to support a flight
-
-#### Time required to fulfill queries for a RID Display Provider
-1. Assume 2 Display Providers viewing each flight on average, 4 subscriptions per flight per DP, and 40% chance of subscription reuse
-    1. 9.6 subscription queries per flight
-    1. 0.96 seconds required (on average) to fulfill viewing queries to support a flight
-
-#### Required parallelism
-1. Use [348,537 remote pilots in 2024](https://www.faa.gov/uas/resources/by_the_numbers/)
-1. Assume 100 flights per month per remote pilot
-1. Use [989,916 recreational pilots](https://www.faa.gov/data_research/aviation/aerospace_forecasts/media/FY2020-40_faa_aerospace_forecast.pdf) as a baseline (even though this is likely number of aircraft, not number of pilots) and double it for the future
-1. Use [7.1 flights per month per recreational pilot](https://www.faa.gov/data_research/aviation/aerospace_forecasts/media/FY2020-40_faa_aerospace_forecast.pdf)
-1. Therefore, expect about 18.6 flights per second
-1. With 1.5 seconds of query time per flight, a nominal parallelism of 28 is required to satisfy the demand
-1. Assuming a peak-average ratio of 3.5, a parallelism of 98 is required
-
-#### Required resources
-1. With Cockroach Labs guidance of 4 parallel operations per vCPU, the DSS pool requires 25 vCPUs.
-1. Assuming 3 DSS instances and the need to continue to operate when one instance is down, each DSS instance requires 13 vCPUs.
-1. Using 8-vCPU virtual machines (like n2-standard-8), this means each instance needs 2 of these virtual machines
-1. Assuming that 5 days' worth of flights are occupying space on disk at any given time and that each flight record on disk is 100k, approximately 83 GB of storage is required
-    1. Note that Cockroach Labs recommends 4,000 read IO/s and 4,000 write IO/s, and some cloud providers scale storage speed with storage size, so 83 GB of storage may be far less than is necessary to achieve these speed numbers
+Resources needed are described [in the sizing section](sizing.md)

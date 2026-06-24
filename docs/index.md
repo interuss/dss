@@ -4,13 +4,13 @@
 
 This website provides instructions to deploy the InterUSS USS to USS Discovery and Synchronization service.
 
-An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](./architecture.md).
+An operational DSS deployment requires a specific architecture to be compliant with [standards requirements](https://github.com/interuss/dss?tab=readme-ov-file#standards-and-regulations) and meet performance expectations as described in [architecture](architecture/index.md).
 This page describes the deployment procedures recommended by InterUSS to achieve this compliance and meet these expectations.
 
 
 ## Getting started
 
-- Review [architecture requirements](architecture.md)
+- Review [architecture requirements](architecture/index.md)
 - Deploy a DSS instance to [Amazon Web Services (EKS)](infrastructure/aws.md) using terraform
 - Deploy a DSS instance to [Google (GKE)](infrastructure/google.md) using terraform
 - Deploy a DSS instance to [Google (GKE)](infrastructure/google-manual.md) manually step by step
