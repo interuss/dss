@@ -66,8 +66,8 @@ var (
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 
-	scdGlobalLock                     = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
-	timeBasedNotificationIndexEnabled = flag.Bool("enable_time_based_notification_index", false, "Use a time based notification index when working with RID and SCD subscriptions.")
+	scdGlobalLock              = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+	timeBasedNotificationIndex = flag.Bool("enable_time_based_notification_index", false, "Use a time-based notification index when working with RID and SCD subscriptions.")
 )
 
 func createKeyResolver() (auth.KeyResolver, error) {
@@ -113,7 +113,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true, *timeBasedNotificationIndexEnabled)
+	ridStore, err := rids.Init(ctx, logger, true, *timeBasedNotificationIndex)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -145,9 +145,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 
-	logger.Info(fmt.Sprintf("Time-based notification index enabled: %t", *timeBasedNotificationIndexEnabled))
-
-	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock, *timeBasedNotificationIndexEnabled)
+	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock, *timeBasedNotificationIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -161,10 +159,10 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}
 
 	return &scd.Server{
-		Store:                             scdStore,
-		DSSReportHandler:                  &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
-		AllowHTTPBaseUrls:                 *allowHTTPBaseUrls,
-		TimeBasedNotificationIndexEnabled: *timeBasedNotificationIndexEnabled,
+		Store:                      scdStore,
+		DSSReportHandler:           &scd.JSONLoggingReceivedReportHandler{ReportLogger: logger},
+		AllowHTTPBaseUrls:          *allowHTTPBaseUrls,
+		TimeBasedNotificationIndex: *timeBasedNotificationIndex,
 	}, nil
 }
 
@@ -261,6 +259,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	logger.Info("config", zap.Bool("scdGlobalLock", *scdGlobalLock))
+	logger.Info("config", zap.Bool("timeBasedNotificationIndex", *timeBasedNotificationIndex))
 	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {
 		logger.Warn("The raft datastore is experimental and its implementation is in progress. See issue for more details: https://github.com/interuss/dss/issues/1463")

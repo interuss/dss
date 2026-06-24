@@ -29,8 +29,8 @@ func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.
 
 // Server implements scdv1.Implementation.
 type Server struct {
-	Store                             scdstore.Store
-	DSSReportHandler                  ReceivedReportHandler
-	AllowHTTPBaseUrls                 bool
-	TimeBasedNotificationIndexEnabled bool
+	Store                      scdstore.Store
+	DSSReportHandler           ReceivedReportHandler
+	AllowHTTPBaseUrls          bool
+	TimeBasedNotificationIndex bool
 }

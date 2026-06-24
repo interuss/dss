@@ -25,12 +25,12 @@ type repo struct {
 	clock                      clockwork.Clock
 	logger                     *zap.Logger
 	globalLock                 bool
-	timebasedNotificationIndex bool
+	timeBasedNotificationIndex bool
 }
 
 // Init initializes the SQL-backed sid store. It return a concrete sqlstore.Store[sid.repos.Repository] providing the
 // ability to interact with a database-backed store of sid information.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool, timebasedNotificationIndex bool) (*sqlstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool, timeBasedNotificationIndex bool) (*sqlstore.Store[repos.Repository], error) {
 	return sqlstore.Init(ctx, sqlstore.Config[repos.Repository]{
 		DBName:                 "scd",
 		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
@@ -41,7 +41,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLoc
 				clock:                      clock,
 				logger:                     logging.WithValuesFromContext(ctx, logger),
 				globalLock:                 globalLock,
-				timebasedNotificationIndex: timebasedNotificationIndex,
+				timeBasedNotificationIndex: timeBasedNotificationIndex,
 			}
 		},
 	}, withCheckCron)
