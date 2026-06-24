@@ -55,6 +55,11 @@ func (r *repo) process(ctx context.Context, query string, args ...interface{}) (
 
 		s.SetCells(cids)
 		s.Version = dssmodels.VersionFromTime(updateTime)
+
+		if r.timeBasedNotificationIndex {
+			s.NotificationIndex = dssql.MillisSinceMidnight()
+		}
+
 		payload = append(payload, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -213,13 +218,27 @@ func (r *repo) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription
 
 // UpdateNotificationIdxsInCells incremement the notification for each sub in the given cells.
 func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	var updateQuery = fmt.Sprintf(`
+
+	var updateQuery string
+
+	if r.timeBasedNotificationIndex {
+		updateQuery = fmt.Sprintf(`
+			SELECT
+                %s
+            subscriptions
+			WHERE
+				cells && $1
+				AND ends_at >= $2`, subscriptionFields)
+	} else {
+		updateQuery = fmt.Sprintf(`
 			UPDATE subscriptions
-			SET notification_index = notification_index + 1
+			SET
+                notification_index = notification_index + 1
 			WHERE
 				cells && $1
 				AND ends_at >= $2
 			RETURNING %s`, subscriptionFields)
+	}
 
 	return r.process(
 		ctx, updateQuery, dssql.CellUnionToCellIds(cells), r.clock.Now())

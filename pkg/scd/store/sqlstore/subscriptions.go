@@ -93,6 +93,10 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
 		s.SetCells(cids)
+
+		if c.timeBasedNotificationIndex {
+			s.NotificationIndex = dsssql.MillisSinceMidnight()
+		}
 		payload = append(payload, s)
 	}
 	if err = rows.Err(); err != nil {
@@ -198,6 +202,11 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.StartTime,
 		s.EndTime,
 		cids)
+
+	if c.timeBasedNotificationIndex {
+		s.NotificationIndex = dsssql.MillisSinceMidnight()
+	}
+
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
 	}
@@ -297,7 +306,27 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 // want operational intent notifications, increments their notification index and returns
 // them with the new index..
 func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
-	var query = fmt.Sprintf(`
+
+	var query string
+
+	if c.timeBasedNotificationIndex {
+		query = fmt.Sprintf(`
+                SELECT
+                    %s
+                FROM
+                    scd_subscriptions
+                    WHERE
+                        cells && $1
+                    AND
+                        COALESCE(starts_at <= $3, true)
+                    AND
+                        COALESCE(ends_at >= $2, true)
+                    AND
+                        notify_for_operations
+                    `, subscriptionFieldsWithPrefix)
+	} else {
+
+		query = fmt.Sprintf(`
 		UPDATE
 			scd_subscriptions
 		SET
@@ -312,6 +341,8 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 			notify_for_operations
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix)
+
+	}
 
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
@@ -328,7 +359,27 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 // constraint notifications, increments their notification index and returns them with the
 // new index.
 func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
-	var query = fmt.Sprintf(`
+
+	var query string
+
+	if c.timeBasedNotificationIndex {
+		query = fmt.Sprintf(`
+                SELECT
+                    %s
+                FROM
+                    scd_subscriptions
+                    WHERE
+                        cells && $1
+                    AND
+                        COALESCE(starts_at <= $3, true)
+                    AND
+                        COALESCE(ends_at >= $2, true)
+                    AND
+                        notify_for_constraints
+                    `, subscriptionFieldsWithPrefix)
+	} else {
+
+		query = fmt.Sprintf(`
 		UPDATE
 			scd_subscriptions
 		SET
@@ -343,6 +394,8 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v
 			notify_for_constraints
 		RETURNING
 			%s`, subscriptionFieldsWithoutPrefix)
+
+	}
 
 	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {

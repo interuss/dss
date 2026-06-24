@@ -35,6 +35,14 @@ All graphs have been generated with the [loadtest present in the monitoring repo
 ![](../assets/perfs_scd_lock_notoverlapping.png)
 *Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.*
 
+## The time-based notification index option
+
+!!! danger
+    All DSS instances in a DSS pool must use the same value for this option. Mixing them will result in undetermined behavior.
+
+Following the rationale described in issue [#1541](https://github.com/interuss/dss/issues/1541), this flag use a time-based system for notification indexes in SCD and RID.
+Please check the details in the linked issue above and ensure you understand the consequences of enabling this flag, including the specific requirements you want or need to comply with.
+
 ## SCD lock diagnostics logs
 
 To help diagnose latency spikes (for example as discussed in [#1311](https://github.com/interuss/dss/issues/1311)), the SCD subscription lock path emits targeted warning logs when a lock query looks expensive.
