@@ -97,6 +97,10 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
                 <td><p>This variable has been renamed to locality and is left to warn users about migration.</p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>datastore_max_open_conns (<code>number</code>)</td>
+                <td><p>Maximum number of open connections to the datastore.</p>
+<br/>Default value: <code>4</code></td>
+            </tr><tr>
                 <td>datastore_type (<code>string</code>)</td>
                 <td><p>Type of datastore used</p>
 <p>Supported technologies: cockroachdb, yugabyte</p>

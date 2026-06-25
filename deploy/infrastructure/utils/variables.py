@@ -47,6 +47,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_image_tag",
     "crdb_cluster_name",
     "locality",
+    "datastore_max_open_conns",
     "crdb_external_nodes",
     "kubernetes_namespace",
     "yugabyte_cloud",

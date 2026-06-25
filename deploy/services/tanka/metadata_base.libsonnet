@@ -12,6 +12,7 @@
   enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
   datastore: 'cockroachdb',
+  datastoreMaxOpenConns: 4,
   locality: error 'must supply locality',
   cockroach: {
     locality: '',

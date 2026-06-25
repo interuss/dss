@@ -15,6 +15,7 @@ local metadata = metadataBase {
   enableTimeBasedNotificationIndex: false, // <-- This boolean value is VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX
   enableDssMetrics: false, // <-- This boolean value is VAR_ENABLE_DSS_METRICS
   datastore: 'VAR_DATASTORE',
+  datastoreMaxOpenConns: 4, // <-- This integer value is VAR_DATASTORE_MAX_OPEN_CONNS
   locality: 'VAR_LOCALITY',
   cockroach+: {
     image: 'VAR_CRDB_DOCKER_IMAGE_NAME',

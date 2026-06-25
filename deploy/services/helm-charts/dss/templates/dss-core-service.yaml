@@ -57,6 +57,7 @@ spec:
             - --datastore_host={{ $datastoreHost }}
             - --datastore_port={{ $datastorePort }}
             - --datastore_user={{ $datastoreUser }}
+            - --datastore_max_open_conns={{$dss.conf.datastoreMaxOpenConns | default 4}}
 {{ if $.Values.cockroachdb.enabled }}
             - --datastore_ssl_dir=/cockroach/cockroach-certs
             - --datastore_ssl_mode=verify-full
