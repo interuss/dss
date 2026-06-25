@@ -53,7 +53,10 @@ type CAsResponse struct {
 	Cas *[]string `json:"CAs,omitempty"`
 }
 
-type SCDLockModeResponse struct {
+type GlobalOptionsResponse struct {
 	// The value of the 'enable_scd_global_lock' option for this DSS instance
-	GlobalLock *bool `json:"global_lock,omitempty"`
+	ScdGlobalLock *bool `json:"scd_global_lock,omitempty"`
+
+	// The value of the 'enable_time_based_notification_index' option for this DSS instance
+	TimeBasedNotificationIndex *bool `json:"time_based_notification_index,omitempty"`
 }

@@ -11,7 +11,7 @@ See the detailed [section about cleanup](cleanup.md).
 !!! danger
      All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.
 
-     You can use the `/aux/v1/configuration/scd_lock_mode` endpoint to retrive the current value for a specifc DSS instance.
+     You can use the `/aux/v1/configuration/global_options` endpoint to retrive the current value for a specifc DSS instance.
 
 It has been reported in issue [#1311](https://github.com/interuss/dss/issues/1311) that creating a lot of overlapping operational intents may increase the datastore load in a way that creates timeouts.
 
@@ -39,6 +39,8 @@ All graphs have been generated with the [loadtest present in the monitoring repo
 
 !!! danger
     All DSS instances in a DSS pool must use the same value for this option. Mixing them will result in undetermined behavior.
+
+     You can use the `/aux/v1/configuration/global_options` endpoint to retrive the current value for a specifc DSS instance.
 
 Following the rationale described in issue [#1541](https://github.com/interuss/dss/issues/1541), this flag use a time-based system for notification indexes in SCD and RID.
 Please check the details in the linked issue above and ensure you understand the consequences of enabling this flag, including the specific requirements you want or need to comply with.

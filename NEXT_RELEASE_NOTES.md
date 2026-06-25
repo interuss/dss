@@ -20,6 +20,7 @@ The release notes should contain at least the following sections:
 * This version requires a database schema update. The migration is backward compatible with DSS `vX.Y.Z`.
   * For Tanka, in main.jsonnet, update desired_scd_db_version to `x.y.z`.
   * For Helm, upgrading a deployed chart with this new version will automatically migrate the version of the schema to `x.y.z`.
+* `/aux/v1/configuration/scd_lock_mode` endpoint has been moved to `/aux/v1/configuration/global_options` (with a new field returned).
 
 #### Optional migration tasks
 
