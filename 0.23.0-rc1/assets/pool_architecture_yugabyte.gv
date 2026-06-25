@@ -1,0 +1,74 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture_yugabyte.png pool_architecture_yugabyte.gv
+digraph G {
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    DSSClient [label="DSS client"]
+
+    LoadBalancer1 [label="TLS termination +\nload balancer",color=1]
+    CoreService1 [label="Core Service",color=2];
+    YBDB1 [label="YBDB Services",color=3];
+    YBLoadBalancer1 [label="TCP Reverse Proxies",color=5]
+
+    LoadBalancer2 [label="TLS termination +\nload balancer",color=1]
+    CoreService2 [label="Core Services",color=2];
+    YBDB2 [label="YBDB Services",color=3];
+    YBLoadBalancer2 [label="TCP Reverse Proxies",color=5]
+
+    LoadBalancer3 [label="TLS termination +\nload balancer",color=1]
+    CoreService3 [label="Core Services",color=2];
+    YBDB3 [label="YBDB Services",color=3];
+    YBLoadBalancer3 [label="TCP Reverse Proxies",color=5]
+
+    PublicInternet [label="Public Internet"];
+
+    subgraph cluster_0 {
+        label="USS1's DSS instance"
+        subgraph cluster_1 {
+            label="Replica X";
+            CoreService1 -> YBDB1;
+            YBDB1;
+            YBLoadBalancer1 -> YBDB1;
+            { rank=sink; YBLoadBalancer1; }
+        }
+        LoadBalancer1 -> CoreService1
+    }
+
+    subgraph cluster_4 {
+        label="USS2's DSS instance"
+        subgraph cluster_5 {
+            label="Replica X";
+            CoreService2 -> YBDB2;
+            YBDB2;
+            YBLoadBalancer2 -> YBDB2;
+            { rank=sink; YBLoadBalancer2; }
+        }
+        LoadBalancer2 -> CoreService2
+    }
+
+    subgraph cluster_8 {
+        label="USS3's DSS instance"
+        subgraph cluster_9 {
+            label="Replica X";
+            YBDB3;
+            CoreService3 -> YBDB3;
+            YBLoadBalancer3 -> YBDB3;
+            { rank=sink; YBLoadBalancer3; }
+        }
+        LoadBalancer3 -> CoreService3
+    }
+
+    DSSClient -> LoadBalancer1;
+    DSSClient -> LoadBalancer2;
+    DSSClient -> LoadBalancer3;
+
+    YBDB1 -> PublicInternet;
+    YBDB2 -> PublicInternet;
+    YBDB3 -> PublicInternet;
+
+    YBLoadBalancer1 -> PublicInternet [dir=back];
+    YBLoadBalancer2 -> PublicInternet [dir=back];
+    YBLoadBalancer3 -> PublicInternet [dir=back];
+
+}
