@@ -266,6 +266,9 @@
             "enableScdGlobalLock": {
               "type": "boolean"
             },
+            "enableTimeBasedNotificationIndex": {
+              "type": "boolean"
+            },
             "enableDssMetrics": {
               "type": "boolean"
             },

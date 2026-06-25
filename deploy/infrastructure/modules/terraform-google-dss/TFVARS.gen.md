@@ -146,6 +146,10 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>Set this boolean true to enable experimental global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas. Must be enabled on all instances part of the pool.</p>
 <br/>Default value: <code>false</code></td>
             </tr><tr>
+                <td>enable_time_based_notification_index (<code>bool</code>)</td>
+                <td><p>Set this boolean to true to use a time-based notification index when working with RID and SCD subscriptions. Must be enabled on all instances part of the pool.</p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>evict_enable_rid_cron (<code>bool</code>)</td>
                 <td><p>Set this to true to enable the cron job that automatically cleanup RID entries.</p>
 <br/>Default value: <code>true</code></td>

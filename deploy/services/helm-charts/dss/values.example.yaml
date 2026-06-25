@@ -13,6 +13,7 @@ dss:
     publicEndpoint: https://dss.example.com
     enableScd: true
     enableScdGlobalLock: false
+    enableTimeBasedNotificationIndex: false
     enableDssMetrics: false
     locality: zone=interuss-example-google-ew1
 

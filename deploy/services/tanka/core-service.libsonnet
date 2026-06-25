@@ -135,6 +135,8 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 public_endpoint: metadata.backend.publicEndpoint,
               } else {}) + (if metadata.enableDssMetrics then {
                 enable_metrics: true,
+              } else {}) + (if metadata.enableTimeBasedNotificationIndex then {
+                enable_time_based_notification_index: true,
               } else {}),
               readinessProbe: {
                 httpGet: {

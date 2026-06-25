@@ -39,6 +39,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "authorization",
     "enable_scd",
     "enable_scd_global_lock",
+    "enable_time_based_notification_index",
     "should_init",
     "desired_rid_db_version",
     "desired_scd_db_version",
