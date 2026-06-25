@@ -340,6 +340,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
+	handler = maxBodySizeMiddleware(1<<22, handler) // 4 MB
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
@@ -403,6 +404,20 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 		} else {
 			next.ServeHTTP(w, r)
 		}
+	})
+}
+
+func maxBodySizeMiddleware(limit int64, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.ContentLength > limit {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+
+		// The client may lie in the Header, limit reading
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		next.ServeHTTP(w, r)
 	})
 }
 
