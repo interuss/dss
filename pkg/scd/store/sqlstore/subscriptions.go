@@ -410,6 +410,11 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
+
+	if c.timeBasedNotificationIndex { // No lock when working with timeBasedNotificationIndex
+		return nil
+	}
+
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if c.globalLock {

@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
+	"github.com/interuss/dss/pkg/store/params"
 	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )
@@ -29,7 +30,8 @@ type repo struct {
 
 // Init initializes the SQL-backed rid store. It return a concrete sqlstore.Store[rid.repos.Repository] providing the
 // ability to interact with a database-backed store of rid information.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, timeBasedNotificationIndex bool) (*sqlstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstore.Store[repos.Repository], error) {
+	opts := params.GetStoreOptions()
 	return sqlstore.Init(ctx, sqlstore.Config[repos.Repository]{
 		DBName:                 "rid",
 		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
@@ -39,7 +41,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, timeBased
 				Queryable:                  q,
 				clock:                      clock,
 				logger:                     logging.WithValuesFromContext(ctx, logger),
-				timeBasedNotificationIndex: timeBasedNotificationIndex,
+				timeBasedNotificationIndex: opts.TimeBasedNotificationIndex,
 			}
 		},
 	}, withCheckCron)
