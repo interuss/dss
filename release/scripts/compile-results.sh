@@ -21,7 +21,7 @@ get_release_version_from_vars() {
         | sed -E 's/.*"[^"]*:([^"]+)".*/\1/'
 }
 
-# Extract "v0.28.0" from "codebase_version": "Interuss/monitoring/v0.28.0"
+# Extract "v0.31.0" from "codebase_version": "Interuss/monitoring/v0.31.0"
 get_monitoring_version_from_report() {
     [[ -f "$1" ]] || { echo "unknown"; return; }
     grep -oE '"codebase_version"[[:space:]]*:[[:space:]]*"[^"]+"' "$1" | head -1 \
