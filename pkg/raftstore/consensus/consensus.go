@@ -97,6 +97,13 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	consensus.snapshotIndex = snap.Metadata.Index
 	consensus.appliedIndex = snap.Metadata.Index
 
+	if !raft.IsEmptySnap(snap) && snap.Data != nil {
+		commitC <- EntryCommit{
+			IsSnapshot:   true,
+			SnapshotData: snap.Data,
+		}
+	}
+
 	go func() {
 		err := consensus.handleReady(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
 		if err != nil {
@@ -240,7 +247,10 @@ func (c *Consensus) handleReady(tickInterval time.Duration, snapshotInterval uin
 					return stacktrace.NewError("snapshot index %d shall be greater than current applied index %d", rd.Snapshot.Metadata.Index, c.appliedIndex)
 				}
 
-				c.commitC <- EntryCommit{SnapshotData: rd.Snapshot.Data}
+				c.commitC <- EntryCommit{
+					IsSnapshot:   true,
+					SnapshotData: rd.Snapshot.Data,
+				}
 
 				c.confState = rd.Snapshot.Metadata.ConfState
 				c.snapshotIndex = rd.Snapshot.Metadata.Index

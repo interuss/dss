@@ -42,7 +42,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 	commitC := make(chan consensus.EntryCommit)
 	go store.processCommits(ctx, commitC)
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, func() ([]byte, error) { return nil, nil }, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
@@ -82,7 +82,7 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 				return
 			}
 
-			if commit.SnapshotData != nil {
+			if commit.IsSnapshot && commit.SnapshotData != nil {
 				if err := s.raftRepo.RestoreFromSnapshot(commit.SnapshotData); err != nil {
 					s.logger.Error("failed to restore from snapshot", zap.Error(err))
 				}

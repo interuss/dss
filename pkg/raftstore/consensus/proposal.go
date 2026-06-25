@@ -15,6 +15,7 @@ type EntryCommit struct {
 	Prop Proposal
 	Done chan ProposalResult
 
+	IsSnapshot   bool
 	SnapshotData []byte
 }
 
