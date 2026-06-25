@@ -37,7 +37,9 @@ type (
 		NodeID uint64
 		// comma-separated "nodeID=peerURL" pairs defining all cluster members including this node
 		Peers string
-
+		// Join indicates that this node is joining an already-running cluster.
+		// After the node's startup, it should be added to the cluster via a config change (e.g. raftctl)
+		Join bool
 		// DataDir is the directory where the node persists its Raft state (WAL segments and snapshots).
 		// This data is required for the node to restart and rejoin the cluster without having to receive
 		// a full snapshot from the leader. It must not be deleted while the node is running or
@@ -67,9 +69,8 @@ type (
 	}
 )
 
-// PeerMap parses the Peers string into a map of node ID to peer URL.
-func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
-	peers := make(map[uint64]*url.URL)
+func (c ConnectParameters) PeerRawMap() (map[uint64]string, error) {
+	peers := make(map[uint64]string)
 
 	for entry := range strings.SplitSeq(c.Peers, ",") {
 		parts := strings.SplitN(entry, "=", 2)
@@ -90,11 +91,26 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 			return nil, stacktrace.NewError("duplicate peer ID %d", id)
 		}
 
-		peerURL, err := url.Parse(parts[1])
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "invalid peer URL %s", parts[1])
-		}
+		peers[id] = parts[1]
+	}
 
+	return peers, nil
+}
+
+// PeerMap parses the Peers string into a map of node ID to peer URL.
+func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
+	peers := make(map[uint64]*url.URL)
+
+	rawPeers, err := c.PeerRawMap()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to parse Peers string")
+	}
+
+	for id, rawURL := range rawPeers {
+		peerURL, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "invalid URL %s for node %d", rawURL, id)
+		}
 		peers[id] = peerURL
 	}
 
@@ -124,6 +140,7 @@ func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
+	flag.BoolVar(&connectParameters.Join, "raft_join", false, "Set on a node's first start when it is joining an already-running cluster (added via raftctl) rather than participating in the cluster's initial bootstrap.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
 		"Log entries retained after compaction so a slow follower can catch up via replication rather than a full snapshot. Higher values tolerate slower followers but increase disk usage.")

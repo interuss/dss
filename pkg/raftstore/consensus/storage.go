@@ -2,8 +2,10 @@ package consensus
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 
@@ -17,6 +19,10 @@ import (
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
 )
+
+// membersFileName is the name of the file, relative to a node's DataDir, that persists the
+// current cluster membership (node ID -> peer URL) across restarts.
+const membersFileName = "members.json"
 
 // snapshotProvider is a function that returns the snapshot data to be included in the Raft snapshot.
 // We use a snapshotProvider from each component (scd, rid and aux).
@@ -34,6 +40,8 @@ type storage struct {
 	snapshot snapshotProvider
 
 	snapshotCatchUpEntries uint64
+
+	dataDir string
 }
 
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
@@ -127,6 +135,8 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 		snapshot: provider,
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
+
+		dataDir: dataDir,
 	}, ok, nil
 }
 
@@ -177,11 +187,16 @@ func (s *storage) save(snapshot raftpb.Snapshot) error {
 	return s.wal.ReleaseLockTo(snapshot.Metadata.Index)
 }
 
-func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfState) error {
+func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfState, members map[uint64]string, removedIDs []uint64) error {
 	s.logger.Info("triggering snapshot", zap.Uint64("appliedIndex", appliedIndex))
-	data, err := s.snapshot()
+	appData, err := s.snapshot()
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to get snapshot data")
+	}
+
+	data, err := json.Marshal(snapshotEnvelope{Members: members, RemovedIDs: removedIDs, AppData: appData})
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal snapshot envelope")
 	}
 
 	snap, err := s.CreateSnapshot(appliedIndex, confState, data)
@@ -241,4 +256,57 @@ func (s *storage) handleReceivedState(snapshot raftpb.Snapshot, hardState raftpb
 	}
 
 	return nil
+}
+
+// saveMembers persists the current node ID -> peer URL table to dataDir/members.json
+// so that it can be loaded on restart.
+func (s *storage) saveMembers(members map[uint64]string) error {
+	data, err := json.MarshalIndent(members, "", "  ")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal member list")
+	}
+
+	tmpPath := path.Join(s.dataDir, membersFileName+".tmp")
+	if err := os.WriteFile(tmpPath, data, 0o640); err != nil {
+		return stacktrace.Propagate(err, "failed to write member list to %s", tmpPath)
+	}
+
+	finalPath := path.Join(s.dataDir, membersFileName)
+	if err := os.Rename(tmpPath, finalPath); err != nil {
+		return stacktrace.Propagate(err, "failed to rename member list into place at %s", finalPath)
+	}
+
+	return nil
+}
+
+// loadMembers loads the persisted node ID -> peer URL table from dataDir/members.json, if it exists.
+func loadMembers(dataDir string) (map[uint64]string, error) {
+	membersPath := path.Join(dataDir, membersFileName)
+	if !fileutil.Exist(membersPath) {
+		return nil, nil
+	}
+
+	data, err := os.ReadFile(membersPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to read member list from %s", membersPath)
+	}
+
+	members := make(map[uint64]string)
+	if err := json.Unmarshal(data, &members); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to unmarshal member list from %s", membersPath)
+	}
+
+	return members, nil
+}
+
+func membersToPeerMap(members map[uint64]string) (map[uint64]*url.URL, error) {
+	peers := make(map[uint64]*url.URL, len(members))
+	for id, rawURL := range members {
+		peerURL, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "invalid URL %s for node %d", rawURL, id)
+		}
+		peers[id] = peerURL
+	}
+	return peers, nil
 }

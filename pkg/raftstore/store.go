@@ -8,6 +8,7 @@ import (
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
+	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
 )
 
@@ -60,6 +61,12 @@ func (s *Store[R]) Transact(ctx context.Context, requestType RequestType, payloa
 
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.raftRepo.GetRepo(), nil
+}
+
+// ProposeConfChange proposes a single membership change to the underlying Raft cluster and
+// blocks until it is applied or ctx is cancelled. It implements raftstore.MembershipManager.
+func (s *Store[R]) ProposeConfChange(ctx context.Context, changeType raftpb.ConfChangeType, nodeID uint64, peerURL string) (*raftpb.ConfState, error) {
+	return s.Consensus.ProposeConfChange(ctx, changeType, nodeID, peerURL)
 }
 
 // Close shuts down the consensus instance and processCommits loop.
