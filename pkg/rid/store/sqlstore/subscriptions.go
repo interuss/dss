@@ -231,13 +231,16 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 				AND ends_at >= $2`, subscriptionFields)
 	} else {
 		updateQuery = fmt.Sprintf(`
-			UPDATE subscriptions
-			SET
-                notification_index = notification_index + 1
-			WHERE
-				cells && $1
-				AND ends_at >= $2
-			RETURNING %s`, subscriptionFields)
+			WITH affected AS (
+                SELECT id FROM subscriptions
+                WHERE cells && $1 AND ends_at >= $2
+                ORDER BY id
+                FOR UPDATE
+            )
+            UPDATE subscriptions
+            SET notification_index = notification_index + 1
+            WHERE id IN (SELECT id FROM affected)
+            RETURNING %s`, subscriptionFields)
 	}
 
 	return r.process(
