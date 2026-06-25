@@ -61,7 +61,7 @@ func setUpStore(ctx context.Context, t *testing.T, logger *zap.Logger) (store.St
 
 	connectParameters.DBName = "rid"
 
-	store, err := ridc.Init(ctx, logger, false, false)
+	store, err := ridc.Init(ctx, logger, false)
 	require.NoError(t, err)
 	logger.Info("using sqlstore.")
 

@@ -103,11 +103,9 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
 		}
 
-		if !a.TimeBasedNotificationIndex {
-			err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds, old.StartTime, old.EndTime)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to acquire lock")
-			}
+		err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds, old.StartTime, old.EndTime)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
 
 		// Get the Subscription supporting the OperationalIntent, if one is defined
@@ -799,11 +797,9 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 			subscriptionIds = append(subscriptionIds, validParams.subscriptionID)
 		}
 
-		if !a.TimeBasedNotificationIndex {
-			err = r.LockSubscriptionsOnCells(ctx, validParams.cells, subscriptionIds, validParams.uExtent.StartTime, validParams.uExtent.EndTime)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to acquire lock")
-			}
+		err = r.LockSubscriptionsOnCells(ctx, validParams.cells, subscriptionIds, validParams.uExtent.StartTime, validParams.uExtent.EndTime)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to acquire lock")
 		}
 
 		// Validate the request against the previous OIR

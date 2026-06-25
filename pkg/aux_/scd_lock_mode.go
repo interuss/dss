@@ -8,5 +8,5 @@ import (
 
 func (a *Server) GetScdLockMode(ctx context.Context, req *restapi.GetScdLockModeRequest) restapi.GetScdLockModeResponseSet {
 
-	return restapi.GetScdLockModeResponseSet{Response200: &restapi.SCDLockModeResponse{GlobalLock: &a.ScdGlobalLock}}
+	return restapi.GetScdLockModeResponseSet{Response200: &restapi.SCDLockModeResponse{GlobalLock: &a.Options.GlobalLock}}
 }

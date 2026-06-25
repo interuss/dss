@@ -43,7 +43,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 }
 
 func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*sqlstore.Store[repos.Repository], error) {
-	s, err := Init(ctx, logging.Logger, false, false)
+	s, err := Init(ctx, logging.Logger, false)
 
 	if err != nil {
 		return nil, err

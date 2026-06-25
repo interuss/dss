@@ -17,11 +17,11 @@ import (
 type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the scd store backend.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool, timeBasedNotificationIndex bool) (Store, error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
 	case params.SQLStoreType:
-		return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock, timeBasedNotificationIndex)
+		return scdsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
 		return scdraftstore.Init(ctx, logger)
 	default:

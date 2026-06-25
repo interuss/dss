@@ -8,6 +8,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
+	"github.com/interuss/dss/pkg/store/params"
 	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )
@@ -30,7 +31,8 @@ type repo struct {
 
 // Init initializes the SQL-backed sid store. It return a concrete sqlstore.Store[sid.repos.Repository] providing the
 // ability to interact with a database-backed store of sid information.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool, timeBasedNotificationIndex bool) (*sqlstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstore.Store[repos.Repository], error) {
+	opts := params.GetStoreOptions()
 	return sqlstore.Init(ctx, sqlstore.Config[repos.Repository]{
 		DBName:                 "scd",
 		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
@@ -40,8 +42,8 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLoc
 				q:                          q,
 				clock:                      clock,
 				logger:                     logging.WithValuesFromContext(ctx, logger),
-				globalLock:                 globalLock,
-				timeBasedNotificationIndex: timeBasedNotificationIndex,
+				globalLock:                 opts.GlobalLock,
+				timeBasedNotificationIndex: opts.TimeBasedNotificationIndex,
 			}
 		},
 	}, withCheckCron)
