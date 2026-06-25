@@ -10,6 +10,7 @@ import (
 	auxraftparams "github.com/interuss/dss/pkg/aux_/store/raftstore/params"
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore"
+	raftstoreadmin "github.com/interuss/dss/pkg/raftstore/admin"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
@@ -47,6 +48,8 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	}
 
 	r.consensus = store.Consensus
+
+	raftstoreadmin.Register(ctx, logger, "aux", store)
 
 	return store, nil
 }

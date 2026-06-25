@@ -9,6 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
+	raftstoreadmin "github.com/interuss/dss/pkg/raftstore/admin"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -119,6 +120,8 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	}
 
 	r.consensus = store.Consensus
+
+	raftstoreadmin.Register(ctx, logger, "scd", store)
 
 	return store, nil
 }
