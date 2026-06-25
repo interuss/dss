@@ -13,6 +13,7 @@ local metadata = metadataBase {
   enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
   datastore: 'yugabyte',
+  datastoreMaxOpenConns: 4,
   locality: 'minikube',
   cockroach+: {
     image: 'cockroachdb/cockroach:v24.1.3',

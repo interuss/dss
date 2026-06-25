@@ -6,11 +6,13 @@
       datastore_ssl_mode: 'verify-full',
       datastore_user: 'root',
       datastore_ssl_dir: '/cockroach/cockroach-certs',
+      datastore_max_open_conns: metadata.datastoreMaxOpenConns,
     } else {
       datastore_host: 'yb-tservers.' + metadata.namespace,
       datastore_port: 5433,
       datastore_ssl_mode: 'verify-full',
       datastore_user: 'yugabyte',
       datastore_ssl_dir: '/opt/yugabyte-certs/',
+      datastore_max_open_conns: metadata.datastoreMaxOpenConns,
     }
 }

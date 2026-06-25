@@ -16,6 +16,7 @@ dss:
     enableTimeBasedNotificationIndex: false
     enableDssMetrics: false
     locality: zone=interuss-example-google-ew1
+    datastoreMaxOpenConns: 4
 
 cockroachdb:
   enabled: true

@@ -284,6 +284,9 @@
               "description": "Locality attribute for this deployment. Example: zone=example",
               "type": "string"
             },
+            "datastoreMaxOpenConns": {
+              "type": "integer"
+            },
             "evict": {
               "description": "Evict jobs configuration",
               "type": "object",

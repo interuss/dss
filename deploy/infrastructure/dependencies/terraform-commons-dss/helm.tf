@@ -71,6 +71,7 @@ resource "local_file" "helm_chart_values" {
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
         locality                         = "zone=${var.locality}"
+        datastoreMaxOpenConns            = var.datastore_max_open_conns
 
         evict = {
           scd = {
@@ -279,6 +280,7 @@ resource "local_file" "helm_chart_values" {
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
         locality                         = "zone=${var.locality}"
+        datastoreMaxOpenConns            = var.datastore_max_open_conns
 
         evict = {
           scd = {

@@ -232,6 +232,8 @@ your chosen provider.
 
     1.  `VAR_DATASTORE`: Datastore to use. Can be set to 'cockroachdb' or 'yugabyte'.
 
+    1.  `VAR_DATASTORE_MAX_OPEN_CONNS`: Maximum number of open connections to the database, default is 4.
+
     1.  `VAR_CRDB_DOCKER_IMAGE_NAME`: Docker image of cockroach db pods. Until
         DSS v0.16, the recommended CockroachDB image name is `cockroachdb/cockroach:v21.2.7`.
         From DSS v0.17, the recommended CockroachDB version is `cockroachdb/cockroach:v24.1.3`.

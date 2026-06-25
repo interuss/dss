@@ -27,6 +27,7 @@ module "terraform-commons-dss" {
   crdb_cluster_name                    = var.crdb_cluster_name
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
+  datastore_max_open_conns             = var.datastore_max_open_conns
   should_init                          = var.should_init
   authorization                        = var.authorization
   locality                             = var.locality
