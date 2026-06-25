@@ -303,12 +303,12 @@ func (s *APIRouter) GetInstanceCAs(exp *regexp.Regexp, w http.ResponseWriter, r 
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req GetScdLockModeRequest
-	var response GetScdLockModeResponseSet
+func (s *APIRouter) GetGlobalOptions(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetGlobalOptionsRequest
+	var response GetGlobalOptionsResponseSet
 
 	// Authorize request
-	req.Auth = s.Authorizer.Authorize(w, r, GetScdLockModeSecurity)
+	req.Auth = s.Authorizer.Authorize(w, r, GetGlobalOptionsSecurity)
 	// Verify authorization
 	if req.Auth.Error != nil {
 		setAuthError(r.Context(), stacktrace.Propagate(req.Auth.Error, "Auth failed"), &response.Response401, &response.Response403, &response.Response500)
@@ -316,7 +316,7 @@ func (s *APIRouter) GetScdLockMode(exp *regexp.Regexp, w http.ResponseWriter, r 
 		// Call implementation
 		ctx, cancel := context.WithCancel(r.Context())
 		defer cancel()
-		response = s.Implementation.GetScdLockMode(ctx, &req)
+		response = s.Implementation.GetGlobalOptions(ctx, &req)
 	}
 
 	// Write response to client
@@ -381,8 +381,8 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/aux/v1/configuration/ca_certs$")
 	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs, Name: "auxv1.GetInstanceCAs", Path: "/aux/v1/configuration/ca_certs"}
 
-	pattern = regexp.MustCompile("^/aux/v1/configuration/scd_lock_mode$")
-	router.Routes[7] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetScdLockMode, Name: "auxv1.GetScdLockMode", Path: "/aux/v1/configuration/scd_lock_mode"}
+	pattern = regexp.MustCompile("^/aux/v1/configuration/global_options$")
+	router.Routes[7] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetGlobalOptions, Name: "auxv1.GetGlobalOptions", Path: "/aux/v1/configuration/global_options"}
 
 	return router
 }

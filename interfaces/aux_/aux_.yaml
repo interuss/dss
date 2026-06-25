@@ -95,11 +95,14 @@ components:
           items:
             type: string
 
-    SCDLockModeResponse:
+    GlobalOptionsResponse:
       type: object
       properties:
-        global_lock:
+        scd_global_lock:
           description: The value of the 'enable_scd_global_lock' option for this DSS instance
+          type: boolean
+        time_based_notification_index:
+          description: The value of the 'enable_time_based_notification_index' option for this DSS instance
           type: boolean
 
 paths:
@@ -330,10 +333,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /aux/v1/configuration/scd_lock_mode:
+  /aux/v1/configuration/global_options:
     get:
-      summary: Return the value of the 'enable_scd_global_lock' lock option. May be used to ensure all participants in a pool are using the same value.
-      operationId: getScdLockMode
+      summary: Return the value of important behaviour options that need to be set to a common value. May be used to ensure all participants in a pool are using the same value.
+      operationId: getGlobalOptions
       tags: [ dss ]
       security:
       - Auth:
@@ -344,7 +347,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SCDLockModeResponse'
+                $ref: '#/components/schemas/GlobalOptionsResponse'
         '401':
           description: >-
             Bearer access token was not provided in Authorization header, token

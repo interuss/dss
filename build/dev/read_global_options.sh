@@ -8,5 +8,5 @@ ACCESS_TOKEN=$(curl --silent \
 | python extract_json_field.py 'access_token')
 
 curl --silent -X GET  \
-"http://localhost:8082/aux/v1/configuration/scd_lock_mode" \
+"http://localhost:8082/aux/v1/configuration/global_options" \
 -H "Authorization: Bearer ${ACCESS_TOKEN}" -H "Content-Type: application/json"
