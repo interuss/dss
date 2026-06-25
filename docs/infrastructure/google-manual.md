@@ -214,6 +214,9 @@ your chosen provider.
         e global throughput but improve throughput with lot of subscriptions in
         the same areas.
 
+    1.  `VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX`: Set this boolean true to enable
+        time-based notification index when working with RID and SCD subscriptions.
+
     1.  `VAR_ENABLE_DSS_METRICS`: Set this boolean true to enable
         prometheus-compatible metric endpoint.
 

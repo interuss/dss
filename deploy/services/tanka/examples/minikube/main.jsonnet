@@ -10,6 +10,7 @@ local metadata = metadataBase {
   single_cluster: true,
   enableScd: true,
   enableScdGlobalLock: false,
+  enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
   datastore: 'yugabyte',
   locality: 'minikube',

@@ -62,14 +62,15 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds          = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname            = var.app_hostname
-        publicEndpoint      = "https://${var.app_hostname}"
-        enableScd           = var.enable_scd
-        enableScdGlobalLock = var.enable_scd_global_lock
-        enableDssMetrics    = var.enable_dss_metrics
-        locality            = "zone=${var.locality}"
+        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname                         = var.app_hostname
+        publicEndpoint                   = "https://${var.app_hostname}"
+        enableScd                        = var.enable_scd
+        enableScdGlobalLock              = var.enable_scd_global_lock
+        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
+        enableDssMetrics                 = var.enable_dss_metrics
+        locality                         = "zone=${var.locality}"
 
         evict = {
           scd = {
@@ -269,14 +270,15 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds          = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname            = var.app_hostname
-        publicEndpoint      = "https://${var.app_hostname}"
-        enableScd           = var.enable_scd
-        enableScdGlobalLock = var.enable_scd_global_lock
-        enableDssMetrics    = var.enable_dss_metrics
-        locality            = "zone=${var.locality}"
+        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname                         = var.app_hostname
+        publicEndpoint                   = "https://${var.app_hostname}"
+        enableScd                        = var.enable_scd
+        enableScdGlobalLock              = var.enable_scd_global_lock
+        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
+        enableDssMetrics                 = var.enable_dss_metrics
+        locality                         = "zone=${var.locality}"
 
         evict = {
           scd = {

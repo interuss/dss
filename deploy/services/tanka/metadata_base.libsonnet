@@ -9,6 +9,7 @@
   single_cluster: false,
   enableScd: false,
   enableScdGlobalLock: false,
+  enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
   datastore: 'cockroachdb',
   locality: error 'must supply locality',
