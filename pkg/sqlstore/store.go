@@ -196,6 +196,9 @@ func (s *Store[R]) transactYugabyte(ctx context.Context, f func(context.Context,
 		if err == nil || !isYugabyteRetryable(err) {
 			return err
 		}
+		if attempt == s.maxRetries {
+			break
+		}
 		backoff := time.Duration(1<<min(attempt, 6)) * time.Millisecond
 		select {
 		case <-ctx.Done():
