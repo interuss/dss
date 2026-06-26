@@ -18,5 +18,5 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get rid raft parameters")
 	}
-	return raftstore.Init(ctx, logger, params, func() repos.Repository { return &repo{} })
+	return raftstore.Init(ctx, logger.With(zap.String("service", "rid")), params, func() repos.Repository { return &repo{} })
 }
