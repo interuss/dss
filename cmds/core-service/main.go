@@ -341,13 +341,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
-	handler = maxBodySizeMiddleware(1<<22, handler) // 4 MB
 	handler = timestamp.RequestTimestampMiddleware(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
 		handler = otelhttp.NewHandler(handler, "http")
 	}
+
+	// Keep this middleware in first position: no processing shall be done before the body size is checked.
+	handler = maxBodySizeMiddleware(1<<22, handler) // 4 MB
 
 	httpServer := &http.Server{
 		Addr:              address,
