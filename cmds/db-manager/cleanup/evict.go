@@ -14,6 +14,7 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -100,7 +101,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		}
 		return nil
 	}
-	if err = scdStore.Transact(ctx, scdAction); err != nil {
+	if _, err = scdStore.Transact(ctx, store.NewActionFunction(scdAction)); err != nil {
 		return fmt.Errorf("failed to execute SCD transaction: %w", err)
 	}
 
@@ -145,7 +146,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 		return nil
 	}
-	if err = ridStore.Transact(ctx, ridAction); err != nil {
+	if _, err = ridStore.Transact(ctx, store.NewActionFunction(ridAction)); err != nil {
 		return fmt.Errorf("failed to execute RID transaction: %w", err)
 	}
 
