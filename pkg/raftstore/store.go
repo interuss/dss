@@ -5,6 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -29,9 +30,9 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 }
 
 // Transact proposes the entry to Raft and blocks until it is committed and applied.
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) Transact(ctx context.Context, action store.Action[R]) (any, error) {
 	// TODO: implement
-	return nil
+	return nil, nil
 }
 
 // Interact returns a repository that can be used to query the store without proposing a Raft entry.

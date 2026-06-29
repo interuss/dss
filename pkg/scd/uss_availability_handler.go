@@ -10,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 )
@@ -51,7 +52,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 		return nil
 	}
 
-	err := a.Store.Transact(ctx, action)
+	_, err := a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
@@ -121,7 +122,7 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 		}
 		return nil
 	}
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {

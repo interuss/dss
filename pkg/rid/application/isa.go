@@ -10,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
 
@@ -63,7 +64,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 		old, err := repo.GetISA(ctx, id, true)
 		switch {
 		case err != nil:
@@ -88,7 +89,7 @@ func (a *app) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Ow
 			return stacktrace.Propagate(err, "Error updating notification indices")
 		}
 		return nil
-	})
+	}))
 	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }
 
@@ -104,7 +105,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 		// ensure it doesn't exist yet
 		old, err := repo.GetISA(ctx, isa.ID, false)
 		if err != nil {
@@ -126,7 +127,7 @@ func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServic
 			return stacktrace.Propagate(err, "Error inserting ISA")
 		}
 		return nil
-	})
+	}))
 	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }
 
@@ -138,7 +139,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 		subs []*ridmodels.Subscription
 	)
 	// The following will automatically retry TXN retry errors.
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 		var err error
 
 		old, err := repo.GetISA(ctx, isa.ID, true)
@@ -176,7 +177,7 @@ func (a *app) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServic
 			return stacktrace.Propagate(err, "Error updating notification indices")
 		}
 		return nil
-	})
+	}))
 
 	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }

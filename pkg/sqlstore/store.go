@@ -176,25 +176,31 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.newRepo(s.Pool), nil
 }
 
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) Transact(ctx context.Context, action store.Action[R]) (any, error) {
 	if s.Version.Type == Yugabyte {
-		return s.transactYugabyte(ctx, f)
+		return s.transactYugabyte(ctx, action)
 	}
 
 	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		return f(ctx, s.newRepo(tx))
+	var result any
+	var err error
+	err = crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+		result, err = action.Execute(ctx, s.newRepo(tx))
+		return err
 	})
+	return result, err
 }
 
-func (s *Store[R]) transactYugabyte(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) transactYugabyte(ctx context.Context, action store.Action[R]) (any, error) {
+	var result any
 	var err error
 	for attempt := 0; attempt <= s.maxRetries; attempt++ {
 		err = pgx.BeginTxFunc(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-			return f(ctx, s.newRepo(tx))
+			result, err = action.Execute(ctx, s.newRepo(tx))
+			return err
 		})
 		if err == nil || !isYugabyteRetryable(err) {
-			return err
+			return result, err
 		}
 		if attempt == s.maxRetries {
 			break
@@ -202,11 +208,11 @@ func (s *Store[R]) transactYugabyte(ctx context.Context, f func(context.Context,
 		backoff := time.Duration(1<<min(attempt, 6)) * time.Millisecond
 		select {
 		case <-ctx.Done():
-			return err
+			return result, err
 		case <-time.After(backoff + time.Duration(rand.Int64N(int64(backoff)+1))):
 		}
 	}
-	return err
+	return result, err
 }
 
 func isYugabyteRetryable(err error) bool {
