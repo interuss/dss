@@ -164,16 +164,6 @@ func ToTime(t *time.Time) *restapi.Time {
 	return result
 }
 
-// ToLatLngPoint converts latlngpoint business object to RID v2 REST model
-func ToLatLngPoint(pt *dssmodels.LatLngPoint) *restapi.LatLngPoint {
-	result := &restapi.LatLngPoint{
-		Lat: restapi.Latitude(pt.Lat),
-		Lng: restapi.Longitude(pt.Lng),
-	}
-
-	return result
-}
-
 // ToIdentificationServiceArea converts an IdentificationServiceArea
 // business object to RID v2 REST model for API consumption.
 func ToIdentificationServiceArea(i *ridmodels.IdentificationServiceArea) *restapi.IdentificationServiceArea {
