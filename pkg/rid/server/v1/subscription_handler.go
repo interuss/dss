@@ -67,12 +67,16 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area"))}}
 	}
-	cu, err := geo.AreaToCellIDs(string(*req.Area))
+	p, err := apiv1.FromGeoPolygonString(*req.Area)
 	if err != nil {
-		if errors.Is(err, geo.ErrAreaTooLarge) {
-			return restapi.SearchSubscriptionsResponseSet{Response413: &restapi.ErrorResponse{
-				Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid area"))}}
-		}
+		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
+	}
+	cu, err := p.CalculateCovering()
+	if errors.Is(err, geo.ErrAreaTooLarge) {
+		return restapi.SearchSubscriptionsResponseSet{Response413: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid area"))}}
+	} else if err != nil {
 		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
 	}
