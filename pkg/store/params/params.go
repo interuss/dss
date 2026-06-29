@@ -8,6 +8,7 @@ import (
 const (
 	RaftStoreType = "raft"
 	SQLStoreType  = "sql"
+	MemStoreType  = "mem"
 )
 
 type (
@@ -29,6 +30,7 @@ var (
 )
 
 func init() {
+	// NB: Memstore is not available here on purpose, as it is only to be used internally.
 	flag.StringVar(&storeParameters.StoreType, "store_type", SQLStoreType, fmt.Sprintf("Store type. Use '%s' for CockroachDB/YugabyteDB and '%s' for Raft-based store.", SQLStoreType, RaftStoreType))
 	flag.BoolVar(&storeOptions.GlobalLock, "enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
 	flag.BoolVar(&storeOptions.TimeBasedNotificationIndex, "enable_time_based_notification_index", false, "Use a time-based notification index when working with RID and SCD subscriptions.")
