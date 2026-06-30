@@ -29,6 +29,13 @@ type GetTokenRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetTokenRequestType = "GetToken"
+
+func (req *GetTokenRequest) RequestType() string { return GetTokenRequestType }
+
+func (req *GetTokenRequest) IsReadOnly() bool { return false }
+
 type GetTokenResponseSet struct {
 	// The requested token was generated successfully
 	Response200 *TokenResponse

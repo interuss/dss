@@ -48,6 +48,13 @@ type GetVersionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetVersionRequestType = "GetVersion"
+
+func (req *GetVersionRequest) RequestType() string { return GetVersionRequestType }
+
+func (req *GetVersionRequest) IsReadOnly() bool { return true }
+
 type GetVersionResponseSet struct {
 	// The version of the DSS is successfully returned.
 	Response200 *VersionResponse
@@ -63,6 +70,13 @@ type ValidateOauthRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const ValidateOauthRequestType = "ValidateOauth"
+
+func (req *ValidateOauthRequest) RequestType() string { return ValidateOauthRequestType }
+
+func (req *ValidateOauthRequest) IsReadOnly() bool { return false }
+
 type ValidateOauthResponseSet struct {
 	// The provided token was validated.
 	Response200 *api.EmptyResponseBody
@@ -81,6 +95,13 @@ type GetPoolRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetPoolRequestType = "GetPool"
+
+func (req *GetPoolRequest) RequestType() string { return GetPoolRequestType }
+
+func (req *GetPoolRequest) IsReadOnly() bool { return true }
+
 type GetPoolResponseSet struct {
 	// The information is successfully returned.
 	Response200 *PoolResponse
@@ -102,6 +123,13 @@ type GetDSSInstancesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetDSSInstancesRequestType = "GetDSSInstances"
+
+func (req *GetDSSInstancesRequest) RequestType() string { return GetDSSInstancesRequestType }
+
+func (req *GetDSSInstancesRequest) IsReadOnly() bool { return true }
+
 type GetDSSInstancesResponseSet struct {
 	// The known DSS instances participating in the pool are successfully returned.
 	Response200 *DSSInstancesResponse
@@ -132,6 +160,15 @@ type PutDSSInstancesHeartbeatRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const PutDSSInstancesHeartbeatRequestType = "PutDSSInstancesHeartbeat"
+
+func (req *PutDSSInstancesHeartbeatRequest) RequestType() string {
+	return PutDSSInstancesHeartbeatRequestType
+}
+
+func (req *PutDSSInstancesHeartbeatRequest) IsReadOnly() bool { return false }
+
 type PutDSSInstancesHeartbeatResponseSet struct {
 	// The heartbeat have been recorded. The known DSS instances participating in the pool are successfully returned.
 	Response201 *DSSInstancesResponse
@@ -156,6 +193,13 @@ type GetAcceptedCAsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetAcceptedCAsRequestType = "GetAcceptedCAs"
+
+func (req *GetAcceptedCAsRequest) RequestType() string { return GetAcceptedCAsRequestType }
+
+func (req *GetAcceptedCAsRequest) IsReadOnly() bool { return true }
+
 type GetAcceptedCAsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *CAsResponse
@@ -171,6 +215,13 @@ type GetInstanceCAsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetInstanceCAsRequestType = "GetInstanceCAs"
+
+func (req *GetInstanceCAsRequest) RequestType() string { return GetInstanceCAsRequestType }
+
+func (req *GetInstanceCAsRequest) IsReadOnly() bool { return true }
+
 type GetInstanceCAsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *CAsResponse
@@ -186,6 +237,13 @@ type GetGlobalOptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetGlobalOptionsRequestType = "GetGlobalOptions"
+
+func (req *GetGlobalOptionsRequest) RequestType() string { return GetGlobalOptionsRequestType }
+
+func (req *GetGlobalOptionsRequest) IsReadOnly() bool { return true }
+
 type GetGlobalOptionsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *GlobalOptionsResponse

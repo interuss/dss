@@ -80,6 +80,15 @@ type SearchIdentificationServiceAreasRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SearchIdentificationServiceAreasRequestType = "SearchIdentificationServiceAreas"
+
+func (req *SearchIdentificationServiceAreasRequest) RequestType() string {
+	return SearchIdentificationServiceAreasRequestType
+}
+
+func (req *SearchIdentificationServiceAreasRequest) IsReadOnly() bool { return true }
+
 type SearchIdentificationServiceAreasResponseSet struct {
 	// Identification Service Areas were successfully retrieved.
 	Response200 *SearchIdentificationServiceAreasResponse
@@ -107,6 +116,15 @@ type GetIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetIdentificationServiceAreaRequestType = "GetIdentificationServiceArea"
+
+func (req *GetIdentificationServiceAreaRequest) RequestType() string {
+	return GetIdentificationServiceAreaRequestType
+}
+
+func (req *GetIdentificationServiceAreaRequest) IsReadOnly() bool { return true }
+
 type GetIdentificationServiceAreaResponseSet struct {
 	// Full information of the Identification Service Area was retrieved successfully.
 	Response200 *GetIdentificationServiceAreaResponse
@@ -140,6 +158,15 @@ type CreateIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateIdentificationServiceAreaRequestType = "CreateIdentificationServiceArea"
+
+func (req *CreateIdentificationServiceAreaRequest) RequestType() string {
+	return CreateIdentificationServiceAreaRequestType
+}
+
+func (req *CreateIdentificationServiceAreaRequest) IsReadOnly() bool { return false }
+
 type CreateIdentificationServiceAreaResponseSet struct {
 	// An existing Identification Service Area was created successfully in the DSS.
 	Response200 *PutIdentificationServiceAreaResponse
@@ -181,6 +208,15 @@ type UpdateIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateIdentificationServiceAreaRequestType = "UpdateIdentificationServiceArea"
+
+func (req *UpdateIdentificationServiceAreaRequest) RequestType() string {
+	return UpdateIdentificationServiceAreaRequestType
+}
+
+func (req *UpdateIdentificationServiceAreaRequest) IsReadOnly() bool { return false }
+
 type UpdateIdentificationServiceAreaResponseSet struct {
 	// An existing Identification Service Area was updated successfully in the DSS.
 	Response200 *PutIdentificationServiceAreaResponse
@@ -216,6 +252,15 @@ type DeleteIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteIdentificationServiceAreaRequestType = "DeleteIdentificationServiceArea"
+
+func (req *DeleteIdentificationServiceAreaRequest) RequestType() string {
+	return DeleteIdentificationServiceAreaRequestType
+}
+
+func (req *DeleteIdentificationServiceAreaRequest) IsReadOnly() bool { return false }
+
 type DeleteIdentificationServiceAreaResponseSet struct {
 	// Identification Service Area was successfully deleted from DSS.
 	Response200 *DeleteIdentificationServiceAreaResponse
@@ -248,6 +293,13 @@ type SearchSubscriptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SearchSubscriptionsRequestType = "SearchSubscriptions"
+
+func (req *SearchSubscriptionsRequest) RequestType() string { return SearchSubscriptionsRequestType }
+
+func (req *SearchSubscriptionsRequest) IsReadOnly() bool { return true }
+
 type SearchSubscriptionsResponseSet struct {
 	// Subscriptions were retrieved successfully.
 	Response200 *SearchSubscriptionsResponse
@@ -275,6 +327,13 @@ type GetSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetSubscriptionRequestType = "GetSubscription"
+
+func (req *GetSubscriptionRequest) RequestType() string { return GetSubscriptionRequestType }
+
+func (req *GetSubscriptionRequest) IsReadOnly() bool { return true }
+
 type GetSubscriptionResponseSet struct {
 	// Subscription information was retrieved successfully.
 	Response200 *GetSubscriptionResponse
@@ -308,6 +367,13 @@ type CreateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateSubscriptionRequestType = "CreateSubscription"
+
+func (req *CreateSubscriptionRequest) RequestType() string { return CreateSubscriptionRequestType }
+
+func (req *CreateSubscriptionRequest) IsReadOnly() bool { return false }
+
 type CreateSubscriptionResponseSet struct {
 	// A new Subscription was created successfully.
 	Response200 *PutSubscriptionResponse
@@ -349,6 +415,13 @@ type UpdateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateSubscriptionRequestType = "UpdateSubscription"
+
+func (req *UpdateSubscriptionRequest) RequestType() string { return UpdateSubscriptionRequestType }
+
+func (req *UpdateSubscriptionRequest) IsReadOnly() bool { return false }
+
 type UpdateSubscriptionResponseSet struct {
 	// An existing Subscription was updated successfully.
 	Response200 *PutSubscriptionResponse
@@ -384,6 +457,13 @@ type DeleteSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteSubscriptionRequestType = "DeleteSubscription"
+
+func (req *DeleteSubscriptionRequest) RequestType() string { return DeleteSubscriptionRequestType }
+
+func (req *DeleteSubscriptionRequest) IsReadOnly() bool { return false }
+
 type DeleteSubscriptionResponseSet struct {
 	// Subscription was deleted successfully.
 	Response200 *DeleteSubscriptionResponse

@@ -202,6 +202,26 @@ def implementation_interface(
         lines.extend(indent(body, 1))
 
         lines.append("}")
+        lines.append("")
+
+        lines.append(
+            'const {}RequestType = "{}"'.format(
+                operation.interface_name, operation.interface_name
+            )
+        )
+        lines.append("")
+        lines.append(
+            "func (req *{}) RequestType() string {{ return {}RequestType }}".format(
+                operation.request_type_name, operation.interface_name
+            )
+        )
+        lines.append("")
+        lines.append(
+            "func (req *{}) IsReadOnly() bool {{ return {} }}".format(
+                operation.request_type_name,
+                "true" if _is_read_only(operation.operation_id) else "false",
+            )
+        )
 
         # Declare response type for operation
         lines.append("type {} struct {{".format(operation.response_type_name))
@@ -263,6 +283,13 @@ def implementation_interface(
 
     lines.append("}")
     return lines
+
+
+def _is_read_only(operation_id: str) -> bool:
+    op_id = operation_id.lower()
+    return any(
+        op_id.startswith(prefix) for prefix in ("get", "query", "search", "list")
+    )
 
 
 def routes(
