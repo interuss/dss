@@ -33,7 +33,7 @@ type Store[R any] struct {
 	wg sync.WaitGroup
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, locality string, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	store := &Store[R]{
@@ -45,7 +45,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 	commitC := make(chan consensus.EntryCommit)
 	store.wg.Go(func() { store.processCommits(ctx, commitC) })
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, locality, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}

@@ -16,12 +16,12 @@ import (
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
 type repo struct{}
 
-func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
 	params, err := scdraftparams.GetConnectParameters()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get scd raft parameters")
 	}
-	return raftstore.Init(ctx, logger.With(zap.String("service", "scd")), params, &repo{}, actions.Registry)
+	return raftstore.Init(ctx, logger.With(zap.String("service", "scd")), locality, params, &repo{}, actions.Registry)
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
