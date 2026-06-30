@@ -15,12 +15,12 @@ import (
 // repo is a full implementation of aux_.repos.Repository for Raft-based storage.
 type repo struct{}
 
-func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
 	params, err := auxraftparams.GetConnectParameters()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get aux raft parameters")
 	}
-	return raftstore.Init(ctx, logger.With(zap.String("service", "aux_")), params, &repo{})
+	return raftstore.Init(ctx, logger.With(zap.String("service", "aux_")), locality, params, &repo{})
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }

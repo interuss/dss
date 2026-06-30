@@ -32,7 +32,7 @@ type Store[R any] struct {
 	Consensus *consensus.Consensus
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, locality string, params raftparams.ConnectParameters, r RaftRepo[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	store := &Store[R]{
@@ -43,7 +43,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 	commitC := make(chan consensus.EntryCommit)
 	go store.processCommits(ctx, commitC)
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, locality, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
