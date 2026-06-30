@@ -48,6 +48,11 @@ type GetVersionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetVersionOperationID = "GetVersion"
+
+func (request *GetVersionRequest) OperationID() string { return GetVersionOperationID }
+
 type GetVersionResponseSet struct {
 	// The version of the DSS is successfully returned.
 	Response200 *VersionResponse
@@ -63,6 +68,11 @@ type ValidateOauthRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const ValidateOauthOperationID = "ValidateOauth"
+
+func (request *ValidateOauthRequest) OperationID() string { return ValidateOauthOperationID }
+
 type ValidateOauthResponseSet struct {
 	// The provided token was validated.
 	Response200 *api.EmptyResponseBody
@@ -81,6 +91,11 @@ type GetPoolRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetPoolOperationID = "GetPool"
+
+func (request *GetPoolRequest) OperationID() string { return GetPoolOperationID }
+
 type GetPoolResponseSet struct {
 	// The information is successfully returned.
 	Response200 *PoolResponse
@@ -102,6 +117,11 @@ type GetDSSInstancesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetDSSInstancesOperationID = "GetDSSInstances"
+
+func (request *GetDSSInstancesRequest) OperationID() string { return GetDSSInstancesOperationID }
+
 type GetDSSInstancesResponseSet struct {
 	// The known DSS instances participating in the pool are successfully returned.
 	Response200 *DSSInstancesResponse
@@ -132,6 +152,13 @@ type PutDSSInstancesHeartbeatRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const PutDSSInstancesHeartbeatOperationID = "PutDSSInstancesHeartbeat"
+
+func (request *PutDSSInstancesHeartbeatRequest) OperationID() string {
+	return PutDSSInstancesHeartbeatOperationID
+}
+
 type PutDSSInstancesHeartbeatResponseSet struct {
 	// The heartbeat have been recorded. The known DSS instances participating in the pool are successfully returned.
 	Response201 *DSSInstancesResponse
@@ -156,6 +183,11 @@ type GetAcceptedCAsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetAcceptedCAsOperationID = "GetAcceptedCAs"
+
+func (request *GetAcceptedCAsRequest) OperationID() string { return GetAcceptedCAsOperationID }
+
 type GetAcceptedCAsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *CAsResponse
@@ -171,6 +203,11 @@ type GetInstanceCAsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetInstanceCAsOperationID = "GetInstanceCAs"
+
+func (request *GetInstanceCAsRequest) OperationID() string { return GetInstanceCAsOperationID }
+
 type GetInstanceCAsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *CAsResponse
@@ -186,6 +223,11 @@ type GetGlobalOptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetGlobalOptionsOperationID = "GetGlobalOptions"
+
+func (request *GetGlobalOptionsRequest) OperationID() string { return GetGlobalOptionsOperationID }
+
 type GetGlobalOptionsResponseSet struct {
 	// The information is successfully returned.
 	Response200 *GlobalOptionsResponse

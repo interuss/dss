@@ -202,6 +202,19 @@ def implementation_interface(
         lines.extend(indent(body, 1))
 
         lines.append("}")
+        lines.append("")
+
+        lines.append(
+            'const {}OperationID = "{}"'.format(
+                operation.interface_name, operation.interface_name
+            )
+        )
+        lines.append("")
+        lines.append(
+            "func (request *{}) OperationID() string {{ return {}OperationID }}".format(
+                operation.request_type_name, operation.interface_name
+            )
+        )
 
         # Declare response type for operation
         lines.append("type {} struct {{".format(operation.response_type_name))
