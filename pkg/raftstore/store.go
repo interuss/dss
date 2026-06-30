@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 
+	"github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -91,6 +92,7 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			}
 
 			ctx = timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
+			ctx = locality.WithLocality(ctx, commit.Prop.Locality)
 			result, err := s.raftRepo.Apply(ctx, commit.Prop)
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
