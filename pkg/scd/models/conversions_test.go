@@ -171,6 +171,10 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 	hi := float32(200.0)
 	restInvalid := &restapi.Altitude{Value: 0}
 
+	restPoint := &restapi.LatLngPoint{Lat: 1, Lng: 2}
+	point, err := dssmodels.NewLatLngPoint(1, 2)
+	require.NoError(t, err)
+
 	testCases := []struct {
 		name    string
 		rest    *restapi.Volume3D
@@ -195,12 +199,12 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 			name: "Circle",
 			rest: &restapi.Volume3D{
 				OutlineCircle: &restapi.Circle{
-					Center: &restapi.LatLngPoint{},
+					Center: restPoint,
 					Radius: &restapi.Radius{},
 				},
 			},
 			want: &dssmodels.Volume3D{
-				Footprint: &dssmodels.GeoCircle{},
+				Footprint: &dssmodels.GeoCircle{Center: point},
 			},
 		},
 		{

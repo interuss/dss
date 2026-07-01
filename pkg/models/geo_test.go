@@ -12,21 +12,9 @@ import (
 func TestPolygonCovering(t *testing.T) {
 	got, err := (&GeoPolygon{
 		Vertices: []*LatLngPoint{
-			// Stanford
-			{
-				Lat: 37.427636,
-				Lng: -122.170502,
-			},
-			// NASA Ames
-			{
-				Lat: 37.408799,
-				Lng: -122.064069,
-			},
-			// Googleplex
-			{
-				Lat: 37.421265,
-				Lng: -122.086504,
-			},
+			{point: s2.PointFromLatLng(s2.LatLngFromDegrees(37.427636, -122.170502))}, // Stanford
+			{point: s2.PointFromLatLng(s2.LatLngFromDegrees(37.408799, -122.064069))}, // NASA Ames
+			{point: s2.PointFromLatLng(s2.LatLngFromDegrees(37.421265, -122.086504))}, // Googleplex
 		},
 	}).CalculateCovering()
 

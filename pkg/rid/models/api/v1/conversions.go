@@ -13,9 +13,11 @@ import (
 
 // FromVolume4D converts RID v1 REST model to business object
 func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
-	result := &dssmodels.Volume4D{
-		SpatialVolume: FromVolume3D(&vol4.SpatialVolume),
+	vol3, err := FromVolume3D(&vol4.SpatialVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting spatial volume")
 	}
+	result := &dssmodels.Volume4D{SpatialVolume: vol3}
 
 	if vol4.TimeStart != nil {
 		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeStart)
@@ -37,31 +39,36 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 }
 
 // FromVolume3D converts RID v1 REST model to business object
-func FromVolume3D(vol3 *restapi.Volume3D) *dssmodels.Volume3D {
+func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
+	p, err := FromGeoPolygon(&vol3.Footprint)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting polygon")
+	}
 	return &dssmodels.Volume3D{
-		Footprint:  FromGeoPolygon(&vol3.Footprint),
+		Footprint:  p,
 		AltitudeLo: (*float32)(vol3.AltitudeLo),
 		AltitudeHi: (*float32)(vol3.AltitudeHi),
-	}
+	}, nil
 }
 
 // FromGeoPolygon converts RID v1 REST model to business object
-func FromGeoPolygon(footprint *restapi.GeoPolygon) *dssmodels.GeoPolygon {
+func FromGeoPolygon(footprint *restapi.GeoPolygon) (*dssmodels.GeoPolygon, error) {
 	result := &dssmodels.GeoPolygon{}
 
 	for _, ltlng := range footprint.Vertices {
-		result.Vertices = append(result.Vertices, FromLatLngPoint(&ltlng))
+		v, err := FromLatLngPoint(&ltlng)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting polygon vertex")
+		}
+		result.Vertices = append(result.Vertices, v)
 	}
 
-	return result
+	return result, nil
 }
 
 // FromLatLngPoint converts RID v1 REST model to business object
-func FromLatLngPoint(pt *restapi.LatLngPoint) *dssmodels.LatLngPoint {
-	return &dssmodels.LatLngPoint{
-		Lat: float64(pt.Lat),
-		Lng: float64(pt.Lng),
-	}
+func FromLatLngPoint(pt *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+	return dssmodels.NewLatLngPoint(float64(pt.Lat), float64(pt.Lng))
 }
 
 // === Business -> RID ===
