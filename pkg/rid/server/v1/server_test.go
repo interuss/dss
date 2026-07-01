@@ -31,7 +31,11 @@ func mustTimestamp(ts *string) *time.Time {
 }
 
 func mustPolygonToCellIDs(p *restapi.GeoPolygon) s2.CellUnion {
-	cells, err := apiv1.FromGeoPolygon(p).CalculateCovering()
+	g, err := apiv1.FromGeoPolygon(p)
+	if err != nil {
+		panic(err)
+	}
+	cells, err := g.CalculateCovering()
 	if err != nil {
 		panic(err)
 	}

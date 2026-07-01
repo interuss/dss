@@ -14,18 +14,18 @@ func TestPolygonCovering(t *testing.T) {
 		Vertices: []*LatLngPoint{
 			// Stanford
 			{
-				Lat: 37.427636,
-				Lng: -122.170502,
+				lat: 37.427636,
+				lng: -122.170502,
 			},
 			// NASA Ames
 			{
-				Lat: 37.408799,
-				Lng: -122.064069,
+				lat: 37.408799,
+				lng: -122.064069,
 			},
 			// Googleplex
 			{
-				Lat: 37.421265,
-				Lng: -122.086504,
+				lat: 37.421265,
+				lng: -122.086504,
 			},
 		},
 	}).CalculateCovering()

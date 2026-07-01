@@ -13,9 +13,11 @@ import (
 
 // FromVolume4D converts RID v1 REST model to business object
 func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
-	result := &dssmodels.Volume4D{
-		SpatialVolume: FromVolume3D(&vol4.SpatialVolume),
+	vol3, err := FromVolume3D(&vol4.SpatialVolume)
+	if err != nil {
+		return nil, err
 	}
+	result := &dssmodels.Volume4D{SpatialVolume: vol3}
 
 	if vol4.TimeStart != nil {
 		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeStart)
@@ -37,111 +39,39 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 }
 
 // FromVolume3D converts RID v1 REST model to business object
-func FromVolume3D(vol3 *restapi.Volume3D) *dssmodels.Volume3D {
+func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
+	p, err := FromGeoPolygon(&vol3.Footprint)
+	if err != nil {
+		return nil, err
+	}
 	return &dssmodels.Volume3D{
-		Footprint:  FromGeoPolygon(&vol3.Footprint),
+		Footprint:  p,
 		AltitudeLo: (*float32)(vol3.AltitudeLo),
 		AltitudeHi: (*float32)(vol3.AltitudeHi),
-	}
+	}, nil
 }
 
 // FromGeoPolygon converts RID v1 REST model to business object
-func FromGeoPolygon(footprint *restapi.GeoPolygon) *dssmodels.GeoPolygon {
+func FromGeoPolygon(footprint *restapi.GeoPolygon) (*dssmodels.GeoPolygon, error) {
 	result := &dssmodels.GeoPolygon{}
 
 	for _, ltlng := range footprint.Vertices {
-		result.Vertices = append(result.Vertices, FromLatLngPoint(&ltlng))
+		v, err := FromLatLngPoint(&ltlng)
+		if err != nil {
+			return nil, err
+		}
+		result.Vertices = append(result.Vertices, v)
 	}
 
-	return result
+	return result, nil
 }
 
 // FromLatLngPoint converts RID v1 REST model to business object
-func FromLatLngPoint(pt *restapi.LatLngPoint) *dssmodels.LatLngPoint {
-	return &dssmodels.LatLngPoint{
-		Lat: float64(pt.Lat),
-		Lng: float64(pt.Lng),
-	}
+func FromLatLngPoint(pt *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+	return dssmodels.NewLatLngPoint(float64(pt.Lat), float64(pt.Lng))
 }
 
 // === Business -> RID ===
-
-// ToVolume4D converts Volume4D business object to a RID v1 REST model
-func ToVolume4D(vol4 *dssmodels.Volume4D) (*restapi.Volume4D, error) {
-	vol3, err := ToVolume3D(vol4.SpatialVolume)
-	if err != nil {
-		return nil, err // No need to Propagate this error as this stack layer does not add useful information
-	}
-
-	result := &restapi.Volume4D{
-		SpatialVolume: *vol3,
-	}
-
-	if vol4.StartTime != nil {
-		ts := vol4.StartTime.Format(time.RFC3339Nano)
-		result.TimeStart = &ts
-	}
-
-	if vol4.EndTime != nil {
-		ts := vol4.EndTime.Format(time.RFC3339Nano)
-		result.TimeEnd = &ts
-	}
-
-	return result, nil
-}
-
-// ToVolume3D converts Volume3D business object to a RID v1 REST model
-func ToVolume3D(vol3 *dssmodels.Volume3D) (*restapi.Volume3D, error) {
-	if vol3 == nil {
-		return nil, nil
-	}
-
-	result := &restapi.Volume3D{}
-
-	if vol3.AltitudeLo != nil {
-		result.AltitudeLo = (*restapi.Altitude)(vol3.AltitudeLo)
-	}
-
-	if vol3.AltitudeHi != nil {
-		result.AltitudeHi = (*restapi.Altitude)(vol3.AltitudeHi)
-	}
-
-	switch t := vol3.Footprint.(type) {
-	case nil:
-		// Empty on purpose
-	case *dssmodels.GeoPolygon:
-		result.Footprint = *ToGeoPolygon(t)
-	default:
-		return nil, stacktrace.NewError("Unsupported geometry type: %T", vol3.Footprint)
-	}
-
-	return result, nil
-}
-
-// ToGeoPolygon converts GeoPolygon business object to a RID v1 REST model
-func ToGeoPolygon(gp *dssmodels.GeoPolygon) *restapi.GeoPolygon {
-	if gp == nil {
-		return nil
-	}
-
-	result := &restapi.GeoPolygon{}
-
-	for _, pt := range gp.Vertices {
-		result.Vertices = append(result.Vertices, *ToLatLngPoint(pt))
-	}
-
-	return result
-}
-
-// ToLatLngPoint converts latlngpoint business object to a RID v1 REST model
-func ToLatLngPoint(pt *dssmodels.LatLngPoint) *restapi.LatLngPoint {
-	result := &restapi.LatLngPoint{
-		Lat: restapi.Latitude(pt.Lat),
-		Lng: restapi.Longitude(pt.Lng),
-	}
-
-	return result
-}
 
 // ToIdentificationServiceArea converts an IdentificationServiceArea
 // business object to a RID v1 REST model for API consumption.

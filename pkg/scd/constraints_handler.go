@@ -369,10 +369,10 @@ func validateAndReturnConstraintUpsertParams(
 
 	// Start and end times are required for each volume
 	// The end time may not be in the past
-	valid.uExtent, err = dssmodels.UnionVolumes4DFromSCDRest(
+	valid.uExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
-		dssmodels.WithRequireTimeBounds(),
-		dssmodels.WithRequireEndTimeAfter(now),
+		scdmodels.WithRequireTimeBounds(),
+		scdmodels.WithRequireEndTimeAfter(now),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")
@@ -404,7 +404,7 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.Que
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
