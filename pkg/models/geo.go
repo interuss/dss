@@ -9,37 +9,11 @@ import (
 )
 
 const (
-	// TimeFormatRFC3339 is the string used for RFC3339
-	TimeFormatRFC3339 = "RFC3339"
-	minLat            = -90.0
-	maxLat            = 90.0
-	minLng            = -180.0
-	maxLng            = 180.0
-	UnitsM            = "M"
-	ReferenceW84      = "W84"
+	minLat = -90.0
+	maxLat = 90.0
+	minLng = -180.0
+	maxLng = 180.0
 )
-
-var (
-	unitToMeterMultiplicativeFactors = map[unit]float32{
-		unitMeter: 1,
-	}
-
-	altitudeReferenceWGS84 altitudeReference = "W84"
-	unitMeter              unit              = "M"
-)
-
-type (
-	altitudeReference string
-	unit              string
-)
-
-func (ar altitudeReference) String() string {
-	return string(ar)
-}
-
-func (u unit) String() string {
-	return string(u)
-}
 
 func float32p(v float32) *float32 {
 	return &v

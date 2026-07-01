@@ -53,14 +53,14 @@ func (s *Subscription) ToRest(dependentOperationalIntents []dssmodels.ID) (*rest
 	if s.StartTime != nil {
 		result.TimeStart = &restapi.Time{
 			Value:  s.StartTime.Format(time.RFC3339Nano),
-			Format: dssmodels.TimeFormatRFC3339,
+			Format: TimeFormatRFC3339,
 		}
 	}
 
 	if s.EndTime != nil {
 		result.TimeEnd = &restapi.Time{
 			Value:  s.EndTime.Format(time.RFC3339Nano),
-			Format: dssmodels.TimeFormatRFC3339,
+			Format: TimeFormatRFC3339,
 		}
 	}
 
