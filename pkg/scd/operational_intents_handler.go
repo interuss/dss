@@ -252,7 +252,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -479,11 +479,11 @@ func validateAndReturnOIRUpsertParams(
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
 	// The end time may not be in the past.
-	valid.uExtent, err = dssmodels.UnionVolumes4DFromSCDRest(
+	valid.uExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
-		dssmodels.WithRequireTimeBounds(),
-		dssmodels.WithRequireAltitudeBounds(),
-		dssmodels.WithRequireEndTimeAfter(now),
+		scdmodels.WithRequireTimeBounds(),
+		scdmodels.WithRequireAltitudeBounds(),
+		scdmodels.WithRequireEndTimeAfter(now),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")

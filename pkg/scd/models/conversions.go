@@ -4,13 +4,21 @@ import (
 	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
 )
 
-type Volume4DValidator func(*Volume4D) error
+const (
+	// TimeFormatRFC3339 is the string used for RFC3339
+	TimeFormatRFC3339 = "RFC3339"
+	UnitsM            = "M"
+	ReferenceW84      = "W84"
+)
+
+type Volume4DValidator func(*dssmodels.Volume4D) error
 
 func WithRequireTimeBounds() Volume4DValidator {
-	return func(v *Volume4D) error {
+	return func(v *dssmodels.Volume4D) error {
 		if v.StartTime == nil {
 			return stacktrace.NewError("Missing start time")
 		}
@@ -22,7 +30,7 @@ func WithRequireTimeBounds() Volume4DValidator {
 }
 
 func WithRequireEndTimeAfter(now time.Time) Volume4DValidator {
-	return func(v *Volume4D) error {
+	return func(v *dssmodels.Volume4D) error {
 		if v.EndTime != nil && v.EndTime.Before(now) {
 			return stacktrace.NewError("End time may not be in the past")
 		}
@@ -31,7 +39,7 @@ func WithRequireEndTimeAfter(now time.Time) Volume4DValidator {
 }
 
 func WithRequireAltitudeBounds() Volume4DValidator {
-	return func(v *Volume4D) error {
+	return func(v *dssmodels.Volume4D) error {
 		if v.SpatialVolume.AltitudeLo == nil {
 			return stacktrace.NewError("Missing lower altitude")
 		}
@@ -44,8 +52,8 @@ func WithRequireAltitudeBounds() Volume4DValidator {
 
 // UnionVolumes4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
 // Validation is applied on the resulting volume union
-func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*Volume4D, error) {
-	volumes := make([]*Volume4D, len(vol4s))
+func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*dssmodels.Volume4D, error) {
+	volumes := make([]*dssmodels.Volume4D, len(vol4s))
 	for idx, vol4 := range vol4s {
 		volume, err := Volume4DFromSCDRest(&vol4)
 		if err != nil {
@@ -53,7 +61,7 @@ func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DV
 		}
 		volumes[idx] = volume
 	}
-	union, err := UnionVolumes4D(volumes...)
+	union, err := dssmodels.UnionVolumes4D(volumes...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to union volumes")
 	}
@@ -68,7 +76,7 @@ func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DV
 }
 
 // Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
-func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
+func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
@@ -96,7 +104,7 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
 		return nil, stacktrace.NewError("Start time cannot be after end time")
 	}
 
-	volume := &Volume4D{
+	volume := &dssmodels.Volume4D{
 		SpatialVolume: vol3,
 		StartTime:     startTime,
 		EndTime:       endTime,
@@ -106,7 +114,7 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*Volume4D, error) {
 }
 
 // Volume3DFromSCDRest converts a vol3 SCD v1 REST model to a Volume3D
-func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
+func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
 	}
@@ -119,7 +127,7 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
 		if vol3.AltitudeLower.Reference != ReferenceW84 {
 			return nil, stacktrace.NewError("Invalid lower altitude reference")
 		}
-		altLo = float32p(float32(vol3.AltitudeLower.Value))
+		altLo = new(float32(vol3.AltitudeLower.Value))
 	}
 
 	var altHi *float32
@@ -130,7 +138,7 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
 		if vol3.AltitudeUpper.Reference != ReferenceW84 {
 			return nil, stacktrace.NewError("Invalid upper altitude reference")
 		}
-		altHi = float32p(float32(vol3.AltitudeUpper.Value))
+		altHi = new(float32(vol3.AltitudeUpper.Value))
 	}
 
 	if altLo != nil && altHi != nil && *altLo > *altHi {
@@ -141,36 +149,36 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*Volume3D, error) {
 	case vol3.OutlineCircle != nil && vol3.OutlinePolygon != nil:
 		return nil, stacktrace.NewError("Both circle and polygon specified in outline geometry")
 	case vol3.OutlinePolygon != nil:
-		return &Volume3D{
+		return &dssmodels.Volume3D{
 			Footprint:  GeoPolygonFromSCDRest(vol3.OutlinePolygon),
 			AltitudeLo: altLo,
 			AltitudeHi: altHi,
 		}, nil
 	case vol3.OutlineCircle != nil:
-		return &Volume3D{
+		return &dssmodels.Volume3D{
 			Footprint:  GeoCircleFromSCDRest(vol3.OutlineCircle),
 			AltitudeLo: altLo,
 			AltitudeHi: altHi,
 		}, nil
 	}
 
-	return &Volume3D{
+	return &dssmodels.Volume3D{
 		AltitudeLo: altLo,
 		AltitudeHi: altHi,
 	}, nil
 }
 
 // GeoCircleFromSCDRest converts a circle SCD v1 REST model to a GeoCircle
-func GeoCircleFromSCDRest(c *restapi.Circle) *GeoCircle {
-	return &GeoCircle{
+func GeoCircleFromSCDRest(c *restapi.Circle) *dssmodels.GeoCircle {
+	return &dssmodels.GeoCircle{
 		Center:      *LatLngPointFromSCDRest(c.Center),
-		RadiusMeter: unitToMeterMultiplicativeFactors[unit(c.Radius.Units)] * c.Radius.Value,
+		RadiusMeter: c.Radius.Value,
 	}
 }
 
 // GeoPolygonFromSCDRest converts a polygon SCD v1 REST model to a GeoPolygon
-func GeoPolygonFromSCDRest(p *restapi.Polygon) *GeoPolygon {
-	result := &GeoPolygon{}
+func GeoPolygonFromSCDRest(p *restapi.Polygon) *dssmodels.GeoPolygon {
+	result := &dssmodels.GeoPolygon{}
 	for _, ltlng := range p.Vertices {
 		result.Vertices = append(result.Vertices, LatLngPointFromSCDRest(&ltlng))
 	}
@@ -179,8 +187,8 @@ func GeoPolygonFromSCDRest(p *restapi.Polygon) *GeoPolygon {
 }
 
 // LatLngPointFromSCDRest converts a point SCD v1 REST model to a latlngpoint
-func LatLngPointFromSCDRest(p *restapi.LatLngPoint) *LatLngPoint {
-	return &LatLngPoint{
+func LatLngPointFromSCDRest(p *restapi.LatLngPoint) *dssmodels.LatLngPoint {
+	return &dssmodels.LatLngPoint{
 		Lat: float64(p.Lat),
 		Lng: float64(p.Lng),
 	}

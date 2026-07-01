@@ -113,14 +113,14 @@ func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 	if o.StartTime != nil {
 		result.TimeStart = restapi.Time{
 			Value:  o.StartTime.Format(time.RFC3339Nano),
-			Format: dssmodels.TimeFormatRFC3339,
+			Format: TimeFormatRFC3339,
 		}
 	}
 
 	if o.EndTime != nil {
 		result.TimeEnd = restapi.Time{
 			Value:  o.EndTime.Format(time.RFC3339Nano),
-			Format: dssmodels.TimeFormatRFC3339,
+			Format: TimeFormatRFC3339,
 		}
 	}
 
