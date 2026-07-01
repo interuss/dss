@@ -104,5 +104,8 @@ markdown_extensions:
 
   - attr_list  # Enable creation of custom anchors
 
+  - pymdownx.blocks.caption
+
+
 extra_javascript:
   - assets/checkbox.js
