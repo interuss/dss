@@ -7,12 +7,17 @@ import (
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
 
+var fakeClock = clockwork.NewFakeClock()
+
 func TestSaveOwnMetadataValidation(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.SaveOwnMetadata(ctx, "", "https://example.com")))
@@ -21,6 +26,7 @@ func TestSaveOwnMetadataValidation(t *testing.T) {
 
 func TestSaveOwnMetadataRoundTrip(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
@@ -40,6 +46,7 @@ func TestSaveOwnMetadataRoundTrip(t *testing.T) {
 
 func TestSaveOwnMetadataUpsert(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://old.example.com"))
@@ -54,6 +61,7 @@ func TestSaveOwnMetadataUpsert(t *testing.T) {
 
 func TestRecordHeartbeatValidation(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(r.RecordHeartbeat(ctx, auxmodels.Heartbeat{Source: "source1"})))
@@ -73,6 +81,7 @@ func TestRecordHeartbeatValidation(t *testing.T) {
 
 func TestRecordHeartbeatDefaultsTimestamp(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
@@ -88,6 +97,7 @@ func TestRecordHeartbeatDefaultsTimestamp(t *testing.T) {
 
 func TestGetDSSMetadataPicksLatestHeartbeat(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
@@ -108,6 +118,7 @@ func TestGetDSSMetadataPicksLatestHeartbeat(t *testing.T) {
 
 func TestGetDSSMetadataUpdatesHeartbeatPerSource(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))

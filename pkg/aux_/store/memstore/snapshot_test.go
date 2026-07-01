@@ -7,12 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
+	"github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	src := newRepo()
 	require.NoError(t, src.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
 	ts := time.Now().UTC()
@@ -28,11 +33,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	got, err := dst.GetDSSMetadata(ctx)
 	require.NoError(t, err)
-	require.Equal(t, want, got)
+	if diff := cmp.Diff(want, got, cmpopts.EquateApproxTime(0), cmp.AllowUnexported(models.Version{})); diff != "" {
+		t.Errorf("Store mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	src := newRepo()
 	require.NoError(t, src.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
 	data, err := src.GetSnapshot()

@@ -10,14 +10,12 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/stacktrace"
-	"github.com/jonboulle/clockwork"
 	"go.uber.org/zap"
 )
 
 // repo is a full implementation of rid.repos.Repository for memory-based storage.
 type repo struct {
 	state state
-	clock clockwork.Clock
 }
 
 // state is the serializable in-memory state.
@@ -60,7 +58,7 @@ type subscriptionRecord struct {
 }
 
 func newRepo() *repo {
-	r := &repo{clock: clockwork.NewRealClock()}
+	r := &repo{}
 	r.resetState()
 	return r
 }

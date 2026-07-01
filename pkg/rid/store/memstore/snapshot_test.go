@@ -9,11 +9,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	src := setUpStore(t)
 	_, err := src.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
@@ -47,6 +49,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	src := setUpStore(t)
 	_, err := src.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)

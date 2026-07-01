@@ -8,6 +8,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -51,19 +52,26 @@ func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.S
 	return rec.toModel(), nil
 }
 
-func (r *repo) InsertSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	if err := validateWriteData(s.Cells, s.StartTime, s.EndTime); err != nil {
 		return nil, err
 	}
 	if _, ok := r.state.Subscriptions[s.ID]; ok {
 		return nil, stacktrace.NewError("Subscription with id %s already exists", s.ID)
 	}
-	rec := subRecordFromModel(s, r.clock.Now())
+
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rec := subRecordFromModel(s, now)
 	r.state.Subscriptions[s.ID] = rec
 	return rec.toModel(), nil
 }
 
-func (r *repo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	if err := validateWriteData(s.Cells, s.StartTime, s.EndTime); err != nil {
 		return nil, err
 	}
@@ -74,7 +82,14 @@ func (r *repo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) 
 	if !dssmodels.VersionFromTime(prev.UpdatedAt).Matches(s.Version) {
 		return nil, nil
 	}
-	rec := subRecordFromModel(s, r.clock.Now())
+
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rec := subRecordFromModel(s, now)
 	rec.Owner = prev.Owner
 	r.state.Subscriptions[s.ID] = rec
 	return rec.toModel(), nil
@@ -93,11 +108,16 @@ func (r *repo) DeleteSubscription(_ context.Context, s *ridmodels.Subscription) 
 	return out, nil
 }
 
-func (r *repo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	if len(cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
-	now := r.clock.Now()
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	want := cellSet(cells)
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
@@ -116,11 +136,16 @@ func (r *repo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ri
 	return out, nil
 }
 
-func (r *repo) SearchSubscriptionsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	if len(cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
-	now := r.clock.Now()
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	want := cellSet(cells)
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
@@ -144,8 +169,12 @@ func (r *repo) SearchSubscriptionsByOwner(_ context.Context, cells s2.CellUnion,
 
 // UpdateNotificationIdxsInCells increments the notification index for each
 // subscription in the given cells.
-func (r *repo) UpdateNotificationIdxsInCells(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	now := r.clock.Now()
+func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
 	want := cellSet(cells)
 	var out []*ridmodels.Subscription
 	for _, rec := range r.state.Subscriptions {
@@ -161,8 +190,13 @@ func (r *repo) UpdateNotificationIdxsInCells(_ context.Context, cells s2.CellUni
 	return out, nil
 }
 
-func (r *repo) MaxSubscriptionCountInCellsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	now := r.clock.Now()
+func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+	now, err := timestamp.RequestTimestampFromContext(ctx)
+
+	if err != nil {
+		return 0, err
+	}
+
 	want := cellSet(cells)
 	counts := make(map[s2.CellID]int, len(cells))
 	for _, rec := range r.state.Subscriptions {
