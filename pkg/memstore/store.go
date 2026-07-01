@@ -20,6 +20,8 @@ type MemRepo[R any] interface {
 	GetRepo() R
 	GetSnapshot() ([]byte, error)
 	RestoreFromSnapshot([]byte) error
+	Checkpoint() any
+	Restore(any) error
 }
 
 type Store[R any] struct {
@@ -58,6 +60,16 @@ func (s *Store[R]) Transact(ctx context.Context, _ func(context.Context, R) erro
 
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.memRepo.GetRepo(), nil
+}
+
+// Checkpoint returns a fast, restorable in-memory copy of the current state.
+func (s *Store[R]) Checkpoint() any {
+	return s.memRepo.Checkpoint()
+}
+
+// Restore replaces the current state with a checkpoint returned by Checkpoint.
+func (s *Store[R]) Restore(cp any) error {
+	return s.memRepo.Restore(cp)
 }
 
 func (s *Store[R]) Close() error {
