@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -409,6 +410,26 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v
 		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
 }
 
+const lockStripes = 65536
+const FibonacciHashMultiplier = 0x9e3779b97f4a7c15
+
+func cellLockKeys(cells s2.CellUnion) []int64 {
+	seen := make(map[int64]struct{}, len(cells))
+	keys := make([]int64, 0, len(cells))
+	for _, cell := range cells {
+		// Fibonacci hash: level-13 cell ids only differ in their high bits,
+		// so a plain modulo would map them all to the same stripe.
+		k := int64((uint64(cell) * FibonacciHashMultiplier) >> 48 % lockStripes)
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		seen[k] = struct{}{}
+		keys = append(keys, k)
+	}
+	slices.Sort(keys) // deterministic acquisition order, no deadlocks
+	return keys
+}
+
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
 
 	if c.timeBasedNotificationIndex { // No lock when working with timeBasedNotificationIndex
@@ -444,6 +465,53 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 				zap.Bool("global_lock", true),
 				zap.Duration("duration", duration),
 				zap.Int("cell_count", len(cells)),
+				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+			)
+		}
+
+		return nil
+
+	}
+
+	if c.hashLock {
+
+		const query = `
+		SELECT key FROM scd_locks WHERE key = ANY($1) FOR UPDATE`
+		const idQuery = `
+		SELECT id FROM scd_subscriptions WHERE id = ANY($1) FOR UPDATE`
+
+		ids := make([]string, len(subscriptionIds))
+		for i, id := range subscriptionIds {
+			ids[i] = id.String()
+		}
+
+		slices.Sort(ids)
+		start := time.Now()
+
+		keys := cellLockKeys(cells)
+
+		_, err := c.q.Exec(ctx, query, keys)
+		if err == nil && len(ids) > 0 {
+			_, err = c.q.Exec(ctx, idQuery, ids)
+		}
+		duration := time.Since(start)
+		if err != nil {
+			logger.Warn("SCD subscription lock query failed",
+				zap.Duration("duration", duration),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("hashed_cell_count", len(keys)),
+				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+				zap.Error(err),
+			)
+			return stacktrace.Propagate(err, "Error in query: %s", query)
+		}
+
+		if duration >= lockQuerySlowThreshold {
+			logger.Warn("Expensive SCD lock detected",
+				zap.Bool("global_lock", false),
+				zap.Duration("duration", duration),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("hashed_cell_count", len(keys)),
 				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
 			)
 		}

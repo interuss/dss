@@ -257,6 +257,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	storeOptions := params.GetStoreOptions()
 	logger.Info("config", zap.Bool("scdGlobalLock", storeOptions.GlobalLock))
+	logger.Info("config", zap.Bool("scdHashLock", storeOptions.HashLock))
 	logger.Info("config", zap.Bool("timeBasedNotificationIndex", storeOptions.TimeBasedNotificationIndex))
 	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {

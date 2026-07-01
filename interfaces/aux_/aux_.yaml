@@ -101,10 +101,12 @@ components:
         scd_global_lock:
           description: The value of the 'enable_scd_global_lock' option for this DSS instance
           type: boolean
+        scd_hash_lock:
+          description: The value of the 'enable_scd_hash_lock' option for this DSS instance
+          type: boolean
         time_based_notification_index:
           description: The value of the 'enable_time_based_notification_index' option for this DSS instance
           type: boolean
-
 paths:
   /aux/v1/version:
     get:

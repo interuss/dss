@@ -8,5 +8,5 @@ import (
 
 func (a *Server) GetGlobalOptions(ctx context.Context, req *restapi.GetGlobalOptionsRequest) restapi.GetGlobalOptionsResponseSet {
 
-	return restapi.GetGlobalOptionsResponseSet{Response200: &restapi.GlobalOptionsResponse{ScdGlobalLock: &a.Options.GlobalLock, TimeBasedNotificationIndex: &a.Options.TimeBasedNotificationIndex}}
+	return restapi.GetGlobalOptionsResponseSet{Response200: &restapi.GlobalOptionsResponse{ScdGlobalLock: &a.Options.GlobalLock, ScdHashLock: &a.Options.HashLock, TimeBasedNotificationIndex: &a.Options.TimeBasedNotificationIndex}}
 }
