@@ -18,6 +18,8 @@ import (
 
 type MemRepo[R any] interface {
 	GetRepo() R
+	GetSnapshot() ([]byte, error)
+	RestoreFromSnapshot([]byte) error
 }
 
 type Store[R any] struct {
