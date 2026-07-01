@@ -198,23 +198,19 @@ func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
 
 // GeoCircle models a circular enclosed area on earth's surface.
 type GeoCircle struct {
-	Center      LatLngPoint
+	Center      *LatLngPoint
 	RadiusMeter float32
 }
 
 // CalculateCovering returns the spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
-	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
-		return nil, geo.ErrBadCoordSet
-	}
-
 	if !(gc.RadiusMeter > 0) {
 		return nil, geo.ErrRadiusMustBeLargerThan0
 	}
 
 	// TODO: Use an S2 Cap as an inscribed polygon does not fully cover the defined circle
 	return geo.RegionCoverer.Covering(s2.RegularLoop(
-		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.Lat, gc.Center.Lng)),
+		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.lat, gc.Center.lng)),
 		geo.DistanceMetersToAngle(float64(gc.RadiusMeter)),
 		20,
 	)), nil
@@ -233,15 +229,8 @@ type GeoPolygon struct {
 // CalculateCovering returns the spatial covering of gp.
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
-	if gp == nil {
-		return nil, geo.ErrBadCoordSet
-	}
 	for _, v := range gp.Vertices {
-		// ensure that coordinates passed are actually on earth
-		if (v.Lat > maxLat) || (v.Lat < minLat) || (v.Lng > maxLng) || (v.Lng < minLng) {
-			return nil, geo.ErrBadCoordSet
-		}
-		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.Lat, v.Lng)))
+		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.lat, v.lng)))
 	}
 	if len(points) < 3 {
 		return nil, geo.ErrNotEnoughPointsInPolygon
@@ -251,6 +240,14 @@ func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 
 // LatLngPoint models a point on the earth's surface.
 type LatLngPoint struct {
-	Lat float64
-	Lng float64
+	lat float64
+	lng float64
+}
+
+func NewLatLngPoint(lat, lng float64) (*LatLngPoint, error) {
+	// ensure that coordinates passed are actually on earth
+	if (lat > maxLat) || (lat < minLat) || (lng > maxLng) || (lng < minLng) {
+		return nil, geo.ErrBadCoordSet
+	}
+	return &LatLngPoint{lat: lat, lng: lng}, nil
 }

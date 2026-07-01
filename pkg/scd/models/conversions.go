@@ -145,51 +145,56 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 		return nil, stacktrace.NewError("Lower altitude cannot be greater than upper altitude")
 	}
 
+	var (
+		footprint dssmodels.Geometry
+		err       error
+	)
 	switch {
 	case vol3.OutlineCircle != nil && vol3.OutlinePolygon != nil:
-		return nil, stacktrace.NewError("Both circle and polygon specified in outline geometry")
+		err = stacktrace.NewError("Both circle and polygon specified in outline geometry")
 	case vol3.OutlinePolygon != nil:
-		return &dssmodels.Volume3D{
-			Footprint:  GeoPolygonFromSCDRest(vol3.OutlinePolygon),
-			AltitudeLo: altLo,
-			AltitudeHi: altHi,
-		}, nil
+		footprint, err = GeoPolygonFromSCDRest(vol3.OutlinePolygon)
 	case vol3.OutlineCircle != nil:
-		return &dssmodels.Volume3D{
-			Footprint:  GeoCircleFromSCDRest(vol3.OutlineCircle),
-			AltitudeLo: altLo,
-			AltitudeHi: altHi,
-		}, nil
+		footprint, err = GeoCircleFromSCDRest(vol3.OutlineCircle)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return &dssmodels.Volume3D{
+		Footprint:  footprint,
 		AltitudeLo: altLo,
 		AltitudeHi: altHi,
 	}, nil
 }
 
 // GeoCircleFromSCDRest converts a circle SCD v1 REST model to a GeoCircle
-func GeoCircleFromSCDRest(c *restapi.Circle) *dssmodels.GeoCircle {
-	return &dssmodels.GeoCircle{
-		Center:      *LatLngPointFromSCDRest(c.Center),
-		RadiusMeter: c.Radius.Value,
+func GeoCircleFromSCDRest(c *restapi.Circle) (*dssmodels.GeoCircle, error) {
+	center, err := LatLngPointFromSCDRest(c.Center)
+	if err != nil {
+		return nil, err
 	}
+	return &dssmodels.GeoCircle{
+		Center:      center,
+		RadiusMeter: c.Radius.Value,
+	}, nil
 }
 
 // GeoPolygonFromSCDRest converts a polygon SCD v1 REST model to a GeoPolygon
-func GeoPolygonFromSCDRest(p *restapi.Polygon) *dssmodels.GeoPolygon {
+func GeoPolygonFromSCDRest(p *restapi.Polygon) (*dssmodels.GeoPolygon, error) {
 	result := &dssmodels.GeoPolygon{}
 	for _, ltlng := range p.Vertices {
-		result.Vertices = append(result.Vertices, LatLngPointFromSCDRest(&ltlng))
+		v, err := LatLngPointFromSCDRest(&ltlng)
+		if err != nil {
+			return nil, err
+		}
+		result.Vertices = append(result.Vertices, v)
 	}
 
-	return result
+	return result, nil
 }
 
 // LatLngPointFromSCDRest converts a point SCD v1 REST model to a latlngpoint
-func LatLngPointFromSCDRest(p *restapi.LatLngPoint) *dssmodels.LatLngPoint {
-	return &dssmodels.LatLngPoint{
-		Lat: float64(p.Lat),
-		Lng: float64(p.Lng),
-	}
+func LatLngPointFromSCDRest(p *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+	return dssmodels.NewLatLngPoint(float64(p.Lat), float64(p.Lng))
 }

@@ -82,7 +82,10 @@ func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 		if vol3.OutlineCircle != nil {
 			return nil, stacktrace.NewError("Only one of outline_circle or outline_polygon may be specified")
 		}
-		footprint := FromPolygon(vol3.OutlinePolygon)
+		footprint, err := FromPolygon(vol3.OutlinePolygon)
+		if err != nil {
+		    return nil, err 
+		}
 
 		result := &dssmodels.Volume3D{
 			Footprint:  footprint,
@@ -112,14 +115,18 @@ func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 }
 
 // FromPolygon converts RID v2 REST model to business object
-func FromPolygon(polygon *restapi.Polygon) *dssmodels.GeoPolygon {
+func FromPolygon(polygon *restapi.Polygon) (*dssmodels.GeoPolygon, error) {
 	result := &dssmodels.GeoPolygon{}
 
 	for _, ltlng := range polygon.Vertices {
-		result.Vertices = append(result.Vertices, FromLatLngPoint(&ltlng))
+		v, err := FromLatLngPoint(&ltlng)
+		if err != nil {
+			return nil, err
+		}
+		result.Vertices = append(result.Vertices, v)
 	}
 
-	return result
+	return result, nil
 }
 
 // FromCircle converts RID v2 REST model to business object
@@ -133,19 +140,20 @@ func FromCircle(circle *restapi.Circle) (*dssmodels.GeoCircle, error) {
 	if circle.Radius.Units != "M" {
 		return nil, stacktrace.NewError("Only circle radius units of 'M' are acceptable for UTM")
 	}
+	center, err := FromLatLngPoint(circle.Center)
+	if err != nil {
+		return nil, err
+	}
 	result := &dssmodels.GeoCircle{
-		Center:      *FromLatLngPoint(circle.Center),
+		Center:      center,
 		RadiusMeter: circle.Radius.Value,
 	}
 	return result, nil
 }
 
 // FromLatLngPoint converts RID v2 REST model to business object
-func FromLatLngPoint(pt *restapi.LatLngPoint) *dssmodels.LatLngPoint {
-	return &dssmodels.LatLngPoint{
-		Lat: float64(pt.Lat),
-		Lng: float64(pt.Lng),
-	}
+func FromLatLngPoint(pt *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+	return dssmodels.NewLatLngPoint(float64(pt.Lat), float64(pt.Lng))
 }
 
 // === Business -> RID ===
