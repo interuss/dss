@@ -2,3 +2,5 @@ flatten_single_child_sections: true
 nav:
   - "Introduction": index.md
   - "Sizing": sizing.md
+  - "Latency": latency.md
+  - "Latency examples": latency-examples.md
