@@ -2,12 +2,14 @@ package aux
 
 import (
 	"context"
-	"time"
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
-	"github.com/interuss/dss/pkg/aux_/models"
+	"github.com/interuss/dss/pkg/aux_/actions"
+	"github.com/interuss/dss/pkg/aux_/repos"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/locality"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
 
@@ -15,13 +17,10 @@ func (a *Server) GetDSSInstances(ctx context.Context, req *restapi.GetDSSInstanc
 
 	resp := restapi.GetDSSInstancesResponseSet{}
 
-	repo, err := a.Store.Interact(ctx)
-	if err != nil {
-		resp.Response500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with the store"))}
-		return resp
-	}
-
-	metadata, err := repo.GetDSSMetadata(ctx)
+	response, err := store.TransactWithResult[repos.Repository, *restapi.DSSInstancesResponse](ctx, a.Store, &store.ActionAdapter[repos.Repository, *restapi.GetDSSInstancesRequest]{
+		Data: req,
+		Run:  actions.GetDSSInstances,
+	})
 
 	if err != nil {
 		switch stacktrace.GetCode(err) {
@@ -34,88 +33,32 @@ func (a *Server) GetDSSInstances(ctx context.Context, req *restapi.GetDSSInstanc
 		return resp
 	}
 
-	instances := make([]restapi.DSSInstance, len(metadata))
-
-	for index, instanceMetadata := range metadata {
-
-		instances[index] = restapi.DSSInstance{
-			Id:             instanceMetadata.Locality,
-			PublicEndpoint: &instanceMetadata.PublicEndpoint,
-		}
-
-		if instanceMetadata.LatestTimestamp.Source.Valid {
-
-			instances[index].MostRecentHeartbeat = &restapi.Heartbeat{
-				Timestamp: instanceMetadata.LatestTimestamp.Timestamp.Format(time.RFC3339Nano),
-				Reporter:  &instanceMetadata.LatestTimestamp.Reporter.String,
-				Source:    instanceMetadata.LatestTimestamp.Source.String,
-			}
-
-			if instanceMetadata.LatestTimestamp.NextHeartbeatExpectedBefore != nil {
-				nextExpectedTimestamp := instanceMetadata.LatestTimestamp.NextHeartbeatExpectedBefore.Format(time.RFC3339Nano)
-				instances[index].MostRecentHeartbeat.NextHeartbeatExpectedBefore = &nextExpectedTimestamp
-			}
-
-		}
-
-	}
-
-	resp.Response200 = &restapi.DSSInstancesResponse{DssInstances: &instances}
+	resp.Response200 = response
 
 	return resp
 
 }
 
 func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutDSSInstancesHeartbeatRequest) restapi.PutDSSInstancesHeartbeatResponseSet {
+	ctx = locality.WithLocality(ctx, a.Locality)
 
-	resp := restapi.PutDSSInstancesHeartbeatResponseSet{}
-
-	repo, err := a.Store.Interact(ctx)
+	_, err := a.Store.Transact(ctx, &store.ActionAdapter[repos.Repository, *restapi.PutDSSInstancesHeartbeatRequest]{
+		Data: req,
+		Run:  actions.PutDSSInstancesHeartbeat,
+	})
 	if err != nil {
-		resp.Response500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with the store"))}
-		return resp
-	}
-
-	if req.Source == nil {
-		resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Source not set"))}
-		return resp
-	}
-
-	heartbeat := models.Heartbeat{
-		Source:   *req.Source,
-		Reporter: *req.Auth.ClientID,
-		Locality: a.Locality,
-	}
-
-	if req.Timestamp != nil {
-		ts, err := time.Parse(time.RFC3339Nano, *req.Timestamp)
-		if err != nil {
-			resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to parse timestamp as RFC3339 time"))}
-			return resp
+		switch stacktrace.GetCode(err) {
+		case dsserr.BadRequest:
+			return restapi.PutDSSInstancesHeartbeatResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid heartbeat"))}}
+		default:
+			return restapi.PutDSSInstancesHeartbeatResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to record heartbeat"))}}
 		}
-		heartbeat.Timestamp = &ts
-	}
-
-	if req.NextHeartbeatExpectedBefore != nil {
-		ts, err := time.Parse(time.RFC3339Nano, *req.NextHeartbeatExpectedBefore)
-		if err != nil {
-			resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to parse next heartbeat expected before as RFC3339 time"))}
-			return resp
-		}
-		heartbeat.NextHeartbeatExpectedBefore = &ts
-	}
-
-	err = repo.RecordHeartbeat(ctx, heartbeat)
-
-	if err != nil {
-		resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to record heartbeat"))}
-		return resp
 	}
 
 	// Return the same response as the get one
-
 	getResponse := a.GetDSSInstances(ctx, &restapi.GetDSSInstancesRequest{})
-
 	return restapi.PutDSSInstancesHeartbeatResponseSet{
 		Response201: getResponse.Response200,
 		Response401: getResponse.Response401,

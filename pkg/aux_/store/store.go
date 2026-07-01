@@ -19,12 +19,12 @@ import (
 type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the aux store backend.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, locality string) (Store, error) {
 	switch storeType := params.GetStoreParameters().StoreType; storeType {
 	case params.SQLStoreType:
 		return auxsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
-		return auxraftstore.Init(ctx, logger)
+		return auxraftstore.Init(ctx, logger, locality)
 	case params.MemStoreType:
 		return auxmemstore.Init(ctx, logger)
 	default:

@@ -8,6 +8,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -60,7 +61,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		return nil, stacktrace.Propagate(err, "Unable to adjust time range")
 	}
 	var sub *ridmodels.Subscription
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 
 		// ensure it doesn't exist yet
 		old, err := repo.GetSubscription(ctx, s.ID)
@@ -90,7 +91,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		}
 
 		return nil
-	})
+	}))
 	return sub, err
 }
 
@@ -98,7 +99,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var sub *ridmodels.Subscription
 
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 		old, err := repo.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
@@ -138,14 +139,14 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return stacktrace.Propagate(err, "Error updating Subscription in repo")
 		}
 		return nil
-	})
+	}))
 	return sub, err
 }
 
 // DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
 func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
 	var ret *ridmodels.Subscription
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewActionFunction(func(ctx context.Context, repo repos.Repository) error {
 		var err error
 		old, err := repo.GetSubscription(ctx, id)
 		switch {
@@ -168,6 +169,6 @@ func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dss
 			return stacktrace.Propagate(err, "Error deleting Subscription from repo")
 		}
 		return nil
-	})
+	}))
 	return ret, err
 }
