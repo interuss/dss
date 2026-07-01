@@ -174,6 +174,15 @@ type QueryOperationalIntentReferencesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QueryOperationalIntentReferencesRequestType = "QueryOperationalIntentReferences"
+
+func (req *QueryOperationalIntentReferencesRequest) RequestType() string {
+	return QueryOperationalIntentReferencesRequestType
+}
+
+func (req *QueryOperationalIntentReferencesRequest) IsReadOnly() bool { return true }
+
 type QueryOperationalIntentReferencesResponseSet struct {
 	// Operational intents were successfully retrieved.
 	Response200 *QueryOperationalIntentReferenceResponse
@@ -204,6 +213,15 @@ type GetOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetOperationalIntentReferenceRequestType = "GetOperationalIntentReference"
+
+func (req *GetOperationalIntentReferenceRequest) RequestType() string {
+	return GetOperationalIntentReferenceRequestType
+}
+
+func (req *GetOperationalIntentReferenceRequest) IsReadOnly() bool { return true }
+
 type GetOperationalIntentReferenceResponseSet struct {
 	// Operational intent reference was retrieved successfully.
 	Response200 *GetOperationalIntentReferenceResponse
@@ -240,6 +258,15 @@ type CreateOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateOperationalIntentReferenceRequestType = "CreateOperationalIntentReference"
+
+func (req *CreateOperationalIntentReferenceRequest) RequestType() string {
+	return CreateOperationalIntentReferenceRequestType
+}
+
+func (req *CreateOperationalIntentReferenceRequest) IsReadOnly() bool { return false }
+
 type CreateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was created successfully in the DSS.
 	Response201 *ChangeOperationalIntentReferenceResponse
@@ -287,6 +314,15 @@ type UpdateOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateOperationalIntentReferenceRequestType = "UpdateOperationalIntentReference"
+
+func (req *UpdateOperationalIntentReferenceRequest) RequestType() string {
+	return UpdateOperationalIntentReferenceRequestType
+}
+
+func (req *UpdateOperationalIntentReferenceRequest) IsReadOnly() bool { return false }
+
 type UpdateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was updated successfully in the DSS.
 	Response200 *ChangeOperationalIntentReferenceResponse
@@ -329,6 +365,15 @@ type DeleteOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteOperationalIntentReferenceRequestType = "DeleteOperationalIntentReference"
+
+func (req *DeleteOperationalIntentReferenceRequest) RequestType() string {
+	return DeleteOperationalIntentReferenceRequestType
+}
+
+func (req *DeleteOperationalIntentReferenceRequest) IsReadOnly() bool { return false }
+
 type DeleteOperationalIntentReferenceResponseSet struct {
 	// The specified operational intent was successfully removed from the DSS.
 	Response200 *ChangeOperationalIntentReferenceResponse
@@ -370,6 +415,15 @@ type QueryConstraintReferencesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QueryConstraintReferencesRequestType = "QueryConstraintReferences"
+
+func (req *QueryConstraintReferencesRequest) RequestType() string {
+	return QueryConstraintReferencesRequestType
+}
+
+func (req *QueryConstraintReferencesRequest) IsReadOnly() bool { return true }
+
 type QueryConstraintReferencesResponseSet struct {
 	// Constraint references were successfully retrieved.
 	Response200 *QueryConstraintReferencesResponse
@@ -400,6 +454,15 @@ type GetConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetConstraintReferenceRequestType = "GetConstraintReference"
+
+func (req *GetConstraintReferenceRequest) RequestType() string {
+	return GetConstraintReferenceRequestType
+}
+
+func (req *GetConstraintReferenceRequest) IsReadOnly() bool { return true }
+
 type GetConstraintReferenceResponseSet struct {
 	// Constraint reference was retrieved successfully.
 	Response200 *GetConstraintReferenceResponse
@@ -436,6 +499,15 @@ type CreateConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateConstraintReferenceRequestType = "CreateConstraintReference"
+
+func (req *CreateConstraintReferenceRequest) RequestType() string {
+	return CreateConstraintReferenceRequestType
+}
+
+func (req *CreateConstraintReferenceRequest) IsReadOnly() bool { return false }
+
 type CreateConstraintReferenceResponseSet struct {
 	// A constraint reference was created successfully in the DSS.
 	Response201 *ChangeConstraintReferenceResponse
@@ -480,6 +552,15 @@ type UpdateConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateConstraintReferenceRequestType = "UpdateConstraintReference"
+
+func (req *UpdateConstraintReferenceRequest) RequestType() string {
+	return UpdateConstraintReferenceRequestType
+}
+
+func (req *UpdateConstraintReferenceRequest) IsReadOnly() bool { return false }
+
 type UpdateConstraintReferenceResponseSet struct {
 	// A constraint reference was updated successfully in the DSS.
 	Response200 *ChangeConstraintReferenceResponse
@@ -518,6 +599,15 @@ type DeleteConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteConstraintReferenceRequestType = "DeleteConstraintReference"
+
+func (req *DeleteConstraintReferenceRequest) RequestType() string {
+	return DeleteConstraintReferenceRequestType
+}
+
+func (req *DeleteConstraintReferenceRequest) IsReadOnly() bool { return false }
+
 type DeleteConstraintReferenceResponseSet struct {
 	// The constraint was successfully removed from the DSS.
 	Response200 *ChangeConstraintReferenceResponse
@@ -556,6 +646,13 @@ type QuerySubscriptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QuerySubscriptionsRequestType = "QuerySubscriptions"
+
+func (req *QuerySubscriptionsRequest) RequestType() string { return QuerySubscriptionsRequestType }
+
+func (req *QuerySubscriptionsRequest) IsReadOnly() bool { return true }
+
 type QuerySubscriptionsResponseSet struct {
 	// Subscriptions were retrieved successfully.
 	Response200 *QuerySubscriptionsResponse
@@ -586,6 +683,13 @@ type GetSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetSubscriptionRequestType = "GetSubscription"
+
+func (req *GetSubscriptionRequest) RequestType() string { return GetSubscriptionRequestType }
+
+func (req *GetSubscriptionRequest) IsReadOnly() bool { return true }
+
 type GetSubscriptionResponseSet struct {
 	// Subscription information was retrieved successfully.
 	Response200 *GetSubscriptionResponse
@@ -622,6 +726,13 @@ type CreateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateSubscriptionRequestType = "CreateSubscription"
+
+func (req *CreateSubscriptionRequest) RequestType() string { return CreateSubscriptionRequestType }
+
+func (req *CreateSubscriptionRequest) IsReadOnly() bool { return false }
+
 type CreateSubscriptionResponseSet struct {
 	// A new subscription was created successfully.
 	Response200 *PutSubscriptionResponse
@@ -664,6 +775,13 @@ type UpdateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateSubscriptionRequestType = "UpdateSubscription"
+
+func (req *UpdateSubscriptionRequest) RequestType() string { return UpdateSubscriptionRequestType }
+
+func (req *UpdateSubscriptionRequest) IsReadOnly() bool { return false }
+
 type UpdateSubscriptionResponseSet struct {
 	// A subscription was updated successfully.
 	Response200 *PutSubscriptionResponse
@@ -701,6 +819,13 @@ type DeleteSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteSubscriptionRequestType = "DeleteSubscription"
+
+func (req *DeleteSubscriptionRequest) RequestType() string { return DeleteSubscriptionRequestType }
+
+func (req *DeleteSubscriptionRequest) IsReadOnly() bool { return false }
+
 type DeleteSubscriptionResponseSet struct {
 	// Subscription was successfully removed from DSS.
 	Response200 *DeleteSubscriptionResponse
@@ -739,6 +864,13 @@ type MakeDssReportRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const MakeDssReportRequestType = "MakeDssReport"
+
+func (req *MakeDssReportRequest) RequestType() string { return MakeDssReportRequestType }
+
+func (req *MakeDssReportRequest) IsReadOnly() bool { return false }
+
 type MakeDssReportResponseSet struct {
 	// A new Report was created successfully (and archived).
 	Response201 *ErrorReport
@@ -767,6 +899,13 @@ type GetUssAvailabilityRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetUssAvailabilityRequestType = "GetUssAvailability"
+
+func (req *GetUssAvailabilityRequest) RequestType() string { return GetUssAvailabilityRequestType }
+
+func (req *GetUssAvailabilityRequest) IsReadOnly() bool { return true }
+
 type GetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully retrieved.
 	Response200 *UssAvailabilityStatusResponse
@@ -800,6 +939,13 @@ type SetUssAvailabilityRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SetUssAvailabilityRequestType = "SetUssAvailability"
+
+func (req *SetUssAvailabilityRequest) RequestType() string { return SetUssAvailabilityRequestType }
+
+func (req *SetUssAvailabilityRequest) IsReadOnly() bool { return false }
+
 type SetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully updated.
 	Response200 *UssAvailabilityStatusResponse

@@ -13,6 +13,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
 
@@ -165,7 +166,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete operational intent")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -221,7 +222,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get operational intent")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -288,7 +289,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not query operational intent")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -934,7 +935,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, store.NewActionFunction(action))
 	if err != nil {
 		return nil, responseConflict, err // No need to Propagate this error as this is not a useful stacktrace line
 	}

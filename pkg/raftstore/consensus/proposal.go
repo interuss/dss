@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -19,6 +20,7 @@ type EntryCommit struct {
 
 type Proposal struct {
 	ID          string    `json:"id"`
+	Locality    string    `json:"locality"`
 	NodeID      uint64    `json:"node_id"`
 	Timestamp   time.Time `json:"timestamp"`
 	RequestType string    `json:"request_type"`
@@ -31,7 +33,11 @@ type Proposal struct {
 }
 
 func (c *Consensus) newProposal(ctx context.Context, requestType string, payload any, readOnly bool) (Proposal, error) {
-	// TODO - Fetch timestamp from context
+	timestamp, err := timestamp.RequestTimestampFromContext(ctx)
+	if err != nil || timestamp.IsZero() {
+		return Proposal{}, stacktrace.Propagate(err, "failed to get timestamp from context")
+	}
+
 	value, err := json.Marshal(payload)
 	if err != nil {
 		return Proposal{}, stacktrace.Propagate(err, "failed to serialize proposal payload")
@@ -39,8 +45,9 @@ func (c *Consensus) newProposal(ctx context.Context, requestType string, payload
 
 	return Proposal{
 		ID:          uuid.NewString(),
+		Locality:    c.locality,
 		NodeID:      c.nodeID,
-		Timestamp:   time.Now().UTC(),
+		Timestamp:   timestamp,
 		RequestType: requestType,
 		Value:       value,
 		ReadOnly:    readOnly,
