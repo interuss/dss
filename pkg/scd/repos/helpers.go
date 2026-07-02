@@ -19,7 +19,7 @@ type ValidOIRParams struct {
 	NewOVN               scdmodels.OVN
 	State                scdmodels.OperationalIntentState
 	UExtent              *dssmodels.Volume4D
-	Cells                s2.CellUnion
+	Cells                s2.CellUnion `json:"-"`
 	SubscriptionID       dssmodels.ID
 	USSBaseURL           string
 	ImplicitSubscription struct {

@@ -511,9 +511,6 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		Manager:     manager,
 		ValidParams: validParams,
 	}
-	for ovn := range validParams.Key {
-		payload.Key = append(payload.Key, ovn)
-	}
 
 	var responseOK *restapi.ChangeOperationalIntentReferenceResponse
 	var responseConflict *restapi.AirspaceConflictResponse

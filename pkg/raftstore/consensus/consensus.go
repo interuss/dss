@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -133,9 +132,9 @@ func (c *Consensus) ProposeValue(ctx context.Context, requestType string, payloa
 		return nil, stacktrace.Propagate(err, "failed to create proposal")
 	}
 
-	buf, err := json.Marshal(proposal)
+	buf, err := proposal.Encode()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
+		return nil, stacktrace.Propagate(err, "failed to encode proposal")
 	}
 
 	applied := c.tracker.track(proposal.ID)
@@ -318,14 +317,18 @@ func (c *Consensus) processNormalEntry(data []byte, wg *sync.WaitGroup) error {
 	}
 
 	prop := Proposal{}
-	err := json.Unmarshal(data, &prop)
+	err := prop.Decode(data)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
+		return stacktrace.Propagate(err, "failed to decode committed proposal")
 	}
 
 	//if readOnly proposal and we did not initiate it, skip it (noop)
 	if prop.ReadOnly && !c.tracker.isPending(prop.ID) {
 		return nil
+	}
+
+	if err := prop.Decompress(); err != nil {
+		return stacktrace.Propagate(err, "failed to decompress committed proposal")
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)

@@ -179,7 +179,6 @@ func (r *repo) queryOperationalIntentTransactionApplier(ctx context.Context, pro
 type UpsertOperationalIntentTransactionPayload struct {
 	Manager     dssmodels.Manager
 	ValidParams *repos.ValidOIRParams
-	Key         []scdmodels.OVN
 }
 
 type UpsertOperationalIntentTransactionResult struct {
@@ -193,12 +192,13 @@ func (r *repo) upsertOperationalIntentTransactionApplier(ctx context.Context, pr
 		return nil, stacktrace.Propagate(err, "failed to unmarshal upsert operational intent request")
 	}
 
-	upsertResult := &UpsertOperationalIntentTransactionResult{}
-
-	key := make(map[scdmodels.OVN]bool, len(payload.Key))
-	for _, ovn := range payload.Key {
-		key[ovn] = true
+	cells, err := payload.ValidParams.UExtent.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to compute spatial covering")
 	}
+	payload.ValidParams.Cells = cells
+
+	upsertResult := &UpsertOperationalIntentTransactionResult{}
 
 	old, err := mem.GetOperationalIntent(ctx, payload.ValidParams.ID)
 	if err != nil {

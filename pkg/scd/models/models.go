@@ -72,6 +72,57 @@ func NewOVNFromUUIDv7Suffix(now time.Time, oiID dssmodels.ID, suffix string) (OV
 	return OVN(fmt.Sprintf("%s_%s", oiID.String(), suffix)), nil
 }
 
+const ovnPackedPrefix = "u:"
+
+// MarshalText packs OVNs of the form `{uuid}_{uuid}` (73 chars) into
+// `u:` + base64 of the 32 raw bytes (45 chars) for wire and snapshot encoding.
+func (ovn OVN) MarshalText() ([]byte, error) {
+	return []byte(ovn.packed()), nil
+}
+
+func (ovn *OVN) UnmarshalText(data []byte) error {
+	*ovn = unpackOVN(string(data))
+	return nil
+}
+
+func (ovn OVN) packed() string {
+	s := string(ovn)
+	if len(s) != 73 || s[36] != '_' {
+		return s
+	}
+
+	a, err := uuid.Parse(s[:36])
+	if err != nil || a.String() != s[:36] {
+		return s
+	}
+
+	b, err := uuid.Parse(s[37:])
+	if err != nil || b.String() != s[37:] {
+		return s
+	}
+
+	raw := make([]byte, 0, 32)
+	raw = append(raw, a[:]...)
+	raw = append(raw, b[:]...)
+	return ovnPackedPrefix + base64.RawStdEncoding.EncodeToString(raw)
+}
+
+func unpackOVN(s string) OVN {
+	if !strings.HasPrefix(s, ovnPackedPrefix) {
+		return OVN(s)
+	}
+
+	raw, err := base64.RawStdEncoding.DecodeString(s[len(ovnPackedPrefix):])
+	if err != nil || len(raw) != 32 {
+		return OVN(s)
+	}
+
+	var a, b uuid.UUID
+	copy(a[:], raw[:16])
+	copy(b[:], raw[16:])
+	return OVN(a.String() + "_" + b.String())
+}
+
 // Empty returns true if ovn indicates an empty opaque version number.
 func (ovn OVN) Empty() bool {
 	return len(ovn) == 0
