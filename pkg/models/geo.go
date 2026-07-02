@@ -9,37 +9,11 @@ import (
 )
 
 const (
-	// TimeFormatRFC3339 is the string used for RFC3339
-	TimeFormatRFC3339 = "RFC3339"
-	minLat            = -90.0
-	maxLat            = 90.0
-	minLng            = -180.0
-	maxLng            = 180.0
-	UnitsM            = "M"
-	ReferenceW84      = "W84"
+	minLat = -90.0
+	maxLat = 90.0
+	minLng = -180.0
+	maxLng = 180.0
 )
-
-var (
-	unitToMeterMultiplicativeFactors = map[unit]float32{
-		unitMeter: 1,
-	}
-
-	altitudeReferenceWGS84 altitudeReference = "W84"
-	unitMeter              unit              = "M"
-)
-
-type (
-	altitudeReference string
-	unit              string
-)
-
-func (ar altitudeReference) String() string {
-	return string(ar)
-}
-
-func (u unit) String() string {
-	return string(u)
-}
 
 func float32p(v float32) *float32 {
 	return &v
@@ -108,7 +82,6 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 // individual volumes in space and time, or one of these root causes:
 // * geo.ErrMissingFootprint
 // * geo.ErrNotEnoughPointsInPolygon
-// * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	result := &Volume4D{}
@@ -193,7 +166,6 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 // * geo.ErrMissingSpatialVolume
 // * geo.ErrMissingFootprint
 // * geo.ErrNotEnoughPointsInPolygon
-// * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	if vol4.SpatialVolume == nil {
@@ -205,7 +177,6 @@ func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 // CalculateCovering returns the spatial covering of vol3, or one of:
 // * geo.ErrMissingFootprint
 // * geo.ErrNotEnoughPointsInPolygon
-// * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 	if vol3.Footprint == nil {
@@ -216,7 +187,6 @@ func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 
 // CalculateCovering returns the result of invoking gf, with possible errors:
 // * geo.ErrNotEnoughPointsInPolygon
-// * geo.ErrBadCoordSet
 // * geo.ErrRadiusMustBeLargerThan0
 func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
 	return gf()
@@ -230,17 +200,13 @@ type GeoCircle struct {
 
 // CalculateCovering returns the spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
-	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
-		return nil, geo.ErrBadCoordSet
-	}
-
 	if !(gc.RadiusMeter > 0) {
 		return nil, geo.ErrRadiusMustBeLargerThan0
 	}
 
 	// TODO: Use an S2 Cap as an inscribed polygon does not fully cover the defined circle
 	return geo.RegionCoverer.Covering(s2.RegularLoop(
-		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.Lat, gc.Center.Lng)),
+		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.lat, gc.Center.lng)),
 		geo.DistanceMetersToAngle(float64(gc.RadiusMeter)),
 		20,
 	)), nil
@@ -259,15 +225,8 @@ type GeoPolygon struct {
 // CalculateCovering returns the spatial covering of gp.
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
-	if gp == nil {
-		return nil, geo.ErrBadCoordSet
-	}
 	for _, v := range gp.Vertices {
-		// ensure that coordinates passed are actually on earth
-		if (v.Lat > maxLat) || (v.Lat < minLat) || (v.Lng > maxLng) || (v.Lng < minLng) {
-			return nil, geo.ErrBadCoordSet
-		}
-		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.Lat, v.Lng)))
+		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.lat, v.lng)))
 	}
 	if len(points) < 3 {
 		return nil, geo.ErrNotEnoughPointsInPolygon
@@ -277,6 +236,16 @@ func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 
 // LatLngPoint models a point on the earth's surface.
 type LatLngPoint struct {
-	Lat float64
-	Lng float64
+	lat float64
+	lng float64
+}
+
+// NewLatLngPoint returns the spatial LatLngPoint, or one of:
+// * geo.ErrBadCoord
+func NewLatLngPoint(lat, lng float64) (*LatLngPoint, error) {
+	// ensure that coordinates passed are actually on earth
+	if (lat > maxLat) || (lat < minLat) || (lng > maxLng) || (lng < minLng) {
+		return nil, stacktrace.Propagate(geo.ErrBadCoord, "Coordinates are out of bounds (lat:%f, lng:%f)]", lat, lng)
+	}
+	return &LatLngPoint{lat: lat, lng: lng}, nil
 }

@@ -104,7 +104,7 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 	// Parse extents
 	// If end time is not specified, the value will be chosen automatically by the DSS.
 	// If start time is not specified, it will default to the time the request is processed.
-	extents, err := dssmodels.Volume4DFromSCDRest(&params.Extents)
+	extents, err := scdmodels.Volume4DFromSCDRest(&params.Extents)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to parse extents")
 	}
@@ -378,7 +378,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QuerySubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}

@@ -139,7 +139,7 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 // and returns the resulting s2.CellUnion, or else:
 // * ErrOddNumberOfCoordinatesInAreaString
 // * ErrNotEnoughPointsInPolygon
-// * ErrBadCoordSet
+// * ErrBadCoord
 //
 // TODO(tvoss):
 // * Agree and implement a maximum number of points in area
@@ -165,13 +165,13 @@ func AreaToCellIDs(area string) (s2.CellUnion, error) {
 		case 0:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lat: %s", err.Error())
+				return nil, stacktrace.Propagate(ErrBadCoord, "Unable to parse lat: %s", err.Error())
 			}
 			lat = f
 		case 1:
 			f, err := strconv.ParseFloat(trimmed, 64)
 			if err != nil {
-				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lng: %s", err.Error())
+				return nil, stacktrace.Propagate(ErrBadCoord, "Unable to parse lng: %s", err.Error())
 			}
 			lng = f
 			points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)))

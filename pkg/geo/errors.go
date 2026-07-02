@@ -18,9 +18,8 @@ var (
 	// vertices to define a valid shape.
 	ErrNotEnoughPointsInPolygon = stacktrace.NewErrorWithCode(dsserr.BadRequest, "Not enough points in polygon")
 
-	// ErrBadCoordSet indicates that a polygon's coordinates did not form a valid
-	// singular enclosed area.
-	ErrBadCoordSet = stacktrace.NewErrorWithCode(dsserr.BadRequest, "Coordinates did not create a well-formed area")
+	// ErrBadCoord indicates that coordinates are not valid
+	ErrBadCoord = stacktrace.NewErrorWithCode(dsserr.BadRequest, "Coordinates are invalid")
 
 	// ErrRadiusMustBeLargerThan0 indicates that a circle with non-positive radius
 	// was specified.
