@@ -75,7 +75,7 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 	cu, err := p.CalculateCovering()
 	if errors.Is(err, geo.ErrAreaTooLarge) {
 		return restapi.SearchSubscriptionsResponseSet{Response413: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Invalid area"))}}
+			Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Requested area is too large"))}}
 	} else if err != nil {
 		return restapi.SearchSubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
