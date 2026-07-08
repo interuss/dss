@@ -120,7 +120,7 @@ Held constant:
 * **Machine resources**: ample CPU and memory; compute is never the bottleneck.
 * **CockroachDB encryption**: off.
 * **Client placement**: Locust runs on the same machine as the DSS under test,
-  so client↔DSS latency is zero. Only *inter-node* latency varies.
+  so client↔DSS latency is negligible. Only *inter-node* latency varies.
 * **Load profile**: the same light test, fixed at 10 users (`-u 10`), with no
   parallelization: each user sends one request, waits for the full response,
   then sends the next.
