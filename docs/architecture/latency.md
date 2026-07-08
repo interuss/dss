@@ -110,7 +110,7 @@ many contentions with version v0.22.0 to be meaningful.
 These examples measure the impact of **latency alone**. Every environment
 parameter is held constant across the three scenarios; the only variable is
 geographic distance, and therefore inter-node latency. Any difference in the
-Any difference in the results is attributable to that latency as much as
+results is attributable to that latency as much as
 practically possible.
 
 Held constant:
