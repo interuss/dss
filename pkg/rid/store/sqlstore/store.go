@@ -6,6 +6,7 @@ import (
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/rid/actions"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/store/params"
@@ -44,5 +45,6 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				timeBasedNotificationIndex: opts.TimeBasedNotificationIndex,
 			}
 		},
+		Registry: actions.Registry,
 	}, withCheckCron)
 }

@@ -35,6 +35,7 @@ type Store[R any] struct {
 	Clock         clockwork.Clock
 	schemaVersion *semver.Version
 	newRepo       func(dsssql.Queryable) R
+	registry      map[string]store.OperationHandler[R]
 	maxRetries    int
 }
 
@@ -45,6 +46,7 @@ type Config[R any] struct {
 	CrdbMajorSchemaVersion int64
 	YbMajorSchemaVersion   int64
 	NewRepo                func(q dsssql.Queryable, clock clockwork.Clock, v *Version) R
+	Registry               map[string]store.OperationHandler[R]
 }
 
 func checkMajorSchemaVersion[R any](ctx context.Context, db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
@@ -155,6 +157,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db.newRepo = func(q dsssql.Queryable) R {
 		return cfg.NewRepo(q, db.Clock, db.Version)
 	}
+	db.registry = cfg.Registry
 
 	if withCheckCron {
 		c := cron.New()
@@ -176,25 +179,31 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.newRepo(s.Pool), nil
 }
 
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest) (any, error) {
 	if s.Version.Type == Yugabyte {
-		return s.transactYugabyte(ctx, f)
+		return s.transactYugabyte(ctx, request)
 	}
 
 	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		return f(ctx, s.newRepo(tx))
+	var result any
+	var err error
+	err = crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+		result, err = s.execute(ctx, s.newRepo(tx), request)
+		return err
 	})
+	return result, err
 }
 
-func (s *Store[R]) transactYugabyte(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) transactYugabyte(ctx context.Context, request store.OperationRequest) (any, error) {
+	var result any
 	var err error
 	for attempt := 0; attempt <= s.maxRetries; attempt++ {
 		err = pgx.BeginTxFunc(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-			return f(ctx, s.newRepo(tx))
+			result, err = s.execute(ctx, s.newRepo(tx), request)
+			return err
 		})
 		if err == nil || !isYugabyteRetryable(err) {
-			return err
+			return result, err
 		}
 		if attempt == s.maxRetries {
 			break
@@ -202,11 +211,23 @@ func (s *Store[R]) transactYugabyte(ctx context.Context, f func(context.Context,
 		backoff := time.Duration(1<<min(attempt, 6)) * time.Millisecond
 		select {
 		case <-ctx.Done():
-			return err
+			return result, err
 		case <-time.After(backoff + time.Duration(rand.Int64N(int64(backoff)+1))):
 		}
 	}
-	return err
+	return result, err
+}
+
+func (s *Store[R]) execute(ctx context.Context, repo R, request store.OperationRequest) (any, error) {
+	// TODO: This should be removed once all operations are registered properly.
+	if fn, ok := request.(*store.FuncOperation[R]); ok {
+		return nil, fn.Execute(ctx, repo)
+	}
+	handler, ok := s.registry[request.OperationID()]
+	if !ok {
+		return nil, stacktrace.NewError("no handler registered for operation %q", request.OperationID())
+	}
+	return handler.Execute(ctx, repo, request)
 }
 
 func isYugabyteRetryable(err error) bool {

@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 
+	"github.com/interuss/dss/pkg/aux_/actions"
 	"github.com/interuss/dss/pkg/aux_/repos"
 	"github.com/interuss/dss/pkg/logging"
 	dssql "github.com/interuss/dss/pkg/sql"
@@ -39,5 +40,6 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				version:   version,
 			}
 		},
+		Registry: actions.Registry,
 	}, withCheckCron)
 }
