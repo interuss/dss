@@ -10,6 +10,8 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv2 "github.com/interuss/dss/pkg/rid/models/api/v2"
+	"github.com/interuss/dss/pkg/rid/repos"
+	store "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -22,17 +24,8 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	version, err := dssmodels.VersionFromString(req.Version)
-	if err != nil {
-		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
-	}
-	id, err := dssmodels.IDFromString(string(req.Id))
-	if err != nil {
-		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
-	}
-	subscription, err := s.App.DeleteSubscription(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
+
+	subscription, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -43,6 +36,8 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			return restapi.DeleteSubscriptionResponseSet{Response409: errResp}
 		case dsserr.NotFound:
 			return restapi.DeleteSubscriptionResponseSet{Response404: errResp}
+		case dsserr.BadRequest:
+			return restapi.DeleteSubscriptionResponseSet{Response400: errResp}
 		default:
 			return restapi.DeleteSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
