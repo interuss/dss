@@ -6,5 +6,4 @@ import (
 )
 
 // Registry maps operation IDs to their handlers.
-// TODO: implement
 var Registry = map[string]dssstore.OperationHandler[repos.Repository]{}
