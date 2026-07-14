@@ -211,26 +211,6 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 			return stacktrace.NewError("UpsertSubscription returned no Subscription for ID: %s", id)
 		}
 
-		// Find relevant Operations
-		var relevantOperations []*scdmodels.OperationalIntent
-		if len(sub.Cells) > 0 {
-			ops, err := r.SearchOperationalIntents(ctx, &dssmodels.Volume4D{
-				StartTime: sub.StartTime,
-				EndTime:   sub.EndTime,
-				SpatialVolume: &dssmodels.Volume3D{
-					AltitudeLo: sub.AltitudeLo,
-					AltitudeHi: sub.AltitudeHi,
-					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-						return sub.Cells, nil
-					}),
-				},
-			})
-			if err != nil {
-				return stacktrace.Propagate(err, "Could not search Operations in repo")
-			}
-			relevantOperations = ops
-		}
-
 		// Convert Subscription to REST
 		p, err := sub.ToRest(dependentOpIds)
 		if err != nil {
@@ -241,6 +221,25 @@ func (a *Server) PutSubscription(ctx context.Context, manager string, subscripti
 		}
 
 		if sub.NotifyForOperationalIntents {
+			// Find relevant Operations
+			var relevantOperations []*scdmodels.OperationalIntent
+			if len(sub.Cells) > 0 {
+				ops, err := r.SearchOperationalIntents(ctx, &dssmodels.Volume4D{
+					StartTime: sub.StartTime,
+					EndTime:   sub.EndTime,
+					SpatialVolume: &dssmodels.Volume3D{
+						AltitudeLo: sub.AltitudeLo,
+						AltitudeHi: sub.AltitudeHi,
+						Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+							return sub.Cells, nil
+						}),
+					},
+				})
+				if err != nil {
+					return stacktrace.Propagate(err, "Could not search Operations in repo")
+				}
+				relevantOperations = ops
+			}
 			// Attach Operations to response
 			opIntentRefs := make([]restapi.OperationalIntentReference, 0, len(relevantOperations))
 			for _, op := range relevantOperations {
