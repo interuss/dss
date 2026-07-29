@@ -5,6 +5,7 @@ import (
 	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +31,7 @@ func TestUnionVolumes4DFromSCDRest(t *testing.T) {
 		name       string
 		validators []Volume4DValidator
 		rest       []restapi.Volume4D
-		want       *Volume4D
+		want       *dssmodels.Volume4D
 		wantErr    bool
 	}{
 		{
@@ -43,7 +44,7 @@ func TestUnionVolumes4DFromSCDRest(t *testing.T) {
 				{TimeStart: newRestTime(timeStart), TimeEnd: newRestTime(timeMid)},
 				{TimeStart: newRestTime(timeStart), TimeEnd: newRestTime(timeEnd)},
 			},
-			want: &Volume4D{SpatialVolume: &Volume3D{}, StartTime: &timeStart, EndTime: &timeEnd},
+			want: &dssmodels.Volume4D{SpatialVolume: &dssmodels.Volume3D{}, StartTime: &timeStart, EndTime: &timeEnd},
 		},
 		{
 			name:       "TimeEndExpired",
@@ -79,7 +80,7 @@ func TestUnionVolumes4DFromSCDRest(t *testing.T) {
 				{Volume: restapi.Volume3D{AltitudeLower: newRestAlt(altLo), AltitudeUpper: newRestAlt(altMid)}},
 				{Volume: restapi.Volume3D{AltitudeLower: newRestAlt(altMid), AltitudeUpper: newRestAlt(altHi)}},
 			},
-			want: &Volume4D{SpatialVolume: &Volume3D{AltitudeLo: &altLo, AltitudeHi: &altHi}},
+			want: &dssmodels.Volume4D{SpatialVolume: &dssmodels.Volume3D{AltitudeLo: &altLo, AltitudeHi: &altHi}},
 		},
 		{
 			name:       "MissingLowerAltitude",
@@ -122,18 +123,18 @@ func TestVolume4DFromSCDRest(t *testing.T) {
 	testCases := []struct {
 		name    string
 		rest    *restapi.Volume4D
-		want    *Volume4D
+		want    *dssmodels.Volume4D
 		wantErr bool
 	}{
 		{
 			name: "Empty",
 			rest: &restapi.Volume4D{},
-			want: &Volume4D{SpatialVolume: &Volume3D{}},
+			want: &dssmodels.Volume4D{SpatialVolume: &dssmodels.Volume3D{}},
 		},
 		{
 			name: "Times",
 			rest: &restapi.Volume4D{TimeStart: newRestTime(start), TimeEnd: newRestTime(end)},
-			want: &Volume4D{SpatialVolume: &Volume3D{}, StartTime: &start, EndTime: &end},
+			want: &dssmodels.Volume4D{SpatialVolume: &dssmodels.Volume3D{}, StartTime: &start, EndTime: &end},
 		},
 		{
 			name:    "InvalidTimeStart",
@@ -173,21 +174,21 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 	testCases := []struct {
 		name    string
 		rest    *restapi.Volume3D
-		want    *Volume3D
+		want    *dssmodels.Volume3D
 		wantErr bool
 	}{
 		{
 			name: "Empty",
 			rest: &restapi.Volume3D{},
-			want: &Volume3D{},
+			want: &dssmodels.Volume3D{},
 		},
 		{
 			name: "Polygon",
 			rest: &restapi.Volume3D{
 				OutlinePolygon: &restapi.Polygon{},
 			},
-			want: &Volume3D{
-				Footprint: &GeoPolygon{},
+			want: &dssmodels.Volume3D{
+				Footprint: &dssmodels.GeoPolygon{},
 			},
 		},
 		{
@@ -198,14 +199,14 @@ func TestVolume3DFromSCDRest(t *testing.T) {
 					Radius: &restapi.Radius{},
 				},
 			},
-			want: &Volume3D{
-				Footprint: &GeoCircle{},
+			want: &dssmodels.Volume3D{
+				Footprint: &dssmodels.GeoCircle{},
 			},
 		},
 		{
 			name: "Altitudes",
 			rest: &restapi.Volume3D{AltitudeLower: newRestAlt(lo), AltitudeUpper: newRestAlt(hi)},
-			want: &Volume3D{AltitudeLo: &lo, AltitudeHi: &hi},
+			want: &dssmodels.Volume3D{AltitudeLo: &lo, AltitudeHi: &hi},
 		},
 		{
 			name:    "InvalidLowerAltitude",
