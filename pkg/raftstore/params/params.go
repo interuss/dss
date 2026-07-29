@@ -150,3 +150,7 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)
 	return p, nil
 }
+
+func GetClusterID() uint64 {
+	return connectParameters.ClusterID
+}

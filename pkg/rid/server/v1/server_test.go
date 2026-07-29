@@ -15,6 +15,8 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
+	"github.com/interuss/dss/pkg/rid/repos"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -63,11 +65,24 @@ func (ma *mockApp) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmo
 	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
 }
 
-func (ma *mockApp) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, id, owner, version)
-	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
+type mockStore struct {
+	mock.Mock
+}
+
+func (ms *mockStore) Interact(ctx context.Context) (repos.Repository, error) {
+	args := ms.Called(ctx)
+	repo, _ := args.Get(0).(repos.Repository)
+	return repo, args.Error(1)
+}
+
+func (ms *mockStore) Transact(ctx context.Context, request dssstore.OperationRequest) (any, error) {
+	args := ms.Called(ctx, request)
+	return args.Get(0), args.Error(1)
+}
+
+func (ms *mockStore) Close() error {
+	args := ms.Called()
+	return args.Error(0)
 }
 
 func (ma *mockApp) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
@@ -115,37 +130,37 @@ func TestDeleteSubscription(t *testing.T) {
 		id           dssmodels.ID
 		version      *dssmodels.Version
 		subscription *ridmodels.Subscription
-		appErr       stacktrace.ErrorCode
+		storeErr     stacktrace.ErrorCode
 		wantErr      **restapi.ErrorResponse
 	}{
 		{
-			name:         "subscription-is-returned-if-returned-from-app",
+			name:         "subscription-is-returned-if-returned-from-store",
 			id:           dssmodels.ID(uuid.New().String()),
 			version:      testdata.Version,
 			subscription: &ridmodels.Subscription{},
 		},
 		{
-			name:    "error-is-returned-if-returned-from-app",
-			id:      dssmodels.ID(uuid.New().String()),
-			version: testdata.Version,
-			appErr:  dsserr.NotFound,
-			wantErr: &respSet.Response404,
+			name:     "error-is-returned-if-returned-from-store",
+			id:       dssmodels.ID(uuid.New().String()),
+			version:  testdata.Version,
+			storeErr: dsserr.NotFound,
+			wantErr:  &respSet.Response404,
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
-			if r.appErr == stacktrace.ErrorCode(0) {
-				ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
+			ms := &mockStore{}
+			if r.storeErr == stacktrace.ErrorCode(0) {
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
 					r.subscription, nil,
 				)
 			} else {
-				ma.On("DeleteSubscription", mock.Anything, r.id, mock.Anything, r.version).Return(
-					(*ridmodels.Subscription)(nil), stacktrace.NewErrorWithCode(r.appErr, "Expected error"),
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
+					(*ridmodels.Subscription)(nil), stacktrace.NewErrorWithCode(r.storeErr, "Expected error"),
 				)
 			}
 
 			s := &Server{
-				App: ma,
+				Store: ms,
 			}
 
 			respSet = s.DeleteSubscription(context.Background(), &restapi.DeleteSubscriptionRequest{
@@ -156,7 +171,7 @@ func TestDeleteSubscription(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }

@@ -25,9 +25,10 @@ type OperationRequest interface {
 
 // OperationHandler holds the logic for the encoding and execution of a registered operation
 type OperationHandler[R any] struct {
-	Encode  func(req OperationRequest) ([]byte, error)
-	Decode  func(buf []byte) (OperationRequest, error)
-	Execute func(ctx context.Context, repo R, request OperationRequest) (any, error)
+	Encode     func(req OperationRequest) ([]byte, error)
+	Decode     func(buf []byte) (OperationRequest, error)
+	Execute    func(ctx context.Context, repo R, request OperationRequest) (any, error)
+	IsReadOnly bool
 }
 
 // TransactWithResult wraps Store.Transact and casts the result to ResultType, avoiding a cast at every call site.

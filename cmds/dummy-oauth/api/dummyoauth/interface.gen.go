@@ -29,6 +29,11 @@ type GetTokenRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetTokenOperationID = "GetToken"
+
+func (request *GetTokenRequest) OperationID() string { return GetTokenOperationID }
+
 type GetTokenResponseSet struct {
 	// The requested token was generated successfully
 	Response200 *TokenResponse
