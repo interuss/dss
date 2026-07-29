@@ -152,7 +152,7 @@ func FromCircle(circle *restapi.Circle) (*dssmodels.GeoCircle, error) {
 }
 
 // FromLatLngPoint converts RID v2 REST model to business object
-func FromLatLngPoint(pt *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+func FromLatLngPoint(pt *restapi.LatLngPoint) (dssmodels.LatLngPoint, error) {
 	return dssmodels.NewLatLngPoint(float64(pt.Lat), float64(pt.Lng))
 }
 

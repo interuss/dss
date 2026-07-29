@@ -187,7 +187,7 @@ func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
 
 // GeoCircle models a circular enclosed area on earth's surface.
 type GeoCircle struct {
-	Center      *LatLngPoint
+	Center      LatLngPoint
 	RadiusMeter float32
 }
 
@@ -199,7 +199,7 @@ func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 
 	// TODO: Use an S2 Cap as an inscribed polygon does not fully cover the defined circle
 	return geo.RegionCoverer.Covering(s2.RegularLoop(
-		gc.Center.point,
+		s2.Point(gc.Center),
 		geo.DistanceMetersToAngle(float64(gc.RadiusMeter)),
 		20,
 	)), nil
@@ -212,14 +212,14 @@ func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 // Edges may not cross.
 // Vertices may not be duplicated.  In particular, the final polygon vertex shall not be identical to the first vertex.
 type GeoPolygon struct {
-	Vertices []*LatLngPoint
+	Vertices []LatLngPoint
 }
 
 // CalculateCovering returns the spatial covering of gp.
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
 	for _, v := range gp.Vertices {
-		points = append(points, v.point)
+		points = append(points, s2.Point(v))
 	}
 	if len(points) < 3 {
 		return nil, geo.ErrNotEnoughPointsInPolygon
@@ -228,16 +228,14 @@ func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 }
 
 // LatLngPoint models a point on the earth's surface.
-type LatLngPoint struct {
-	point s2.Point
-}
+type LatLngPoint s2.Point
 
 // NewLatLngPoint returns the spatial LatLngPoint, or one of:
 // * geo.ErrBadCoord
-func NewLatLngPoint(lat, lng float64) (*LatLngPoint, error) {
+func NewLatLngPoint(lat, lng float64) (LatLngPoint, error) {
 	pt, err := geo.NewPointFromDegrees(lat, lng)
 	if err != nil {
-		return nil, err
+		return LatLngPoint{}, err
 	}
-	return &LatLngPoint{point: pt}, err
+	return LatLngPoint(pt), err
 }

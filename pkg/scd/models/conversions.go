@@ -195,6 +195,6 @@ func GeoPolygonFromSCDRest(p *restapi.Polygon) (*dssmodels.GeoPolygon, error) {
 }
 
 // LatLngPointFromSCDRest converts a point SCD v1 REST model to a latlngpoint
-func LatLngPointFromSCDRest(p *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+func LatLngPointFromSCDRest(p *restapi.LatLngPoint) (dssmodels.LatLngPoint, error) {
 	return dssmodels.NewLatLngPoint(float64(p.Lat), float64(p.Lng))
 }

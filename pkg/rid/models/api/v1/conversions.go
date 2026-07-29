@@ -67,7 +67,7 @@ func FromGeoPolygon(footprint *restapi.GeoPolygon) (*dssmodels.GeoPolygon, error
 }
 
 // FromLatLngPoint converts RID v1 REST model to business object
-func FromLatLngPoint(pt *restapi.LatLngPoint) (*dssmodels.LatLngPoint, error) {
+func FromLatLngPoint(pt *restapi.LatLngPoint) (dssmodels.LatLngPoint, error) {
 	return dssmodels.NewLatLngPoint(float64(pt.Lat), float64(pt.Lng))
 }
 
