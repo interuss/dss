@@ -165,7 +165,7 @@ services:
       start_interval: 5s
 
   local-dss-jaeger:
-    image: jaegertracing/jaeger:2.14.0
+    image: jaegertracing/jaeger:2.20.0
     ports:
       - "16686:16686"
       - "4317:4317"
@@ -175,7 +175,7 @@ services:
     profiles: ["with-monitoring"]
 
   local-dss-prometheus:
-    image: prom/prometheus:v3.8.1
+    image: prom/prometheus:v3.13.1
     command:
       - --config.file=/etc/prometheus/prometheus.yaml
     ports:
