@@ -26,6 +26,17 @@ func RequestTimestampFromContext(ctx context.Context) (time.Time, error) {
 	return timestamp, nil
 }
 
+// MustGetRequestTimestamp returns the request timestamp from the context and panics if it is not
+// present or invalid, which is a programming error.
+func MustGetRequestTimestamp(ctx context.Context) time.Time {
+	timestamp, err := RequestTimestampFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return timestamp
+}
+
 // WithRequestTimestamp returns a new context with the given timestamp.
 func WithRequestTimestamp(ctx context.Context, timestamp time.Time) context.Context {
 	return context.WithValue(ctx, timestampKey{}, timestamp)

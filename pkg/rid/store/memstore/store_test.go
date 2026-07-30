@@ -23,9 +23,7 @@ var (
 // fakeClock, so tests can advance time deterministically.
 func setUpStore(t *testing.T) *repo {
 	t.Helper()
-	fakeClock = clockwork.NewFakeClock()
 	r := newRepo()
-	r.clock = fakeClock
 	return r
 }
 

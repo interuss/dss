@@ -30,7 +30,26 @@ linters:
     - predeclared
     - nolintlint
     - unparam
+    - forbidigo
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: '^time\.Now$'
+          msg: use timestamp.RequestTimestampFromContext(ctx)
+        - pattern: '^time\.(Since|Until)$'
+          msg: use timestamp.RequestTimestampFromContext(ctx)
+        - pattern: '^time\.(Tick|After|AfterFunc|NewTimer|NewTicker)$'
+          msg: no real clock in memstore
+        - pattern: 'clock\.Now$'
+          msg: use timestamp.RequestTimestampFromContext(ctx)
   exclusions:
       paths:
           - build/workspace
           - '.*\.gen\.go'
+      rules:
+          - linters:
+                - forbidigo
+            path-except: 'pkg/(aux_|rid|scd)/store/memstore/'
+          - linters:
+                - forbidigo
+            path: '_test\.go'

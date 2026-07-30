@@ -11,6 +11,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -54,19 +55,22 @@ func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.S
 	return rec.toModel(), nil
 }
 
-func (r *repo) InsertSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	if err := validateWriteData(s.Cells, s.StartTime, s.EndTime); err != nil {
 		return nil, err
 	}
 	if _, ok := r.state.Subscriptions[s.ID]; ok {
 		return nil, stacktrace.NewError("Subscription with id %s already exists", s.ID)
 	}
-	rec := subRecordFromModel(s, r.clock.Now())
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	rec := subRecordFromModel(s, now)
 	r.state.Subscriptions[s.ID] = rec
 	return rec.toModel(), nil
 }
 
-func (r *repo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *repo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	if err := validateWriteData(s.Cells, s.StartTime, s.EndTime); err != nil {
 		return nil, err
 	}
@@ -74,7 +78,10 @@ func (r *repo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) 
 	if !ok {
 		return nil, nil
 	}
-	rec := subRecordFromModel(s, r.clock.Now())
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	rec := subRecordFromModel(s, now)
 	rec.Owner = prev.Owner // It's not possible to update the owner of a subscription, this ensure it's to changed to a new value.
 	r.state.Subscriptions[s.ID] = rec
 	return rec.toModel(), nil
@@ -92,9 +99,9 @@ func (r *repo) DeleteSubscription(_ context.Context, s *ridmodels.Subscription) 
 
 // liveSubscriptionsInCells yields the non-expired subscriptions touching cells,
 // optionally restricted to a single owner.
-func (r *repo) liveSubscriptionsInCells(cells s2.CellUnion, owner *dssmodels.Owner) iter.Seq[*subscriptionRecord] {
+func (r *repo) liveSubscriptionsInCells(now time.Time, cells s2.CellUnion, owner *dssmodels.Owner) iter.Seq[*subscriptionRecord] {
 	return func(yield func(*subscriptionRecord) bool) {
-		now := r.clock.Now()
+
 		want := cellSet(cells)
 		for _, rec := range r.state.Subscriptions {
 			if owner != nil && rec.Owner != *owner {
@@ -113,20 +120,23 @@ func (r *repo) liveSubscriptionsInCells(cells s2.CellUnion, owner *dssmodels.Own
 	}
 }
 
-func (r *repo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	return r.searchSubscriptions(cells, nil)
+func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+	return r.searchSubscriptions(ctx, cells, nil)
 }
 
-func (r *repo) SearchSubscriptionsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
-	return r.searchSubscriptions(cells, &owner)
+func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+	return r.searchSubscriptions(ctx, cells, &owner)
 }
 
-func (r *repo) searchSubscriptions(cells s2.CellUnion, owner *dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (r *repo) searchSubscriptions(ctx context.Context, cells s2.CellUnion, owner *dssmodels.Owner) ([]*ridmodels.Subscription, error) {
 	if len(cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
 	var out []*ridmodels.Subscription
-	for rec := range r.liveSubscriptionsInCells(cells, owner) {
+	for rec := range r.liveSubscriptionsInCells(now, cells, owner) {
 		out = append(out, rec.toModel())
 
 		if len(out) > dssmodels.MaxResultLimit { // This mimics sqlstore behaviour, but it's not very good.
@@ -138,19 +148,25 @@ func (r *repo) searchSubscriptions(cells s2.CellUnion, owner *dssmodels.Owner) (
 
 // UpdateNotificationIdxsInCells increments the notification index for each
 // subscription in the given cells.
-func (r *repo) UpdateNotificationIdxsInCells(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
 	var out []*ridmodels.Subscription
-	for rec := range r.liveSubscriptionsInCells(cells, nil) {
+	for rec := range r.liveSubscriptionsInCells(now, cells, nil) {
 		rec.NotificationIndex++
 		out = append(out, rec.toModel())
 	}
 	return out, nil
 }
 
-func (r *repo) MaxSubscriptionCountInCellsByOwner(_ context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
 	want := cellSet(cells)
 	counts := make(map[s2.CellID]int, len(cells))
-	for rec := range r.liveSubscriptionsInCells(cells, &owner) {
+	for rec := range r.liveSubscriptionsInCells(now, cells, &owner) {
 		for _, c := range rec.Cells {
 			if _, ok := want[c]; ok {
 				counts[c]++
