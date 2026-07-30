@@ -9,6 +9,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -51,19 +52,22 @@ func (r *repo) GetISA(_ context.Context, id dssmodels.ID, _ bool) (*ridmodels.Id
 	return rec.toModel(), nil
 }
 
-func (r *repo) InsertISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	if err := validateWriteData(isa.Cells, isa.StartTime, isa.EndTime); err != nil {
 		return nil, err
 	}
 	if _, ok := r.state.ISAs[isa.ID]; ok {
 		return nil, stacktrace.NewError("ISA with id %s already exists", isa.ID)
 	}
-	rec := isaRecordFromModel(isa, r.clock.Now())
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	rec := isaRecordFromModel(isa, now)
 	r.state.ISAs[isa.ID] = rec
 	return rec.toModel(), nil
 }
 
-func (r *repo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
 	if err := validateWriteData(isa.Cells, isa.StartTime, isa.EndTime); err != nil {
 		return nil, err
 	}
@@ -71,8 +75,12 @@ func (r *repo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationService
 	if !ok {
 		return nil, nil
 	}
-	rec := isaRecordFromModel(isa, r.clock.Now())
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	rec := isaRecordFromModel(isa, now)
 	rec.Owner = prev.Owner // It's not possible to update the owner of an ISA, this ensure it's to changed to a new value.
+
 	r.state.ISAs[isa.ID] = rec
 	return rec.toModel(), nil
 }

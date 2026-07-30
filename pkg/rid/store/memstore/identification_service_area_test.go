@@ -10,7 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
-	"github.com/jonboulle/clockwork"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,6 +34,7 @@ var (
 
 func TestStoreSearchISAs(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	cells := s2.CellUnion{
 		s2.CellID(17106221850767130624),
 		s2.CellID(17106221885126868992),
@@ -136,6 +137,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 func TestBadVersion(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	saOut1, err := repo.InsertISA(ctx, serviceArea)
@@ -157,6 +159,7 @@ func TestBadVersion(t *testing.T) {
 
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	saOut, err := repo.InsertISA(ctx, serviceArea)
@@ -164,10 +167,10 @@ func TestStoreExpiredISA(t *testing.T) {
 	require.NotNil(t, saOut)
 
 	// The ISA's endTime is one hour from now.
-	fakeClock.Advance(59 * time.Minute)
+	now := fakeClock.Now()
+	now = now.Add(59 * time.Minute)
 
 	// We should still be able to find the ISA by searching and by ID.
-	now := fakeClock.Now()
 	serviceAreas, err := repo.SearchISAs(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
@@ -177,8 +180,7 @@ func TestStoreExpiredISA(t *testing.T) {
 	require.NotNil(t, ret)
 
 	// But now the ISA has expired.
-	fakeClock.Advance(2 * time.Minute)
-	now = fakeClock.Now()
+	now = now.Add(2 * time.Minute)
 
 	serviceAreas, err = repo.SearchISAs(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
@@ -192,6 +194,7 @@ func TestStoreExpiredISA(t *testing.T) {
 
 func TestStoreDeleteISAs(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert the ISA.
@@ -212,6 +215,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 func TestStoreISAWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
@@ -226,9 +230,8 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 
 func TestListExpiredISAs(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
-
-	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
 	// Insert ISA with endtime 1 day from now
 	isa1 := *serviceArea
@@ -258,9 +261,8 @@ func TestListExpiredISAs(t *testing.T) {
 
 func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
-
-	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
 	// Insert ISA with endtime 1 day from now
 	isa1 := *serviceArea
@@ -292,6 +294,7 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 
 func TestStoreCountISAs(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert the ISA.

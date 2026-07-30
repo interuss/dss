@@ -10,6 +10,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -69,6 +70,7 @@ var (
 
 func TestStoreGetSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
@@ -88,6 +90,7 @@ func TestStoreGetSubscription(t *testing.T) {
 
 func TestStoreInsertSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
@@ -131,6 +134,7 @@ func TestStoreInsertSubscription(t *testing.T) {
 
 func TestStoreDeleteSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
@@ -158,6 +162,7 @@ func TestStoreDeleteSubscription(t *testing.T) {
 
 func TestStoreSearchSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now().UTC())
 	repo := setUpStore(t)
 
 	var (
@@ -202,6 +207,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 
 func TestStoreExpiredSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
@@ -215,7 +221,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	require.NoError(t, err)
 
 	// The subscription's endTime is 24 hours from now.
-	fakeClock.Advance(23 * time.Hour)
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now().Add(23*time.Hour))
 
 	// We should still be able to find the subscription by searching and by ID.
 	subs, err := repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
@@ -227,7 +233,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	require.NotNil(t, &ret)
 
 	// But now the subscription has expired.
-	fakeClock.Advance(2 * time.Hour)
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now().Add(25*time.Hour))
 
 	subs, err = repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
@@ -240,6 +246,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
@@ -254,6 +261,7 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 
 func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	for _, s := range subscriptionsPool {
@@ -268,6 +276,7 @@ func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 
 func TestListExpiredSubscriptions(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
@@ -300,9 +309,8 @@ func TestListExpiredSubscriptions(t *testing.T) {
 
 func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
-
-	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
 	// Insert Subscription with endtime 1 day from now
 	subscripiton1 := *subscriptionsPool[0].input
@@ -334,6 +342,7 @@ func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 
 func TestStoreCountSubscription(t *testing.T) {
 	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
