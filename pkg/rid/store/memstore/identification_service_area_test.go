@@ -1,4 +1,4 @@
-package sqlstore
+package memstore
 
 import (
 	"context"
@@ -33,20 +33,14 @@ var (
 )
 
 func TestStoreSearchISAs(t *testing.T) {
-	var (
-		ctx   = context.Background()
-		cells = s2.CellUnion{
-			s2.CellID(17106221850767130624),
-			s2.CellID(17106221885126868992),
-			s2.CellID(17106221919486607360),
-			s2.CellID(uint64(overflow)),
-		}
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	cells := s2.CellUnion{
+		s2.CellID(17106221850767130624),
+		s2.CellID(17106221885126868992),
+		s2.CellID(17106221919486607360),
+		s2.CellID(uint64(overflow)),
+	}
+	repo := setUpStore(t)
 
 	isa := *serviceArea
 	isa.Cells = cells
@@ -142,11 +136,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 func TestBadVersion(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	saOut1, err := repo.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
@@ -167,11 +157,7 @@ func TestBadVersion(t *testing.T) {
 
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	saOut, err := repo.InsertISA(ctx, serviceArea)
 	require.NoError(t, err)
@@ -205,14 +191,8 @@ func TestStoreExpiredISA(t *testing.T) {
 }
 
 func TestStoreDeleteISAs(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	// Insert the ISA.
 	copy := *serviceArea
@@ -232,11 +212,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 func TestStoreISAWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.IdentificationServiceArea{
@@ -244,17 +220,13 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 		Owner:   dssmodels.Owner("original owner"),
 		EndTime: &endTime,
 	}
-	_, err = repo.InsertISA(ctx, sub)
+	_, err := repo.InsertISA(ctx, sub)
 	require.Error(t, err)
 }
 
 func TestListExpiredISAs(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
@@ -286,11 +258,7 @@ func TestListExpiredISAs(t *testing.T) {
 
 func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
@@ -323,14 +291,8 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 }
 
 func TestStoreCountISAs(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	// Insert the ISA.
 	copy := *serviceArea

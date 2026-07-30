@@ -10,6 +10,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/interuss/stacktrace v1.0.0
 	github.com/jackc/pgx/v5 v5.9.2
