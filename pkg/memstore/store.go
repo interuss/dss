@@ -1,11 +1,5 @@
 package memstore
 
-// Memstore is a special kind of store:
-// Store instances store data in memory. There is no persistent storage.
-// Store instances are a singleton.
-// Repository usage is not thread-safe.
-// It's used by raftstore for projected storage.
-
 import (
 	"context"
 	"sync"
@@ -23,6 +17,11 @@ type MemRepo[R any] interface {
 	RestoreFromSnapshot([]byte) error
 }
 
+// Memstore is a special kind of store:
+// Store instances store data in memory. There is no persistent storage.
+// Store instances are a singleton.
+// Repository usage is not thread-safe.
+// It's used by raftstore for projected storage.
 type Store[R any] struct {
 	logger *zap.Logger
 

@@ -1,4 +1,4 @@
-package sqlstore
+package memstore
 
 import (
 	"context"
@@ -68,14 +68,8 @@ var (
 )
 
 func TestStoreGetSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -93,14 +87,8 @@ func TestStoreGetSubscription(t *testing.T) {
 }
 
 func TestStoreInsertSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -142,14 +130,8 @@ func TestStoreInsertSubscription(t *testing.T) {
 }
 
 func TestStoreDeleteSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
@@ -175,14 +157,8 @@ func TestStoreDeleteSubscription(t *testing.T) {
 }
 
 func TestStoreSearchSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	var (
 		// pick an L13 value that overflows.
@@ -226,11 +202,7 @@ func TestStoreSearchSubscription(t *testing.T) {
 
 func TestStoreExpiredSubscription(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
@@ -239,7 +211,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 		Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
 		EndTime: &endTime,
 	}
-	_, err = repo.InsertSubscription(ctx, sub)
+	_, err := repo.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
 
 	// The subscription's endTime is 24 hours from now.
@@ -268,11 +240,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
@@ -280,17 +248,13 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 		Owner:   dssmodels.Owner("original owner"),
 		EndTime: &endTime,
 	}
-	_, err = repo.InsertSubscription(ctx, sub)
+	_, err := repo.InsertSubscription(ctx, sub)
 	require.Error(t, err)
 }
 
 func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	for _, s := range subscriptionsPool {
 		_, err := repo.InsertSubscription(ctx, s.input)
@@ -304,11 +268,7 @@ func TestMaxSubscriptionCountInCellsByOwner(t *testing.T) {
 
 func TestListExpiredSubscriptions(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
@@ -340,11 +300,7 @@ func TestListExpiredSubscriptions(t *testing.T) {
 
 func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 	ctx := context.Background()
-	store, tearDownStore := setUpStore(ctx, t)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	repo := setUpStore(t)
 
 	fakeClock := clockwork.NewFakeClockAt(time.Now())
 
@@ -377,14 +333,8 @@ func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 }
 
 func TestStoreCountSubscription(t *testing.T) {
-	var (
-		ctx                  = context.Background()
-		store, tearDownStore = setUpStore(ctx, t)
-	)
-	defer tearDownStore()
-
-	repo, err := store.Interact(ctx)
-	require.NoError(t, err)
+	ctx := context.Background()
+	repo := setUpStore(t)
 
 	for _, r := range subscriptionsPool {
 		t.Run(r.name, func(t *testing.T) {
