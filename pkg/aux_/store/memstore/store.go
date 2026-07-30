@@ -14,27 +14,33 @@ type locality string
 
 // repo is a full implementation of aux_.repos.Repository for memory-based storage.
 type repo struct {
-	// participants holds pool participants metadata, keyed by locality.
-	participants map[locality]*participant
-	// heartbeats holds the latest heartbeat per (locality, source).
-	heartbeats map[heartbeatKey]auxmodels.Heartbeat
+	state state
+}
+
+// state is the serializable in-memory state.
+type state struct {
+	// Participants holds pool participants metadata, keyed by locality.
+	Participants map[locality]*participant
+	// Heartbeats holds the latest heartbeat per (locality, source).
+	Heartbeats map[heartbeatKey]auxmodels.Heartbeat
 }
 
 type participant struct {
-	publicEndpoint string
-	updatedAt      time.Time
+	PublicEndpoint string
+	UpdatedAt      time.Time
 }
 
 type heartbeatKey struct {
-	locality locality
-	source   string
+	Locality locality
+	Source   string
 }
 
 func newRepo() *repo {
 	return &repo{
-		participants: map[locality]*participant{},
-		heartbeats:   map[heartbeatKey]auxmodels.Heartbeat{},
-	}
+		state: state{
+			Participants: map[locality]*participant{},
+			Heartbeats:   map[heartbeatKey]auxmodels.Heartbeat{},
+		}}
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*memstore.Store[repos.Repository], error) {
