@@ -115,6 +115,7 @@ services:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
       GOCOVERDIR: "/startup/coverdata"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"
@@ -135,6 +136,9 @@ services:
       local-dss-aux-bootstrapper-ybdb:
         condition: service_completed_successfully
         required: false
+      local-dss-jaeger:
+        condition: service_started
+        required: false
     networks:
       - dss_sandbox_default_network
     healthcheck:
@@ -142,7 +146,7 @@ services:
       interval: 3m
       start_period: 30s
       start_interval: 5s
-    profiles: ["", "with-yugabyte"]
+    profiles: ["", "with-yugabyte", "with-monitoring"]
 
   local-dss-dummy-oauth:
     build:
@@ -159,6 +163,51 @@ services:
       interval: 3m
       start_period: 30s
       start_interval: 5s
+
+  local-dss-jaeger:
+    image: jaegertracing/jaeger:2.20.0
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-monitoring"]
+
+  local-dss-prometheus:
+    image: prom/prometheus:v3.13.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    ports:
+      - "9090:9090"
+    volumes:
+      - $PWD/monitoring/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+    depends_on:
+      local-dss-core-service:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-monitoring"]
+
+  local-dss-grafana:
+    image: grafana/grafana:13.0-ubuntu-slim
+    ports:
+      - "3000:3000"
+    volumes:
+      - $PWD/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - $PWD/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - $PWD/../../deploy/services/tanka/grafana_dashboards/dss.json:/var/lib/grafana/dashboards/dss.json:ro
+    environment:
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/dss.json
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      local-dss-prometheus:
+        condition: service_started
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-monitoring"]
 
 networks:
   dss_sandbox_default_network:
