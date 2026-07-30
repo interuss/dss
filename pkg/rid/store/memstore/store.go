@@ -2,6 +2,7 @@ package memstore
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -15,7 +16,8 @@ import (
 
 // repo is a full implementation of rid.repos.Repository for memory-based storage.
 type repo struct {
-	state state
+	state      state
+	checkpoint state
 }
 
 // state is the serializable in-memory state.
@@ -64,10 +66,13 @@ func newRepo() *repo {
 }
 
 func (r *repo) resetState() {
+
 	r.state = state{
 		ISAs:          map[dssmodels.ID]*isaRecord{},
 		Subscriptions: map[dssmodels.ID]*subscriptionRecord{},
 	}
+
+	r.Checkpoint()
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*memstore.Store[repos.Repository], error) {
@@ -172,4 +177,50 @@ func listExpired[M any, R expiringRecord[M]](store map[dssmodels.ID]R, writer st
 		}
 	}
 	return out
+}
+
+func (rec *isaRecord) clone() *isaRecord {
+	cp := *rec
+	cp.Cells = slices.Clone(rec.Cells)
+	cp.StartTime = clonePtr(rec.StartTime)
+	cp.EndTime = clonePtr(rec.EndTime)
+	cp.AltitudeHi = clonePtr(rec.AltitudeHi)
+	cp.AltitudeLo = clonePtr(rec.AltitudeLo)
+	return &cp
+}
+
+func (rec *subscriptionRecord) clone() *subscriptionRecord {
+	cp := *rec
+	cp.Cells = slices.Clone(rec.Cells)
+	cp.StartTime = clonePtr(rec.StartTime)
+	cp.EndTime = clonePtr(rec.EndTime)
+	cp.AltitudeHi = clonePtr(rec.AltitudeHi)
+	cp.AltitudeLo = clonePtr(rec.AltitudeLo)
+	return &cp
+}
+
+// clone returns a deep copy of s. May be optimzed in speed by not cloning everything, as long
+// rest of the package don't mutate fields, iff speed of this function is important.
+func (s state) clone() state {
+	isas := make(map[dssmodels.ID]*isaRecord, len(s.ISAs))
+	for id, rec := range s.ISAs {
+		isas[id] = rec.clone()
+	}
+	subs := make(map[dssmodels.ID]*subscriptionRecord, len(s.Subscriptions))
+	for id, rec := range s.Subscriptions {
+		subs[id] = rec.clone()
+	}
+	return state{ISAs: isas, Subscriptions: subs}
+}
+
+// Checkpoint ask the repo to store a quick, internal checkpoint with its current state.
+// There is at most one check point, any existing checkpoint is overwritten
+func (r *repo) Checkpoint() {
+	r.checkpoint = r.state.clone()
+}
+
+// Restore replaces the current state with the latest checkpoint. May be called multiple time
+// to restore the same checkpoint.
+func (r *repo) Restore() {
+	r.state = r.checkpoint.clone()
 }

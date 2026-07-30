@@ -38,20 +38,20 @@ func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, erro
 		}
 
 		// Find the latest heartbeat across all sources for this locality.
-		var latest auxmodels.Heartbeat
-		found := false
+		var latest *heartbeat
+		var latestSource string
 		for key, hb := range r.state.Heartbeats {
 			if key.Locality != loc {
 				continue
 			}
-			if !found || hb.Timestamp.After(*latest.Timestamp) {
+			if latest == nil || hb.Timestamp.After(*latest.Timestamp) {
 				latest = hb
-				found = true
+				latestSource = key.Source
 			}
 		}
 
-		if found {
-			m.LatestTimestamp.Source = sql.NullString{String: latest.Source, Valid: true}
+		if latest != nil {
+			m.LatestTimestamp.Source = sql.NullString{String: latestSource, Valid: true}
 			m.LatestTimestamp.Timestamp = latest.Timestamp
 			m.LatestTimestamp.NextHeartbeatExpectedBefore = latest.NextHeartbeatExpectedBefore
 			m.LatestTimestamp.Reporter = sql.NullString{String: latest.Reporter, Valid: true}
@@ -62,24 +62,28 @@ func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, erro
 	return metadata, nil
 }
 
-func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbeat) error {
-	if heartbeat.Locality == "" {
+func (r *repo) RecordHeartbeat(ctx context.Context, hb auxmodels.Heartbeat) error {
+	if hb.Locality == "" {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
 	}
-	if heartbeat.Source == "" {
+	if hb.Source == "" {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Source not set")
 	}
 
-	if heartbeat.Timestamp == nil {
+	if hb.Timestamp == nil {
 		now := timestamp.MustGetRequestTimestamp(ctx).UTC()
-		heartbeat.Timestamp = &now
+		hb.Timestamp = &now
 	}
 
-	if heartbeat.NextHeartbeatExpectedBefore != nil && heartbeat.NextHeartbeatExpectedBefore.Before(*heartbeat.Timestamp) {
+	if hb.NextHeartbeatExpectedBefore != nil && hb.NextHeartbeatExpectedBefore.Before(*hb.Timestamp) {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Cannot expect the timestamp of the next heartbeat before the timestamp of the new heartbeat")
 	}
 
-	r.state.Heartbeats[heartbeatKey{Locality: locality(heartbeat.Locality), Source: heartbeat.Source}] = heartbeat
+	r.state.Heartbeats[heartbeatKey{Locality: locality(hb.Locality), Source: hb.Source}] = &heartbeat{
+		Timestamp:                   hb.Timestamp,
+		NextHeartbeatExpectedBefore: hb.NextHeartbeatExpectedBefore,
+		Reporter:                    hb.Reporter,
+	}
 	return nil
 }
 

@@ -16,3 +16,11 @@ func Init(ctx context.Context, logger *zap.Logger) (*memstore.Store[repos.Reposi
 }
 
 func (r *repo) GetRepo() repos.Repository { return r }
+
+func (r *repo) Checkpoint() {
+	panic("Checkpoint not yet implemented for scd")
+}
+
+func (r *repo) Restore() {
+	panic("Restore not yet implemented for scd")
+}

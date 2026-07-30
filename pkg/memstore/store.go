@@ -15,6 +15,14 @@ type MemRepo[R any] interface {
 	GetRepo() R
 	GetSnapshot() ([]byte, error)
 	RestoreFromSnapshot([]byte) error
+
+	// Checkpoint ask the repo to store a quick, internal checkpoint with its current state.
+	// There is at most one check point, any existing checkpoint is overwritten
+	Checkpoint()
+
+	// Restore replaces the current state with the latest checkpoint. May be called multiple time
+	// to restore the same checkpoint.
+	Restore()
 }
 
 // Memstore is a special kind of store:
@@ -58,6 +66,14 @@ func (s *Store[R]) Transact(ctx context.Context, _ store.OperationRequest) (any,
 
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.memRepo.GetRepo(), nil
+}
+
+func (s *Store[R]) Checkpoint() {
+	s.memRepo.Checkpoint()
+}
+
+func (s *Store[R]) Restore() {
+	s.memRepo.Restore()
 }
 
 func (s *Store[R]) Close() error {
