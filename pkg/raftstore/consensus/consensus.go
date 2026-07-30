@@ -131,7 +131,7 @@ func (c *Consensus) Stop(ctx context.Context) {
 }
 
 // HandleClientRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
-func (c *Consensus) HandleClientRequest(ctx context.Context, requestType string, value any, readOnly bool) (any, error) {
+func (c *Consensus) HandleClientRequest(ctx context.Context, requestType string, value []byte, readOnly bool) (any, error) {
 	proposal, err := c.newProposal(ctx, requestType, value, readOnly)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create proposal")

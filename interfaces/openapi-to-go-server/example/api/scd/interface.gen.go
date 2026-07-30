@@ -174,6 +174,13 @@ type QueryOperationalIntentReferencesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QueryOperationalIntentReferencesOperationID = "QueryOperationalIntentReferences"
+
+func (request *QueryOperationalIntentReferencesRequest) OperationID() string {
+	return QueryOperationalIntentReferencesOperationID
+}
+
 type QueryOperationalIntentReferencesResponseSet struct {
 	// Operational intents were successfully retrieved.
 	Response200 *QueryOperationalIntentReferenceResponse
@@ -204,6 +211,13 @@ type GetOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetOperationalIntentReferenceOperationID = "GetOperationalIntentReference"
+
+func (request *GetOperationalIntentReferenceRequest) OperationID() string {
+	return GetOperationalIntentReferenceOperationID
+}
+
 type GetOperationalIntentReferenceResponseSet struct {
 	// Operational intent reference was retrieved successfully.
 	Response200 *GetOperationalIntentReferenceResponse
@@ -240,6 +254,13 @@ type CreateOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateOperationalIntentReferenceOperationID = "CreateOperationalIntentReference"
+
+func (request *CreateOperationalIntentReferenceRequest) OperationID() string {
+	return CreateOperationalIntentReferenceOperationID
+}
+
 type CreateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was created successfully in the DSS.
 	Response201 *ChangeOperationalIntentReferenceResponse
@@ -287,6 +308,13 @@ type UpdateOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateOperationalIntentReferenceOperationID = "UpdateOperationalIntentReference"
+
+func (request *UpdateOperationalIntentReferenceRequest) OperationID() string {
+	return UpdateOperationalIntentReferenceOperationID
+}
+
 type UpdateOperationalIntentReferenceResponseSet struct {
 	// An operational intent reference was updated successfully in the DSS.
 	Response200 *ChangeOperationalIntentReferenceResponse
@@ -329,6 +357,13 @@ type DeleteOperationalIntentReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteOperationalIntentReferenceOperationID = "DeleteOperationalIntentReference"
+
+func (request *DeleteOperationalIntentReferenceRequest) OperationID() string {
+	return DeleteOperationalIntentReferenceOperationID
+}
+
 type DeleteOperationalIntentReferenceResponseSet struct {
 	// The specified operational intent was successfully removed from the DSS.
 	Response200 *ChangeOperationalIntentReferenceResponse
@@ -370,6 +405,13 @@ type QueryConstraintReferencesRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QueryConstraintReferencesOperationID = "QueryConstraintReferences"
+
+func (request *QueryConstraintReferencesRequest) OperationID() string {
+	return QueryConstraintReferencesOperationID
+}
+
 type QueryConstraintReferencesResponseSet struct {
 	// Constraint references were successfully retrieved.
 	Response200 *QueryConstraintReferencesResponse
@@ -400,6 +442,13 @@ type GetConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetConstraintReferenceOperationID = "GetConstraintReference"
+
+func (request *GetConstraintReferenceRequest) OperationID() string {
+	return GetConstraintReferenceOperationID
+}
+
 type GetConstraintReferenceResponseSet struct {
 	// Constraint reference was retrieved successfully.
 	Response200 *GetConstraintReferenceResponse
@@ -436,6 +485,13 @@ type CreateConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateConstraintReferenceOperationID = "CreateConstraintReference"
+
+func (request *CreateConstraintReferenceRequest) OperationID() string {
+	return CreateConstraintReferenceOperationID
+}
+
 type CreateConstraintReferenceResponseSet struct {
 	// A constraint reference was created successfully in the DSS.
 	Response201 *ChangeConstraintReferenceResponse
@@ -480,6 +536,13 @@ type UpdateConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateConstraintReferenceOperationID = "UpdateConstraintReference"
+
+func (request *UpdateConstraintReferenceRequest) OperationID() string {
+	return UpdateConstraintReferenceOperationID
+}
+
 type UpdateConstraintReferenceResponseSet struct {
 	// A constraint reference was updated successfully in the DSS.
 	Response200 *ChangeConstraintReferenceResponse
@@ -518,6 +581,13 @@ type DeleteConstraintReferenceRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteConstraintReferenceOperationID = "DeleteConstraintReference"
+
+func (request *DeleteConstraintReferenceRequest) OperationID() string {
+	return DeleteConstraintReferenceOperationID
+}
+
 type DeleteConstraintReferenceResponseSet struct {
 	// The constraint was successfully removed from the DSS.
 	Response200 *ChangeConstraintReferenceResponse
@@ -556,6 +626,11 @@ type QuerySubscriptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const QuerySubscriptionsOperationID = "QuerySubscriptions"
+
+func (request *QuerySubscriptionsRequest) OperationID() string { return QuerySubscriptionsOperationID }
+
 type QuerySubscriptionsResponseSet struct {
 	// Subscriptions were retrieved successfully.
 	Response200 *QuerySubscriptionsResponse
@@ -586,6 +661,11 @@ type GetSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetSubscriptionOperationID = "GetSubscription"
+
+func (request *GetSubscriptionRequest) OperationID() string { return GetSubscriptionOperationID }
+
 type GetSubscriptionResponseSet struct {
 	// Subscription information was retrieved successfully.
 	Response200 *GetSubscriptionResponse
@@ -622,6 +702,11 @@ type CreateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateSubscriptionOperationID = "CreateSubscription"
+
+func (request *CreateSubscriptionRequest) OperationID() string { return CreateSubscriptionOperationID }
+
 type CreateSubscriptionResponseSet struct {
 	// A new subscription was created successfully.
 	Response200 *PutSubscriptionResponse
@@ -664,6 +749,11 @@ type UpdateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateSubscriptionOperationID = "UpdateSubscription"
+
+func (request *UpdateSubscriptionRequest) OperationID() string { return UpdateSubscriptionOperationID }
+
 type UpdateSubscriptionResponseSet struct {
 	// A subscription was updated successfully.
 	Response200 *PutSubscriptionResponse
@@ -701,6 +791,11 @@ type DeleteSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteSubscriptionOperationID = "DeleteSubscription"
+
+func (request *DeleteSubscriptionRequest) OperationID() string { return DeleteSubscriptionOperationID }
+
 type DeleteSubscriptionResponseSet struct {
 	// Subscription was successfully removed from DSS.
 	Response200 *DeleteSubscriptionResponse
@@ -739,6 +834,11 @@ type MakeDssReportRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const MakeDssReportOperationID = "MakeDssReport"
+
+func (request *MakeDssReportRequest) OperationID() string { return MakeDssReportOperationID }
+
 type MakeDssReportResponseSet struct {
 	// A new Report was created successfully (and archived).
 	Response201 *ErrorReport
@@ -767,6 +867,11 @@ type GetUssAvailabilityRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetUssAvailabilityOperationID = "GetUssAvailability"
+
+func (request *GetUssAvailabilityRequest) OperationID() string { return GetUssAvailabilityOperationID }
+
 type GetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully retrieved.
 	Response200 *UssAvailabilityStatusResponse
@@ -800,6 +905,11 @@ type SetUssAvailabilityRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SetUssAvailabilityOperationID = "SetUssAvailability"
+
+func (request *SetUssAvailabilityRequest) OperationID() string { return SetUssAvailabilityOperationID }
+
 type SetUssAvailabilityResponseSet struct {
 	// Availability status of specified USS was successfully updated.
 	Response200 *UssAvailabilityStatusResponse
