@@ -26,7 +26,7 @@ var (
 		EndTime:   &endTime,
 		Writer:    writer,
 		Cells: s2.CellUnion{
-			s2.CellID(uint64(overflow)),
+			s2.CellID(overflow),
 			s2.CellID(17106221850767130624),
 		},
 	}
@@ -39,7 +39,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			s2.CellID(17106221850767130624),
 			s2.CellID(17106221885126868992),
 			s2.CellID(17106221919486607360),
-			s2.CellID(uint64(overflow)),
+			s2.CellID(overflow),
 		}
 		store, tearDownStore = setUpStore(ctx, t)
 	)
@@ -79,7 +79,7 @@ func TestStoreSearchISAs(t *testing.T) {
 		},
 		{
 			name:  "search for only one cell with high bit set",
-			cells: s2.CellUnion{s2.CellID(uint64(overflow))},
+			cells: s2.CellUnion{s2.CellID(overflow)},
 			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
 				return &start, nil
 			},
@@ -106,7 +106,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			cells: cells,
 			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
 				var (
-					offset   = time.Duration(100 * time.Second)
+					offset   = 100 * time.Second
 					earliest = end.Add(offset)
 					latest   = end.Add(offset * 2)
 				)
@@ -120,7 +120,7 @@ func TestStoreSearchISAs(t *testing.T) {
 			cells: cells,
 			timestampMutator: func(start time.Time, end time.Time) (*time.Time, *time.Time) {
 				var (
-					offset   = time.Duration(100 * time.Second)
+					offset   = 100 * time.Second
 					earliest = start.Add(-offset)
 					latest   = end.Add(offset)
 				)
@@ -196,7 +196,7 @@ func TestStoreExpiredISA(t *testing.T) {
 
 	serviceAreas, err = repo.SearchISAs(ctx, serviceArea.Cells, &now, nil)
 	require.NoError(t, err)
-	require.Len(t, serviceAreas, 0)
+	require.Empty(t, serviceAreas)
 
 	// A get should work even if it is expired.
 	ret, err = repo.GetISA(ctx, serviceArea.ID, false)
@@ -215,8 +215,8 @@ func TestStoreDeleteISAs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Insert the ISA.
-	copy := *serviceArea
-	isa, err := repo.InsertISA(ctx, &copy)
+	serviceAreaCopy := *serviceArea
+	isa, err := repo.InsertISA(ctx, &serviceAreaCopy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 
@@ -333,15 +333,15 @@ func TestStoreCountISAs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Insert the ISA.
-	copy := *serviceArea
-	isa, err := repo.InsertISA(ctx, &copy)
+	serviceAreaCopy := *serviceArea
+	isa, err := repo.InsertISA(ctx, &serviceAreaCopy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 
 	//Count should be one
 	count, err := repo.CountISAs(ctx)
 	require.NoError(t, err)
-	require.Equal(t, count, int64(1))
+	require.Equal(t, int64(1), count)
 
 	// Delete the ISA.
 	// Ensure a fresh Get, then delete still updates the sub indexes
@@ -355,5 +355,5 @@ func TestStoreCountISAs(t *testing.T) {
 	//Count should be zero
 	count, err = repo.CountISAs(ctx)
 	require.NoError(t, err)
-	require.Equal(t, count, int64(0))
+	require.Equal(t, int64(0), count)
 }

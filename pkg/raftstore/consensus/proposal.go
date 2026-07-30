@@ -30,7 +30,7 @@ type Proposal struct {
 	ReadOnly bool `json:"read_only"`
 }
 
-func (c *Consensus) newProposal(ctx context.Context, requestType string, payload any, readOnly bool) (Proposal, error) {
+func (c *Consensus) newProposal(_ context.Context, requestType string, payload any, readOnly bool) (Proposal, error) {
 	// TODO - Fetch timestamp from context
 	value, err := json.Marshal(payload)
 	if err != nil {

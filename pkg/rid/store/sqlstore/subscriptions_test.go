@@ -32,7 +32,7 @@ var (
 				NotificationIndex: 42,
 				Writer:            writer,
 				Cells: s2.CellUnion{
-					s2.CellID(uint64(overflow)),
+					s2.CellID(overflow),
 					12494535935418957824,
 				},
 			},
@@ -259,7 +259,7 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	subs, err = repo.SearchSubscriptionsByOwner(ctx, sub.Cells, "original owner")
 	require.NoError(t, err)
-	require.Len(t, subs, 0)
+	require.Empty(t, subs)
 
 	ret, err = repo.GetSubscription(ctx, sub.ID)
 	require.NotNil(t, ret)
@@ -395,7 +395,7 @@ func TestStoreCountSubscription(t *testing.T) {
 			//Count should be one
 			count, err := repo.CountSubscriptions(ctx)
 			require.NoError(t, err)
-			require.Equal(t, count, int64(1))
+			require.Equal(t, int64(1), count)
 
 			sub4, err := repo.DeleteSubscription(ctx, sub1)
 			require.NoError(t, err)
@@ -404,7 +404,7 @@ func TestStoreCountSubscription(t *testing.T) {
 			//Count should be zero
 			count, err = repo.CountSubscriptions(ctx)
 			require.NoError(t, err)
-			require.Equal(t, count, int64(0))
+			require.Equal(t, int64(0), count)
 		})
 	}
 }

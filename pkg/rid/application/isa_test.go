@@ -212,7 +212,7 @@ func TestInsertISA(t *testing.T) {
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -309,7 +309,7 @@ func TestUpdateISA(t *testing.T) {
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -333,8 +333,8 @@ func TestAppDeleteISAs(t *testing.T) {
 
 	insertedSubscriptions := []*ridmodels.Subscription{}
 	for _, r := range subscriptionsPool {
-		copy := *r.input
-		s1, err := app.InsertSubscription(ctx, &copy)
+		sunscriptionCopy := *r.input
+		s1, err := app.InsertSubscription(ctx, &sunscriptionCopy)
 		require.NoError(t, err)
 		require.NotNil(t, s1)
 		require.Equal(t, 42, s1.NotificationIndex)
@@ -352,8 +352,8 @@ func TestAppDeleteISAs(t *testing.T) {
 	}
 
 	// Insert the ISA.
-	copy := *serviceArea
-	isa, subscriptionsOut, err := app.InsertISA(ctx, &copy)
+	serviceAreaCopy := *serviceArea
+	isa, subscriptionsOut, err := app.InsertISA(ctx, &serviceAreaCopy)
 	require.NoError(t, err)
 	require.NotNil(t, isa)
 	require.Len(t, subscriptionsOut, len(insertedSubscriptions))

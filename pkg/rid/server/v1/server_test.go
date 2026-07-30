@@ -626,7 +626,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	defer cancel()
 	ma.On("DeleteISA", mock.Anything, id, dssmodels.Owner(testdata.Owner), mock.Anything).Return(
 		&ridmodels.IdentificationServiceArea{
-			ID:      dssmodels.ID(id),
+			ID:      id,
 			Owner:   dssmodels.Owner("me-myself-and-i"),
 			URL:     "https://no/place/like/home",
 			Version: testdata.Version,

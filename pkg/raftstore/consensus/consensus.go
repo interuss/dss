@@ -373,7 +373,7 @@ func (c *Consensus) applyConfigChange(data []byte) error {
 	return nil
 }
 
-func (c *Consensus) applyConfigChangeV2(data []byte) (bool, error) {
+func (c *Consensus) applyConfigChangeV2(data []byte) (bool, error) { //nolint:unparam
 	var cc raftpb.ConfChangeV2
 	err := cc.Unmarshal(data)
 	if err != nil {

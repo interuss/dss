@@ -49,7 +49,7 @@ type Config[R any] struct {
 	Registry               map[string]store.OperationHandler[R]
 }
 
-func checkMajorSchemaVersion[R any](ctx context.Context, db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
+func checkMajorSchemaVersion[R any](db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
 	if vs == UnknownVersion {
 		return stacktrace.NewError("%s has not been bootstrapped with Schema Manager, please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", db.Pool.Config().ConnConfig.Database)
 	}
@@ -141,7 +141,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	vs, err := db.GetSchemaVersion(ctx, cfg.DBName)
 
 	if err == nil {
-		err = checkMajorSchemaVersion(ctx, db, vs, cfg.CrdbMajorSchemaVersion, cfg.YbMajorSchemaVersion)
+		err = checkMajorSchemaVersion(db, vs, cfg.CrdbMajorSchemaVersion, cfg.YbMajorSchemaVersion)
 	}
 	if err != nil {
 		db.Pool.Close()

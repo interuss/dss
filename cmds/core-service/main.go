@@ -122,7 +122,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}
 
 	if *enableMetrics {
-		err = registerRIDMetrics(ctx, ridStore)
+		err = registerRIDMetrics(ridStore)
 
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -149,7 +149,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}
 
 	if *enableMetrics {
-		err = registerSCDMetrics(ctx, scdStore)
+		err = registerSCDMetrics(scdStore)
 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -163,7 +163,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}, nil
 }
 
-func registerRIDMetrics(ctx context.Context, store rids.Store) error {
+func registerRIDMetrics(store rids.Store) error {
 
 	meter := otel.Meter("rid")
 
@@ -199,7 +199,7 @@ func registerRIDMetrics(ctx context.Context, store rids.Store) error {
 	return err
 }
 
-func registerSCDMetrics(ctx context.Context, store scds.Store) error {
+func registerSCDMetrics(store scds.Store) error {
 
 	meter := otel.Meter("scd")
 
@@ -474,7 +474,7 @@ func main() {
 			logger.Panic("Failed to initialize OpenTelemetry", zap.Error(err))
 		}
 		// Handle shutdown properly so nothing leaks.
-		defer otelShutdown(context.Background())
+		defer func() { _ = otelShutdown(context.Background()) }()
 	}
 
 	backoffs := []time.Duration{
