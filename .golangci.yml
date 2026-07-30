@@ -19,6 +19,17 @@ linters:
     - misspell
     - staticcheck
     - govet
+    - errcheck
+    - ineffassign
+    - unused
+    - nilerr
+    - noctx
+    - testifylint
+    - unconvert
+    - reassign
+    - predeclared
+    - nolintlint
+    - unparam
   exclusions:
       paths:
           - build/workspace

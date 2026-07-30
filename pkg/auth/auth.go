@@ -93,7 +93,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error retrieving JWKS at %s", req.URL)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	jwks := jose.JSONWebKeySet{}
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {

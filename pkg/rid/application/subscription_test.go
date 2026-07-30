@@ -118,7 +118,7 @@ func (store *subscriptionStore) UpdateNotificationIdxsInCells(ctx context.Contex
 }
 
 func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	max := 0
+	maxValue := 0
 	subs, _ := store.SearchSubscriptionsByOwner(ctx, cells, owner)
 
 	cellMap := make(map[s2.CellID]int)
@@ -129,12 +129,12 @@ func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.C
 			} else {
 				cellMap[cid]++
 			}
-			if cellMap[cid] > max {
-				max = cellMap[cid]
+			if cellMap[cid] > maxValue {
+				maxValue = cellMap[cid]
 			}
 		}
 	}
-	return max, nil
+	return maxValue, nil
 }
 
 func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
@@ -183,7 +183,7 @@ func TestBadOwner(t *testing.T) {
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
 	_, err = app.UpdateSubscription(ctx, sub)
-	require.Equal(t, stacktrace.GetCode(err), dsserr.PermissionDenied)
+	require.Equal(t, dsserr.PermissionDenied, stacktrace.GetCode(err))
 }
 
 func TestSubscriptionUpdateCells(t *testing.T) {
@@ -289,7 +289,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -395,7 +395,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
 			} else {
-				require.Equal(t, stacktrace.GetCode(err), r.wantErr)
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
 			}
 
 			if !r.wantStartTime.IsZero() {
@@ -443,7 +443,7 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting the 11th subscription will fail.
 	ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
-	require.Equal(t, stacktrace.GetCode(err), dsserr.Exhausted)
+	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
 	require.Nil(t, ret)
 
 	// Inserting a subscription in a different cell will succeed.
@@ -453,6 +453,6 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// Inserting a subscription that overlaps fail.
 	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
-	require.Equal(t, stacktrace.GetCode(err), dsserr.Exhausted)
+	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
 	require.Nil(t, ret)
 }

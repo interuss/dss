@@ -24,18 +24,12 @@ var (
 		unitMeter: 1,
 	}
 
-	altitudeReferenceWGS84 altitudeReference = "W84"
-	unitMeter              unit              = "M"
+	unitMeter unit = "M"
 )
 
 type (
-	altitudeReference string
-	unit              string
+	unit string
 )
-
-func (ar altitudeReference) String() string {
-	return string(ar)
-}
 
 func (u unit) String() string {
 	return string(u)

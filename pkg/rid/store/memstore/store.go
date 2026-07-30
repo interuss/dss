@@ -148,13 +148,13 @@ type expiringRecord[M any] interface {
 	toModel() *M
 }
 
-func (rec *isaRecord) endTime() *time.Time { return rec.EndTime }
+func (rec *isaRecord) endTime() *time.Time { return rec.EndTime } //nolint:unused
 
-func (rec *isaRecord) writerName() string { return rec.Writer }
+func (rec *isaRecord) writerName() string { return rec.Writer } //nolint:unused
 
-func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime }
+func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime } //nolint:unused
 
-func (rec *subscriptionRecord) writerName() string { return rec.Writer }
+func (rec *subscriptionRecord) writerName() string { return rec.Writer } //nolint:unused
 
 // listExpired returns the records whose end time is at or before threshold and
 // whose writer matches. A limit of 0 means unlimited.

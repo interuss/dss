@@ -229,7 +229,7 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 // If the ovn argument is empty (""), it will attempt to create a new Constraint.
 func (a *Server) PutConstraintReference(ctx context.Context, manager string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutConstraintReferenceParameters,
 ) (*restapi.ChangeConstraintReferenceResponse, error) {
-	validParams, err := validateAndReturnConstraintUpsertParams(time.Now(), entityid, ovn, params, a.AllowHTTPBaseUrls)
+	validParams, err := validateAndReturnConstraintUpsertParams(time.Now(), entityid, params, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters")
 	}
@@ -344,7 +344,6 @@ func (vp *validConstraintParams) toConstraint(manager dssmodels.Manager, version
 func validateAndReturnConstraintUpsertParams(
 	now time.Time,
 	entityid restapi.EntityID,
-	ovn restapi.EntityOVN,
 	params *restapi.PutConstraintReferenceParameters,
 	allowHTTPBaseUrls bool,
 ) (*validConstraintParams, error) {

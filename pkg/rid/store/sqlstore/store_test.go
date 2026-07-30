@@ -35,7 +35,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newTestStore(ctx, t, connectParameters)
+	store, err := newTestStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, cleanUp(ctx, store))
@@ -43,7 +43,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*sqlstore.Store[repos.Repository], error) {
+func newTestStore(ctx context.Context) (*sqlstore.Store[repos.Repository], error) {
 	s, err := Init(ctx, logging.Logger, false)
 
 	if err != nil {
@@ -151,9 +151,9 @@ func TestTransactor(t *testing.T) {
 		_, err := store.Transact(ctx, dssstore.NewFuncOperation(func(ctx context.Context, s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
-			require.Len(t, subs, 0)
+			require.Empty(t, subs)
 			subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
-			require.Len(t, subs, 0)
+			require.Empty(t, subs)
 			require.NoError(t, err)
 
 			// Tx1 conflicts first
@@ -220,9 +220,9 @@ func TestBasicTxn(t *testing.T) {
 
 	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
-	require.Len(t, subs, 0)
+	require.Empty(t, subs)
 	subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
-	require.Len(t, subs, 0)
+	require.Empty(t, subs)
 	require.NoError(t, err)
 
 	// Tx1 conflicts first
