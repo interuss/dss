@@ -20,7 +20,7 @@ The following table describes the variables of this terraform module.
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>authorization (<code>object({<br/>'public_key_pem_path': '${optional(string)}',<br/> 'jwks': "${optional(object({<br/>'endpoint': '${string}',<br/> 'key_id': '${string}'})<br/>)}"})<br/></code>)</td>
+                <td>authorization (<code>object({<br/>public_key_pem_path = optional(string),<br/> jwks = optional(object({<br/>endpoint = string,<br/> key_id = string})<br/>)})<br/></code>)</td>
                 <td><p>One of <code>public_key_pem_path</code> or <code>jwks</code> should be provided but not both.</p>
 <ul>
 <li>
