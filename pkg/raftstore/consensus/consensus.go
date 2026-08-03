@@ -110,7 +110,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	return consensus, nil
 }
 
+// TODO: ctx is currently ignored
 func (c *Consensus) Stop(ctx context.Context) {
+	// TODO: remove once
 	c.once.Do(func() {
 		c.logger.Info("stopping consensus")
 		close(c.stopC)
@@ -223,6 +225,7 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 // startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	go func() {
+		// TODO: this shouldn't be triggered from inside the consensus instance, removing it will allow removing the once.
 		defer c.Stop(context.Background())
 
 		ticker := time.NewTicker(tickInterval)

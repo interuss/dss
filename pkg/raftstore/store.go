@@ -85,6 +85,7 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 }
 
 // Close shuts down the consensus instance and processCommits loop.
+// TODO: pass a context to Stop then to consensus.Stop.
 func (s *Store[R]) Close() error {
 	s.Consensus.Stop(context.Background())
 	s.cancel()
