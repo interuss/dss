@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/timestamp"
-	"github.com/interuss/stacktrace"
 )
 
 type EntryCommit struct {
@@ -31,15 +30,12 @@ type Proposal struct {
 }
 
 func (c *Consensus) newProposal(ctx context.Context, requestType string, value []byte, readOnly bool) (Proposal, error) {
-	timestamp, err := timestamp.RequestTimestampFromContext(ctx)
-	if err != nil || timestamp.IsZero() {
-		return Proposal{}, stacktrace.Propagate(err, "failed to get timestamp from context")
-	}
+	timestamp := timestamp.MustGetRequestTimestamp(ctx)
 
 	return Proposal{
 		ID:          uuid.NewString(),
 		NodeID:      c.nodeID,
-		Timestamp:   timestamp,
+		Timestamp:   timestamp.UTC(),
 		RequestType: requestType,
 		Value:       value,
 		ReadOnly:    readOnly,
