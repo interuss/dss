@@ -16,8 +16,16 @@ import (
 type RaftRepo[R any] interface {
 	GetRepo() R
 	// Apply is called on every committed entry. The proposal must be applied atomically.
+	// The any return mirrors store.OperationHandler.Execute: different requests yield different
+	// concrete result types. Callers recover the type via store.TransactWithResult.
 	Apply(ctx context.Context, proposal consensus.Proposal) (any, error)
+
+	// GetSnapshot returns a serialized view of current state, suitable
+	// for restoring via RestoreFromSnapshot.
 	GetSnapshot() ([]byte, error)
+
+	// RestoreFromSnapshot replaces all state with the snapshot in data.
+	// data is always the output of a prior GetSnapshot.
 	RestoreFromSnapshot(data []byte) error
 }
 
