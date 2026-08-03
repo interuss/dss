@@ -2,7 +2,6 @@ package raftstore
 
 import (
 	"context"
-	"sync"
 
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
@@ -38,7 +37,7 @@ type Store[R any] struct {
 
 	Consensus *consensus.Consensus
 
-	wg sync.WaitGroup
+	done chan struct{}
 }
 
 func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
@@ -49,9 +48,13 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 		logger:   logging.WithValuesFromContext(ctx, logger),
 		cancel:   cancel,
 		registry: registry,
+		done:     make(chan struct{}),
 	}
 	commitC := make(chan consensus.EntryCommit)
-	store.wg.Go(func() { store.processCommits(ctx, commitC) })
+	go func() {
+		defer close(store.done)
+		store.processCommits(ctx, commitC)
+	}()
 
 	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
 	if err != nil {
@@ -86,7 +89,7 @@ func (s *Store[R]) Close() error {
 	s.Consensus.Stop(context.Background())
 	s.cancel()
 	s.logger.Info("waiting for commit processing goroutine to exit")
-	s.wg.Wait()
+	<-s.done
 	return nil
 }
 
