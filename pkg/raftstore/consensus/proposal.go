@@ -29,7 +29,7 @@ type Proposal struct {
 	ReadOnly bool `json:"read_only"`
 }
 
-func (c *Consensus) newProposal(ctx context.Context, requestType string, value []byte, readOnly bool) (Proposal, error) {
+func (c *Consensus) newProposal(ctx context.Context, requestType string, value []byte, readOnly bool) Proposal {
 	timestamp := timestamp.MustGetRequestTimestamp(ctx)
 
 	return Proposal{
@@ -39,7 +39,7 @@ func (c *Consensus) newProposal(ctx context.Context, requestType string, value [
 		RequestType: requestType,
 		Value:       value,
 		ReadOnly:    readOnly,
-	}, nil
+	}
 }
 
 type ProposalResult struct {
