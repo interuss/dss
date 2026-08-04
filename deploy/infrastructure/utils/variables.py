@@ -6,11 +6,13 @@
 
 from os import listdir
 from os.path import isfile, join, abspath, dirname, exists
-from typing import Dict, List, Tuple
 import hcl2
 import marko
 import argparse
 import sys
+from hcl2 import SerializationOptions
+import re
+import textwrap
 
 DEFINITIONS_PATH = join(abspath(dirname(__file__)), "definitions")
 GENERATED_TFVARS_MD_FILENAME = "TFVARS.gen.md"
@@ -134,7 +136,7 @@ def is_example_project(path: str) -> bool:
     return "/modules/" in path
 
 
-def load_tf_definitions() -> Dict[str, str]:
+def load_tf_definitions() -> dict[str, str]:
     """
     Load terraform variables definitions and return a dictionary
     where keys are the variable name and the value the content of the file.
@@ -144,18 +146,39 @@ def load_tf_definitions() -> Dict[str, str]:
         for f in listdir(DEFINITIONS_PATH)
         if isfile(join(DEFINITIONS_PATH, f))
     ]
-    result = {}
+    result: dict[str, str] = {}
     for variable in variables:
         with open(join(DEFINITIONS_PATH, f"{variable}.tf")) as f:
             result[variable] = f.read()
     return result
 
 
-def parse_definition(variable_name: str, tf_definition: str) -> Tuple[str, str, str]:
+def clean_text(v: str) -> str:
+    m = re.fullmatch(r"\$\{(.*)\}", v, re.DOTALL)  # Remove ${} varppers
+    if m:
+        v = m.group(1)
+    m = re.fullmatch(
+        r"<<-?([A-Za-z_]\w*)\n(.*)\n\s*\1", v, re.DOTALL
+    )  # Remove block boundaries
+    if m:
+        return textwrap.dedent(m.group(2))
+    return v
+
+
+def parse_definition(
+    variable_name: str, tf_definition: str
+) -> tuple[str, str, str | None]:
     """
     Parse the tf content (hcl format) and retrieve the description field, variable_type and the default_value.
     """
-    hcl_declaration = hcl2.loads(tf_definition)
+    hcl_declaration = hcl2.loads(
+        tf_definition,
+        serialization_options=SerializationOptions(
+            strip_string_quotes=True,
+            explicit_blocks=False,
+            with_comments=False,
+        ),
+    )
     variables = hcl_declaration.get("variable")
     if len(variables) > 1:
         raise ValueError(
@@ -171,9 +194,6 @@ def parse_definition(variable_name: str, tf_definition: str) -> Tuple[str, str, 
     value_type = variables[0].get(declared_var_name).get("type", None)
     if value_type is None:
         raise ValueError(f"Type field required for variable {variable_name}.")
-    value_type = value_type[
-        2:-1
-    ]  # Value type format includes a ${...} wrapper. This removes the wrapper.
 
     default_value = variables[0].get(declared_var_name).get("default", None)
 
@@ -187,6 +207,9 @@ def parse_definition(variable_name: str, tf_definition: str) -> Tuple[str, str, 
     if description is None:
         raise ValueError(f"Description field required for variable {variable_name}.")
 
+    description = clean_text(description)
+    value_type = clean_text(value_type)
+
     return description, value_type, default_value
 
 
@@ -198,18 +221,8 @@ def write_file(filepath: str, content: str) -> None:
         file.write(content)
 
 
-def comment(content: str) -> str:
-    """
-    This prefix the possibly multiline content with # to generate a commented block.
-    """
-    if content is None:
-        return ""
-    commented_lines = "\n".join([f"# {l}" for l in content.split("\n")])
-    return commented_lines
-
-
 def get_variables_gen_tf_content(
-    variables: List[str], definitions: Dict[str, str]
+    variables: list[str], definitions: dict[str, str]
 ) -> str:
     """
     Generate the content of variables.gen.tf (Terraform definitions) based
@@ -228,8 +241,8 @@ def get_variables_gen_tf_content(
 
 def get_tfvars_md_content(
     project_name: str,
-    variables: List[str],
-    definitions: Dict[str, str],
+    variables: list[str],
+    definitions: dict[str, str],
     has_internal_vars: bool,
 ) -> str:
     content = f"<!-- {GENERATED_COMMENT} -->\n\n"
@@ -250,7 +263,7 @@ def get_tfvars_md_content(
         <tbody>
     """.strip()
 
-    def simplify_type(value_type):
+    def simplify_type(value_type: str) -> str:
         return (
             value_type.replace("({", "({<br/>")
             .replace("})", "})<br/>")
@@ -290,7 +303,7 @@ def has_internal_variables(path: str) -> bool:
     return exists(join(path, INTERNAL_VARIABLES_FILENAME))
 
 
-def write_files(definitions: Dict[str, str]):
+def write_files(definitions: dict[str, str]):
     """
     Generate by project the variables tf file and the example tfvars for example projects.
     """
@@ -326,7 +339,7 @@ def read_file(file_path: str) -> str:
     return content
 
 
-def diff_files(definitions: Dict[str, str]) -> bool:
+def diff_files(definitions: dict[str, str]) -> bool:
     """
     Generates the `variables.gen.tf` file content in memory and diffs it
     against the `variables.get.tf` files found on disk
