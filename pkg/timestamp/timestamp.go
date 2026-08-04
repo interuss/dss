@@ -10,10 +10,10 @@ import (
 
 type timestampKey struct{}
 
-// RequestTimestampFromContext returns the request timestamp from the context, or an error if the value is not present or if it is zero.
+// requestTimestampFromContext returns the request timestamp from the context, or an error if the value is not present or if it is zero.
 // The timestamp is set by the Middleware when a query is received then (on the receiver side) by the Raftstore when the query is applied.
 // It is then used for deterministic execution of time-dependent queries.
-func RequestTimestampFromContext(ctx context.Context) (time.Time, error) {
+func requestTimestampFromContext(ctx context.Context) (time.Time, error) {
 	timestamp, ok := ctx.Value(timestampKey{}).(time.Time)
 	if !ok {
 		return time.Time{}, stacktrace.NewError("timestamp not found in context")
@@ -29,7 +29,7 @@ func RequestTimestampFromContext(ctx context.Context) (time.Time, error) {
 // MustGetRequestTimestamp returns the request timestamp from the context and panics if it is not
 // present or invalid, which is a programming error.
 func MustGetRequestTimestamp(ctx context.Context) time.Time {
-	timestamp, err := RequestTimestampFromContext(ctx)
+	timestamp, err := requestTimestampFromContext(ctx)
 	if err != nil {
 		panic(err)
 	}

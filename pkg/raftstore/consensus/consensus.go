@@ -110,7 +110,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	return consensus, nil
 }
 
+// TODO: ctx is currently ignored (see issue: https://github.com/interuss/dss/issues/1610)
 func (c *Consensus) Stop(ctx context.Context) {
+	// TODO: remove once (see issue: https://github.com/interuss/dss/issues/1610)
 	c.once.Do(func() {
 		c.logger.Info("stopping consensus")
 		close(c.stopC)
@@ -131,12 +133,8 @@ func (c *Consensus) Stop(ctx context.Context) {
 }
 
 // HandleClientRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
-func (c *Consensus) HandleClientRequest(ctx context.Context, requestType string, value any, readOnly bool) (any, error) {
-	proposal, err := c.newProposal(ctx, requestType, value, readOnly)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to create proposal")
-	}
-
+func (c *Consensus) HandleClientRequest(ctx context.Context, requestType string, value []byte, readOnly bool) (any, error) {
+	proposal := c.newProposal(ctx, requestType, value, readOnly)
 	buf, err := json.Marshal(proposal)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
@@ -223,6 +221,8 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 // startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	go func() {
+		// TODO: this shouldn't be triggered from inside the consensus instance, removing it will allow removing the once.
+		// (see issue: https://github.com/interuss/dss/issues/1610)
 		defer c.Stop(context.Background())
 
 		ticker := time.NewTicker(tickInterval)
