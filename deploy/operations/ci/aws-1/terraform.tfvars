@@ -8,7 +8,7 @@ kubernetes_version           = 1.32
 cluster_name                 = "dss-ci-aws-ue1"
 node_count                   = 3
 aws_instance_type            = "t3.medium"
-aws_kubernetes_storage_class = "gp2"
+aws_kubernetes_storage_class = "gp3"
 
 # DSS configuration
 image               = "docker.io/interuss/dss:latest"

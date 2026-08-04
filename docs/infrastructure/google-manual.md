@@ -326,7 +326,7 @@ your chosen provider.
         provider has some default storage classes that should work:
           - Google Cloud: `standard`
           - Azure: `default`
-          - AWS: `gp2`
+          - AWS: `gp3`
 
     1.  `VAR_INGRESS_NAME`: If using Google Kubernetes Engine, set this to the
         the name of the core-service static IP address created above (e.g.,

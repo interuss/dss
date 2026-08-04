@@ -82,9 +82,8 @@ See https://aws.amazon.com/ec2/instance-types/ for available options.</p>
 See https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html for more details and
 available options.</p>
 <p>Depending on your use case, performance may be significantly improved with higher-tier storage classes, though this should be balanced against the associated costs.</p>
-<p>Both CockroachDB and YugabyteDB recommend at least <code>gp3</code> for production workloads. Use <code>gp2</code> for testing only, or consider <code>io2</code> for high-throughput scenarios.</p>
+<p>Both CockroachDB and YugabyteDB recommend at least <code>gp3</code> for production workloads. Consider <code>io2</code> for high-throughput scenarios.</p>
 <p>See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#aws and https://docs.yugabyte.com/stable/deploy/checklist/#amazon-web-services-aws for database-specific recommendations.</p>
-<p>Example: <code>gp3</code> for production and <code>gp2</code> for development.</p>
 </td>
             </tr><tr>
                 <td>aws_region (<code>string</code>)</td>
