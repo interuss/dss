@@ -1,5 +1,8 @@
 package memstore
 
+// Note: as of now, doesn't implement timeBasedNotificationIndex settings, as it doesn't improve performance
+// and was done mostly for SQL store improvements.
+
 import (
 	"context"
 	"iter"
@@ -9,6 +12,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -22,10 +26,10 @@ func subRecordFromModel(s *ridmodels.Subscription, updatedAt time.Time) *subscri
 		NotificationIndex: s.NotificationIndex,
 		Owner:             s.Owner,
 		Cells:             slices.Clone(s.Cells),
-		StartTime:         clonePtr(s.StartTime),
-		EndTime:           clonePtr(s.EndTime),
-		AltitudeHi:        clonePtr(s.AltitudeHi),
-		AltitudeLo:        clonePtr(s.AltitudeLo),
+		StartTime:         utils.ClonePtr(s.StartTime),
+		EndTime:           utils.ClonePtr(s.EndTime),
+		AltitudeHi:        utils.ClonePtr(s.AltitudeHi), // TODO: As noted during review, altitudes seems unused.
+		AltitudeLo:        utils.ClonePtr(s.AltitudeLo),
 		Writer:            s.Writer,
 		UpdatedAt:         updatedAt,
 	}
@@ -38,11 +42,11 @@ func (rec *subscriptionRecord) toModel() *ridmodels.Subscription {
 		NotificationIndex: rec.NotificationIndex,
 		Owner:             rec.Owner,
 		Cells:             slices.Clone(rec.Cells),
-		StartTime:         clonePtr(rec.StartTime),
-		EndTime:           clonePtr(rec.EndTime),
+		StartTime:         utils.ClonePtr(rec.StartTime),
+		EndTime:           utils.ClonePtr(rec.EndTime),
 		Version:           dssmodels.VersionFromTime(rec.UpdatedAt),
-		AltitudeHi:        clonePtr(rec.AltitudeHi),
-		AltitudeLo:        clonePtr(rec.AltitudeLo),
+		AltitudeHi:        utils.ClonePtr(rec.AltitudeHi),
+		AltitudeLo:        utils.ClonePtr(rec.AltitudeLo),
 		Writer:            rec.Writer,
 	}
 }

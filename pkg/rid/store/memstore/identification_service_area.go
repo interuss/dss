@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -19,10 +20,10 @@ func isaRecordFromModel(isa *ridmodels.IdentificationServiceArea, updatedAt time
 		URL:        isa.URL,
 		Owner:      isa.Owner,
 		Cells:      slices.Clone(isa.Cells),
-		StartTime:  clonePtr(isa.StartTime),
-		EndTime:    clonePtr(isa.EndTime),
-		AltitudeHi: clonePtr(isa.AltitudeHi),
-		AltitudeLo: clonePtr(isa.AltitudeLo),
+		StartTime:  utils.ClonePtr(isa.StartTime),
+		EndTime:    utils.ClonePtr(isa.EndTime),
+		AltitudeHi: utils.ClonePtr(isa.AltitudeHi),
+		AltitudeLo: utils.ClonePtr(isa.AltitudeLo),
 		Writer:     isa.Writer,
 		UpdatedAt:  updatedAt,
 	}
@@ -35,11 +36,11 @@ func (rec *isaRecord) toModel() *ridmodels.IdentificationServiceArea {
 		URL:        rec.URL,
 		Owner:      rec.Owner,
 		Cells:      slices.Clone(rec.Cells),
-		StartTime:  clonePtr(rec.StartTime),
-		EndTime:    clonePtr(rec.EndTime),
+		StartTime:  utils.ClonePtr(rec.StartTime),
+		EndTime:    utils.ClonePtr(rec.EndTime),
 		Version:    dssmodels.VersionFromTime(rec.UpdatedAt),
-		AltitudeHi: clonePtr(rec.AltitudeHi),
-		AltitudeLo: clonePtr(rec.AltitudeLo),
+		AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
+		AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
 		Writer:     rec.Writer,
 	}
 }
