@@ -80,6 +80,13 @@ type SearchIdentificationServiceAreasRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SearchIdentificationServiceAreasOperationID = "SearchIdentificationServiceAreas"
+
+func (request *SearchIdentificationServiceAreasRequest) OperationID() string {
+	return SearchIdentificationServiceAreasOperationID
+}
+
 type SearchIdentificationServiceAreasResponseSet struct {
 	// Identification Service Areas were successfully retrieved.
 	Response200 *SearchIdentificationServiceAreasResponse
@@ -107,6 +114,13 @@ type GetIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetIdentificationServiceAreaOperationID = "GetIdentificationServiceArea"
+
+func (request *GetIdentificationServiceAreaRequest) OperationID() string {
+	return GetIdentificationServiceAreaOperationID
+}
+
 type GetIdentificationServiceAreaResponseSet struct {
 	// Full information of the Identification Service Area was retrieved successfully.
 	Response200 *GetIdentificationServiceAreaResponse
@@ -140,6 +154,13 @@ type CreateIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateIdentificationServiceAreaOperationID = "CreateIdentificationServiceArea"
+
+func (request *CreateIdentificationServiceAreaRequest) OperationID() string {
+	return CreateIdentificationServiceAreaOperationID
+}
+
 type CreateIdentificationServiceAreaResponseSet struct {
 	// An existing Identification Service Area was created successfully in the DSS.
 	Response200 *PutIdentificationServiceAreaResponse
@@ -181,6 +202,13 @@ type UpdateIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateIdentificationServiceAreaOperationID = "UpdateIdentificationServiceArea"
+
+func (request *UpdateIdentificationServiceAreaRequest) OperationID() string {
+	return UpdateIdentificationServiceAreaOperationID
+}
+
 type UpdateIdentificationServiceAreaResponseSet struct {
 	// An existing Identification Service Area was updated successfully in the DSS.
 	Response200 *PutIdentificationServiceAreaResponse
@@ -216,6 +244,13 @@ type DeleteIdentificationServiceAreaRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteIdentificationServiceAreaOperationID = "DeleteIdentificationServiceArea"
+
+func (request *DeleteIdentificationServiceAreaRequest) OperationID() string {
+	return DeleteIdentificationServiceAreaOperationID
+}
+
 type DeleteIdentificationServiceAreaResponseSet struct {
 	// Identification Service Area was successfully deleted from DSS.
 	Response200 *DeleteIdentificationServiceAreaResponse
@@ -248,6 +283,13 @@ type SearchSubscriptionsRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const SearchSubscriptionsOperationID = "SearchSubscriptions"
+
+func (request *SearchSubscriptionsRequest) OperationID() string {
+	return SearchSubscriptionsOperationID
+}
+
 type SearchSubscriptionsResponseSet struct {
 	// Subscriptions were retrieved successfully.
 	Response200 *SearchSubscriptionsResponse
@@ -275,6 +317,11 @@ type GetSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetSubscriptionOperationID = "GetSubscription"
+
+func (request *GetSubscriptionRequest) OperationID() string { return GetSubscriptionOperationID }
+
 type GetSubscriptionResponseSet struct {
 	// Subscription information was retrieved successfully.
 	Response200 *GetSubscriptionResponse
@@ -308,6 +355,11 @@ type CreateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const CreateSubscriptionOperationID = "CreateSubscription"
+
+func (request *CreateSubscriptionRequest) OperationID() string { return CreateSubscriptionOperationID }
+
 type CreateSubscriptionResponseSet struct {
 	// A new Subscription was created successfully.
 	Response200 *PutSubscriptionResponse
@@ -349,6 +401,11 @@ type UpdateSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const UpdateSubscriptionOperationID = "UpdateSubscription"
+
+func (request *UpdateSubscriptionRequest) OperationID() string { return UpdateSubscriptionOperationID }
+
 type UpdateSubscriptionResponseSet struct {
 	// An existing Subscription was updated successfully.
 	Response200 *PutSubscriptionResponse
@@ -384,6 +441,11 @@ type DeleteSubscriptionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const DeleteSubscriptionOperationID = "DeleteSubscription"
+
+func (request *DeleteSubscriptionRequest) OperationID() string { return DeleteSubscriptionOperationID }
+
 type DeleteSubscriptionResponseSet struct {
 	// Subscription was deleted successfully.
 	Response200 *DeleteSubscriptionResponse
