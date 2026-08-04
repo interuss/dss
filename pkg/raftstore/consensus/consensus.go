@@ -110,9 +110,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	return consensus, nil
 }
 
-// TODO: ctx is currently ignored
+// TODO: ctx is currently ignored (see issue: https://github.com/interuss/dss/issues/1610)
 func (c *Consensus) Stop(ctx context.Context) {
-	// TODO: remove once
+	// TODO: remove once (see issue: https://github.com/interuss/dss/issues/1610)
 	c.once.Do(func() {
 		c.logger.Info("stopping consensus")
 		close(c.stopC)
@@ -222,6 +222,7 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	go func() {
 		// TODO: this shouldn't be triggered from inside the consensus instance, removing it will allow removing the once.
+		// (see issue: https://github.com/interuss/dss/issues/1610)
 		defer c.Stop(context.Background())
 
 		ticker := time.NewTicker(tickInterval)
