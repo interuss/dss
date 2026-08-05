@@ -8,6 +8,7 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
 	"github.com/interuss/dss/pkg/memstore"
+	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/stacktrace"
@@ -117,13 +118,6 @@ func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
 	return false
 }
 
-func clonePtr[T any](v *T) *T {
-	if v == nil {
-		return nil
-	}
-	return new(*v)
-}
-
 type versionedRecord interface {
 	version() *dssmodels.Version
 }
@@ -182,20 +176,20 @@ func listExpired[M any, R expiringRecord[M]](store map[dssmodels.ID]R, writer st
 func (rec *isaRecord) clone() *isaRecord {
 	cp := *rec
 	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = clonePtr(rec.StartTime)
-	cp.EndTime = clonePtr(rec.EndTime)
-	cp.AltitudeHi = clonePtr(rec.AltitudeHi)
-	cp.AltitudeLo = clonePtr(rec.AltitudeLo)
+	cp.StartTime = utils.ClonePtr(rec.StartTime)
+	cp.EndTime = utils.ClonePtr(rec.EndTime)
+	cp.AltitudeHi = utils.ClonePtr(rec.AltitudeHi)
+	cp.AltitudeLo = utils.ClonePtr(rec.AltitudeLo)
 	return &cp
 }
 
 func (rec *subscriptionRecord) clone() *subscriptionRecord {
 	cp := *rec
 	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = clonePtr(rec.StartTime)
-	cp.EndTime = clonePtr(rec.EndTime)
-	cp.AltitudeHi = clonePtr(rec.AltitudeHi)
-	cp.AltitudeLo = clonePtr(rec.AltitudeLo)
+	cp.StartTime = utils.ClonePtr(rec.StartTime)
+	cp.EndTime = utils.ClonePtr(rec.EndTime)
+	cp.AltitudeHi = utils.ClonePtr(rec.AltitudeHi)
+	cp.AltitudeLo = utils.ClonePtr(rec.AltitudeLo)
 	return &cp
 }
 

@@ -3,16 +3,36 @@ package memstore
 import (
 	"context"
 
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	"github.com/interuss/stacktrace"
+	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/jackc/pgx/v5"
 )
 
-func (r *repo) GetUssAvailability(_ context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetUssAvailability not implemented for memstore")
+func (rec *availabilityRecord) toModel() *scdmodels.UssAvailabilityStatus {
+	return &scdmodels.UssAvailabilityStatus{
+		Uss:          rec.Uss,
+		Availability: rec.Availability,
+		Version:      scdmodels.NewOVNFromTime(rec.UpdatedAt, rec.Uss.String()),
+	}
 }
 
-func (r *repo) UpsertUssAvailability(_ context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpsertUssAvailability not implemented for memstore")
+func (r *repo) GetUssAvailability(_ context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
+	rec, ok := r.state.Availabilities[id]
+	if !ok {
+		return nil, pgx.ErrNoRows // TODO: #1608
+	}
+	return rec.toModel(), nil
+}
+
+func (r *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	rec := &availabilityRecord{
+		Uss:          s.Uss,
+		Availability: s.Availability,
+		UpdatedAt:    now,
+	}
+	r.state.Availabilities[s.Uss] = rec
+	return rec.toModel(), nil
 }
