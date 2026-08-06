@@ -927,10 +927,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-scd-hash-lock-option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SCD hash lock option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-time-based-notification-index-option" class="md-nav__link">
     <span class="md-ellipsis">
       
         The time-based notification index option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combining-the-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining the options
       
     </span>
   </a>
@@ -1096,10 +1118,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-scd-hash-lock-option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SCD hash lock option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-time-based-notification-index-option" class="md-nav__link">
     <span class="md-ellipsis">
       
         The time-based notification index option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combining-the-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining the options
       
     </span>
   </a>
@@ -1206,7 +1250,7 @@
 <div class="admonition danger">
 <p class="admonition-title">Danger</p>
 <p>All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.</p>
-<p>You can use the <code>/aux/v1/configuration/global_options</code> endpoint to retrive the current value for a specifc DSS instance.</p>
+<p>You can use the <code>/aux/v1/configuration/global_options</code> endpoint to retrieve the current value for a specifc DSS instance.</p>
 </div>
 <p>It has been reported in issue <a href="https://github.com/interuss/dss/issues/1311">#1311</a> that creating a lot of overlapping operational intents may increase the datastore load in a way that creates timeouts.</p>
 <p>By default, the code will try to lock on required subscriptions when working on operational intents, and having too many of them may lead to issues.</p>
@@ -1221,14 +1265,32 @@
 <em>Overlapping requests. Notice the huge spikes on the left, as the datastore struggles to acquire locks.</em></p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_notoverlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_notoverlapping.png"></a>
 <em>Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.</em></p>
+<h2 id="the-scd-hash-lock-option">The SCD hash lock option<a class="headerlink" href="#the-scd-hash-lock-option" title="Permanent link">¶</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.</p>
+<p>You can use the <code>/aux/v1/configuration/global_options</code> endpoint to retrieve the current value for a specifc DSS instance.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>This option requires migration 3.4.1 for CockroachDB and 1.1.1 for Yugabyte to be effective</p>
+</div>
+<p>Similar to the SCD global lock option, but use lock based on hashed cells (with 65k locks).</p>
+<p>This should be better than global lock, as long as cells used don't collide and limit number of entries in the database.</p>
+<p>The number of locks (65535) is a compromise between lock contention (the more locks, the less unrelated cells share the same one) and the size of the <code>scd_locks</code> table. It is fixed and cannot be changed.</p>
 <h2 id="the-time-based-notification-index-option">The time-based notification index option<a class="headerlink" href="#the-time-based-notification-index-option" title="Permanent link">¶</a></h2>
 <div class="admonition danger">
 <p class="admonition-title">Danger</p>
 <p>All DSS instances in a DSS pool must use the same value for this option. Mixing them will result in undetermined behavior.</p>
-<p>You can use the <code>/aux/v1/configuration/global_options</code> endpoint to retrive the current value for a specifc DSS instance.</p>
+<p>You can use the <code>/aux/v1/configuration/global_options</code> endpoint to retrieve the current value for a specifc DSS instance.</p>
 </div>
 <p>Following the rationale described in issue <a href="https://github.com/interuss/dss/issues/1541">#1541</a>, this flag use a time-based system for notification indexes in SCD and RID.
 Please check the details in the linked issue above and ensure you understand the consequences of enabling this flag, including the specific requirements you want or need to comply with.</p>
+<h2 id="combining-the-options">Combining the options<a class="headerlink" href="#combining-the-options" title="Permanent link">¶</a></h2>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>The SCD global lock, SCD hash lock and time-based notification index options are mutually exclusive: at most one of them may be enabled.</p>
+</div>
 <h2 id="scd-lock-diagnostics-logs">SCD lock diagnostics logs<a class="headerlink" href="#scd-lock-diagnostics-logs" title="Permanent link">¶</a></h2>
 <p>To help diagnose latency spikes (for example as discussed in <a href="https://github.com/interuss/dss/issues/1311">#1311</a>), the SCD subscription lock path emits targeted warning logs when a lock query looks expensive.</p>
 <p>The warning is emitted when lock query duration is greater than or equal to <code>4s</code>.</p>
@@ -1261,7 +1323,7 @@ Please check the details in the linked issue above and ensure you understand the
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 25, 2026 12:54:34 UTC">June 25, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 6, 2026 10:26:19 UTC">August 6, 2026</span>
   </span>
 
     
