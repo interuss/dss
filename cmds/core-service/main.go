@@ -257,7 +257,19 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	storeOptions := params.GetStoreOptions()
 	logger.Info("config", zap.Bool("scdGlobalLock", storeOptions.GlobalLock))
+	logger.Info("config", zap.Bool("scdHashLock", storeOptions.HashLock))
 	logger.Info("config", zap.Bool("timeBasedNotificationIndex", storeOptions.TimeBasedNotificationIndex))
+
+	enabledOptions := 0
+	for _, enabled := range []bool{storeOptions.GlobalLock, storeOptions.HashLock, storeOptions.TimeBasedNotificationIndex} {
+		if enabled {
+			enabledOptions++
+		}
+	}
+	if enabledOptions > 1 {
+		return stacktrace.NewError("At most one of --enable_scd_global_lock, --enable_scd_hash_lock and --enable_time_based_notification_index may be enabled")
+	}
+
 	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {
 		logger.Warn("The raft datastore is experimental and its implementation is in progress. See issue for more details: https://github.com/interuss/dss/issues/1463")

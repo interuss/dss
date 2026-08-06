@@ -53,6 +53,8 @@ The release notes should contain at least the following sections:
   * This migration will improve performance. If that is not the case for a specific scenario that was missed, please downgrade to the previous version and open an issue.
   * These indexes are still useful for Yugabyte, so no such migration exists for it.
   * Details about migrations are available [there](https://interuss.github.io/dss/latest/operations/database-migrations/)
+* The 3.4.1 (or 1.1.1 for Yugabyte) migration for SCD is mandatory if you plan to use the new SCD hash lock option.
+  * This migration can be applied without any impact if you do not plan to use it.
 
 ## Important information
 
