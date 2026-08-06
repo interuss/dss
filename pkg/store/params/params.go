@@ -20,6 +20,7 @@ type (
 	// Options carries the configuration flags shared by all datastore backends.
 	Options struct {
 		GlobalLock                 bool
+		HashLock                   bool
 		TimeBasedNotificationIndex bool
 	}
 )
@@ -33,6 +34,7 @@ func init() {
 	// NB: Memstore is not available here on purpose, as it is only to be used internally.
 	flag.StringVar(&storeParameters.StoreType, "store_type", SQLStoreType, fmt.Sprintf("Store type. Use '%s' for CockroachDB/YugabyteDB and '%s' for Raft-based store.", SQLStoreType, RaftStoreType))
 	flag.BoolVar(&storeOptions.GlobalLock, "enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+	flag.BoolVar(&storeOptions.HashLock, "enable_scd_hash_lock", false, "Experimental: Lock based on hashed cells id when working with SCD subscriptions. Better performances than global lock.")
 	flag.BoolVar(&storeOptions.TimeBasedNotificationIndex, "enable_time_based_notification_index", false, "Use a time-based notification index when working with RID and SCD subscriptions.")
 }
 

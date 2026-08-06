@@ -2,9 +2,11 @@ package sqlstore
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/stretchr/testify/require"
@@ -114,4 +116,40 @@ func TestListExpiredSubscriptions(t *testing.T) {
 			require.ElementsMatch(t, expiredIDs, testCase.expired)
 		})
 	}
+}
+
+func TestCellLockKeys(t *testing.T) {
+
+	// No cells -> no hash
+	require.Empty(t, cellLockKeys(s2.CellUnion{}))
+
+	adjacent := s2.CellUnion{}
+	cell := cells[0]
+	for i := 0; i < 16; i++ {
+		adjacent = append(adjacent, cell)
+		cell = cell.Next()
+	}
+
+	keys := cellLockKeys(adjacent)
+	// Adjacent cells -> spread
+	require.Len(t, keys, 16)
+	// Key are sorted
+	require.True(t, slices.IsSorted(keys))
+	// Hash is predicatable
+	require.Equal(t, keys, cellLockKeys(adjacent))
+
+	// Hash stay in range
+	for _, key := range keys {
+		require.GreaterOrEqual(t, key, int64(0))
+		require.Less(t, key, int64(lockStripes))
+	}
+
+	// Identical cells -> identical hash
+	require.Equal(t,
+		cellLockKeys(s2.CellUnion{cells[0], cells[1]}),
+		cellLockKeys(s2.CellUnion{cells[1], cells[0], cells[0]}))
+
+	// Test expected value as well
+	require.Equal(t, []int64{42925, 44377, 45830, 47282, 48734, 50186, 51638, 53090, 54542, 55994, 57446, 58899, 60351, 61803, 63255, 64707}, keys)
+
 }

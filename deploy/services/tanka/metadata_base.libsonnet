@@ -91,7 +91,7 @@
     enable: false, // NB: Automatically enabled if should_init is set to true.
     image: error 'must specify image',
     desired_rid_db_version: '4.1.0',
-    desired_scd_db_version: '3.4.0',
+    desired_scd_db_version: '3.4.1',
     desired_aux_db_version: '1.1.0',
   },
   evict: {
