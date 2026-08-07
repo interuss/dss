@@ -167,6 +167,11 @@ func (store *subscriptionStore) CountSubscriptions(ctx context.Context) (int64, 
 	return int64(len(store.subs)), nil
 }
 
+// Don't perform anything
+func (store *subscriptionStore) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion) error {
+	return nil
+}
+
 func TestBadOwner(t *testing.T) {
 	ctx := context.Background()
 	app, cleanup := setUpSubApp(ctx, t)
