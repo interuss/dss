@@ -116,6 +116,7 @@ services:
       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
       GOCOVERDIR: "/startup/coverdata"
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
+      CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
     command: /startup/core_service.sh ${DEBUG_ON:-0}
     ports:
       - "4000:4000"

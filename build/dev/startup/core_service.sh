@@ -37,7 +37,8 @@ if [ "$DEBUG_ON" = "1" ]; then
   -enable_scd \
   -allow_http_base_urls \
   -locality local_dev \
-  -public_endpoint http://127.0.0.1:8082
+  -public_endpoint http://127.0.0.1:8082 \
+  ${CORE_SERVICE_EXTRA_FLAGS}
 else
   echo "Debug Mode: off"
   # Use exec so docker-compose's SIGTERM is forwarded to the binary
@@ -54,5 +55,6 @@ else
   -enable_scd \
   -allow_http_base_urls \
   -locality local_dev \
-  -public_endpoint http://127.0.0.1:8082
+  -public_endpoint http://127.0.0.1:8082 \
+  ${CORE_SERVICE_EXTRA_FLAGS}
 fi
