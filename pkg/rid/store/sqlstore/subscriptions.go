@@ -225,6 +225,7 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 		updateQuery = fmt.Sprintf(`
 			SELECT
                 %s
+            FROM
             subscriptions
 			WHERE
 				cells && $1
