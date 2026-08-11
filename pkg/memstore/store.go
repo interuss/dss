@@ -79,3 +79,11 @@ func (s *Store[R]) Restore() {
 func (s *Store[R]) Close() error {
 	return nil
 }
+
+func (s *Store[R]) GetSnapshot() ([]byte, error) {
+	return s.memRepo.GetSnapshot()
+}
+
+func (s *Store[R]) RestoreFromSnapshot(data []byte) error {
+	return s.memRepo.RestoreFromSnapshot(data)
+}
