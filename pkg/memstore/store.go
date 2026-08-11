@@ -33,8 +33,9 @@ type MemRepo[R any] interface {
 type Store[R any] struct {
 	logger *zap.Logger
 
-	name    string
-	memRepo MemRepo[R]
+	name string
+
+	MemRepo[R]
 }
 
 var (
@@ -53,7 +54,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, name string, r MemRepo
 	store := &Store[R]{
 		name:    name,
 		logger:  logging.WithValuesFromContext(ctx, logger),
-		memRepo: r,
+		MemRepo: r,
 	}
 
 	stores[name] = store
@@ -65,25 +66,9 @@ func (s *Store[R]) Transact(ctx context.Context, _ store.OperationRequest) (any,
 }
 
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
-	return s.memRepo.GetRepo(), nil
-}
-
-func (s *Store[R]) Checkpoint() {
-	s.memRepo.Checkpoint()
-}
-
-func (s *Store[R]) Restore() {
-	s.memRepo.Restore()
+	return s.GetRepo(), nil
 }
 
 func (s *Store[R]) Close() error {
 	return nil
-}
-
-func (s *Store[R]) GetSnapshot() ([]byte, error) {
-	return s.memRepo.GetSnapshot()
-}
-
-func (s *Store[R]) RestoreFromSnapshot(data []byte) error {
-	return s.memRepo.RestoreFromSnapshot(data)
 }
