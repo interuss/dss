@@ -1,0 +1,84 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture_certs.png pool_architecture_certs.gv
+digraph G {
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    CoreService1a [label="Core Service",color=2];
+    CoreService1b [label="Core Service",color=2];
+    DB1a [label="Datastore 1A",color=3];
+    DB1b [label="Datastore 1B",color=3];
+    PrivateKey1 [label="Certs signed by\nUSS1 private key",color=6]
+
+    CoreService2a [label="Core Service",color=2];
+    CoreService2b [label="Core Service",color=2];
+    DB2a [label="Datastore 2A",color=3];
+    DB2b [label="Datastore 2B",color=3];
+    PrivateKey2 [label="Certs signed by\nUSS2 private key",color=6]
+
+    CoreService3a [label="Core Service",color=2];
+    CoreService3b [label="Core Service",color=2];
+    DB3a [label="Datastore 3A",color=3];
+    DB3b [label="Datastore 3B",color=3];
+    PrivateKey3 [label="Certs signed by\nUSS3 private key",color=6]
+
+    Certs [label="Shared ca.crt accepts public keys\nof all USSs' private keys",color=6];
+
+    subgraph cluster_0 {
+        label="USS1's DSS instance"
+        subgraph cluster_1 {
+            label="Replica A";
+            CoreService1a;
+            { rank=sink; DB1a; }
+        }
+        subgraph cluster_2 {
+            label="Replica B";
+            CoreService1b;
+            { rank=sink; DB1b; }
+        }
+        DB1a -> PrivateKey1 [dir=back,style=dotted];
+        DB1b -> PrivateKey1 [dir=back,style=dotted];
+        CoreService1a -> PrivateKey1 [dir=back,style=dotted];
+        CoreService1b -> PrivateKey1 [dir=back,style=dotted];
+    }
+
+    subgraph cluster_4 {
+        label="USS2's DSS instance"
+        subgraph cluster_5 {
+            label="Replica A";
+            CoreService2a;
+            { rank=sink; DB2a; }
+        }
+        subgraph cluster_6 {
+            label="Replica B";
+            CoreService2b;
+            { rank=sink; DB2b; }
+        }
+        DB2a -> PrivateKey2 [dir=back,style=dotted];
+        DB2b -> PrivateKey2 [dir=back,style=dotted];
+        CoreService2a -> PrivateKey2 [dir=back,style=dotted];
+        CoreService2b -> PrivateKey2 [dir=back,style=dotted];
+    }
+
+    subgraph cluster_8 {
+        label="USS3's DSS instance"
+        subgraph cluster_9 {
+            label="Replica A";
+            CoreService3a;
+            { rank=sink; DB3a; }
+        }
+        subgraph cluster_10 {
+            label="Replica B";
+            CoreService3b;
+            { rank=sink; DB3b; }
+        }
+        DB3a -> PrivateKey3 [dir=back,style=dotted];
+        DB3b -> PrivateKey3 [dir=back,style=dotted];
+        CoreService3a -> PrivateKey3 [dir=back,style=dotted];
+        CoreService3b -> PrivateKey3 [dir=back,style=dotted];
+    }
+
+    PrivateKey1 -> Certs [dir=both,style=dotted];
+    PrivateKey2 -> Certs [dir=both,style=dotted];
+    PrivateKey3 -> Certs [dir=both,style=dotted];
+}
