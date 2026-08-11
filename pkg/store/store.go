@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 
 	"github.com/interuss/stacktrace"
@@ -29,6 +30,27 @@ type OperationHandler[R any] struct {
 	Decode     func(buf []byte) (OperationRequest, error)
 	Execute    func(ctx context.Context, repo R, request OperationRequest) (any, error)
 	IsReadOnly bool
+}
+
+// EncodeJSON is a general-purpose OperationHandler.Encode that marshals the request as JSON.
+// TODO: remove once all operations use custom encoders / decoders.
+func EncodeJSON(request OperationRequest) ([]byte, error) {
+	buf, err := json.Marshal(request)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal %q request", request.OperationID())
+	}
+	return buf, nil
+}
+
+// DecodeJSON is a general-purpose OperationHandler.Decode that unmarshals JSON into a new T.
+// T must be a pointer to a struct type that implements OperationRequest.
+// TODO: remove once all operations use custom encoders / decoders.
+func DecodeJSON[T OperationRequest](buf []byte) (OperationRequest, error) {
+	req := new(T)
+	if err := json.Unmarshal(buf, req); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to unmarshal request")
+	}
+	return *req, nil
 }
 
 // TransactWithResult wraps Store.Transact and casts the result to ResultType, avoiding a cast at every call site.
