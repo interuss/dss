@@ -39,6 +39,9 @@ spec:
                 - --rid_isa=false
                 - --rid_sub=false
                 - --scd_ttl={{ $.Values.dss.conf.evict.scd.ttl }}
+  {{- if $.Values.dss.conf.evict.scd.timeout }}
+                - --timeout={{ $.Values.dss.conf.evict.scd.timeout }}
+  {{- end }}
                 - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
@@ -95,6 +98,9 @@ spec:
                 - --rid_isa={{ $.Values.dss.conf.evict.rid.ISAs }}
                 - --rid_sub={{ $.Values.dss.conf.evict.rid.subscriptions }}
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
+  {{- if $.Values.dss.conf.evict.rid.timeout }}
+                - --timeout={{ $.Values.dss.conf.evict.rid.timeout }}
+  {{- end }}
                 - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}

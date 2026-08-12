@@ -306,6 +306,10 @@
                       "type": "string",
                       "description": "Go duration format (https://pkg.go.dev/time#ParseDuration)"
                     },
+                    "timeout": {
+                      "type": "string",
+                      "description": "Go duration format (https://pkg.go.dev/time#ParseDuration). Empty to use the command default."
+                    },
                     "operationalIntents": {
                       "type": "boolean"
                     },
@@ -328,6 +332,10 @@
                     "ttl": {
                       "type": "string",
                       "description": "Go duration format (https://pkg.go.dev/time#ParseDuration)"
+                    },
+                    "timeout": {
+                      "type": "string",
+                      "description": "Go duration format (https://pkg.go.dev/time#ParseDuration). Empty to use the command default."
                     },
                     "ISAs": {
                       "type": "boolean"

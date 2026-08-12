@@ -73,6 +73,7 @@ local metadata = metadataBase {
       enable_cron: false, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
       schedule: "VAR_EVICT_SCD_SCHEDULE",
       ttl: "VAR_EVICT_SCD_TTL",
+      timeout: "VAR_EVICT_SCD_TIMEOUT",
       operational_intents: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS
     },
@@ -80,6 +81,7 @@ local metadata = metadataBase {
       enable_cron: true, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
       schedule: "VAR_EVICT_RID_SCHEDULE",
       ttl: "VAR_EVICT_RID_TTL",
+      timeout: "VAR_EVICT_RID_TIMEOUT",
       ISAs: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_ISAS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS
     },

@@ -174,6 +174,12 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>Set this to true to enable cleanup of RID subscriptions.</p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>evict_rid_timeout (<code>string</code>)</td>
+                <td><p>Timeout of the RID eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+Leave empty to use the default value of the command.</p>
+<p>Example: <code>10m</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>evict_rid_ttl (<code>string</code>)</td>
                 <td><p>How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"30m"</code></td>
@@ -189,6 +195,12 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td>evict_scd_subscriptions (<code>bool</code>)</td>
                 <td><p>Set this to true to enable cleanup of SCD subscriptions.</p>
 <br/>Default value: <code>true</code></td>
+            </tr><tr>
+                <td>evict_scd_timeout (<code>string</code>)</td>
+                <td><p>Timeout of the SCD eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+Leave empty to use the default value of the command.</p>
+<p>Example: <code>10m</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>evict_scd_ttl (<code>string</code>)</td>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>

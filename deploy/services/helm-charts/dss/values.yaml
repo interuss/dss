@@ -8,12 +8,14 @@ dss:
           enableCron: false
           schedule: "0 2 * * *"
           ttl: 2688h
+          timeout: ""
           operationalIntents: true
           subscriptions: true
       rid:
           enableCron: true
           schedule: "*/30 * * * *"
           ttl: 30m
+          timeout: ""
           ISAs: true
           subscriptions: true
 
