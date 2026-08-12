@@ -97,7 +97,7 @@ func TestNewRSAAuthClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	tmpfile, err := os.CreateTemp("/tmp", "bad.pem")
+	tmpfile, err := os.CreateTemp(t.TempDir(), "bad.pem")
 	require.NoError(t, err)
 	require.NoError(t, tmpfile.Close())
 	// Test catches previous segfault.
