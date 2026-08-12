@@ -59,7 +59,7 @@ func FromGeoPolygon(footprint *restapi.GeoPolygon) *dssmodels.GeoPolygon {
 
 // FromGeoPolygonString converts RID v1 REST model to business object
 func FromGeoPolygonString(area restapi.GeoPolygonString) (*dssmodels.GeoPolygon, error) {
-	return common.FromGeoPolygonSring((string)(area))
+	return common.FromGeoPolygonString((string)(area))
 }
 
 // FromLatLngPoint converts RID v1 REST model to business object

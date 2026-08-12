@@ -125,7 +125,7 @@ func FromPolygon(polygon *restapi.Polygon) *dssmodels.GeoPolygon {
 
 // FromGeoPolygonString converts RID v2 REST model to business object
 func FromGeoPolygonString(area restapi.GeoPolygonString) (*dssmodels.GeoPolygon, error) {
-	return common.FromGeoPolygonSring((string)(area))
+	return common.FromGeoPolygonString((string)(area))
 }
 
 // FromCircle converts RID v2 REST model to business object

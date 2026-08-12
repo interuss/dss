@@ -27,7 +27,7 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
-// AreaFromRest parses "area" in the format 'lat0,lon0,lat1,lon1,...'
+// FromGeoPolygonString parses "area" in the format 'lat0,lon0,lat1,lon1,...'
 // and returns the resulting GeoPolygon, or else:
 // * ErrOddNumberOfCoordinatesInAreaString
 // * ErrNotEnoughPointsInPolygon
@@ -35,7 +35,7 @@ func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
 //
 // TODO(tvoss):
 // * Agree and implement a maximum number of points in area
-func FromGeoPolygonSring(area string) (*dssmodels.GeoPolygon, error) {
+func FromGeoPolygonString(area string) (*dssmodels.GeoPolygon, error) {
 	var (
 		lat, lng float64
 		err      error

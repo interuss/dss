@@ -52,7 +52,7 @@ func TestFromGeoPolygonSring(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			p, err := FromGeoPolygonSring(testCase.area)
+			p, err := FromGeoPolygonString(testCase.area)
 			if testCase.wantErr {
 				require.Error(t, err)
 			} else {
