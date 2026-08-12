@@ -31,7 +31,8 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       scd_ttl: metadata.evict.scd.ttl,
                       locality: metadata.locality,
                       delete: true,
-                  } + datastoreparameters.all(metadata),
+                  } + (if metadata.evict.scd.timeout != "" then { timeout: metadata.evict.scd.timeout } else {})
+                    + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
               },
@@ -67,7 +68,8 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       rid_ttl: metadata.evict.rid.ttl,
                       locality: metadata.locality,
                       delete: true,
-                  } + datastoreparameters.all(metadata),
+                  } + (if metadata.evict.rid.timeout != "" then { timeout: metadata.evict.rid.timeout } else {})
+                    + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
               },

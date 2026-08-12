@@ -527,6 +527,19 @@ variable "evict_scd_ttl" {
 }
 
 
+variable "evict_scd_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the SCD eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -579,6 +592,19 @@ variable "evict_rid_ttl" {
   EOT
 
   default = "30m"
+}
+
+
+variable "evict_rid_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the RID eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
 }
 
 

@@ -78,6 +78,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_scd_cron
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
+            timeout : var.evict_scd_timeout
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -85,6 +86,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_rid_cron
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
+            timeout : var.evict_rid_timeout
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
@@ -287,6 +289,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_scd_cron
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
+            timeout : var.evict_scd_timeout
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -294,6 +297,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_rid_cron
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
+            timeout : var.evict_rid_timeout
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
