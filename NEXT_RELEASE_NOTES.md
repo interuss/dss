@@ -68,6 +68,7 @@ The release notes should contain at least the following sections:
 * Server timeout flag has been renamed from `server timeout` to `server_timeout`.
 * The `duration` field, previously recorded as a string containing the unit, has been changed to `duration_ms`, a float representing the duration in milliseconds, rounded to 0.01.
 * Grafana version deployed by Helm charts or Tanka files have been upgraded to 13.0. Ensure to read grafana changelog based on your current version.
+* Improved the core-service so it doesn't shut down as soon as a single refresh of the JWKS keys fails. Keys that could not be refreshed due to a transient failure (unreachable endpoint, HTTP error status, malformed response) are now used from the cache for up to jwks_key_ttl (new flag, default 1h) before the service shuts down. Set it to 0 to restore the previous behavior. Other failures, such as a key ID missing from the key set, still shut the service down immediately. On startup, a transient failure now makes the service retry with a backoff instead of shutting down.
 * The Google Kubernetes Engine (GKE) node disk size has been increased from 15GB to 25GB to prevent issues with saturated system disks.
 
   * You will need to apply the Terraform state once to recreate the node pool.

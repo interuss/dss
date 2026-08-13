@@ -45,6 +45,10 @@ const (
 
 	// NotImplemented is used when a feature needed for the operation has not yet been implemented.
 	NotImplemented
+
+	// Unavailable is used when an operation failed for a transient reason and
+	// may succeed if it is attempted again later.
+	Unavailable
 )
 
 func init() {

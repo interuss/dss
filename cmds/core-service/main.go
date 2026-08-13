@@ -23,6 +23,7 @@ import (
 	aux "github.com/interuss/dss/pkg/aux_"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -30,7 +31,6 @@ import (
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
-	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/dss/pkg/version"
@@ -65,6 +65,7 @@ var (
 	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
 	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
 	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
+	jwksKeyTTL        = flag.Duration("jwks_key_ttl", 1*time.Hour, "Maximum duration during which keys that could not be refreshed are still used before shutting down the service")
 	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
@@ -318,6 +319,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		ctx, auth.Configuration{
 			KeyResolver:       keyResolver,
 			KeyRefreshTimeout: *keyRefreshTimeout,
+			KeyTTL:            *jwksKeyTTL,
 			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
 		},
 	)
@@ -495,7 +497,7 @@ func main() {
 	backoff := 0
 	for {
 		if err := RunHTTPServer(ctx, cancel, *address, *locality); err != nil {
-			if stacktrace.GetCode(err) == store.CodeRetryable {
+			if stacktrace.GetCode(err) == dsserr.Unavailable {
 				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %.fs to retry...", backoffs[backoff].Seconds()), zap.Error(err))
 				time.Sleep(backoffs[backoff])
 				if backoff < len(backoffs)-1 {

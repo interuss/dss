@@ -12,6 +12,7 @@ import (
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/exaring/otelpgx"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/sqlstore/params"
@@ -133,7 +134,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db, err := Dial[R](ctx, cp)
 	if err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to connect to database server for %s", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Failed to connect to database server for %s", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to %s database", cfg.DBName)
 	}
@@ -146,7 +147,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	if err != nil {
 		db.Pool.Close()
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to create %s store", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Failed to create %s store", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create %s store", cfg.DBName)
 	}

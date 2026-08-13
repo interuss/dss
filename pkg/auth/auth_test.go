@@ -5,8 +5,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,10 +17,14 @@ import (
 	"github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/auth/claims"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func rsaTokenReq(key *rsa.PrivateKey, exp, nbf int64) *http.Request {
@@ -482,4 +489,178 @@ func TestHasScope(t *testing.T) {
 	require.True(t, HasScope(scopes, scdv1.UtmStrategicCoordinationScope))
 	require.True(t, HasScope(scopes, scdv1.UtmConformanceMonitoringSaScope))
 	require.False(t, HasScope(scopes, scdv1.UtmAvailabilityArbitrationScope))
+}
+
+type failingKeyResolver struct {
+	mu   sync.Mutex
+	keys []interface{}
+	err  error
+}
+
+func (r *failingKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.err != nil {
+		return nil, r.err
+	}
+	return r.keys, nil
+}
+
+func (r *failingKeyResolver) setErr(err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.err = err
+}
+
+type ignorePanicHook struct{}
+
+func (ignorePanicHook) OnWrite(*zapcore.CheckedEntry, []zapcore.Field) {}
+
+func observeLogs(t *testing.T) *observer.ObservedLogs {
+	core, logs := observer.New(zapcore.DebugLevel)
+	previous := logging.Logger
+	logging.Logger = zap.New(core, zap.WithPanicHook(ignorePanicHook{}))
+	t.Cleanup(func() { logging.Logger = previous })
+	return logs
+}
+
+func TestKeyRefreshFailureKeepsCachedKeys(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	require.NoError(t, err)
+
+	logs := observeLogs(t)
+	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	a, err := NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver:       resolver,
+		KeyRefreshTimeout: 1 * time.Millisecond,
+		KeyTTL:            1 * time.Hour,
+	})
+	require.NoError(t, err)
+
+	resolver.setErr(stacktrace.NewErrorWithCode(dsserr.Unavailable, "JWKS endpoint is unreachable"))
+
+	require.Eventually(t, func() bool {
+		return logs.FilterLevelExact(zapcore.ErrorLevel).Len() > 0
+	}, time.Second, time.Millisecond)
+
+	require.Zero(t, logs.FilterLevelExact(zapcore.PanicLevel).Len())
+
+	a.keyGuard.RLock()
+	defer a.keyGuard.RUnlock()
+	require.Equal(t, []interface{}{&key.PublicKey}, a.keys)
+}
+
+func TestKeyRefreshFailurePanicsAfterMaxCacheAge(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	require.NoError(t, err)
+
+	logs := observeLogs(t)
+	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	_, err = NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver:       resolver,
+		KeyRefreshTimeout: 1 * time.Millisecond,
+		KeyTTL:            200 * time.Millisecond,
+	})
+	require.NoError(t, err)
+
+	resolver.setErr(stacktrace.NewErrorWithCode(dsserr.Unavailable, "JWKS endpoint is unreachable"))
+
+	require.Eventually(t, func() bool {
+		return logs.FilterLevelExact(zapcore.ErrorLevel).Len() > 0
+	}, time.Second, time.Millisecond)
+	require.Zero(t, logs.FilterLevelExact(zapcore.PanicLevel).Len())
+
+	require.Eventually(t, func() bool {
+		return logs.FilterLevelExact(zapcore.PanicLevel).Len() > 0
+	}, time.Second, time.Millisecond)
+}
+
+func TestKeyRefreshFailurePanicsImmediatelyWithoutMaxCacheAge(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	require.NoError(t, err)
+
+	logs := observeLogs(t)
+	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}, err: nil}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	_, err = NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver:       resolver,
+		KeyRefreshTimeout: 1 * time.Millisecond,
+	})
+	require.NoError(t, err)
+
+	resolver.setErr(stacktrace.NewErrorWithCode(dsserr.Unavailable, "JWKS endpoint is unreachable"))
+
+	require.Eventually(t, func() bool {
+		return logs.FilterLevelExact(zapcore.PanicLevel).Len() > 0
+	}, time.Second, time.Millisecond)
+
+	require.Zero(t, logs.FilterLevelExact(zapcore.ErrorLevel).Len())
+}
+
+func TestKeyRefreshFailurePanicsOnNonRetryableError(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	require.NoError(t, err)
+
+	logs := observeLogs(t)
+	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	_, err = NewRSAAuthorizer(ctx, Configuration{
+		KeyResolver:       resolver,
+		KeyRefreshTimeout: 1 * time.Millisecond,
+		KeyTTL:            1 * time.Hour,
+	})
+	require.NoError(t, err)
+
+	resolver.setErr(stacktrace.NewError("Failed to resolve key(s) for ID: unknown"))
+
+	require.Eventually(t, func() bool {
+		return logs.FilterLevelExact(zapcore.PanicLevel).Len() > 0
+	}, time.Second, time.Millisecond)
+
+	require.Zero(t, logs.FilterLevelExact(zapcore.ErrorLevel).Len())
+}
+
+func TestJWKSResolverErrorCodes(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		status int
+		body   string
+		keyIDs []string
+		code   stacktrace.ErrorCode
+	}{
+		{"server error", http.StatusInternalServerError, "", nil, dsserr.Unavailable},
+		{"client error", http.StatusNotFound, "", nil, dsserr.Unavailable},
+		{"invalid body", http.StatusOK, "not json", nil, dsserr.Unavailable},
+		{"unknown key id", http.StatusOK, `{"keys":[]}`, []string{"unknown"}, stacktrace.NoCode},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(c.status)
+				_, _ = w.Write([]byte(c.body))
+			}))
+			defer server.Close()
+
+			endpoint, err := url.Parse(server.URL)
+			require.NoError(t, err)
+
+			resolver := &JWKSResolver{Endpoint: endpoint, KeyIDs: c.keyIDs}
+			_, err = resolver.ResolveKeys(t.Context())
+			require.Error(t, err)
+			require.Equal(t, c.code, stacktrace.GetCode(err))
+		})
+	}
 }
