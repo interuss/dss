@@ -9,6 +9,24 @@ Certificates are always regenerated from scratch.
 
 ### Release Process
 
+#### Ensure require CLI tools are available and set up
+```shell
+which gcloud aws terraform
+
+# login with aws
+aws login
+aws configure --profile aws-interuss-dss
+
+# login with gcloud
+gcloud auth login
+
+# your local path may vary for this configuration, but ensure the target projects are set correctly
+cat $HOME/.config/gcloud/configurations/config_default
+
+# could help if you encounter auth issues when other projects are setup in your local environment
+unset GOOGLE_CLOUD_PROJECT
+```
+
 #### Configure environment variables
 * `export IMAGE=docker.io/interuss/dss:v0.22.0`
 * `export ZONE_ID=(AWS zone id)`
@@ -24,6 +42,8 @@ Spawn clusters defined in infrastructure/. Config is copied into the usual 'pers
 A parallel terraform apply is then run.
 
 After this step, Kubernetes clusters are ready.
+
+If some issues are encountered during the deployment, it is safe to perform a `terraform apply` in the `personal/*` folders.
 
 #### Configure clusters
 * `./release/scripts/configure-clusters.sh`
