@@ -63,6 +63,12 @@ Example:</li>
 </ul>
 </td>
             </tr><tr>
+                <td>aws_create_storage_class (<code>bool</code>)</td>
+                <td><p>Create storage class in cluster.</p>
+<p>For now, create a gp3 storage class in the cluster and set it as the default one.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>aws_iam_permissions_boundary (<code>string</code>)</td>
                 <td><p>AWS IAM Policy ARN to be used for permissions boundaries on created roles.</p>
 <p>Example: <code>arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries</code></p>
