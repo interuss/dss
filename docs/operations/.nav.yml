@@ -9,4 +9,5 @@ nav:
   - "Database migrations": database-migrations.md
   - "Performances": performances.md
   - "Cleanup": cleanup.md
+  - "Authentication": authentication.md
   - "Troubleshooting": troubleshooting.md
