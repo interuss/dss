@@ -61,12 +61,13 @@ var (
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
 
-	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
-	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
-	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
-	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
-	jwksKeyTTL        = flag.Duration("jwks_key_ttl", 1*time.Hour, "Maximum duration during which keys that could not be refreshed are still used before shutting down the service")
-	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
+	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
+	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
+	jwksKeyIDs              = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
+	legacyKeyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "DEPRECATED (replaced by jwks_refresh_interval) Cadence at which the keys used for JWT verification are refreshed")
+	jwksRefreshInterval     = flag.Duration("jwks_refresh_interval", 1*time.Minute, "Cadence at which the keys used for JWT verification are refreshed")
+	jwksKeyTTL              = flag.Duration("jwks_key_ttl", 1*time.Hour, "Maximum duration during which keys that could not be refreshed are still used before shutting down the service")
+	jwtAudiences            = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
 func createKeyResolver() (auth.KeyResolver, error) {
@@ -317,10 +318,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	authorizer, err := auth.NewRSAAuthorizer(
 		ctx, auth.Configuration{
-			KeyResolver:       keyResolver,
-			KeyRefreshTimeout: *keyRefreshTimeout,
-			KeyTTL:            *jwksKeyTTL,
-			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
+			KeyResolver:        keyResolver,
+			KeyRefreshInterval: *jwksRefreshInterval,
+			KeyTTL:             *jwksKeyTTL,
+			AcceptedAudiences:  strings.Split(*jwtAudiences, ","),
 		},
 	)
 	if err != nil {
@@ -465,6 +466,10 @@ func main() {
 		if f.Name == "server timeout" {
 			*timeout = *legacyTimeout
 			logger.Warn("'server timeout' has been renamed to 'server_timeout'")
+		}
+		if f.Name == "key_refresh_timeout" {
+			*jwksRefreshInterval = *legacyKeyRefreshTimeout
+			logger.Warn("'key_refresh_timeout' has been renamed to 'jwks_refresh_interval'")
 		}
 	})
 

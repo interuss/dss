@@ -112,7 +112,7 @@ func TestNewRSAAuthClient(t *testing.T) {
 		KeyResolver: &FromFileKeyResolver{
 			KeyFiles: []string{tmpfile.Name()},
 		},
-		KeyRefreshTimeout: 1 * time.Millisecond,
+		KeyRefreshInterval: 1 * time.Millisecond,
 	})
 	require.Error(t, err)
 	require.NoError(t, os.Remove(tmpfile.Name()))
@@ -158,8 +158,8 @@ func TestRSAAuthInterceptor(t *testing.T) {
 		KeyResolver: &fromMemoryKeyResolver{
 			Keys: []interface{}{&key.PublicKey},
 		},
-		KeyRefreshTimeout: 1 * time.Millisecond,
-		AcceptedAudiences: []string{"test-aud"},
+		KeyRefreshInterval: 1 * time.Millisecond,
+		AcceptedAudiences:  []string{"test-aud"},
 	})
 
 	require.NoError(t, err)
@@ -352,8 +352,8 @@ func TestRSAAuthAudiences(t *testing.T) {
 				KeyResolver: &fromMemoryKeyResolver{
 					Keys: []interface{}{&key.PublicKey},
 				},
-				KeyRefreshTimeout: 1 * time.Millisecond,
-				AcceptedAudiences: test.Accepted,
+				KeyRefreshInterval: 1 * time.Millisecond,
+				AcceptedAudiences:  test.Accepted,
 			})
 			require.NoError(t, err)
 
@@ -535,9 +535,9 @@ func TestKeyRefreshFailureKeepsCachedKeys(t *testing.T) {
 	defer cancel()
 
 	a, err := NewRSAAuthorizer(ctx, Configuration{
-		KeyResolver:       resolver,
-		KeyRefreshTimeout: 1 * time.Millisecond,
-		KeyTTL:            1 * time.Hour,
+		KeyResolver:        resolver,
+		KeyRefreshInterval: 1 * time.Millisecond,
+		KeyTTL:             1 * time.Hour,
 	})
 	require.NoError(t, err)
 
@@ -565,9 +565,9 @@ func TestKeyRefreshFailurePanicsAfterMaxCacheAge(t *testing.T) {
 	defer cancel()
 
 	_, err = NewRSAAuthorizer(ctx, Configuration{
-		KeyResolver:       resolver,
-		KeyRefreshTimeout: 1 * time.Millisecond,
-		KeyTTL:            200 * time.Millisecond,
+		KeyResolver:        resolver,
+		KeyRefreshInterval: 1 * time.Millisecond,
+		KeyTTL:             200 * time.Millisecond,
 	})
 	require.NoError(t, err)
 
@@ -594,8 +594,8 @@ func TestKeyRefreshFailurePanicsImmediatelyWithoutMaxCacheAge(t *testing.T) {
 	defer cancel()
 
 	_, err = NewRSAAuthorizer(ctx, Configuration{
-		KeyResolver:       resolver,
-		KeyRefreshTimeout: 1 * time.Millisecond,
+		KeyResolver:        resolver,
+		KeyRefreshInterval: 1 * time.Millisecond,
 	})
 	require.NoError(t, err)
 
@@ -619,9 +619,9 @@ func TestKeyRefreshFailurePanicsOnNonRetryableError(t *testing.T) {
 	defer cancel()
 
 	_, err = NewRSAAuthorizer(ctx, Configuration{
-		KeyResolver:       resolver,
-		KeyRefreshTimeout: 1 * time.Millisecond,
-		KeyTTL:            1 * time.Hour,
+		KeyResolver:        resolver,
+		KeyRefreshInterval: 1 * time.Millisecond,
+		KeyTTL:             1 * time.Hour,
 	})
 	require.NoError(t, err)
 
