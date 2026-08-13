@@ -55,6 +55,7 @@ The release notes should contain at least the following sections:
   * Details about migrations are available [there](https://interuss.github.io/dss/latest/operations/database-migrations/)
 * The 3.4.1 (or 1.1.1 for Yugabyte) migration for SCD is mandatory if you plan to use the new SCD hash lock option.
   * This migration can be applied without any impact if you do not plan to use it.
+* The `key_refresh_timeout` flag has been renamed to `jwks_refresh_interval`. The former is still accepted but is deprecated and will be removed in a future release.
 
 ## Important information
 
