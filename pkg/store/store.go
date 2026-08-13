@@ -57,7 +57,3 @@ func NewFuncOperation[R any](f func(context.Context, R) error) *FuncOperation[R]
 
 func (a *FuncOperation[R]) OperationID() string                    { return "" }
 func (a *FuncOperation[R]) Execute(ctx context.Context, r R) error { return a.f(ctx, r) }
-
-const (
-	CodeRetryable = stacktrace.ErrorCode(1)
-)
