@@ -55,6 +55,10 @@ The release notes should contain at least the following sections:
   * Details about migrations are available [there](https://interuss.github.io/dss/latest/operations/database-migrations/)
 * The 3.4.1 (or 1.1.1 for Yugabyte) migration for SCD is mandatory if you plan to use the new SCD hash lock option.
   * This migration can be applied without any impact if you do not plan to use it.
+* The default storage class for AWS changed from `gp2` to `gp3`.
+  * For existing clusters, ensure the value of `aws_kubernetes_storage_class` in your terraform config is set to `gp2` if it was not defined. Switching storage class is not supported.
+  * As `gp3` doesn't exist by default in EKS, terraform will now create the new storage class. If `gp3` already exists in your cluster, set `aws_create_storage_class` to false.
+  * There is a behaviour change between the previous default storage class and the new one: `reclaimPolicy` is set to `Retain` to limit accidental data deletion.
 
 ## Important information
 

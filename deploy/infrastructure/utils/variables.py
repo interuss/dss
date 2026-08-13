@@ -104,6 +104,7 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_instance_type",
     "aws_route53_zone_id",
     "aws_iam_permissions_boundary",
+    "aws_create_storage_class",
 ] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-aws-dss
