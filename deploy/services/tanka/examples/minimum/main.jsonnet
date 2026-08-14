@@ -53,6 +53,8 @@ local metadata = metadataBase {
     pubKeys: ['VAR_PUBLIC_KEY_PEM_PATH'],
     jwksEndpoint: 'VAR_JWKS_ENDPOINT',
     jwksKeyIds: ['VAR_JWKS_KEY_ID'],
+    jwksRefreshInterval: 'VAR_JWKS_REFRESH_INTERVAL',
+    jwksKeyTtl: 'VAR_JWKS_KEY_TTL',
     hostname: 'VAR_APP_HOSTNAME',
     publicEndpoint: 'VAR_PUBLIC_ENDPOINT',
     dumpRequests: false,

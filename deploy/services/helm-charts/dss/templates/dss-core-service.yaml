@@ -81,6 +81,12 @@ spec:
             {{- if $dss.conf.jwksKeyIds }}
             - --jwks_key_ids={{ $dss.conf.jwksKeyIds | join "," }}
             {{- end }}
+            {{- if $dss.conf.jwksRefreshInterval }}
+            - --jwks_refresh_interval={{ $dss.conf.jwksRefreshInterval }}
+            {{- end }}
+            {{- if $dss.conf.jwksKeyTtl }}
+            - --jwks_key_ttl={{ $dss.conf.jwksKeyTtl }}
+            {{- end }}
             {{- if $dss.conf.pubKeys }}
             - --public_key_files={{ $dss.conf.pubKeys | join "," }}
             {{- end }}
