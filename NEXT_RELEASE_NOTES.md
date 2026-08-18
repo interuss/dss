@@ -59,6 +59,7 @@ The release notes should contain at least the following sections:
   * For existing clusters, ensure the value of `aws_kubernetes_storage_class` in your terraform config is set to `gp2` if it was not defined. Switching storage class is not supported.
   * As `gp3` doesn't exist by default in EKS, terraform will now create the new storage class. If `gp3` already exists in your cluster, set `aws_create_storage_class` to false.
   * There is a behaviour change between the previous default storage class and the new one: `reclaimPolicy` is set to `Retain` to limit accidental data deletion.
+* The `key_refresh_timeout` flag has been renamed to `jwks_refresh_interval`. The former is still accepted but is deprecated and will be removed in a future release.
 
 ## Important information
 

@@ -133,10 +133,10 @@ type Authorizer struct {
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
 type Configuration struct {
-	KeyResolver       KeyResolver   // Used to initialize and periodically refresh keys.
-	KeyRefreshTimeout time.Duration // Keys are refreshed on this cadence.
-	KeyTTL            time.Duration // Maximum age of the cached keys before a failing refresh becomes fatal.
-	AcceptedAudiences []string      // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
+	KeyResolver        KeyResolver   // Used to initialize and periodically refresh keys.
+	KeyRefreshInterval time.Duration // Keys are refreshed on this cadence.
+	KeyTTL             time.Duration // Maximum age of the cached keys before a failing refresh becomes fatal.
+	AcceptedAudiences  []string      // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -155,7 +155,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	go func() {
-		ticker := time.NewTicker(configuration.KeyRefreshTimeout)
+		ticker := time.NewTicker(configuration.KeyRefreshInterval)
 		defer ticker.Stop()
 
 		lastSuccess := time.Now()
