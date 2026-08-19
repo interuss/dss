@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"time"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -11,15 +10,6 @@ import (
 )
 
 func (r *repo) SaveOwnMetadata(ctx context.Context, locality string, publicEndpoint string) error {
-
-	if locality == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
-	}
-
-	if publicEndpoint == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Public endpoint not set")
-	}
-
 	var exists bool
 
 	if err := r.QueryRow(ctx, "SELECT EXISTS (SELECT * FROM pool_participants WHERE locality = $1)", locality).Scan(&exists); err != nil {
@@ -99,24 +89,6 @@ func (r *repo) GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, er
 }
 
 func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbeat) error {
-
-	if heartbeat.Locality == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
-	}
-
-	if heartbeat.Source == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Source not set")
-	}
-
-	if heartbeat.Timestamp == nil {
-		now := time.Now()
-		heartbeat.Timestamp = &now
-	}
-
-	if heartbeat.NextHeartbeatExpectedBefore != nil && heartbeat.NextHeartbeatExpectedBefore.Before(*heartbeat.Timestamp) {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Cannot expect the timestamp of the next heartbeat before the timestamp of the new heartbeat")
-	}
-
 	var exists bool
 
 	if err := r.QueryRow(ctx, "SELECT EXISTS (SELECT * FROM heartbeats WHERE locality = $1 AND source = $2)", heartbeat.Locality, heartbeat.Source).Scan(&exists); err != nil {

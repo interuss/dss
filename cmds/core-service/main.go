@@ -92,6 +92,14 @@ func createKeyResolver() (auth.KeyResolver, error) {
 }
 
 func createAuxServer(ctx context.Context, locality string, publicEndpoint string, opts params.Options, logger *zap.Logger) (*aux.Server, error) {
+	if locality == "" {
+		return nil, stacktrace.NewError("Locality not set")
+	}
+
+	if publicEndpoint == "" {
+		return nil, stacktrace.NewError("Public endpoint not set")
+	}
+
 	auxStore, err := auxs.Init(ctx, logger, true)
 	if err != nil {
 		return nil, err

@@ -14,12 +14,19 @@ type Misc interface {
 }
 
 // aux_.repos.DSSMetadata abstracts pool-information interactions with the DSS metadata repository.
+//
+// Implementations do not validate their arguments: callers are responsible for ensuring their correctness.
 type DSSMetadata interface {
-	// SaveOwnMetadata store our metadata into the pool participants
+	// SaveOwnMetadata stores our metadata into the pool participants.
+	// locality and publicEndpoint must both be non-empty.
 	SaveOwnMetadata(ctx context.Context, locality string, publicEndpoint string) error
 	// GetDSSMetadata returns all DSS metadata of pool participants
 	GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, error)
-	// Record a new Timestamp
+	// RecordHeartbeat records a new heartbeat.
+	// hearthbeat.Locality and hearthbeat.Source must both be non-empty
+	// hearthbeat.Timestamp must be set
+	// if hearthbeat.NextHeartbeatExpectedBefore is set, it must not be before
+	// hearthbeat.Timestamp.
 	RecordHeartbeat(ctx context.Context, hearthbeat auxmodels.Heartbeat) error
 }
 

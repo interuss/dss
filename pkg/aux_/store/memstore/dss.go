@@ -11,13 +11,6 @@ import (
 )
 
 func (r *repo) SaveOwnMetadata(ctx context.Context, loc string, publicEndpoint string) error {
-	if loc == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
-	}
-	if publicEndpoint == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Public endpoint not set")
-	}
-
 	now := timestamp.MustGetRequestTimestamp(ctx)
 
 	r.state.Participants[locality(loc)] = &participant{
@@ -62,23 +55,7 @@ func (r *repo) GetDSSMetadata(_ context.Context) ([]*auxmodels.DSSMetadata, erro
 	return metadata, nil
 }
 
-func (r *repo) RecordHeartbeat(ctx context.Context, hb auxmodels.Heartbeat) error {
-	if hb.Locality == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Locality not set")
-	}
-	if hb.Source == "" {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Source not set")
-	}
-
-	if hb.Timestamp == nil {
-		now := timestamp.MustGetRequestTimestamp(ctx).UTC()
-		hb.Timestamp = &now
-	}
-
-	if hb.NextHeartbeatExpectedBefore != nil && hb.NextHeartbeatExpectedBefore.Before(*hb.Timestamp) {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Cannot expect the timestamp of the next heartbeat before the timestamp of the new heartbeat")
-	}
-
+func (r *repo) RecordHeartbeat(_ context.Context, hb auxmodels.Heartbeat) error {
 	r.state.Heartbeats[heartbeatKey{Locality: locality(hb.Locality), Source: hb.Source}] = &heartbeat{
 		Timestamp:                   hb.Timestamp,
 		NextHeartbeatExpectedBefore: hb.NextHeartbeatExpectedBefore,
