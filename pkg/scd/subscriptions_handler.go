@@ -450,7 +450,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 ) restapi.DeleteSubscriptionResponseSet {
 
 	// Retrieve Subscription ID
-	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
+	_, err := dssmodels.IDFromString(string(req.Subscriptionid))
 	if err != nil {
 		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
@@ -469,55 +469,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	var response *restapi.DeleteSubscriptionResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Check to make sure it's ok to delete this Subscription
-		old, err := r.GetSubscription(ctx, id)
-		switch {
-		case err != nil:
-			return stacktrace.Propagate(err, "Could not get Subscription from repo")
-		case old == nil: // Return a 404 here.
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
-		case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-				"Subscription owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
-		case old.Version != version:
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", version)
-		}
-
-		// Get dependent Operations
-		dependentOps, err := r.GetDependentOperationalIntents(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not find dependent Operations")
-		}
-		if len(dependentOps) > 0 {
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscriptions with dependent Operations may not be removed"),
-				"Subscription had %d dependent Operations", len(dependentOps))
-		}
-
-		// Delete Subscription in repo
-		err = r.DeleteSubscription(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not delete Subscription from repo")
-		}
-
-		// Convert deleted Subscription to REST
-		p, err := old.ToRest(dependentOps)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error converting Subscription model to REST")
-		}
-
-		// Create response for client
-		response = &restapi.DeleteSubscriptionResponse{
-			Subscription: *p,
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.DeleteSubscriptionResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
