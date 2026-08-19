@@ -11,42 +11,12 @@ import (
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/scd/actions"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
-
-// subscriptionIsImplicitAndOnlyAttachedToOIR will check if:
-// - the subscription is defined and is implicit
-// - the subscription is attached to the specified operational intent
-// - the subscription is not attached to any other operational intent
-//
-// This is to be used in contexts where an implicit subscription may need to be cleaned up: if true is returned,
-// the subscription can be safely removed after the operational intent is deleted or attached to another subscription.
-//
-// NOTE: this should eventually be pushed down the datastore as part of the queries being executed in the callers of this method.
-//
-//	See https://github.com/interuss/dss/issues/1059 for more details
-func subscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Repository, oirID dssmodels.ID, subscription *scdmodels.Subscription) (bool, error) {
-	if subscription == nil {
-		return false, nil
-	}
-	if !subscription.ImplicitSubscription {
-		return false, nil
-	}
-	// Get the Subscription's dependent OperationalIntents
-	dependentOps, err := r.GetDependentOperationalIntents(ctx, subscription.ID)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not find dependent OperationalIntents")
-	}
-	if len(dependentOps) == 0 {
-		return false, stacktrace.NewError("An implicit Subscription had no dependent OperationalIntents")
-	} else if len(dependentOps) == 1 && dependentOps[0] == oirID {
-		return true, nil
-	}
-	return false, nil
-}
 
 // DeleteOperationalIntentReference deletes a single operational intent ref for a given ID at
 // the specified version.
@@ -54,7 +24,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 ) restapi.DeleteOperationalIntentReferenceResponseSet {
 
 	// Retrieve OperationalIntent ID
-	id, err := dssmodels.IDFromString(string(req.Entityid))
+	_, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.DeleteOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -73,100 +43,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for operational intent to modify"))}}
 	}
 
-	var response *restapi.ChangeOperationalIntentReferenceResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Get OperationalIntent to delete
-		old, err := r.GetOperationalIntent(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get OperationIntent from repo")
-		}
-		if old == nil {
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
-		}
-
-		// Validate deletion request
-		if old.Manager != dssmodels.Manager(*req.Auth.ClientID) {
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
-		}
-
-		if old.OVN != ovn {
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-				"Current version is %s but client specified version %s", old.OVN, ovn)
-		}
-
-		// Lock subscriptions based on the cell and subscriptions we're going to use
-		// to reduce the number of retries under concurrent load.
-		// See issue #1002 for details.
-		var subscriptionIds = make([]dssmodels.ID, 0)
-
-		if old.SubscriptionID != nil {
-			subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
-		}
-
-		err = r.LockSubscriptionsOnCells(ctx, old.Cells, subscriptionIds, old.StartTime, old.EndTime)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to acquire lock")
-		}
-
-		// Get the Subscription supporting the OperationalIntent, if one is defined
-		var previousSubscription *scdmodels.Subscription
-		if old.SubscriptionID != nil {
-			previousSubscription, err = r.GetSubscription(ctx, *old.SubscriptionID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
-			}
-			if previousSubscription == nil {
-				return stacktrace.NewError("OperationalIntent's Subscription missing from repo")
-			}
-		}
-
-		removeImplicitSubscription, err := subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, id, previousSubscription)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not determine if Subscription can be removed")
-		}
-
-		// Gather the subscriptions that need to be notified
-		notifyVolume := &dssmodels.Volume4D{
-			StartTime: old.StartTime,
-			EndTime:   old.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeHi: old.AltitudeUpper,
-				AltitudeLo: old.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return old.Cells, nil
-				}),
-			}}
-
-		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
-		if err != nil {
-			return stacktrace.Propagate(err, "could not obtain relevant subscriptions")
-		}
-
-		// Delete OperationalIntent from repo
-		if err := r.DeleteOperationalIntent(ctx, id); err != nil {
-			return stacktrace.Propagate(err, "Unable to delete OperationalIntent from repo")
-		}
-
-		// removeImplicitSubscription is only true if the OIR had a subscription defined
-		if removeImplicitSubscription {
-			// Automatically remove a now-unused implicit Subscription
-			err = r.DeleteSubscription(ctx, previousSubscription.ID)
-			if err != nil {
-				return stacktrace.Propagate(err, "Unable to delete associated implicit Subscription")
-			}
-		}
-
-		// Return response to client
-		response = &restapi.ChangeOperationalIntentReferenceResponse{
-			OperationalIntentReference: *old.ToRest(),
-			Subscribers:                makeSubscribersToNotify(subsToNotify),
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeOperationalIntentReferenceResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete operational intent")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -575,25 +452,6 @@ func computeNotificationVolume(
 	return notifyVolume, nil
 }
 
-// getRelevantSubscriptionsAndIncrementIndices retrieves the subscriptions relevant to the passed volume and increments their notification indices
-// before returning them.
-func getRelevantSubscriptionsAndIncrementIndices(
-	ctx context.Context,
-	r repos.Repository,
-	notifyVolume *dssmodels.Volume4D,
-) (repos.Subscriptions, error) {
-
-	// Find the Subscriptions interested in OperationalIntents and increment their
-	// notification indices
-	subs, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
-
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to increment notification indices of relevant subscriptions")
-	}
-
-	return subs, nil
-}
-
 // validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
 // - If all required keys are provided, (nil, nil) will be returned.
 // - If keys are missing, the conflict response to be sent back as well as an error with the dsserr.MissingOVNs code will be returned.
@@ -785,7 +643,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		previousSubIsBeingReplaced := previousSub != nil && validParams.subscriptionID != previousSub.ID
 		removePreviousImplicitSubscription := false
 		if previousSubIsBeingReplaced {
-			removePreviousImplicitSubscription, err = subscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, validParams.id, previousSub)
+			removePreviousImplicitSubscription, err = actions.SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, r, validParams.id, previousSub)
 			if err != nil {
 				return stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
 			}
@@ -876,7 +734,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		}
 
 		// Notify relevant Subscriptions
-		subsToNotify, err := getRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
+		subsToNotify, err := actions.GetRelevantSubscriptionsAndIncrementIndices(ctx, r, notifyVolume)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 		}
