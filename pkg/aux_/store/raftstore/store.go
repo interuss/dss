@@ -24,8 +24,7 @@ const (
 // repo is a full implementation of aux_.repos.Repository for Raft-based storage.
 type repo struct {
 	consensus *consensus.Consensus
-	memStore  *memstore.Store[repos.Repository]
-	memRepo   repos.Repository
+	*memstore.Store[repos.Repository]
 }
 
 func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
@@ -39,7 +38,7 @@ func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.
 		return nil, stacktrace.Propagate(err, "failed to initialize aux memstore")
 	}
 
-	r := &repo{memStore: memStore, memRepo: memStore.GetRepo()}
+	r := &repo{Store: memStore}
 	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "aux_")), locality, params, r, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize aux raftstore")
@@ -52,14 +51,6 @@ func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.
 
 func (r *repo) GetRepo() repos.Repository { return r }
 
-func (r *repo) GetSnapshot() ([]byte, error) {
-	return r.memStore.GetSnapshot()
-}
-
-func (r *repo) RestoreFromSnapshot(data []byte) error {
-	return r.memStore.RestoreFromSnapshot(data)
-}
-
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
 	case saveOwnMetadata:
@@ -68,10 +59,10 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", saveOwnMetadata)
 		}
 
-		return nil, r.memRepo.SaveOwnMetadata(ctx, payload.Locality, payload.PublicEndpoint)
+		return nil, r.Store.GetRepo().SaveOwnMetadata(ctx, payload.Locality, payload.PublicEndpoint)
 
 	case getDSSMetadata:
-		return r.memRepo.GetDSSMetadata(ctx)
+		return r.Store.GetRepo().GetDSSMetadata(ctx)
 
 	case recordHeartbeat:
 		var heartbeat auxmodels.Heartbeat
@@ -79,7 +70,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", recordHeartbeat)
 		}
 
-		return nil, r.memRepo.RecordHeartbeat(ctx, heartbeat)
+		return nil, r.Store.GetRepo().RecordHeartbeat(ctx, heartbeat)
 
 	default:
 		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
