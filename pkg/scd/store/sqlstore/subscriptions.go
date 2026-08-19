@@ -12,6 +12,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 
@@ -444,7 +445,7 @@ func cellLockKeys(cells s2.CellUnion) []int64 {
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
 
-	if c.timeBasedNotificationIndex { // No lock when working with timeBasedNotificationIndex
+	if c.timeBasedNotificationIndex && c.version.Type == sqlstore.CockroachDB { // No lock when working with timeBasedNotificationIndex on CockroachDB
 		return nil
 	}
 

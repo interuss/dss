@@ -29,6 +29,7 @@ type repo struct {
 	globalLock                 bool
 	hashLock                   bool
 	timeBasedNotificationIndex bool
+	version                    *sqlstore.Version
 }
 
 // Init initializes the SQL-backed sid store. It return a concrete sqlstore.Store[sid.repos.Repository] providing the
@@ -39,7 +40,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 		DBName:                 "scd",
 		CrdbMajorSchemaVersion: currentCrdbMajorSchemaVersion,
 		YbMajorSchemaVersion:   currentYugabyteMajorSchemaVersion,
-		NewRepo: func(q dssql.Queryable, clock clockwork.Clock, _ *sqlstore.Version) repos.Repository {
+		NewRepo: func(q dssql.Queryable, clock clockwork.Clock, version *sqlstore.Version) repos.Repository {
 			return &repo{
 				q:                          q,
 				clock:                      clock,
@@ -47,6 +48,7 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				globalLock:                 opts.GlobalLock,
 				hashLock:                   opts.HashLock,
 				timeBasedNotificationIndex: opts.TimeBasedNotificationIndex,
+				version:                    version,
 			}
 		},
 		Registry: actions.Registry,
