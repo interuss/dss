@@ -9,7 +9,7 @@ See the detailed [section about cleanup](cleanup.md).
 ## The SCD global lock option
 
 !!! danger
-     All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.
+     All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance. See the [upgrades](upgrades.md#zero-traffic-upgrade-procedure) page for information on how to enable or disable these flags in an existing deployment.
 
      You can use the `/aux/v1/configuration/global_options` endpoint to retrieve the current value for a specifc DSS instance.
 
@@ -38,7 +38,7 @@ All graphs have been generated with the [loadtest present in the monitoring repo
 ## The SCD hash lock option
 
 !!! danger
-     All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance.
+     All DSS instances in a DSS pool must use the same value for this option. Mixing will result in dramatically lower performance. See the [upgrades](upgrades.md#zero-traffic-upgrade-procedure) page for information on how to enable or disable these flags in an existing deployment.
 
      You can use the `/aux/v1/configuration/global_options` endpoint to retrieve the current value for a specifc DSS instance.
 
@@ -54,7 +54,7 @@ The number of locks (65535) is a compromise between lock contention (the more lo
 ## The time-based notification index option
 
 !!! danger
-    All DSS instances in a DSS pool must use the same value for this option. Mixing them will result in undetermined behavior.
+    All DSS instances in a DSS pool must use the same value for this option. Mixing them will result in undetermined behavior.  See the [upgrades](upgrades.md#zero-traffic-upgrade-procedure) page for information on how to enable or disable these flags in an existing deployment.
 
      You can use the `/aux/v1/configuration/global_options` endpoint to retrieve the current value for a specifc DSS instance.
 
