@@ -66,7 +66,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetConstraintReferenceRequest,
 ) restapi.GetConstraintReferenceResponseSet {
 
-	id, err := dssmodels.IDFromString(string(req.Entityid))
+	_, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.GetConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -77,29 +77,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *restapi.GetConstraintReferenceResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		constraint, err := r.GetConstraint(ctx, id)
-		switch {
-		case err == pgx.ErrNoRows:
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
-		case err != nil:
-			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
-		}
-
-		if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
-			constraint.OVN = scdmodels.NoOvnPhrase
-		}
-
-		// Return response to client
-		response = &restapi.GetConstraintReferenceResponse{
-			ConstraintReference: *constraint.ToRest(),
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetConstraintReferenceResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get constraint")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -355,37 +333,13 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.Que
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	_, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
 	}
 
-	var response *restapi.QueryConstraintReferencesResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Perform search query on Store
-		constraints, err := r.SearchConstraints(ctx, vol4)
-		if err != nil {
-			return err
-		}
-
-		// Create response for client
-		response = &restapi.QueryConstraintReferencesResponse{
-			ConstraintReferences: make([]restapi.ConstraintReference, 0, len(constraints)),
-		}
-		for _, constraint := range constraints {
-			p := constraint.ToRest()
-			if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
-				noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
-				p.Ovn = &noOvnPhrase
-			}
-			response.ConstraintReferences = append(response.ConstraintReferences, *p)
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryConstraintReferencesResponse](ctx, a.Store, req)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}

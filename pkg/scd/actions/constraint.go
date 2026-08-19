@@ -20,6 +20,87 @@ func init() {
 		Decode:  dssstore.DecodeJSON[*restapi.DeleteConstraintReferenceRequest],
 		Execute: ExecuteDeleteConstraint,
 	}
+	Registry[restapi.GetConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:     dssstore.EncodeJSON,
+		Decode:     dssstore.DecodeJSON[*restapi.GetConstraintReferenceRequest],
+		Execute:    ExecuteGetConstraint,
+		IsReadOnly: true,
+	}
+	Registry[restapi.QueryConstraintReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:     dssstore.EncodeJSON,
+		Decode:     dssstore.DecodeJSON[*restapi.QueryConstraintReferencesRequest],
+		Execute:    ExecuteQueryConstraintReferences,
+		IsReadOnly: true,
+	}
+}
+
+func ExecuteGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	req, ok := request.(*restapi.GetConstraintReferenceRequest)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetConstraintReferenceOperationID)
+	}
+
+	id, err := dssmodels.IDFromString(string(req.Entityid))
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
+	}
+
+	constraint, err := repo.GetConstraint(ctx, id)
+	switch {
+	case err == pgx.ErrNoRows:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
+	}
+
+	if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+		constraint.OVN = scdmodels.NoOvnPhrase
+	}
+
+	// Return response to client
+	return &restapi.GetConstraintReferenceResponse{
+		ConstraintReference: *constraint.ToRest(),
+	}, nil
+}
+
+func ExecuteQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	req, ok := request.(*restapi.QueryConstraintReferencesRequest)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
+	}
+
+	// Retrieve the area of interest parameter
+	aoi := req.Body.AreaOfInterest
+	if aoi == nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
+	}
+
+	// Parse area of interest to common Volume4D
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
+	}
+
+	// Perform search query on Store
+	constraints, err := repo.SearchConstraints(ctx, vol4)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create response for client
+	response := &restapi.QueryConstraintReferencesResponse{
+		ConstraintReferences: make([]restapi.ConstraintReference, 0, len(constraints)),
+	}
+	for _, constraint := range constraints {
+		p := constraint.ToRest()
+		if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+			noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+			p.Ovn = &noOvnPhrase
+		}
+		response.ConstraintReferences = append(response.ConstraintReferences, *p)
+	}
+
+	return response, nil
 }
 
 func ExecuteDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
