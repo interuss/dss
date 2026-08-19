@@ -22,7 +22,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 ) restapi.DeleteConstraintReferenceResponseSet {
 
 	// Retrieve Constraint ID
-	id, err := dssmodels.IDFromString(string(req.Entityid))
+	_, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.DeleteConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -35,61 +35,12 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 	}
 
 	// Retrieve OVN
-	ovn := scdmodels.OVN(req.Ovn)
-	if ovn == "" {
+	if req.Ovn == "" {
 		return restapi.DeleteConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for constraint to modify"))}}
 	}
 
-	var response *restapi.ChangeConstraintReferenceResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Make sure deletion request is valid
-		old, err := r.GetConstraint(ctx, id)
-		switch {
-		case err == pgx.ErrNoRows:
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
-		case err != nil:
-			return stacktrace.Propagate(err, "Unable to get Constraint from repo")
-		case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
-			return stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"Constraint owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
-		case old.OVN != ovn:
-			return stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-				"Current version is %s but client specified version %s", old.OVN, ovn)
-		}
-
-		// Delete Constraint in repo
-		err = r.DeleteConstraint(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to delete Constraint from repo")
-		}
-
-		// Find the Subscriptions interested in Constraints and increment their
-		// notification indices.
-		subs, err := r.IncrementNotificationIndicesForConstraints(ctx, &dssmodels.Volume4D{
-			StartTime: old.StartTime,
-			EndTime:   old.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeHi: old.AltitudeUpper,
-				AltitudeLo: old.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return old.Cells, nil
-				}),
-			}})
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to increment notification indices")
-		}
-
-		// Return response to client
-		response = &restapi.ChangeConstraintReferenceResponse{
-			ConstraintReference: *old.ToRest(),
-			Subscribers:         makeSubscribersToNotify(subs),
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete constraint")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
