@@ -49,6 +49,7 @@ for container_name in "${localhost_containers[@]}"; do
 	fi
 done
 
+
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \

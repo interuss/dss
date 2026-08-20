@@ -91,11 +91,24 @@ jobs:
         name: coverage-data
         path: coverage.out
 
-  dss-tests-with-yugabyte:
-    name: DSS tests with Yugabyte
+  dss-tests-matrix:
+    name: DSS tests (${{ matrix.db }} ${{ matrix.flags }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [crdb, yugabyte]
+        flags:
+          - ""
+          - "-enable_time_based_notification_index"
+          - "-enable_scd_global_lock"
+          - "-enable_scd_hash_lock"
+        exclude:
+          - db: crdb
+            flags: ""
     env:
-      COMPOSE_PROFILES: with-yugabyte
+      COMPOSE_PROFILES: ${{ matrix.db == 'yugabyte' && 'with-yugabyte' || '' }}
+      CORE_SERVICE_EXTRA_FLAGS: ${{ matrix.flags }}
     steps:
       - name: Job information
         run: |
