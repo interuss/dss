@@ -190,7 +190,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi.GetOperationalIntentReferenceRequest,
 ) restapi.GetOperationalIntentReferenceResponseSet {
 
-	id, err := dssmodels.IDFromString(string(req.Entityid))
+	_, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.GetOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -201,28 +201,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *restapi.GetOperationalIntentReferenceResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		op, err := r.GetOperationalIntent(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get OperationalIntent from repo")
-		}
-		if op == nil {
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
-		}
-
-		if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
-			op.OVN = scdmodels.NoOvnPhrase
-		}
-
-		response = &restapi.GetOperationalIntentReferenceResponse{
-			OperationalIntentReference: *op.ToRest(),
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetOperationalIntentReferenceResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get operational intent")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -253,7 +232,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	_, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -265,31 +244,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	var response *restapi.QueryOperationalIntentReferenceResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Perform search query on Store
-		ops, err := r.SearchOperationalIntents(ctx, vol4)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to query for OperationalIntents in repo")
-		}
-
-		// Create response for client
-		response = &restapi.QueryOperationalIntentReferenceResponse{
-			OperationalIntentReferences: make([]restapi.OperationalIntentReference, 0, len(ops)),
-		}
-		for _, op := range ops {
-			p := op.ToRest()
-			if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
-				noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
-				p.Ovn = &noOvnPhrase
-			}
-			response.OperationalIntentReferences = append(response.OperationalIntentReferences, *p)
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryOperationalIntentReferenceResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not query operational intent")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
