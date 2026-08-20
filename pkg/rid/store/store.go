@@ -18,13 +18,13 @@ import (
 type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the rid store backend.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, locality string) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
 	case params.SQLStoreType:
 		return ridsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
-		return ridraftstore.Init(ctx, logger)
+		return ridraftstore.Init(ctx, logger, locality)
 	case params.MemStoreType:
 		return ridmemstore.Init(ctx, logger)
 	default:
