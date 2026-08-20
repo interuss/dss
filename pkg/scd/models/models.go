@@ -38,6 +38,22 @@ type (
 	VersionNumber int32
 )
 
+// NewDeterministicImplicitSubscriptionID derives a UUID from the provided operational intent ID and timestamp.
+// This allows the same ID to be generated for the same request across multiple Raft nodes and across entry replays.
+//
+// The version/variant bits enforcing is the same as google/uuid's NewRandomFromReader:
+// https://github.com/google/uuid/blob/master/version4.go
+func NewDeterministicImplicitSubscriptionID(now time.Time, oiID dssmodels.ID) (dssmodels.ID, error) {
+	sum := sha256.Sum256([]byte("implicit-subscription:" + oiID.String() + ":" + now.Format(time.RFC3339Nano)))
+	sum[6] = (sum[6] & 0x0f) | 0x40 // Set version to 4.
+	sum[8] = (sum[8] & 0x3f) | 0x80 // Set variant to 10.
+	id, err := uuid.FromBytes(sum[:16])
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to build UUID")
+	}
+	return dssmodels.ID(id.String()), nil
+}
+
 // NewOVNFromTime encodes t as an OVN.
 func NewOVNFromTime(t time.Time, salt string) OVN {
 	sum := sha256.Sum256([]byte(salt + t.Format(time.RFC3339Nano)))
