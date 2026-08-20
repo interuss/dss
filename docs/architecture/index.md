@@ -48,9 +48,12 @@ See [Additional requirements](../operations/pooling.md#additional-requirements).
 
 One of the primary design considerations of the DSS is to be very resilient to
 failures.  This resiliency is obtained primarily from the behavior of the
-underlying CockroachDB database technology and how we configure it.  The diagram
-below shows the result of failures (bringing a node down for maintenance, or
-having an entire USS go down) from different starting points, assuming 3 replicas.
+underlying CockroachDB database technology and how we configure it. To meet these
+survivability objectives, see [CockroachDB Pool Survivability](../operations/survivability-crdb.md) for how to configure
+the CockroachDB pool with replica placement constraints.
+
+The diagram below shows the result of failures (bringing a node down for maintenance,
+or having an entire USS go down) from different starting points, assuming 3 replicas.
 
 ![Survivability diagram](../assets/generated/survivability_3x2.png)
 
