@@ -22,3 +22,4 @@ This checklist outlines the major decisions and steps required to deploy a non-l
 * [ ] If needed, [monitor metrics](operations/monitoring.md) of your DSS instance.
 * [ ] If needed, track the availability of your DSS instance using [health checks](operations/healthchecks.md).
 * [ ] Review the [database cleanup documentation](operations/cleanup.md) and enable cleanup cron jobs if required.
+* [ ] Review the [authentication documentation](operations/authentication.md) to configure how access tokens are verified.
