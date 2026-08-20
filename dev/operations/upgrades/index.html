@@ -5,13 +5,13 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/monitoring/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/upgrades/">
       
       
-        <link rel="prev" href="../pooling-crdb/">
+        <link rel="prev" href="../migrations/">
       
       
-        <link rel="next" href="../healthchecks/">
+        <link rel="next" href="../database-migrations/">
       
       
         
@@ -22,7 +22,7 @@
     
     
       
-        <title>Monitoring - DSS Deployment User Documentation</title>
+        <title>Upgrades - DSS Deployment User Documentation</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#monitoring" class="md-skip">
+        <a href="#dss-upgrades" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Monitoring
+              Upgrades
             
           </span>
         </div>
@@ -730,37 +730,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Monitoring
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -776,154 +749,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#grafana-prometheus-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grafana / Prometheus stack
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#grafana-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grafana access
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#prometheus-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus access
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-federation-multi-cluster-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus Federation (Multi Cluster Monitoring)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Prometheus Federation (Multi Cluster Monitoring)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#externally-exposing-prometheus" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Externally Exposing Prometheus
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deploy-global-prometheus-instance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deploy "Global Prometheus" instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opentelemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpenTelemetry
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="OpenTelemetry">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tracing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tracing
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -989,10 +814,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../upgrades/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrades
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1008,6 +860,115 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#upgrade-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade preparation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility-between-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility between releases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compatibility between releases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#versions-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versions compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flags-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flags compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrade-procedures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade procedures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrade procedures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rolling-upgrade-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rolling upgrade procedure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zero-traffic-upgrade-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zero-Traffic upgrade procedure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1186,10 +1147,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#upgrade-preparation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        Upgrade preparation
       
     </span>
   </a>
@@ -1197,22 +1158,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grafana-prometheus-stack" class="md-nav__link">
+  <a href="#compatibility-between-releases" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grafana / Prometheus stack
+        Compatibility between releases
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
+    <nav class="md-nav" aria-label="Compatibility between releases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grafana-access" class="md-nav__link">
+  <a href="#versions-compatibility" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grafana access
+        Versions compatibility
       
     </span>
   </a>
@@ -1220,10 +1181,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#prometheus-access" class="md-nav__link">
+  <a href="#flags-compatibility" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prometheus access
+        Flags compatibility
       
     </span>
   </a>
@@ -1236,22 +1197,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prometheus-federation-multi-cluster-monitoring" class="md-nav__link">
+  <a href="#upgrade-procedures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prometheus Federation (Multi Cluster Monitoring)
+        Upgrade procedures
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Prometheus Federation (Multi Cluster Monitoring)">
+    <nav class="md-nav" aria-label="Upgrade procedures">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#externally-exposing-prometheus" class="md-nav__link">
+  <a href="#rolling-upgrade-procedure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Externally Exposing Prometheus
+        Rolling upgrade procedure
       
     </span>
   </a>
@@ -1259,49 +1220,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#deploy-global-prometheus-instance" class="md-nav__link">
+  <a href="#zero-traffic-upgrade-procedure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploy "Global Prometheus" instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opentelemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpenTelemetry
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="OpenTelemetry">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tracing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tracing
+        Zero-Traffic upgrade procedure
       
     </span>
   </a>
@@ -1378,7 +1300,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/operations/monitoring.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/operations/upgrades.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1387,172 +1309,125 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/operations/monitoring.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/operations/upgrades.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">¶</a></h1>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¶</a></h2>
-<p>Some of these <a href="../../infrastructure/#prerequisites">tools</a> are required to interact with monitoring services.</p>
-<h2 id="grafana-prometheus-stack">Grafana / Prometheus stack<a class="headerlink" href="#grafana-prometheus-stack" title="Permanent link">¶</a></h2>
-<p>When enabled, an instance of Grafana and Prometheus are deployed along with the
-core DSS services; this combination allows you to view (Grafana) metrics
-(collected by Prometheus).</p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_grafana_stack.png" data-desc-position="bottom"><img alt="Monitoring stack diagram" src="../../assets/generated/prometheus_grafana_stack.png"></a></p>
-<p>This can be enabled via:</p>
+<h1 id="dss-upgrades">DSS upgrades<a class="headerlink" href="#dss-upgrades" title="Permanent link">¶</a></h1>
+<p>This page describes how to upgrade a DSS pool, and which versions may temporarily coexist
+while the upgrade is in progress.</p>
+<h2 id="upgrade-preparation">Upgrade preparation<a class="headerlink" href="#upgrade-preparation" title="Permanent link">¶</a></h2>
+<p>Before upgrading a pool:</p>
+<ol>
+<li>Read the release notes of every version between the currently deployed one and the target
+   one, not only those of the target version.</li>
+<li>Check the compatibility table below for the source and target versions.</li>
+<li>Choose the procedure: a <a href="#rolling-upgrade-procedure">rolling upgrade</a> if the two versions are compatible; a <a href="#zero-traffic-upgrade-procedure">Zero-Traffic upgrade</a>
+   otherwise, or if incompatible settings must be changed.</li>
+<li>Agree on which DSS instance in the pool applies the database migrations.</li>
+</ol>
+<h2 id="compatibility-between-releases">Compatibility between releases<a class="headerlink" href="#compatibility-between-releases" title="Permanent link">¶</a></h2>
+<p>Releases are generally backward compatible with at least the previous release (and often earlier releases as well; see below), which allows certain combinations of versions of the DSS to
+run simultaneously during an upgrade.</p>
+<p>To limit the impact of a partially upgraded pool, we recommend keeping the window during
+which multiple versions run as short as practically possible.</p>
+<h3 id="versions-compatibility">Versions compatibility<a class="headerlink" href="#versions-compatibility" title="Permanent link">¶</a></h3>
+<p>The following matrix shows what is possible when a user wants to upgrade a pool on version A (rows) to
+version B (columns).</p>
+<p>The table always assumes a migration to the latest schema of the target version B prior to DSS version upgrade per "Rolling upgrade procedure" below.  Where this cannot be accomplished (e.g., DSS version X cannot function with the latest schema of DSS version X+1), the transition will be indicated as incompatible.</p>
+<table>
+<thead>
+<tr>
+<th>A \ B</th>
+<th><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.20.2">v0.20.2</a></th>
+<th><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.21.1">v0.21.1</a></th>
+<th><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.22.0">v0.22.0</a></th>
+<th><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0-rc3">v0.23.0-rc3</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.20.2">v0.20.2</a></strong></td>
+<td>✅</td>
+<td>✅<sup>1</sup></td>
+<td>✅<sup>1</sup></td>
+<td>✅<sup>1</sup></td>
+</tr>
+<tr>
+<td><strong><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.21.1">v0.21.1</a></strong></td>
+<td>⚪</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.22.0">v0.22.0</a></strong></td>
+<td>⚪</td>
+<td>⚪</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong><a href="https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0-rc3">v0.23.0-rc3</a></strong></td>
+<td>⚪</td>
+<td>⚪</td>
+<td>⚪</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p>✅ compatible · ⚠️ degraded, see explanation below · ❌ incompatible · ⚪ not evaluated</p>
+<p><sup>1</sup>Some tests in a multi-version pool may fail due to improvements in the test suite and DSS behavior.</p>
+<p>Based on these results, InterUSS suggests that a rolling upgrade may be performed between any
+of the versions listed above.</p>
+<h3 id="flags-compatibility">Flags compatibility<a class="headerlink" href="#flags-compatibility" title="Permanent link">¶</a></h3>
+<p>Feature flags (particularly those detailed on <a href="../performances/">the performance page</a>) are
+activated per node, with no global synchronization. Modifying these flags via a progressive
+rollout restart triggers a transitional state with the following impacts:</p>
 <ul>
-<li>The <code>enable_monitoring</code> option in terraform</li>
-<li>The <code>monitoring.enabled</code> option in helm</li>
-<li>By using tanka, which always enables it</li>
+<li>Performance degradation: the cluster temporarily operates with mixed locking strategies. This
+  untested configuration is expected to increase resource contention and response latency.</li>
+<li>Requirement violations: because nodes respond inconsistently during the transition, the system
+  fails to comply with requirements F3548-21-DSS0210 and F3411-22a-DSS0070.</li>
 </ul>
-<p>By default, DSS metrics are not enabled; see below, OpenTelemetry section, to activate them.</p>
-<h3 id="grafana-access">Grafana access<a class="headerlink" href="#grafana-access" title="Permanent link">¶</a></h3>
-<p>To access the Grafana interface, first ensure that the appropriate
-cluster context is selected (<code>kubectl config current-context</code>). Then, run the
-following command:</p>
-<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>grafana<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="m">3000</span>
-</code></pre></div></td></tr></tbody></table></div>
-<p>While that command is running, open a browser and navigate to
-<a href="http://localhost:3000">http://localhost:3000</a>.</p>
-<p>The default username is <code>admin</code> with a default password of <code>admin</code> if using tanka, or a random value in a kubernetes secret named <code>&lt;release&gt;-grafana</code> if using helm charts.</p>
-<p>Example to retrieve the secret in a default 'dss' release:</p>
-<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>kubectl<span class="w"> </span>get<span class="w"> </span>secrets/dss-grafana<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s2">"{.data.admin-password}"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d
-</code></pre></div></td></tr></tbody></table></div>
-<p>Click the magnifying glass on the left side to select a dashboard to view.</p>
-<h3 id="prometheus-access">Prometheus access<a class="headerlink" href="#prometheus-access" title="Permanent link">¶</a></h3>
-<p>Prometheus access is protected by a client certificate. If you need to access the web interface, you will need to import a valid client certificate in your browser.</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>For day to day usage, you don't need to access Prometheus, use Grafana instead. This is only useful for debugging.</p>
-</div>
-<p>To build a pkcs12 file from a valid client certificate (use a random password):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="yugabyte" name="__tabbed_1" type="radio"><input id="cockroachdb" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="yugabyte">Yugabyte</label><label for="cockroachdb">CockroachDB</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>openssl pkcs12 -export -inkey deploy/operations/certificates-management/workspace/demo/clients/client.grafana.key -in deploy/operations/certificates-management/workspace/demo/clients/client.grafana.crt  -out /tmp/cert_key.p12
-</code></pre></div></td></tr></tbody></table></div>
-</div>
-<div class="tabbed-block">
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>openssl pkcs12 -export -inkey build/workspace/demo/client_certs_dir/client.grafana.key -in build/workspace/demo/client_certs_dir/client.grafana.crt -out /tmp/cert_key.p12
-</code></pre></div></td></tr></tbody></table></div>
-</div>
-</div>
-</div>
-<hr>
-<p>Then import this file as client certificate in your browser.</p>
+<p>We recommend applying the <a href="#zero-traffic-upgrade-procedure">Zero-Traffic upgrade procedure</a> for the following flags:</p>
 <ul>
-<li>Firefox: Preferences &gt; Privacy &amp; Security &gt; View Certificates &gt; Your Certificates &gt; Import</li>
-<li>Chrome: Privacy and security &gt; Security &gt; Manage Certificates &gt; Import</li>
+<li>enable_scd_global_lock</li>
+<li>enable_scd_hash_lock</li>
+<li>enable_time_based_notification_index</li>
 </ul>
-<p>Next time you access the interface, select the certificate you just imported.</p>
-<h2 id="prometheus-federation-multi-cluster-monitoring">Prometheus Federation (Multi Cluster Monitoring)<a class="headerlink" href="#prometheus-federation-multi-cluster-monitoring" title="Permanent link">¶</a></h2>
-<p><a href="https://prometheus.io/docs/prometheus/latest/federation/">Prometheus Federation</a>
-enables you to easily monitor multiple clusters of the DSS that you operate,
-unifying all the metrics into a single Prometheus instance where you can build
-Grafana Dashboards. Enabling Prometheus Federation is optional.</p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_federation.png" data-desc-position="bottom"><img alt="Federation stack diagram" src="../../assets/generated/prometheus_federation.png"></a></p>
-<p>To enable it, you need to do two things:</p>
+<p>All flags that are local, including feature flags for monitoring, can be enabled or disabled without any specific precautions.</p>
+<h2 id="upgrade-procedures">Upgrade procedures<a class="headerlink" href="#upgrade-procedures" title="Permanent link">¶</a></h2>
+<h3 id="rolling-upgrade-procedure">Rolling upgrade procedure<a class="headerlink" href="#rolling-upgrade-procedure" title="Permanent link">¶</a></h3>
+<p>This procedure has a lower impact and can be carried out asynchronously.</p>
+<p>Ensure the source and target DSS versions are compatible using the table above. Periods during which
+multiple DSS versions run in a DSS pool shall be as short as practically possible and limited to
+transitions.</p>
+<p>The steps are:</p>
 <ol>
-<li>Externally expose the Prometheus service of the DSS clusters.</li>
-<li>Deploy a "Global Prometheus" instance to unify metrics.</li>
+<li>Perform the database schema migrations to the latest schema versions of the target DSS version.</li>
+<li>Upgrade the DSS <code>core-service</code> instances, one at a time.</li>
 </ol>
-<h3 id="externally-exposing-prometheus">Externally Exposing Prometheus<a class="headerlink" href="#externally-exposing-prometheus" title="Permanent link">¶</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="terraform-managed" name="__tabbed_2" type="radio"><input id="helm-managed" name="__tabbed_2" type="radio"><input id="tanka-managed" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="terraform-managed">Terraform managed</label><label for="helm-managed">Helm managed</label><label for="tanka-managed">Tanka managed</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
+<p>The database migrations are applied once for the whole pool, by the member agreed upon beforehand, and
+before the <code>core-service</code> image can be upgraded. Each member can then upgrade their own
+instances at their own pace.</p>
+<h3 id="zero-traffic-upgrade-procedure">Zero-Traffic upgrade procedure<a class="headerlink" href="#zero-traffic-upgrade-procedure" title="Permanent link">¶</a></h3>
+<p>This procedure has more impact and requires more synchronization between the members of a DSS
+pool. It is, however, less prone to errors, and it is required to upgrade between incompatible
+releases or to change the value of settings identified above.</p>
+<p>The steps are:</p>
 <ol>
-<li>Set the option <code>prometheus_hostname</code> to the value of the public hostname that will be used to access your instance.</li>
-<li>Apply changes as usual, first by running terraform, and then tanka or helm</li>
+<li>Stop all regular cronjobs.</li>
+<li>Stop all DSS <code>core-service</code> instances.</li>
+<li>Perform database migrations to the schema versions associated with the target DSS version.</li>
+<li>Start the new <code>core-service</code> instances.</li>
+<li>Resume all regular cronjobs.</li>
 </ol>
-</div>
-<div class="tabbed-block">
-<ol>
-<li>Set <code>monitoring.externalService.enabled</code> to <code>true</code></li>
-<li>[Optional] Set <code>monitoring.externalService.ip</code> set to a static external IP</li>
-<li>[Optional] Set <code>monitoring.externalService.subnet</code> if you use AWS.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<ol>
-<li>Set <code>expose_external</code> to <code>true</code></li>
-<li>[Optional] Supply a static external IP Address to <code>IP</code></li>
-</ol>
-</div>
-</div>
-</div>
-<h3 id="deploy-global-prometheus-instance">Deploy "Global Prometheus" instance<a class="headerlink" href="#deploy-global-prometheus-instance" title="Permanent link">¶</a></h3>
-<ol>
-<li>Follow guide to deploy Prometheus https://prometheus.io/docs/introduction/first_steps/</li>
-<li>The scrape rules for this global instance will scrape other prometheus <code>/federate</code> endpoints and are rather simple, please look at the <a href="https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation">example configuration</a> as a starting point.</li>
-<li>
-<p>You will need to enable a client certificate, as this is used to protect the endpoint.</p>
-<ul>
-<li>This uses the same CAs in a cluster. You can use any generated certificate with all Prometheus instances in a cluster.</li>
-<li>Copy the private (<code>client.grafana.key</code>), public (<code>client.grafana.crt</code>), and CA (<code>ca.crt</code>) keys and make them available to your Prometheus instance, next to the config. Folders are:</li>
-</ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="yugabyte_1" name="__tabbed_3" type="radio"><input id="cockroachdb_1" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="yugabyte_1">Yugabyte</label><label for="cockroachdb_1">CockroachDB</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p><code>deploy/operations/certificates-management/workspace/demo/clients/</code></p>
-</div>
-<div class="tabbed-block">
-<p><code>build/workspace/demo/client_certs_dir/</code></p>
-</div>
-</div>
-</div>
-</li>
-</ol>
-<ol start="4"><li>Add encryption to your config:
-
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
-<span class="normal"><a href="#__codelineno-4-2">2</a></span>
-<span class="normal"><a href="#__codelineno-4-3">3</a></span>
-<span class="normal"><a href="#__codelineno-4-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>tls_config:
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a>    ca_file:   ca.pem
-<a id="__codelineno-4-3" name="__codelineno-4-3"></a>    cert_file: client.grafana.crt
-<a id="__codelineno-4-4" name="__codelineno-4-4"></a>    key_file:  client.grafana.key
-</code></pre></div></td></tr></tbody></table></div>
-
-</li></ol>
-
-<h2 id="opentelemetry">OpenTelemetry<a class="headerlink" href="#opentelemetry" title="Permanent link">¶</a></h2>
-<p><a href="https://opentelemetry.io/">OpenTelemetry</a> is an open-source observability framework for cloud-native software.</p>
-<p>You can enable it on the DSS server to get:</p>
-<ul>
-<li>Tracing for all queries</li>
-<li>A Prometheus endpoint with some metrics</li>
-</ul>
-<p>Currently, thoses settings are not yet available in Terraform, Helm or Tanka.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>By default, when metrics are enabled, the metrics service listens on all addresses.</p>
-</div>
-<h3 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">¶</a></h3>
-<p>Use flag <code>--enable_metrics</code> to enable metrics.</p>
-<p>Point any Prometheus server to the endpoint (by default on port 8079).</p>
-<p>You can use the <code>--metrics_addr</code> flag to change the listening port and address.</p>
-<p>A dashboard is automatically deployed by Helm and Tanka. If you use you own grafana instance, it can be found <a href="https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/dss.json">there</a>.</p>
-<p>You can use the <code>enable_dss_metrics</code> option in Terraform, <code>dss.conf.enableDssMetrics</code> in Helm, or <code>enableDssMetrics</code> in Tanka to activate it when using these.
-This will also automatically enable collection by Prometheus if used.</p>
-<h3 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">¶</a></h3>
-<p>Use flag <code>--enable_tracing</code> to enable tracing.</p>
-<p>Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include <a href="https://www.jaegertracing.io/">Jaeger</a>, <a href="https://github.com/openobserve/openobserve">OpenObserve</a>, <a href="https://grafana.com/docs/tempo/latest/">Grafana Tempo</a>, and <a href="https://github.com/SigNoz/signoz">SigNoz</a>. Multiple SaaS solutions are also available (including some of the previously mentioned tools).</p>
-<p>You need to use the <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> environment variable to configure it. Point it toward your server by following its specific documentation.</p>
-<p><a href="https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/">Other variables for telemetry</a> (and <a href="https://opentelemetry.io/docs/languages/sdk-configuration/general/">variables in general</a>) supported by the Go language are available as well if needed.</p>
-<p>For local debugging, enable the <code>with-monitoring</code> profile in the standalone
-Docker Compose deployment:</p>
-<div class="language-bash highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="nv">COMPOSE_PROFILES</span><span class="o">=</span>with-monitoring<span class="w"> </span>./build/dev/run_locally.sh
-</code></pre></div></td></tr></tbody></table></div>
-<p>This enables DSS metrics and tracing and starts Prometheus, Grafana, and Jaeger.
-Grafana is available at http://localhost:3000 with the DSS dashboard already
-configured (use <code>admin</code> for both the username and password), Prometheus is
-available at http://localhost:9090, and Jaeger is available at
-http://localhost:16686.</p>
-<p>See the <a href="../../build/dev/standalone_instance.md#monitoring">standalone local instance documentation</a>
-for more details.</p>
+<p>The service is unavailable between steps 2 and 4. Every member of the pool must have completed
+step 2 before step 3 can be started.</p>
 
 
 
@@ -1573,7 +1448,7 @@ for more details.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 30, 2026 07:16:17 UTC">July 30, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 20, 2026 08:36:26 UTC">August 20, 2026</span>
   </span>
 
     
@@ -1605,7 +1480,7 @@ for more details.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../pooling-crdb/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pooling (CockroachDB)">
+          <a href="../migrations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Migrations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -1615,20 +1490,20 @@ for more details.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Pooling (CockroachDB)
+                Migrations
               </div>
             </div>
           </a>
         
         
           
-          <a href="../healthchecks/" class="md-footer__link md-footer__link--next" aria-label="Next: Health checks">
+          <a href="../database-migrations/" class="md-footer__link md-footer__link--next" aria-label="Next: Database migrations">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Health checks
+                Database migrations
               </div>
             </div>
             <div class="md-footer__button md-icon">
