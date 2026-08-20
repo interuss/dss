@@ -54,6 +54,11 @@ RESULTFILE="$(pwd)/e2e_test_result"
 touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
 
+PROBER_EXTRA_ARGS=()
+if [[ "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_time_based_notification_index"* ]]; then
+	PROBER_EXTRA_ARGS+=(--scd-time-based-notification-index true)
+fi
+
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
@@ -69,7 +74,8 @@ if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--rid-v2-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
-	--scd-api-version 1.0.0; then
+	--scd-api-version 1.0.0 \
+    "${PROBER_EXTRA_ARGS[@]}"; then
 
     if [ "$CI" == "true" ]; then
         echo "=== END OF TEST RESULTS ==="
