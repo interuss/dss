@@ -1,0 +1,181 @@
+package actions
+
+import (
+	"context"
+
+	"github.com/golang/geo/s2"
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	dssmodels "github.com/interuss/dss/pkg/models"
+	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
+	dssstore "github.com/interuss/dss/pkg/store"
+	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v5"
+)
+
+func init() {
+	Registry[restapi.DeleteConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*restapi.DeleteConstraintReferenceRequest],
+		Execute: ExecuteDeleteConstraint,
+	}
+	Registry[restapi.GetConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:     dssstore.EncodeJSON,
+		Decode:     dssstore.DecodeJSON[*restapi.GetConstraintReferenceRequest],
+		Execute:    ExecuteGetConstraint,
+		IsReadOnly: true,
+	}
+	Registry[restapi.QueryConstraintReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:     dssstore.EncodeJSON,
+		Decode:     dssstore.DecodeJSON[*restapi.QueryConstraintReferencesRequest],
+		Execute:    ExecuteQueryConstraintReferences,
+		IsReadOnly: true,
+	}
+}
+
+func ExecuteGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	req, ok := request.(*restapi.GetConstraintReferenceRequest)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetConstraintReferenceOperationID)
+	}
+
+	id, err := dssmodels.IDFromString(string(req.Entityid))
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
+	}
+
+	constraint, err := repo.GetConstraint(ctx, id)
+	switch {
+	case err == pgx.ErrNoRows:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
+	}
+
+	if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+		constraint.OVN = scdmodels.NoOvnPhrase
+	}
+
+	// Return response to client
+	return &restapi.GetConstraintReferenceResponse{
+		ConstraintReference: *constraint.ToRest(),
+	}, nil
+}
+
+func ExecuteQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	req, ok := request.(*restapi.QueryConstraintReferencesRequest)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
+	}
+
+	// Retrieve the area of interest parameter
+	aoi := req.Body.AreaOfInterest
+	if aoi == nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
+	}
+
+	// Parse area of interest to common Volume4D
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
+	}
+
+	// Perform search query on Store
+	constraints, err := repo.SearchConstraints(ctx, vol4)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create response for client
+	response := &restapi.QueryConstraintReferencesResponse{
+		ConstraintReferences: make([]restapi.ConstraintReference, 0, len(constraints)),
+	}
+	for _, constraint := range constraints {
+		p := constraint.ToRest()
+		if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+			noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
+			p.Ovn = &noOvnPhrase
+		}
+		response.ConstraintReferences = append(response.ConstraintReferences, *p)
+	}
+
+	return response, nil
+}
+
+func ExecuteDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	req, ok := request.(*restapi.DeleteConstraintReferenceRequest)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteConstraintReferenceOperationID)
+	}
+
+	// Retrieve Constraint ID
+	id, err := dssmodels.IDFromString(string(req.Entityid))
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
+	}
+
+	// Make sure deletion request is valid
+	old, err := repo.GetConstraint(ctx, id)
+	switch {
+	case err == pgx.ErrNoRows:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
+	case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			"Constraint owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
+	case old.OVN != scdmodels.OVN(req.Ovn):
+		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+			"Current version is %s but client specified version %s", old.OVN, scdmodels.OVN(req.Ovn))
+	}
+
+	// Delete Constraint in repo
+	err = repo.DeleteConstraint(ctx, id)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to delete Constraint from repo")
+	}
+
+	// Find the Subscriptions interested in Constraints and increment their
+	// notification indices.
+	subs, err := repo.IncrementNotificationIndicesForConstraints(ctx, &dssmodels.Volume4D{
+		StartTime: old.StartTime,
+		EndTime:   old.EndTime,
+		SpatialVolume: &dssmodels.Volume3D{
+			AltitudeHi: old.AltitudeUpper,
+			AltitudeLo: old.AltitudeLower,
+			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
+				return old.Cells, nil
+			}),
+		}})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to increment notification indices")
+	}
+
+	// Return response to client
+	return &restapi.ChangeConstraintReferenceResponse{
+		ConstraintReference: *old.ToRest(),
+		Subscribers:         makeSubscribersToNotify(subs),
+	}, nil
+}
+
+func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.SubscriberToNotify {
+	result := []restapi.SubscriberToNotify{}
+
+	subscriptionsByURL := map[string][]restapi.SubscriptionState{}
+	for _, sub := range subscriptions {
+		subState := restapi.SubscriptionState{
+			SubscriptionId:    restapi.SubscriptionID(sub.ID.String()),
+			NotificationIndex: restapi.SubscriptionNotificationIndex(sub.NotificationIndex),
+		}
+		subscriptionsByURL[sub.USSBaseURL] = append(subscriptionsByURL[sub.USSBaseURL], subState)
+	}
+	for url, states := range subscriptionsByURL {
+		result = append(result, restapi.SubscriberToNotify{
+			UssBaseUrl:    restapi.SubscriptionUssBaseURL(url),
+			Subscriptions: states,
+		})
+	}
+
+	return result
+}
