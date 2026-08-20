@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/random"
 	"github.com/interuss/dss/pkg/scd/actions"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -403,8 +403,17 @@ func validateUpsertRequestAgainstPreviousOIR(
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
 func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
+	generator, err := random.Generator(random.MustFromContext(ctx), "implicit-subscription:"+validParams.id.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to derive implicit subscription ID generator")
+	}
+	id, err := scdmodels.NewDeterministicImplicitSubscriptionID(generator)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create implicit subscription ID")
+	}
+
 	subToUpsert := scdmodels.Subscription{
-		ID:                          dssmodels.ID(uuid.New().String()),
+		ID:                          id,
 		Manager:                     manager,
 		StartTime:                   validParams.uExtent.StartTime,
 		EndTime:                     validParams.uExtent.EndTime,

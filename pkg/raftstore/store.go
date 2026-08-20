@@ -7,6 +7,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
+	"github.com/interuss/dss/pkg/random"
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
@@ -117,6 +118,7 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 
 			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
 			proposalCtx = locality.WithRequestLocality(proposalCtx, commit.Prop.Locality)
+			proposalCtx = random.NewContext(proposalCtx, commit.Prop.Seed)
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
