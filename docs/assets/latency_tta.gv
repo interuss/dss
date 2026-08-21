@@ -1,0 +1,28 @@
+digraph time_to_answer {
+    rankdir=LR;
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    client   [label="Client"];
+    core     [label="DSS"];
+
+    subgraph cluster_db {
+        label="Distributed DB cluster";
+        style=dashed;
+        leader   [label="Node\n(leaseholder)"];
+        peer1    [label="Peer node"];
+        peer2    [label="Peer node"];
+    }
+
+    client -> core    [label="API call"];
+    core   -> leader  [label="query"];
+
+    leader -> peer1   [label="consensus\nround-trip"];
+    leader -> peer2   [label="consensus\nround-trip"];
+    peer1  -> leader  [label="ack"];
+    peer2  -> leader  [label="ack (quorum)"];
+
+    leader -> core    [label="result"];
+    core   -> client  [label="response"];
+
+}
