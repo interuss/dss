@@ -59,10 +59,11 @@ if [[ "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_time_based_notification_index
 	PROBER_EXTRA_ARGS+=(--scd-time-based-notification-index true)
 fi
 
-# The heavy traffic concurrency tests are flaky when running against Yugabyte
-# We reduce the concurrent worker count for that backend to 5
-if [[ "${COMPOSE_PROFILES:-}" == *"yugabyte"* ]]; then
-	PROBER_EXTRA_ARGS+=(--heavy_traffic_concurrent_workers 5)
+# Following the extension of performance testing in https://github.com/interuss/dss/pull/1618
+# The Yugabyte test with the -enable_scd_hash_lock flag is flaky, so we reduce the
+# concurrent worker count to 8 for that specific configuration.
+if [[ "${COMPOSE_PROFILES:-}" == *"yugabyte"* && "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_scd_hash_lock"* ]]; then
+	PROBER_EXTRA_ARGS+=(--heavy_traffic_concurrent_workers 8)
 fi
 
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
