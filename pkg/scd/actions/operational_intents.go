@@ -35,6 +35,16 @@ func init() {
 		Decode:  dssstore.DecodeJSON[*restapi.DeleteOperationalIntentReferenceRequest],
 		Execute: ExecuteDeleteOperationalIntentReference,
 	}
+	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*restapi.CreateOperationalIntentReferenceRequest],
+		Execute: ExecutePutOperationalIntentReference,
+	}
+	Registry[restapi.UpdateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*restapi.UpdateOperationalIntentReferenceRequest],
+		Execute: ExecutePutOperationalIntentReference,
+	}
 }
 
 // SubscriptionIsImplicitAndOnlyAttachedToOIR will check if:
@@ -269,11 +279,11 @@ func CheckUpsertPermissionsAndReturnManager(authorizedManager *api.Authorization
 	return dssmodels.Manager(*authorizedManager.ClientID), nil
 }
 
-// ValidateUpsertRequestAgainstPreviousOIR checks that the client requesting an OIR upsert has the necessary permissions and that the request is valid.
+// validateUpsertRequestAgainstPreviousOIR checks that the client requesting an OIR upsert has the necessary permissions and that the request is valid.
 // On success, the version of the OIR is returned:
 //   - upon initial creation (if no previous OIR exists), it is 0
 //   - otherwise, it is the version of the previous OIR
-func ValidateUpsertRequestAgainstPreviousOIR(
+func validateUpsertRequestAgainstPreviousOIR(
 	requestingManager dssmodels.Manager,
 	providedOVN scdmodels.OVN,
 	previousOIR *scdmodels.OperationalIntent,
@@ -299,11 +309,11 @@ func ValidateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
-// ComputeNotificationVolume computes the volume that needs to be queried for subscriptions
+// computeNotificationVolume computes the volume that needs to be queried for subscriptions
 // given the requested extent and the (possibly nil) previous operational intent.
 // The returned volume is either the union of the requested extent and the previous OIR's extent, or just the requested extent
 // if the previous OIR is nil.
-func ComputeNotificationVolume(
+func computeNotificationVolume(
 	previousOIR *scdmodels.OperationalIntent,
 	requestedExtent *dssmodels.Volume4D) (*dssmodels.Volume4D, error) {
 
@@ -348,7 +358,7 @@ type validOIRParams struct {
 	Key map[scdmodels.OVN]bool
 }
 
-func (vp *validOIRParams) ToOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber, pastOVNs []scdmodels.OVN) *scdmodels.OperationalIntent {
+func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber, pastOVNs []scdmodels.OVN) *scdmodels.OperationalIntent {
 	// For OIR's in the accepted state, we may not have a attachedSub available,
 	// in such cases the attachedSub ID on scdmodels.OperationalIntent will be nil
 	// and will be replaced with the 'NullV4UUID' when sent over to a client.
@@ -493,9 +503,9 @@ func ValidateAndReturnOIRUpsertParams(
 	return valid, nil
 }
 
-// CreateAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
+// createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
-func CreateAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
+func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
 	id, err := scdmodels.NewDeterministicImplicitSubscriptionID(timestamp.MustGetRequestTimestamp(ctx), validParams.ID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create implicit subscription ID")
@@ -518,11 +528,11 @@ func CreateAndStoreNewImplicitSubscription(ctx context.Context, r repos.Reposito
 	return r.UpsertSubscription(ctx, &subToUpsert)
 }
 
-// ValidateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
+// validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
 // - If all required keys are provided, (nil, nil) will be returned.
 // - If keys are missing, the conflict response to be sent back as well as an error with the dsserr.MissingOVNs code will be returned.
 // - In case of any other error, (nil, error) will be returned.
-func ValidateKeyAndProvideConflictResponse(
+func validateKeyAndProvideConflictResponse(
 	ctx context.Context,
 	r repos.Repository,
 	requestingManager dssmodels.Manager,
@@ -598,10 +608,10 @@ func ValidateKeyAndProvideConflictResponse(
 	return nil, nil
 }
 
-// EnsureSubscriptionCoversOIR ensures that the subscription covers the requested geo-temporal extent, extending it if both possible and required,
+// ensureSubscriptionCoversOIR ensures that the subscription covers the requested geo-temporal extent, extending it if both possible and required,
 // or failing otherwise.
 // After this method returns successfully, the subscription will cover the requested geo-temporal extent.
-func EnsureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
+func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
 
 	updateSub := false
 	if sub.StartTime != nil && sub.StartTime.After(*params.UExtent.StartTime) {
@@ -637,4 +647,193 @@ func EnsureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 	}
 
 	return sub, nil
+}
+
+// ExecutePutOperationalIntentReference inserts or updates an Operational Intent.
+// If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
+func ExecutePutOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	var (
+		entityid restapi.EntityID
+		ovn      restapi.EntityOVN
+		params   *restapi.PutOperationalIntentReferenceParameters
+		auth     *api.AuthorizationResult
+	)
+
+	switch req := request.(type) {
+	case *restapi.CreateOperationalIntentReferenceRequest:
+		entityid, params, auth = req.Entityid, req.Body, &req.Auth
+	case *restapi.UpdateOperationalIntentReferenceRequest:
+		entityid, ovn, params, auth = req.Entityid, req.Ovn, req.Body, &req.Auth
+	default:
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
+	}
+
+	now := timestamp.MustGetRequestTimestamp(ctx)
+
+	// Base URL scheme validation is a pre-flight, request-only check performed by the handler
+	// before this action is proposed for consensus; skip it here (allowHTTPBaseUrls: true).
+	validParams, err := ValidateAndReturnOIRUpsertParams(now, entityid, ovn, params, true)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
+	}
+	manager, err := CheckUpsertPermissionsAndReturnManager(auth, validParams.State)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state")
+	}
+
+	// Get existing OperationalIntent, if any
+	old, err := repo.GetOperationalIntent(ctx, validParams.ID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not get OperationalIntent from repo")
+	}
+
+	// Lock subscriptions based on the cell and subscriptions we're going to use
+	// to reduce the number of retries under concurrent load.
+	// See issue #1002 for details.
+	var subscriptionIds = make([]dssmodels.ID, 0)
+
+	if old != nil && old.SubscriptionID != nil {
+		subscriptionIds = append(subscriptionIds, *old.SubscriptionID)
+	}
+
+	if !validParams.SubscriptionID.Empty() {
+		subscriptionIds = append(subscriptionIds, validParams.SubscriptionID)
+	}
+
+	err = repo.LockSubscriptionsOnCells(ctx, validParams.Cells, subscriptionIds, validParams.UExtent.StartTime, validParams.UExtent.EndTime)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to acquire lock")
+	}
+
+	// Validate the request against the previous OIR
+	if err := validateUpsertRequestAgainstPreviousOIR(manager, validParams.OVN, old); err != nil {
+		return nil, stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Request validation failed")
+	}
+
+	var (
+		version     = scdmodels.VersionNumber(1)
+		pastOVNs    = make([]scdmodels.OVN, 0)
+		previousSub *scdmodels.Subscription
+	)
+	if old != nil {
+		version = old.Version + 1
+		pastOVNs = append(old.PastOVNs, validParams.OVN)
+
+		// Fetch the previous OIR's subscription if it exists
+		if old.SubscriptionID != nil {
+			previousSub, err = repo.GetSubscription(ctx, *old.SubscriptionID)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
+			}
+		}
+	}
+
+	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
+	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
+	removePreviousImplicitSubscription := false
+	if previousSubIsBeingReplaced {
+		removePreviousImplicitSubscription, err = SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, repo, validParams.ID, previousSub)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
+		}
+	}
+
+	// attachedSub is the subscription that will end up being attached to the OIR
+	// it defaults to the previous subscription (which may be nil), and may be updated if required by the parameters
+	attachedSub := previousSub
+	if validParams.SubscriptionID.Empty() {
+		// No subscription ID was provided:
+		// check if an implicit subscription should be created, otherwise do nothing
+		if validParams.ImplicitSubscription.Requested {
+			// Parameters for a new implicit subscription have been passed: we will create
+			// a new implicit subscription even if another subscription was attached to this OIR before,
+			// regardless of whether it was an implicit subscription or not.
+			if attachedSub, err = createAndStoreNewImplicitSubscription(ctx, repo, manager, validParams); err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to create implicit subscription")
+			}
+		} else {
+			// If no subscription ID is provided and no implicit subscription is requested,
+			// the OIR should have no attached subscription
+			attachedSub = nil
+		}
+	} else {
+		// Attempt to rely on the specified subscription
+		// If it is different from the previous subscription, we need to fetch it from the store
+		// in order to ensure it correctly covers the OIR.
+		// We do the check below in order to avoid re-fetching the subscription if it has not changed
+		if attachedSub == nil || previousSubIsBeingReplaced {
+			attachedSub, err = repo.GetSubscription(ctx, validParams.SubscriptionID)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Unable to get requested Subscription from store")
+			}
+			if attachedSub == nil {
+				return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.SubscriptionID)
+			}
+		}
+
+		// We need to confirm that it is owned by the calling manager
+		if attachedSub.Manager != manager {
+			return nil, stacktrace.Propagate(
+				// We do a bit of wrapping gymnastics because the root error message will be sent in the response,
+				// and we don't want to include the effective manager in there.
+				stacktrace.NewErrorWithCode(
+					dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
+				// The propagation message will end in the logs and help with debugging.
+				"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent",
+				validParams.SubscriptionID,
+				attachedSub.Manager,
+				manager,
+			)
+		}
+
+		// We need to ensure the subscription covers the OIR's geo-temporal extent
+		attachedSub, err = ensureSubscriptionCoversOIR(ctx, repo, attachedSub, validParams)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
+		}
+	}
+
+	var responseConflict *restapi.AirspaceConflictResponse
+	if validParams.State.RequiresKey() {
+		responseConflict, err = validateKeyAndProvideConflictResponse(ctx, repo, manager, validParams, attachedSub)
+		if err != nil {
+			// responseConflict is non-nil here on a dsserr.MissingOVNs error: return it alongside
+			// the error so the handler can still send it to the client. See the doc comment above.
+			return responseConflict, stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Failed to validate key")
+		}
+	}
+
+	// Construct the new OperationalIntent
+	op := validParams.toOIR(manager, attachedSub, version, pastOVNs)
+
+	// Upsert the OperationalIntent
+	op, err = repo.UpsertOperationalIntent(ctx, op)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to upsert OperationalIntent in repo")
+	}
+
+	// Check if the previously attached subscription should be removed
+	if removePreviousImplicitSubscription {
+		err = repo.DeleteSubscription(ctx, previousSub.ID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Unable to delete previous implicit Subscription")
+		}
+	}
+
+	notifyVolume, err := computeNotificationVolume(old, validParams.UExtent)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to compute notification volume")
+	}
+
+	// Notify relevant Subscriptions
+	subsToNotify, err := GetRelevantSubscriptionsAndIncrementIndices(ctx, repo, notifyVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
+	}
+
+	// Return response to client
+	return &restapi.ChangeOperationalIntentReferenceResponse{
+		OperationalIntentReference: *op.ToRest(),
+		Subscribers:                makeSubscribersToNotify(subsToNotify),
+	}, nil
 }
