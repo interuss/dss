@@ -59,6 +59,12 @@ if [[ "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_time_based_notification_index
 	PROBER_EXTRA_ARGS+=(--scd-time-based-notification-index true)
 fi
 
+# The heavy traffic concurrency tests are flaky when running against Yugabyte
+# We reduce the concurrent worker count for that backend to 5
+if [[ "${COMPOSE_PROFILES:-}" == *"yugabyte"* ]]; then
+	PROBER_EXTRA_ARGS+=(--heavy_traffic_concurrent_workers 5)
+fi
+
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
