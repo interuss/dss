@@ -51,6 +51,8 @@ This should be better than global lock, as long as cells used don't collide and 
 
 The number of locks (65535) is a compromise between lock contention (the more locks, the less unrelated cells share the same one) and the size of the `scd_locks` table. It is fixed and cannot be changed.
 
+Note that since [#1618](https://github.com/interuss/dss/issues/1618), the `--heavy_traffic_concurrent_workers` flag needs to be reduced on the CI when testing with the `-enable_scd_hash_lock` configuration against Yugabyte due to intermittent load-sensitive test failures.
+
 ## The time-based notification index option
 
 !!! danger

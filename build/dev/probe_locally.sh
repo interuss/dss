@@ -60,7 +60,7 @@ if [[ "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_time_based_notification_index
 fi
 
 # Following the extension of performance testing in https://github.com/interuss/dss/pull/1618
-# The Yugabyte test with the -enable_scd_hash_lock flag is flaky, so we reduce the
+# The Yugabyte test with the -enable_scd_hash_lock flag faces intermittent load-sensitive test failures, so we reduce the
 # concurrent worker count to 8 for that specific configuration.
 if [[ "${COMPOSE_PROFILES:-}" == *"yugabyte"* && "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_scd_hash_lock"* ]]; then
 	PROBER_EXTRA_ARGS+=(--heavy_traffic_concurrent_workers 8)
