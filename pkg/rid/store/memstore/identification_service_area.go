@@ -120,8 +120,11 @@ func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.
 		}
 		out = append(out, rec.toModel())
 
-		if len(out) > dssmodels.MaxResultLimit { // This mimics sqlstore behaviour, but it's not very good.
-			break
+		// One match beyond the limit is enough to know the response cannot be
+		// exhaustive, see #1120.
+		if len(out) > dssmodels.MaxResultLimit {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
+				"More than %d identification service areas match; reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
 		}
 	}
 	return out, nil

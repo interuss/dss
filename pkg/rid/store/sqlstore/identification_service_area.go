@@ -207,7 +207,16 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 		return nil, stacktrace.NewError("Earliest start time is missing")
 	}
 
-	return r.fetchISAs(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit)
+	// Select one row beyond the limit to detect a non-exhaustive result set, see #1120.
+	isas, err := r.fetchISAs(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit+1)
+	if err != nil {
+		return nil, err // No need to Propagate this error as this stack layer does not add useful information
+	}
+	if len(isas) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
+			"More than %d identification service areas match; reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
+	}
+	return isas, nil
 }
 
 // ListExpiredISAs lists all expired ISAs based on writer.

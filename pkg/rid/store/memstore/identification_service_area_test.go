@@ -7,10 +7,12 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 )
 
@@ -321,4 +323,33 @@ func TestStoreCountISAs(t *testing.T) {
 	count, err = repo.CountISAs(ctx)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), count)
+}
+
+func TestStoreSearchISAsResultLimit(t *testing.T) {
+	ctx := context.Background()
+	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	repo := setUpStore(t)
+
+	insertISA := func() {
+		isa := *serviceArea
+		isa.ID = dssmodels.ID(uuid.New().String())
+		_, err := repo.InsertISA(ctx, &isa)
+		require.NoError(t, err)
+	}
+
+	for i := 0; i < dssmodels.MaxResultLimit; i++ {
+		insertISA()
+	}
+
+	// Exactly MaxResultLimit matches still fits in an exhaustive response.
+	serviceAreas, err := repo.SearchISAs(ctx, serviceArea.Cells, &startTime, nil)
+	require.NoError(t, err)
+	require.Len(t, serviceAreas, dssmodels.MaxResultLimit)
+
+	insertISA()
+
+	serviceAreas, err = repo.SearchISAs(ctx, serviceArea.Cells, &startTime, nil)
+	require.Error(t, err)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+	require.Nil(t, serviceAreas)
 }
