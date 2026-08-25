@@ -30,12 +30,12 @@ version B (columns).
 
 The table always assumes a migration to the latest schema of the target version B prior to DSS version upgrade per "Rolling upgrade procedure" below.  Where this cannot be accomplished (e.g., DSS version X cannot function with the latest schema of DSS version X+1), the transition will be indicated as incompatible.
 
-| A \ B | [v0.20.2](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.20.2) | [v0.21.1](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.21.1) | [v0.22.0](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.22.0) | [v0.23.0-rc3](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0-rc3) |
+| A \ B | [v0.20.2](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.20.2) | [v0.21.1](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.21.1) | [v0.22.0](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.22.0) | [v0.23.0](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0) |
 |---|---|---|---|---|
 | **[v0.20.2](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.20.2)** | ✅ | ✅<sup>1</sup> | ✅<sup>1</sup> | ✅<sup>1</sup> |
 | **[v0.21.1](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.21.1)** | ⚪ | ✅ | ✅ | ✅ |
 | **[v0.22.0](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.22.0)** | ⚪ | ⚪ | ✅ | ✅ |
-| **[v0.23.0-rc3](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0-rc3)** | ⚪ | ⚪ | ⚪ | ✅ |
+| **[v0.23.0](https://github.com/interuss/dss/releases/tag/interuss%2Fdss%2Fv0.23.0)** | ⚪ | ⚪ | ⚪ | ✅ |
 
 
 ✅ compatible · ⚠️ degraded, see explanation below · ❌ incompatible · ⚪ not evaluated
