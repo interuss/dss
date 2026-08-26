@@ -15,7 +15,22 @@ To achieve this, we:
 
 ## 1. Setting Node Locality
 
-When starting each CockroachDB node, you must configure its `--locality` flag to specify which USS and node it represents. The locality must use first at least the `uss` key, and optionally second the `node` key.
+When starting each CockroachDB node, you must configure its `--locality` flag to specify which USS and node it represents. For the purpose of ensuring survivability of the cluster, it is important that all USSes align of the structure of their locality settings.
+We recommend that the locality use first at least the `uss` key, and optionally second the `node` key.
+Because CockroachDB will distribute range replicas using values of locality keys, the order of the keys defining the hierarchy to do so, if there is some existing locality set preventing this to be achieved, it is important that:
+- all USSes define a specific key whose value is specific to them (e.g. `uss=uss1`);
+- and that the number of total replicas set is covers at least the total number of combination of keys of to the USS key.
+
+Example: with three USSs each with two nodes define the following localities:
+- `region=east,uss=uss1,node=uss1_node1`
+- `region=west,uss=uss1,node=uss1_node2`
+- `region=east,uss=uss2,node=uss2_node1`
+- `region=west,uss=uss2,node=uss2_node2`
+- `region=east,uss=uss3,node=uss3_node3`
+- `region=west,uss=uss3,node=uss3_node3`
+Then, the total number of replicas should be set to at least 6 (2 `region` * 3 `uss`).
+
+If, for some reason specific to your deployment, this is not possible to achieve, you will need to configure specific range constraints on your deployment to ensure survivability. This is however not within the scope of this documentation.
 
 !!! danger "Ordering Constraint"
     The ordering of the `--locality` flag keys must be exactly the same across all CockroachDB nodes in the cluster (e.g., `uss` first, then `node`). Mixing the order (e.g., `node` then `uss` on some nodes) will cause CockroachDB to treat them as incompatible locality hierarchies and fail to apply constraints correctly.
@@ -53,15 +68,15 @@ The `default` range is the cluster-wide catch-all. Any database or table created
 
 ### The `ALTER RANGE` SQL Statement
 
-To configure a 3-replica cluster where exactly one replica lives on each of the three USSs:
+To configure a 3-replica cluster where exactly one replica lives on each of the three USSs, assuming locality is set on each node as described above:
 
 ```sql
 ALTER RANGE default CONFIGURE ZONE USING
   num_replicas = 3,
-  constraints = '{"+uss=uss1": 1, "+uss=uss2": 1, "+uss=uss3": 1}';
+  num_replicas = 3;
 ```
 
 ### Explanation of the Parameters:
 * `num_replicas = 3`: Tells CockroachDB to keep 3 copies of each range.
-* `constraints`: A JSON object specifying per-replica constraints. Do note that specifying this might not always be necessary depending on your deployment.
-    * `"+uss=uss1": 1` tells CockroachDB that exactly one replica must be located on nodes matching the locality `uss=uss1`.
+
+Do note that outside of the default case described in this documentation, you will need to adjust the above SQL query by configuring different ranges and/or setting specific constraints. This is however not within the scope of this documentation.
