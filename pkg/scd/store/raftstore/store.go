@@ -46,6 +46,8 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case searchConstraints, getConstraint, upsertConstraint, deleteConstraint, countConstraints:
+		return r.applyConstraint(ctx, proposal)
 
 	default:
 		handler, ok := operations.Registry[string(proposal.RequestType)]
