@@ -115,8 +115,8 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 				continue
 			}
 
-			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
-			proposalCtx = locality.WithRequestLocality(proposalCtx, commit.Prop.Locality)
+			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
+			proposalCtx = locality.NewContext(proposalCtx, commit.Prop.Locality)
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}

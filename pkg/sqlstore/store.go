@@ -192,7 +192,7 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	err = crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 		// Each retry attempt gets its own timestamp, so that the request timestamp is always "now" for the current attempt.
 		// This is important because the request timestamp is used to generate deterministic IDs, and we want each attempt to have a unique ID.
-		attemptCtx := timestamp.WithRequestTimestamp(ctx, time.Now())
+		attemptCtx := timestamp.NewContext(ctx, time.Now())
 		result, err = s.execute(attemptCtx, s.newRepo(tx), request)
 		return err
 	})
@@ -205,7 +205,7 @@ func (s *Store[R]) transactYugabyte(ctx context.Context, request store.Operation
 	for attempt := 0; attempt <= s.maxRetries; attempt++ {
 		err = pgx.BeginTxFunc(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
 			// See the comment in Transact above: each retry attempt gets its own timestamp.
-			attemptCtx := timestamp.WithRequestTimestamp(ctx, time.Now())
+			attemptCtx := timestamp.NewContext(ctx, time.Now())
 			result, err = s.execute(attemptCtx, s.newRepo(tx), request)
 			return err
 		})

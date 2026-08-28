@@ -506,7 +506,7 @@ func ValidateAndReturnOIRUpsertParams(
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
 func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
-	id, err := scdmodels.NewDeterministicImplicitSubscriptionID(timestamp.MustGetRequestTimestamp(ctx), validParams.ID)
+	id, err := scdmodels.NewDeterministicImplicitSubscriptionID(timestamp.MustFromContext(ctx), validParams.ID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create implicit subscription ID")
 	}
@@ -668,7 +668,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	// Base URL scheme validation is a pre-flight, request-only check performed by the handler
 	// before this action is proposed for consensus; skip it here (allowHTTPBaseUrls: true).

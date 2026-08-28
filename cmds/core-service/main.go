@@ -367,8 +367,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
-	handler = timestamp.RequestTimestampMiddleware(handler)
-	handler = requestlocality.LocalityMiddleware(locality)(handler)
+	handler = timestamp.Middleware(handler)
+	handler = requestlocality.Middleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
