@@ -8,8 +8,8 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/interuss/dss/pkg/scd/actions"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
@@ -28,7 +28,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
-			response = actions.GetDefaultAvailabilityResponse(id)
+			response = operations.GetDefaultAvailabilityResponse(id)
 		} else {
 			// No need to Propagate this error as this is not a useful stacktrace line
 			return restapi.GetUssAvailabilityResponseSet{Response500: &api.InternalServerErrorBody{
@@ -61,7 +61,7 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
-			result = actions.GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(req.UssId))
+			result = operations.GetDefaultAvailabilityResponse(dssmodels.ManagerFromString(req.UssId))
 		} else {
 			err = stacktrace.Propagate(err, "Could not set USS availability status")
 			errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
