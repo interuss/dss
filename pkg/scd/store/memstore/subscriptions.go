@@ -78,7 +78,7 @@ func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*scdmodels.S
 }
 
 func (r *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := &subscriptionRecord{
 		ID:                          s.ID,

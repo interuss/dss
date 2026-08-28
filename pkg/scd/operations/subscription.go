@@ -119,7 +119,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 	}
 
 	// Validate and perhaps correct StartTime and EndTime.
-	if err := subreq.AdjustTimeRange(timestamp.MustGetRequestTimestamp(ctx), old); err != nil {
+	if err := subreq.AdjustTimeRange(timestamp.MustFromContext(ctx), old); err != nil {
 		return nil, stacktrace.Propagate(err, "Error adjusting time range of Subscription")
 	}
 
@@ -373,7 +373,7 @@ func executeQuerySubscriptions(ctx context.Context, repo repos.Repository, reque
 		return nil, stacktrace.Propagate(err, "Error searching Subscriptions in repo")
 	}
 
-	nowMarker := timestamp.MustGetRequestTimestamp(ctx)
+	nowMarker := timestamp.MustFromContext(ctx)
 
 	// Return response to client
 	response := &restapi.QuerySubscriptionsResponse{
