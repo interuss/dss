@@ -22,29 +22,29 @@ func init() {
 	Registry[restapi.GetOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.GetOperationalIntentReferenceRequest],
-		Execute:    ExecuteGetOperationalIntentReference,
+		Execute:    executeGetOperationalIntentReference,
 		IsReadOnly: true,
 	}
 	Registry[restapi.QueryOperationalIntentReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.QueryOperationalIntentReferencesRequest],
-		Execute:    ExecuteQueryOperationalIntentReferences,
+		Execute:    executeQueryOperationalIntentReferences,
 		IsReadOnly: true,
 	}
 	Registry[restapi.DeleteOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.DeleteOperationalIntentReferenceRequest],
-		Execute: ExecuteDeleteOperationalIntentReference,
+		Execute: executeDeleteOperationalIntentReference,
 	}
 	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.CreateOperationalIntentReferenceRequest],
-		Execute: ExecutePutOperationalIntentReference,
+		Execute: executePutOperationalIntentReference,
 	}
 	Registry[restapi.UpdateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.UpdateOperationalIntentReferenceRequest],
-		Execute: ExecutePutOperationalIntentReference,
+		Execute: executePutOperationalIntentReference,
 	}
 }
 
@@ -79,9 +79,9 @@ func SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Rep
 	return false, nil
 }
 
-// ExecuteDeleteOperationalIntentReference deletes a single operational intent ref for a given ID
+// executeDeleteOperationalIntentReference deletes a single operational intent ref for a given ID
 // at the specified version.
-func ExecuteDeleteOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.DeleteOperationalIntentReferenceRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteOperationalIntentReferenceOperationID)
@@ -182,7 +182,7 @@ func ExecuteDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	}, nil
 }
 
-func ExecuteGetOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeGetOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.GetOperationalIntentReferenceRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetOperationalIntentReferenceOperationID)
@@ -210,7 +210,7 @@ func ExecuteGetOperationalIntentReference(ctx context.Context, repo repos.Reposi
 	}, nil
 }
 
-func ExecuteQueryOperationalIntentReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.QueryOperationalIntentReferencesRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryOperationalIntentReferencesOperationID)
@@ -644,9 +644,9 @@ type PutOperationalIntentReferenceResult struct {
 	Conflict *restapi.AirspaceConflictResponse
 }
 
-// ExecutePutOperationalIntentReference inserts or updates an Operational Intent.
+// executePutOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
-func ExecutePutOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executePutOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	var (
 		entityid restapi.EntityID
 		ovn      restapi.EntityOVN
