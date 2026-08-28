@@ -49,6 +49,11 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case getISA, deleteISA, insertISA, updateISA, searchISAs, listExpiredISAs, countISAs:
 		return r.applyISA(ctx, proposal)
 
+	case getSubscription, deleteSubscription, insertSubscription, updateSubscription,
+		searchSubscriptions, searchSubscriptionsByOwner, updateNotificationIdxsInCells,
+		maxSubscriptionCountInCellsByOwner, listExpiredSubscriptions, countSubscriptions:
+		return r.applySubscription(ctx, proposal)
+
 	default:
 		handler, ok := operations.Registry[string(proposal.RequestType)]
 		if !ok {
