@@ -7,8 +7,8 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/interuss/dss/pkg/scd/actions"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -138,18 +138,18 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := actions.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, "", req.Body, a.AllowHTTPBaseUrls)
+	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, "", req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
 	}
-	_, err = actions.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
+	_, err = operations.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
 	if err != nil {
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state"))}}
 	}
 
-	result, err := dssstore.TransactWithResult[repos.Repository, *actions.PutOperationalIntentReferenceResult](ctx, a.Store, req)
+	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -181,18 +181,18 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := actions.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, req.Ovn, req.Body, a.AllowHTTPBaseUrls)
+	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, req.Ovn, req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
 	}
-	_, err = actions.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
+	_, err = operations.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
 	if err != nil {
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state"))}}
 	}
 
-	result, err := dssstore.TransactWithResult[repos.Repository, *actions.PutOperationalIntentReferenceResult](ctx, a.Store, req)
+	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
