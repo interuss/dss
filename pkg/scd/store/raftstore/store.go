@@ -54,6 +54,10 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		listExpiredSubscriptions, countSubscriptions:
 		return r.applySubscription(ctx, proposal)
 
+	case getOperationalIntent, deleteOperationalIntent, upsertOperationalIntent, searchOperationalIntents,
+		getDependentOperationalIntents, listExpiredOperationalIntents, countOperationalIntents:
+		return r.applyOperationalIntent(ctx, proposal)
+
 	default:
 		handler, ok := operations.Registry[string(proposal.RequestType)]
 		if !ok {
