@@ -17,13 +17,13 @@ func init() {
 	Registry[restapi.GetUssAvailabilityOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.GetUssAvailabilityRequest],
-		Execute:    ExecuteGetUssAvailability,
+		Execute:    executeGetUssAvailability,
 		IsReadOnly: true,
 	}
 	Registry[restapi.SetUssAvailabilityOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.SetUssAvailabilityRequest],
-		Execute: ExecuteSetUssAvailability,
+		Execute: executeSetUssAvailability,
 	}
 }
 
@@ -36,7 +36,7 @@ func GetDefaultAvailabilityResponse(id dssmodels.Manager) *restapi.UssAvailabili
 	}
 }
 
-func ExecuteGetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeGetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.GetUssAvailabilityRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetUssAvailabilityOperationID)
@@ -60,7 +60,7 @@ func ExecuteGetUssAvailability(ctx context.Context, repo repos.Repository, reque
 	}, nil
 }
 
-func ExecuteSetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeSetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.SetUssAvailabilityRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.SetUssAvailabilityOperationID)

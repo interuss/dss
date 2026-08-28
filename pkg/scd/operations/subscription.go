@@ -19,33 +19,33 @@ func init() {
 	Registry[restapi.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.CreateSubscriptionRequest],
-		Execute: ExecutePutSubscription,
+		Execute: executePutSubscription,
 	}
 	Registry[restapi.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.UpdateSubscriptionRequest],
-		Execute: ExecutePutSubscription,
+		Execute: executePutSubscription,
 	}
 	Registry[restapi.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.DeleteSubscriptionRequest],
-		Execute: ExecuteDeleteSubscription,
+		Execute: executeDeleteSubscription,
 	}
 	Registry[restapi.GetSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.GetSubscriptionRequest],
-		Execute:    ExecuteGetSubscription,
+		Execute:    executeGetSubscription,
 		IsReadOnly: true,
 	}
 	Registry[restapi.QuerySubscriptionsOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.QuerySubscriptionsRequest],
-		Execute:    ExecuteQuerySubscriptions,
+		Execute:    executeQuerySubscriptions,
 		IsReadOnly: true,
 	}
 }
 
-func ExecutePutSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executePutSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	var (
 		manager        string
 		subscriptionid restapi.SubscriptionID
@@ -253,7 +253,7 @@ func GetOperations(ctx context.Context, r repos.Repository, opIDs []dssmodels.ID
 	return res, nil
 }
 
-func ExecuteDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.DeleteSubscriptionRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteSubscriptionOperationID)
@@ -305,7 +305,7 @@ func ExecuteDeleteSubscription(ctx context.Context, repo repos.Repository, reque
 	return &restapi.DeleteSubscriptionResponse{Subscription: *p}, nil
 }
 
-func ExecuteGetSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeGetSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.GetSubscriptionRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetSubscriptionOperationID)
@@ -349,7 +349,7 @@ func ExecuteGetSubscription(ctx context.Context, repo repos.Repository, request 
 	return &restapi.GetSubscriptionResponse{Subscription: *p}, nil
 }
 
-func ExecuteQuerySubscriptions(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeQuerySubscriptions(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.QuerySubscriptionsRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QuerySubscriptionsOperationID)

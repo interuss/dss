@@ -20,33 +20,33 @@ func init() {
 	Registry[restapi.DeleteConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.DeleteConstraintReferenceRequest],
-		Execute: ExecuteDeleteConstraint,
+		Execute: executeDeleteConstraint,
 	}
 	Registry[restapi.GetConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.GetConstraintReferenceRequest],
-		Execute:    ExecuteGetConstraint,
+		Execute:    executeGetConstraint,
 		IsReadOnly: true,
 	}
 	Registry[restapi.CreateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.CreateConstraintReferenceRequest],
-		Execute: ExecutePutConstraint,
+		Execute: executePutConstraint,
 	}
 	Registry[restapi.UpdateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*restapi.UpdateConstraintReferenceRequest],
-		Execute: ExecutePutConstraint,
+		Execute: executePutConstraint,
 	}
 	Registry[restapi.QueryConstraintReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
 		Decode:     dssstore.DecodeJSON[*restapi.QueryConstraintReferencesRequest],
-		Execute:    ExecuteQueryConstraintReferences,
+		Execute:    executeQueryConstraintReferences,
 		IsReadOnly: true,
 	}
 }
 
-func ExecuteGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.GetConstraintReferenceRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetConstraintReferenceOperationID)
@@ -75,9 +75,9 @@ func ExecuteGetConstraint(ctx context.Context, repo repos.Repository, request ds
 	}, nil
 }
 
-// ExecutePutConstraint inserts or updates a Constraint.
+// executePutConstraint inserts or updates a Constraint.
 // If ovn is empty (""), it will attempt to create a new Constraint.
-func ExecutePutConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executePutConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	var (
 		manager  string
 		entityid restapi.EntityID
@@ -226,7 +226,7 @@ func validateAndReturnConstraintUpsertParams(
 	return valid, nil
 }
 
-func ExecuteQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.QueryConstraintReferencesRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
@@ -266,7 +266,7 @@ func ExecuteQueryConstraintReferences(ctx context.Context, repo repos.Repository
 	return response, nil
 }
 
-func ExecuteDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	req, ok := request.(*restapi.DeleteConstraintReferenceRequest)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteConstraintReferenceOperationID)
