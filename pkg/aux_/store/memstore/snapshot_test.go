@@ -17,7 +17,7 @@ import (
 
 func TestSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	src := newRepo()
 	require.NoError(t, src.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
 	ts := time.Now().UTC()
@@ -40,7 +40,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	src := newRepo()
 	require.NoError(t, src.SaveOwnMetadata(ctx, "dss-1", "https://example.com"))
 	data, err := src.GetSnapshot()

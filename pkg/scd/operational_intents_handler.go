@@ -138,7 +138,7 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, "", req.Body, a.AllowHTTPBaseUrls)
+	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustFromContext(ctx), req.Entityid, "", req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
@@ -181,7 +181,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustGetRequestTimestamp(ctx), req.Entityid, req.Ovn, req.Body, a.AllowHTTPBaseUrls)
+	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustFromContext(ctx), req.Entityid, req.Ovn, req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
