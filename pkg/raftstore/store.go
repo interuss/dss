@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 
+	"github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -40,7 +41,7 @@ type Store[R any] struct {
 	done chan struct{}
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, locality string, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	store := &Store[R]{
@@ -56,7 +57,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 		store.processCommits(ctx, commitC)
 	}()
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, locality, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
@@ -115,6 +116,7 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			}
 
 			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
+			proposalCtx = locality.WithRequestLocality(proposalCtx, commit.Prop.Locality)
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
