@@ -168,7 +168,7 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 // validateConstraintUpsertRequest performs the request validation that can be done ahead of the transaction.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled as a dsserr.BadRequest.
 func validateConstraintUpsertRequest(ctx context.Context, entityid restapi.EntityID, params *restapi.PutConstraintReferenceParameters, allowHTTPBaseUrls bool) error {
-	_, err := operations.ValidateAndReturnConstraintUpsertParams(timestamp.MustGetRequestTimestamp(ctx), entityid, params)
+	_, err := operations.ValidateAndReturnConstraintUpsertParams(timestamp.MustFromContext(ctx), entityid, params)
 	if err != nil {
 		return err
 	}

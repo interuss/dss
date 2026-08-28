@@ -663,7 +663,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	// Base URL scheme validation is a pre-flight, request-only check performed by the handler
 	// before this action is proposed for consensus; skip it here (allowHTTPBaseUrls: true).
