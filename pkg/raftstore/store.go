@@ -2,68 +2,123 @@ package raftstore
 
 import (
 	"context"
-	"sync"
 
+	"github.com/interuss/dss/pkg/locality"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
+	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
-var (
-	sharedConsensus     *consensus.Consensus
-	sharedConsensusOnce sync.Once
-	sharedConsensusErr  error
-)
+type RaftRepo[R any] interface {
+	GetRepo() R
+	// Apply is called on every committed entry. The proposal must be applied atomically.
+	// The any return mirrors store.OperationHandler.Execute: different requests yield different
+	// concrete result types. Callers recover the type via store.TransactWithResult.
+	Apply(ctx context.Context, proposal consensus.Proposal) (any, error)
 
-type Store[R any] struct {
-	newRepo   func() R
-	consensus *consensus.Consensus
+	// GetSnapshot returns a serialized view of current state, suitable
+	// for restoring via RestoreFromSnapshot.
+	GetSnapshot() ([]byte, error)
+
+	// RestoreFromSnapshot replaces all state with the snapshot in data.
+	// data is always the output of a prior GetSnapshot.
+	RestoreFromSnapshot(data []byte) error
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, newRepo func() R) (*Store[R], error) {
-	// scd, rid and aux will share the same consensus instance, so we initialize it once.
-	sharedConsensusOnce.Do(func() {
-		params := raftparams.GetConnectParameters()
-		peers, err := params.PeerMap()
-		if err != nil {
-			sharedConsensusErr = stacktrace.Propagate(err, "failed to parse peer map")
-			return
-		}
+type Store[R any] struct {
+	logger *zap.Logger
 
-		sharedConsensus, sharedConsensusErr = consensus.NewConsensus(ctx, logger, params.ID, peers, params.DataDir, params.SnapshotCatchupEntries)
-		if sharedConsensusErr != nil {
-			sharedConsensusErr = stacktrace.Propagate(sharedConsensusErr, "failed to initialize consensus")
-		}
-	})
-	if sharedConsensusErr != nil {
-		return nil, sharedConsensusErr
+	raftRepo RaftRepo[R]
+	cancel   context.CancelFunc
+	registry map[string]store.OperationHandler[R]
+
+	Consensus *consensus.Consensus
+
+	done chan struct{}
+}
+
+func Init[R any](ctx context.Context, logger *zap.Logger, locality string, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	store := &Store[R]{
+		raftRepo: r,
+		logger:   logging.WithValuesFromContext(ctx, logger),
+		cancel:   cancel,
+		registry: registry,
+		done:     make(chan struct{}),
+	}
+	commitC := make(chan consensus.EntryCommit)
+	go func() {
+		defer close(store.done)
+		store.processCommits(ctx, commitC)
+	}()
+
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, locality, params, r.GetSnapshot, commitC)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
 
-	// TODO: implement
-	sharedConsensus.RegisterStore("provider", func() ([]byte, error) {
-		return nil, nil
-	})
+	store.Consensus = consensusInstance
 
-	return &Store[R]{
-		newRepo:   newRepo,
-		consensus: sharedConsensus,
-	}, nil
+	return store, nil
 }
 
 // Transact proposes the entry to Raft and blocks until it is committed and applied.
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
-	// TODO: implement
-	return nil
+func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest) (any, error) {
+	handler, ok := s.registry[request.OperationID()]
+	if !ok {
+		return nil, stacktrace.NewError("no handler registered for operation %q", request.OperationID())
+	}
+	payload, err := handler.Encode(request)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
+	}
+	return s.Consensus.HandleClientRequest(ctx, consensus.RequestType(request.OperationID()), payload, handler.IsReadOnly)
 }
 
-// Interact returns a repository that can be used to query the store without proposing a Raft entry.
+// Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
-	return s.newRepo(), nil
+	return s.raftRepo.GetRepo(), nil
 }
 
-// Close shuts down the consensus instance.
+// Close shuts down the consensus instance and processCommits loop.
+// TODO: pass a context to Stop then to consensus.Stop (see issue: https://github.com/interuss/dss/issues/1610).
 func (s *Store[R]) Close() error {
-	// TODO: implement
+	s.Consensus.Stop(context.Background())
+	s.cancel()
+	s.logger.Info("waiting for commit processing goroutine to exit")
+	<-s.done
 	return nil
+}
+
+// processCommits reads committed entries from the consensus layer and applies them via Apply.
+func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus.EntryCommit) {
+	for {
+		select {
+		case <-ctx.Done():
+			s.logger.Info("stopping commit processing loop")
+			return
+		case commit, ok := <-commitCh:
+			if !ok {
+				s.logger.Info("commit channel closed, stopping commit processing loop")
+				return
+			}
+
+			if commit.SnapshotData != nil {
+				if err := s.raftRepo.RestoreFromSnapshot(commit.SnapshotData); err != nil {
+					s.logger.Fatal("failed to restore from snapshot", zap.Error(err))
+				}
+				continue
+			}
+
+			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
+			proposalCtx = locality.WithRequestLocality(proposalCtx, commit.Prop.Locality)
+			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
+			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
+		}
+	}
 }

@@ -72,6 +72,7 @@ Flags:
       --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
       --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
       --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
+      --timeout duration   Timeout for the command (default 5m0s)
 
 Global Flags:
       --datastore_application_name string   application name for tagging the connection to the database (default "dss")
@@ -89,6 +90,7 @@ Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
+- `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
 
 ## Regular cleanup
@@ -111,12 +113,14 @@ dss:
                 enableCron: false
                 schedule: "0 2 * * *"
                 ttl: 2688h
+                timeout: ""
                 operationalIntents: true
                 subscriptions: true
             rid:
                 enableCron: true
                 schedule: "*/30 * * * *"
                 ttl: 30m
+                timeout: ""
                 ISAs: true
                 subscriptions: true
 ```
@@ -131,6 +135,7 @@ evict+: {
         enable_cron: false,
         schedule: "0 2 * * *",
         ttl: "2688h",
+        timeout: "",
         operational_intents: true,
         subscriptions: true,
     },
@@ -138,6 +143,7 @@ evict+: {
         enable_cron: true,
         schedule: "*/30 * * * *",
         ttl: "30m",
+        timeout: "",
         ISAs: true,
         subscriptions: true,
     },
@@ -153,11 +159,13 @@ When deploying via terrafrom modules, the parameters are configurable with modul
 | `evict_enable_scd_cron`         | `false`          |
 | `evict_scd_schedule`            | `"0 2 * * *"`    |
 | `evict_scd_ttl`                 | `"2688h"`        |
+| `evict_scd_timeout`             | `""`             |
 | `evict_scd_operational_intents` | `true`           |
 | `evict_scd_subscriptions`       | `true`           |
 | `evict_enable_rid_cron`         | `true`           |
 | `evict_rid_schedule`            | `"*/30 * * * *"` |
 | `evict_rid_ttl`                 | `"30m"`          |
+| `evict_rid_timeout`             | `""`             |
 | `evict_rid_isas`                | `true`           |
 | `evict_rid_subscriptions`       | `true`           |
 

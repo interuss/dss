@@ -6,6 +6,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/ridv2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/models/api/common"
 	"github.com/interuss/stacktrace"
 )
 
@@ -122,6 +123,11 @@ func FromPolygon(polygon *restapi.Polygon) *dssmodels.GeoPolygon {
 	return result
 }
 
+// FromGeoPolygonString converts RID v2 REST model to business object
+func FromGeoPolygonString(area restapi.GeoPolygonString) (*dssmodels.GeoPolygon, error) {
+	return common.FromGeoPolygonString((string)(area))
+}
+
 // FromCircle converts RID v2 REST model to business object
 func FromCircle(circle *restapi.Circle) (*dssmodels.GeoCircle, error) {
 	if circle.Center == nil {
@@ -159,16 +165,6 @@ func ToTime(t *time.Time) *restapi.Time {
 	result := &restapi.Time{
 		Format: "RFC3339",
 		Value:  t.Format(time.RFC3339Nano),
-	}
-
-	return result
-}
-
-// ToLatLngPoint converts latlngpoint business object to RID v2 REST model
-func ToLatLngPoint(pt *dssmodels.LatLngPoint) *restapi.LatLngPoint {
-	result := &restapi.LatLngPoint{
-		Lat: restapi.Latitude(pt.Lat),
-		Lng: restapi.Longitude(pt.Lng),
 	}
 
 	return result

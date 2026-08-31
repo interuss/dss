@@ -9,10 +9,12 @@ resource "local_file" "tanka_config_main" {
     VAR_CLUSTER_CONTEXT                      = var.kubernetes_context_name
     VAR_ENABLE_SCD                           = var.enable_scd
     VAR_ENABLE_SCD_GLOBAL_LOCK               = var.enable_scd_global_lock
+    VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX = var.enable_time_based_notification_index
     VAR_ENABLE_DSS_METRICS                   = var.enable_dss_metrics
     VAR_DB_HOSTNAME_SUFFIX                   = var.db_hostname_suffix
     VAR_LOCALITY                             = var.locality
     VAR_DATASTORE                            = var.datastore_type
+    VAR_DATASTORE_MAX_OPEN_CONNS             = var.datastore_max_open_conns
     VAR_CRDB_NODE_IPS                        = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
     VAR_INGRESS_NAME                         = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
@@ -46,11 +48,13 @@ resource "local_file" "tanka_config_main" {
     VAR_EVICT_ENABLE_SCD_CRON                = var.evict_enable_scd_cron
     VAR_EVICT_SCD_SCHEDULE                   = var.evict_scd_schedule
     VAR_EVICT_SCD_TTL                        = var.evict_scd_ttl
+    VAR_EVICT_SCD_TIMEOUT                    = var.evict_scd_timeout
     VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS = var.evict_scd_operational_intents
     VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS       = var.evict_scd_subscriptions
     VAR_EVICT_ENABLE_RID_CRON                = var.evict_enable_rid_cron
     VAR_EVICT_RID_SCHEDULE                   = var.evict_rid_schedule
     VAR_EVICT_RID_TTL                        = var.evict_rid_ttl
+    VAR_EVICT_RID_TIMEOUT                    = var.evict_rid_timeout
     VAR_EVICT_RID_ENABLE_ISAS                = var.evict_rid_isas
     VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS       = var.evict_rid_subscriptions
     VAR_PROMETHEUS_EXPOSE_EXTERNAL           = var.prometheus_hostname != ""

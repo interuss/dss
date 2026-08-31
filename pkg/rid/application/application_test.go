@@ -13,6 +13,8 @@ import (
 	dssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/sqlstore/params"
+	dssstore "github.com/interuss/dss/pkg/store"
+	"github.com/interuss/stacktrace"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
@@ -35,8 +37,11 @@ func (s *mockRepo) Interact(ctx context.Context) (repos.Repository, error) {
 	return s, nil
 }
 
-func (s *mockRepo) Transact(ctx context.Context, f func(ctx context.Context, repo repos.Repository) error) error {
-	return f(ctx, s)
+func (s *mockRepo) Transact(ctx context.Context, request dssstore.OperationRequest) (any, error) {
+	if fn, ok := request.(*dssstore.FuncOperation[repos.Repository]); ok {
+		return nil, fn.Execute(ctx, s)
+	}
+	return nil, stacktrace.NewError("unsupported operation type %T", request)
 }
 
 func (s *mockRepo) Close() error {

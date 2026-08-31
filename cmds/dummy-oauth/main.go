@@ -55,7 +55,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 	if req.Expire == nil {
 		expireTime = time.Now().Add(time.Hour).Unix()
 	} else {
-		expireTime = int64(*req.Expire)
+		expireTime = *req.Expire
 	}
 
 	var sub string

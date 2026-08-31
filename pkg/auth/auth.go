@@ -91,13 +91,17 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error retrieving JWKS at %s", req.URL)
+		return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Error retrieving JWKS at %s", req.URL)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 400 {
+		return nil, stacktrace.NewErrorWithCode(dsserr.Unavailable, "Error retrieving JWKS at %s: status %d", req.URL, resp.StatusCode)
+	}
 
 	jwks := jose.JSONWebKeySet{}
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
-		return nil, stacktrace.Propagate(err, "Error decoding JWKS")
+		return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Error decoding JWKS")
 	}
 
 	var keys []interface{}
@@ -129,9 +133,10 @@ type Authorizer struct {
 
 // Configuration bundles up creation-time parameters for an Authorizer instance.
 type Configuration struct {
-	KeyResolver       KeyResolver   // Used to initialize and periodically refresh keys.
-	KeyRefreshTimeout time.Duration // Keys are refreshed on this cadence.
-	AcceptedAudiences []string      // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
+	KeyResolver        KeyResolver   // Used to initialize and periodically refresh keys.
+	KeyRefreshInterval time.Duration // Keys are refreshed on this cadence.
+	KeyTTL             time.Duration // Maximum age of the cached keys before a failing refresh becomes fatal.
+	AcceptedAudiences  []string      // AcceptedAudiences enforces the aud keyClaim on the jwt. An empty string allows no aud keyClaim.
 }
 
 // NewRSAAuthorizer returns an Authorizer instance using values from configuration.
@@ -150,17 +155,25 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	}
 
 	go func() {
-		ticker := time.NewTicker(configuration.KeyRefreshTimeout)
+		ticker := time.NewTicker(configuration.KeyRefreshInterval)
 		defer ticker.Stop()
+
+		lastSuccess := time.Now()
 
 		for {
 			select {
 			case <-ticker.C:
 				keys, err := configuration.KeyResolver.ResolveKeys(ctx)
 				if err != nil {
-					logger.Panic("failed to refresh key", zap.Error(err))
+					if stacktrace.GetCode(err) != dsserr.Unavailable || time.Since(lastSuccess) >= configuration.KeyTTL {
+						logger.Panic("failed to refresh key", zap.Error(err))
+					} else {
+						logger.Error("failed to refresh key, using cached keys", zap.Error(err))
+					}
+					continue
 				}
 
+				lastSuccess = time.Now()
 				authorizer.setKeys(keys)
 			case <-ctx.Done():
 				logger.Warn("finalizing key refresh worker", zap.Error(ctx.Err()))

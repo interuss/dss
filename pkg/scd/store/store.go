@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/interuss/dss/pkg/scd/repos"
+	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
 	scdraftstore "github.com/interuss/dss/pkg/scd/store/raftstore"
 	scdsqlstore "github.com/interuss/dss/pkg/scd/store/sqlstore"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -17,13 +18,15 @@ import (
 type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the scd store backend.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, globalLock bool) (Store, error) {
+func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool, locality string) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
 	case params.SQLStoreType:
-		return scdsqlstore.Init(ctx, logger, withCheckCron, globalLock)
+		return scdsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
-		return scdraftstore.Init(ctx, logger)
+		return scdraftstore.Init(ctx, logger, locality)
+	case params.MemStoreType:
+		return scdmemstore.Init(ctx, logger)
 	default:
 		return nil, stacktrace.NewError("Unsupported store type %q for scd", storeType)
 	}

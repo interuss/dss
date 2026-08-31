@@ -57,6 +57,7 @@ spec:
             - --datastore_host={{ $datastoreHost }}
             - --datastore_port={{ $datastorePort }}
             - --datastore_user={{ $datastoreUser }}
+            - --datastore_max_open_conns={{$dss.conf.datastoreMaxOpenConns | default 4}}
 {{ if $.Values.cockroachdb.enabled }}
             - --datastore_ssl_dir=/cockroach/cockroach-certs
             - --datastore_ssl_mode=verify-full
@@ -67,6 +68,9 @@ spec:
             - --dump_requests=true
             - --enable_scd={{$dss.conf.enableScd}}
             - --enable_scd_global_lock={{$dss.conf.enableScdGlobalLock | default false}}
+{{ if $dss.conf.enableTimeBasedNotificationIndex }}
+            - --enable_time_based_notification_index=true
+{{ end }}
 {{ if $dss.conf.enableDssMetrics }}
             - --enable_metrics=true
 {{ end }}

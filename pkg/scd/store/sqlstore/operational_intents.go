@@ -12,9 +12,6 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgtype"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -66,8 +63,8 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 		cids            []int64
 		ussRequestedOVN pgtype.Text
 		pastOVNs        []string
+		availability    pgtype.Text
 	)
-	ussAvailabilities := map[dssmodels.Manager]scdmodels.UssAvailabilityState{}
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
@@ -88,6 +85,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&cids,
 			&ussRequestedOVN,
 			&pastOVNs,
+			&availability,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
@@ -108,26 +106,14 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 		}
 
 		o.SetCells(cids)
-		ussAvailabilities[o.Manager] = scdmodels.UssAvailabilityStateUnknown
+		o.UssAvailability = scdmodels.UssAvailabilityStateUnknown
+		if availability.Valid {
+			o.UssAvailability = scdmodels.UssAvailabilityState(availability.String)
+		}
 		payload = append(payload, o)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
-	}
-
-	for manager := range ussAvailabilities {
-		ussAvailability, err := s.GetUssAvailability(ctx, manager)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			return nil, stacktrace.Propagate(err, "Error getting USS availability of %s", manager)
-		}
-
-		if ussAvailability != nil {
-			ussAvailabilities[manager] = ussAvailability.Availability
-		}
-	}
-
-	for _, op := range payload {
-		op.UssAvailability = ussAvailabilities[op.Manager]
 	}
 
 	return payload, nil
@@ -149,10 +135,12 @@ func (s *repo) fetchOperationalIntent(ctx context.Context, q dsssql.Queryable, q
 
 func (s *repo) fetchOperationByID(ctx context.Context, q dsssql.Queryable, id dssmodels.ID) (*scdmodels.OperationalIntent, error) {
 	query := fmt.Sprintf(`
-		SELECT %s FROM
+        SELECT %s, scd_uss_availability.availability FROM
 			scd_operations
+		LEFT JOIN scd_uss_availability
+			ON scd_operations.owner = scd_uss_availability.id
 		WHERE
-			id = $1`, operationFieldsWithoutPrefix)
+			scd_operations.id = $1`, operationFieldsWithPrefix)
 	uid, err := id.PgUUID()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert id to PgUUID")
@@ -196,6 +184,7 @@ func (s *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
 	var (
 		upsertOperationsQuery = fmt.Sprintf(`
+            WITH upserted AS (
 			INSERT INTO
 				scd_operations
 				(%s)
@@ -216,9 +205,14 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 					uss_requested_ovn = $12,
 					past_ovns = $13
 				RETURNING
-					%s`,
+					%s
+            )
+			SELECT upserted.*, scd_uss_availability.availability
+			FROM upserted
+			LEFT JOIN scd_uss_availability
+				ON upserted.owner = scd_uss_availability.id`,
 			operationFieldsWithoutPrefix,
-			operationFieldsWithPrefix,
+			operationFieldsWithoutPrefix,
 		)
 	)
 
@@ -279,11 +273,13 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
-				%s
+				%s, scd_uss_availability.availability
 			FROM
 				scd_operations
+			LEFT JOIN scd_uss_availability
+				ON scd_operations.owner = scd_uss_availability.id
 			WHERE
-				cells && $1
+				scd_operations.cells && $1
 			AND
 				COALESCE(scd_operations.altitude_upper >= $2, true)
 			AND
@@ -364,9 +360,11 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
 	expiredOpIntentsQuery := fmt.Sprintf(`
         SELECT
-            %s
+            %s, scd_uss_availability.availability
         FROM
             scd_operations
+        LEFT JOIN scd_uss_availability
+            ON scd_operations.owner = scd_uss_availability.id
         WHERE
             scd_operations.ends_at IS NOT NULL AND scd_operations.ends_at <= $1
             OR

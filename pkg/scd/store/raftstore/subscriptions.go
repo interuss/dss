@@ -27,8 +27,12 @@ func (r *repo) DeleteSubscription(_ context.Context, id dssmodels.ID) error {
 	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteSubscription not implemented for raftstore")
 }
 
-func (r *repo) IncrementNotificationIndices(_ context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "IncrementNotificationIndices not implemented for raftstore")
+func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "IncrementNotificationIndicesForOperationalIntents not implemented for raftstore")
+}
+
+func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "IncrementNotificationIndicesForConstraints not implemented for raftstore")
 }
 
 func (r *repo) LockSubscriptionsOnCells(_ context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {

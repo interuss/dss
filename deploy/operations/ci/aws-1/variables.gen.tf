@@ -53,6 +53,20 @@ variable "aws_iam_permissions_boundary" {
 }
 
 
+variable "aws_create_storage_class" {
+  type        = bool
+  description = <<-EOT
+  Create storage class in cluster.
+
+  For now, create a gp3 storage class in the cluster and set it as the default one.
+
+  Example: `true`
+  EOT
+
+  default = true
+}
+
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
@@ -153,11 +167,10 @@ variable "aws_kubernetes_storage_class" {
 
   Depending on your use case, performance may be significantly improved with higher-tier storage classes, though this should be balanced against the associated costs.
 
-  Both CockroachDB and YugabyteDB recommend at least `gp3` for production workloads. Use `gp2` for testing only, or consider `io2` for high-throughput scenarios.
+  Both CockroachDB and YugabyteDB recommend at least `gp3` for production workloads. Consider `io2` for high-throughput scenarios.
 
   See https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#aws and https://docs.yugabyte.com/stable/deploy/checklist/#amazon-web-services-aws for database-specific recommendations.
 
-  Example: `gp3` for production and `gp2` for development.
   EOT
 }
 
@@ -302,6 +315,13 @@ variable "enable_scd_global_lock" {
 }
 
 
+variable "enable_time_based_notification_index" {
+  type        = bool
+  description = "Set this boolean to true to use a time-based notification index when working with RID and SCD subscriptions. Must be enabled on all instances part of the pool."
+  default     = false
+}
+
+
 variable "should_init" {
   type        = bool
   description = <<-EOT
@@ -393,6 +413,13 @@ variable "locality" {
     condition     = var.locality != ""
     error_message = "Locality value must be set"
   }
+}
+
+
+variable "datastore_max_open_conns" {
+  type        = number
+  description = "Maximum number of open connections to the datastore."
+  default     = 4
 }
 
 
@@ -514,6 +541,19 @@ variable "evict_scd_ttl" {
 }
 
 
+variable "evict_scd_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the SCD eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -566,6 +606,19 @@ variable "evict_rid_ttl" {
   EOT
 
   default = "30m"
+}
+
+
+variable "evict_rid_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the RID eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
 }
 
 

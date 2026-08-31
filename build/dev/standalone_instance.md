@@ -22,6 +22,12 @@ sandbox environment consisting of:
   http://localhost:8085/token externally to generate dummy JWT access tokens
   that validate against [the auth2.pem public key](../test-certs/auth2.pem)
 
+The optional `with-monitoring` profile also provides:
+
+* Prometheus for collecting DSS metrics
+* Grafana with the DSS metrics dashboard already configured
+* Jaeger for collecting and viewing DSS traces
+
 ## Prerequisites
 
 * Install [Docker](https://docs.docker.com/v17.12/install/)
@@ -98,6 +104,29 @@ The default option is `up --build` which forces to re-build the local deployment
 The system can be removed entirely with `run_locally.sh down`.
 See all `docker compose` verbs
 [here](https://docs.docker.com/compose/reference/overview/).
+
+### Monitoring
+
+To include the local metrics and tracing tools, enable the `with-monitoring`
+Docker Compose profile:
+
+```bash
+COMPOSE_PROFILES=with-monitoring ./run_locally.sh
+```
+
+The profile enables metrics and tracing in the DSS Core Service and provides:
+
+* DSS metrics dashboard in Grafana: http://localhost:3000 (username and password:
+  `admin`)
+* Prometheus: http://localhost:9090
+* Jaeger: http://localhost:16686
+
+To use the Yugabyte datastore and monitoring tools together, enable both
+profiles:
+
+```bash
+COMPOSE_PROFILES=with-yugabyte,with-monitoring ./run_locally.sh
+```
 
 ## Database migration and versioning
 

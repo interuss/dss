@@ -14,13 +14,13 @@ func NewObserver() (*zap.Logger, *observer.ObservedLogs) {
 }
 
 func RequireNoLogging(t *testing.T, logs *observer.ObservedLogs) {
-	require.Equal(t, len(logs.All()), 0)
+	require.Empty(t, logs.All())
 }
 
 func RequireDeprecationWarning(t *testing.T, logs *observer.ObservedLogs) {
 	entry := logs.All()[0]
-	require.Equal(t, entry.Level, zap.WarnLevel)
-	require.Equal(t, entry.Message, "DEPRECATED: enable_http has been renamed to allow_http_base_urls.")
+	require.Equal(t, zap.WarnLevel, entry.Level)
+	require.Equal(t, "DEPRECATED: enable_http has been renamed to allow_http_base_urls.", entry.Message)
 }
 
 func TestHttpDeprecationDoesNothingWhenBothFlagsAreOff(t *testing.T) {
@@ -29,7 +29,7 @@ func TestHttpDeprecationDoesNothingWhenBothFlagsAreOff(t *testing.T) {
 	oldFlag := new(bool)
 	SetDeprecatingHttpFlag(logger, &newFlag, &oldFlag)
 	RequireNoLogging(t, logs)
-	require.False(t, newFlag == oldFlag)
+	require.NotSame(t, newFlag, oldFlag)
 	require.False(t, *newFlag)
 	require.False(t, *oldFlag)
 }
@@ -41,7 +41,7 @@ func TestHttpDeprecationDoesNothingWhenNewFlagIsOn(t *testing.T) {
 	*newFlag = true
 	SetDeprecatingHttpFlag(logger, &newFlag, &oldFlag)
 	RequireNoLogging(t, logs)
-	require.False(t, newFlag == oldFlag)
+	require.NotSame(t, newFlag, oldFlag)
 	require.True(t, *newFlag)
 	require.False(t, *oldFlag)
 }
@@ -53,7 +53,7 @@ func TestHttpDeprecationReassignsAddressWhenOldFlagIsOn(t *testing.T) {
 	*oldFlag = true
 	SetDeprecatingHttpFlag(logger, &newFlag, &oldFlag)
 	RequireDeprecationWarning(t, logs)
-	require.True(t, newFlag == oldFlag)
+	require.Same(t, newFlag, oldFlag)
 	require.True(t, *newFlag)
 	require.True(t, *oldFlag)
 }
@@ -66,7 +66,7 @@ func TestHttpDeprecationPrefersNewFlagWhenBothAreOn(t *testing.T) {
 	*oldFlag = true
 	SetDeprecatingHttpFlag(logger, &newFlag, &oldFlag)
 	RequireDeprecationWarning(t, logs)
-	require.False(t, newFlag == oldFlag)
+	require.NotSame(t, newFlag, oldFlag)
 	require.True(t, *newFlag)
 	require.True(t, *oldFlag)
 }

@@ -9,8 +9,10 @@
   single_cluster: false,
   enableScd: false,
   enableScdGlobalLock: false,
+  enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
   datastore: 'cockroachdb',
+  datastoreMaxOpenConns: 4,
   locality: error 'must supply locality',
   cockroach: {
     locality: '',
@@ -88,8 +90,8 @@
   schema_manager: {
     enable: false, // NB: Automatically enabled if should_init is set to true.
     image: error 'must specify image',
-    desired_rid_db_version: '4.0.0',
-    desired_scd_db_version: '3.3.0',
+    desired_rid_db_version: '4.1.0',
+    desired_scd_db_version: '3.4.1',
     desired_aux_db_version: '1.1.0',
   },
   evict: {
@@ -97,6 +99,7 @@
       enable_cron: false,
       schedule: "0 2 * * *",
       ttl: "2688h",
+      timeout: "",
       operational_intents: true,
       subscriptions: true,
     },
@@ -104,6 +107,7 @@
       enable_cron: true,
       schedule: "*/30 * * * *",
       ttl: "30m",
+      timeout: "",
       ISAs: true,
       subscriptions: true,
     },

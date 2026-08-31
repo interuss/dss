@@ -92,7 +92,7 @@ func TestIDFromString(t *testing.T) {
 func scanIntoUUID(t *testing.T, id ID) *pgtype.UUID {
 	uuid := pgtype.UUID{}
 	err := uuid.Scan(id.String())
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	return &uuid
 }
 

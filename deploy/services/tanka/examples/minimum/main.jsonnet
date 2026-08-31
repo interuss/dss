@@ -12,8 +12,10 @@ local metadata = metadataBase {
   single_cluster: false,
   enableScd: false, // <-- This boolean value is VAR_ENABLE_SCD
   enableScdGlobalLock: false, // <-- This boolean value is VAR_ENABLE_SCD_GLOBAL_LOCK
+  enableTimeBasedNotificationIndex: false, // <-- This boolean value is VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX
   enableDssMetrics: false, // <-- This boolean value is VAR_ENABLE_DSS_METRICS
   datastore: 'VAR_DATASTORE',
+  datastoreMaxOpenConns: 4, // <-- This integer value is VAR_DATASTORE_MAX_OPEN_CONNS
   locality: 'VAR_LOCALITY',
   cockroach+: {
     image: 'VAR_CRDB_DOCKER_IMAGE_NAME',
@@ -59,8 +61,8 @@ local metadata = metadataBase {
   schema_manager+: {
     enable: false, // <-- this boolean value is VAR_ENABLE_SCHEMA_MANAGER
     image: 'VAR_DOCKER_IMAGE_NAME',
-    desired_rid_db_version: '4.0.0',
-    desired_scd_db_version: '3.3.0',
+    desired_rid_db_version: '4.1.0',
+    desired_scd_db_version: '3.4.1',
     desired_aux_db_version: '1.1.0',
   },
   prometheus+: {
@@ -71,6 +73,7 @@ local metadata = metadataBase {
       enable_cron: false, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
       schedule: "VAR_EVICT_SCD_SCHEDULE",
       ttl: "VAR_EVICT_SCD_TTL",
+      timeout: "VAR_EVICT_SCD_TIMEOUT",
       operational_intents: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS
     },
@@ -78,6 +81,7 @@ local metadata = metadataBase {
       enable_cron: true, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
       schedule: "VAR_EVICT_RID_SCHEDULE",
       ttl: "VAR_EVICT_RID_TTL",
+      timeout: "VAR_EVICT_RID_TIMEOUT",
       ISAs: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_ISAS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS
     },

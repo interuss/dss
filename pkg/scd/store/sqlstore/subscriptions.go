@@ -3,6 +3,8 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"math/bits"
+	"slices"
 	"strings"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
+	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 
@@ -93,6 +96,10 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 			return nil, stacktrace.Propagate(err, "Error generating Subscription version")
 		}
 		s.SetCells(cids)
+
+		if c.timeBasedNotificationIndex {
+			s.NotificationIndex = dsssql.MillisSinceMidnight()
+		}
 		payload = append(payload, s)
 	}
 	if err = rows.Err(); err != nil {
@@ -198,6 +205,11 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.StartTime,
 		s.EndTime,
 		cids)
+
+	if c.timeBasedNotificationIndex {
+		s.NotificationIndex = dsssql.MillisSinceMidnight()
+	}
+
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
 	}
@@ -293,53 +305,150 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	return subscriptions, nil
 }
 
-// Implements scd.repos.Subscription.IncrementNotificationIndices
-func (c *repo) IncrementNotificationIndices(ctx context.Context, subscriptionIds []dssmodels.ID) ([]int, error) {
-	var updateQuery = `
-			UPDATE scd_subscriptions
-			SET notification_index = notification_index + 1
-			WHERE id = ANY($1)
-			RETURNING id, notification_index`
+// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in v4d that
+// want operational intent notifications, increments their notification index and returns
+// them with the new index..
+func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
 
-	ids := make([]string, len(subscriptionIds))
-	for i, id := range subscriptionIds {
-		ids[i] = id.String()
+	var query string
+
+	if c.timeBasedNotificationIndex {
+		query = fmt.Sprintf(`
+                SELECT
+                    %s
+                FROM
+                    scd_subscriptions
+                    WHERE
+                        cells && $1
+                    AND
+                        COALESCE(starts_at <= $3, true)
+                    AND
+                        COALESCE(ends_at >= $2, true)
+                    AND
+                        notify_for_operations
+                    `, subscriptionFieldsWithPrefix)
+	} else {
+
+		query = fmt.Sprintf(`
+		UPDATE
+			scd_subscriptions
+		SET
+			notification_index = notification_index + 1
+		WHERE
+			cells && $1
+		AND
+			COALESCE(starts_at <= $3, true)
+		AND
+			COALESCE(ends_at >= $2, true)
+		AND
+			notify_for_operations
+		RETURNING
+			%s`, subscriptionFieldsWithoutPrefix)
+
 	}
 
-	rows, err := c.q.Query(ctx, updateQuery, ids)
+	cells, err := v4d.CalculateSpatialCovering()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in query: %s", updateQuery)
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
 	}
-	defer rows.Close()
+	if len(cells) == 0 {
+		return nil, nil
+	}
+	return c.fetchSubscriptions(ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
 
-	indices := make(map[dssmodels.ID]int)
-	for rows.Next() {
-		var id string
-		var notificationIndex int
-		err := rows.Scan(&id, &notificationIndex)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error scanning notification index row")
+}
+
+// IncrementNotificationIndicesForConstraints finds the Subscriptions in v4d that want
+// constraint notifications, increments their notification index and returns them with the
+// new index.
+func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+
+	var query string
+
+	if c.timeBasedNotificationIndex {
+		query = fmt.Sprintf(`
+                SELECT
+                    %s
+                FROM
+                    scd_subscriptions
+                    WHERE
+                        cells && $1
+                    AND
+                        COALESCE(starts_at <= $3, true)
+                    AND
+                        COALESCE(ends_at >= $2, true)
+                    AND
+                        notify_for_constraints
+                    `, subscriptionFieldsWithPrefix)
+	} else {
+
+		query = fmt.Sprintf(`
+		UPDATE
+			scd_subscriptions
+		SET
+			notification_index = notification_index + 1
+		WHERE
+			cells && $1
+		AND
+			COALESCE(starts_at <= $3, true)
+		AND
+			COALESCE(ends_at >= $2, true)
+		AND
+			notify_for_constraints
+		RETURNING
+			%s`, subscriptionFieldsWithoutPrefix)
+
+	}
+
+	cells, err := v4d.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
+	}
+	if len(cells) == 0 {
+		return nil, nil
+	}
+
+	return c.fetchSubscriptions(
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
+}
+
+// lockStripes is the number of rows of the scd_locks table used by the hash lock option, cells
+// being mapped to one of those rows. Its value is a compromise between lock contention
+// (the more stripes, the less unrelated cells share the same one) and the size of the scd_locks
+// table. It is fixed by the migrations creating those rows and cannot be changed without a matching migration.
+const lockStripes = 65536
+
+var lockStripeShift = 64 - bits.Len64(lockStripes-1)
+
+// FibonacciHashMultiplier is 2^64/φ, φ being the golden ratio, as used by Fibonacci hashing:
+// https://en.wikipedia.org/wiki/Fibonacci_hashing
+// This multiplier uniformly distributes over the table space blocks of consecutive keys with
+// respect to any block of bits of the key, including the high bits to speads cells evenly.
+const FibonacciHashMultiplier = 0x9e3779b97f4a7c15
+
+// cellLockKeys maps a cell union to the deduplicated scd_locks keys covering it. The returned keys
+// are sorted so that all transactions acquire the locks in the same order, preventing deadlocks.
+func cellLockKeys(cells s2.CellUnion) []int64 {
+	seen := make(map[int64]struct{}, len(cells))
+	keys := make([]int64, 0, len(cells))
+	for _, cell := range cells {
+		k := int64((uint64(cell) * FibonacciHashMultiplier) >> lockStripeShift) // Use high bits since entropy is higher on thoses
+		if _, ok := seen[k]; ok {
+			continue
 		}
-		indices[dssmodels.ID(id)] = notificationIndex
+		seen[k] = struct{}{}
+		keys = append(keys, k)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, stacktrace.Propagate(err, "Error in rows query result")
-	}
-
-	if len(indices) != len(subscriptionIds) {
-		return nil, stacktrace.NewError(
-			"Expected %d notification_index results when incrementing but got %d instead",
-			len(subscriptionIds), len(indices))
-	}
-
-	orderedIndices := make([]int, 0, len(indices))
-	for _, id := range subscriptionIds {
-		orderedIndices = append(orderedIndices, indices[id])
-	}
-	return orderedIndices, nil
+	slices.Sort(keys)
+	return keys
 }
 
 func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
+
+	if c.timeBasedNotificationIndex && c.version.Type == sqlstore.CockroachDB { // No lock when working with timeBasedNotificationIndex on CockroachDB
+		return nil
+	}
+
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
 	if c.globalLock {
@@ -369,6 +478,53 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 				zap.Bool("global_lock", true),
 				zap.Duration("duration", duration),
 				zap.Int("cell_count", len(cells)),
+				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+			)
+		}
+
+		return nil
+
+	}
+
+	if c.hashLock {
+
+		const query = `
+		SELECT key FROM scd_locks WHERE key = ANY($1) FOR UPDATE`
+		const idQuery = `
+		SELECT id FROM scd_subscriptions WHERE id = ANY($1) FOR UPDATE`
+
+		ids := make([]string, len(subscriptionIds))
+		for i, id := range subscriptionIds {
+			ids[i] = id.String()
+		}
+
+		slices.Sort(ids)
+		start := time.Now()
+
+		keys := cellLockKeys(cells)
+
+		_, err := c.q.Exec(ctx, query, keys)
+		if err == nil && len(ids) > 0 {
+			_, err = c.q.Exec(ctx, idQuery, ids)
+		}
+		duration := time.Since(start)
+		if err != nil {
+			logger.Warn("SCD subscription lock query failed",
+				zap.Duration("duration", duration),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("hashed_cell_count", len(keys)),
+				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
+				zap.Error(err),
+			)
+			return stacktrace.Propagate(err, "Error in query: %s", query)
+		}
+
+		if duration >= lockQuerySlowThreshold {
+			logger.Warn("Expensive SCD lock detected",
+				zap.Bool("global_lock", false),
+				zap.Duration("duration", duration),
+				zap.Int("cell_count", len(cells)),
+				zap.Int("hashed_cell_count", len(keys)),
 				zap.Int("explicit_subscription_id_count", len(subscriptionIds)),
 			)
 		}

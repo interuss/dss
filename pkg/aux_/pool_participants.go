@@ -8,6 +8,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
 	"github.com/interuss/dss/pkg/aux_/models"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -76,7 +77,7 @@ func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutD
 		return resp
 	}
 
-	if req.Source == nil {
+	if req.Source == nil || *req.Source == "" {
 		resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Source not set"))}
 		return resp
 	}
@@ -94,6 +95,9 @@ func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutD
 			return resp
 		}
 		heartbeat.Timestamp = &ts
+	} else {
+		now := timestamp.MustGetRequestTimestamp(ctx)
+		heartbeat.Timestamp = &now
 	}
 
 	if req.NextHeartbeatExpectedBefore != nil {
@@ -103,6 +107,11 @@ func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutD
 			return resp
 		}
 		heartbeat.NextHeartbeatExpectedBefore = &ts
+
+		if heartbeat.NextHeartbeatExpectedBefore.Before(*heartbeat.Timestamp) {
+			resp.Response400 = &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Cannot expect the timestamp of the next heartbeat before the timestamp of the new heartbeat"))}
+			return resp
+		}
 	}
 
 	err = repo.RecordHeartbeat(ctx, heartbeat)

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: DSS
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: true
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

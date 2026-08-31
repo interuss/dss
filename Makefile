@@ -247,8 +247,8 @@ dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss down-locall
 
 .PHONY: evaluate-tanka
 evaluate-tanka:
-	docker container run -v $(CURDIR)/deploy/services/tanka:/deploy/services/tanka grafana/tanka show --dangerous-allow-redirect /deploy/services/tanka/examples/minimum
-	docker container run -v $(CURDIR)/deploy/services/tanka:/deploy/services/tanka grafana/tanka show --dangerous-allow-redirect /deploy/services/tanka/examples/schema_manager
+	docker container run --rm -v $(CURDIR)/deploy/services/tanka:/deploy/services/tanka grafana/tanka show --dangerous-allow-redirect /deploy/services/tanka/examples/minimum
+	docker container run --rm -v $(CURDIR)/deploy/services/tanka:/deploy/services/tanka grafana/tanka show --dangerous-allow-redirect /deploy/services/tanka/examples/schema_manager
 
 # This reproduces the entire continuous integration workflow (.github/workflows/ci.yml)
 .PHONY: presubmit

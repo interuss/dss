@@ -1,6 +1,7 @@
 nav:
   - "Overview": index.md
   - "Architecture": architecture.md
+  - "Sizing": sizing.md
   - "Pooling": pooling.md
   - "Pooling: YugabyteDB specifics": pooling-yugabyte.md
   - "Pooling: CRDB specifics": pooling-crdb.md

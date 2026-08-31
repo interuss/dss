@@ -304,6 +304,13 @@ variable "enable_scd_global_lock" {
 }
 
 
+variable "enable_time_based_notification_index" {
+  type        = bool
+  description = "Set this boolean to true to use a time-based notification index when working with RID and SCD subscriptions. Must be enabled on all instances part of the pool."
+  default     = false
+}
+
+
 variable "should_init" {
   type        = bool
   description = <<-EOT
@@ -395,6 +402,13 @@ variable "locality" {
     condition     = var.locality != ""
     error_message = "Locality value must be set"
   }
+}
+
+
+variable "datastore_max_open_conns" {
+  type        = number
+  description = "Maximum number of open connections to the datastore."
+  default     = 4
 }
 
 
@@ -516,6 +530,19 @@ variable "evict_scd_ttl" {
 }
 
 
+variable "evict_scd_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the SCD eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -568,6 +595,19 @@ variable "evict_rid_ttl" {
   EOT
 
   default = "30m"
+}
+
+
+variable "evict_rid_timeout" {
+  type        = string
+  description = <<-EOT
+  Timeout of the RID eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+  Leave empty to use the default value of the command.
+
+  Example: `10m`
+  EOT
+
+  default = ""
 }
 
 

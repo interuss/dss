@@ -112,7 +112,7 @@ func VersionFromString(s string) (*Version, error) {
 	}
 	v := &Version{s: s}
 
-	nanos, err := strconv.ParseInt(string(s), versionBase, 64)
+	nanos, err := strconv.ParseInt(s, versionBase, 64)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error parsing version to integer")
 	}

@@ -12,8 +12,10 @@ local metadata = metadataBase {
   single_cluster: false,
   enableScd: ${VAR_ENABLE_SCD}, // <-- This boolean value is VAR_ENABLE_SCD
   enableScdGlobalLock: ${VAR_ENABLE_SCD_GLOBAL_LOCK}, // <-- This boolean value is VAR_ENABLE_SCD_GLOBAL_LOCK
+  enableTimeBasedNotificationIndex: ${VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX}, // <-- This boolean value is VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX
   enableDssMetrics: ${VAR_ENABLE_DSS_METRICS}, // <-- This boolean value is VAR_ENABLE_DSS_METRICS
   datastore: '${VAR_DATASTORE}',
+  datastoreMaxOpenConns: ${VAR_DATASTORE_MAX_OPEN_CONNS},
   locality: '${VAR_LOCALITY}',
   cockroach+: {
     image: '${VAR_CRDB_DOCKER_IMAGE_NAME}',
@@ -72,6 +74,7 @@ local metadata = metadataBase {
       enable_cron: ${VAR_EVICT_ENABLE_SCD_CRON},
       schedule: "${VAR_EVICT_SCD_SCHEDULE}",
       ttl: "${VAR_EVICT_SCD_TTL}",
+      timeout: "${VAR_EVICT_SCD_TIMEOUT}",
       operational_intents: ${VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS},
       subscriptions: ${VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS},
     },
@@ -79,6 +82,7 @@ local metadata = metadataBase {
       enable_cron: ${VAR_EVICT_ENABLE_RID_CRON},
       schedule: "${VAR_EVICT_RID_SCHEDULE}",
       ttl: "${VAR_EVICT_RID_TTL}",
+      timeout: "${VAR_EVICT_RID_TIMEOUT}",
       ISAs: ${VAR_EVICT_RID_ENABLE_ISAS},
       subscriptions: ${VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS},
     },

@@ -8,6 +8,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -23,10 +24,6 @@ const (
 // the repo layer.
 type SubscriptionApp interface {
 	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
-
-	// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
-	// Returns the delete Subscription and all IdentificationServiceAreas affected by the delete.
-	DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error)
 
 	// InsertSubscription inserts or updates an Subscription.
 	InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
@@ -60,7 +57,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		return nil, stacktrace.Propagate(err, "Unable to adjust time range")
 	}
 	var sub *ridmodels.Subscription
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
 
 		// ensure it doesn't exist yet
 		old, err := repo.GetSubscription(ctx, s.ID)
@@ -90,7 +87,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 		}
 
 		return nil
-	})
+	}))
 	return sub, err
 }
 
@@ -98,7 +95,7 @@ func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription)
 func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	var sub *ridmodels.Subscription
 
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := a.store.Transact(ctx, store.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
 		old, err := repo.GetSubscription(ctx, s.ID)
 		switch {
 		case err != nil:
@@ -138,36 +135,6 @@ func (a *app) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription)
 			return stacktrace.Propagate(err, "Error updating Subscription in repo")
 		}
 		return nil
-	})
+	}))
 	return sub, err
-}
-
-// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
-func (a *app) DeleteSubscription(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.Subscription, error) {
-	var ret *ridmodels.Subscription
-	err := a.store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
-		var err error
-		old, err := repo.GetSubscription(ctx, id)
-		switch {
-		case err != nil:
-			return stacktrace.Propagate(err, "Error getting Subscription from repo")
-		case old == nil:
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
-		case !version.Matches(old.Version):
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", version),
-				"Subscription currently at version %s but client specified %s", old.Version, version)
-		case old.Owner != owner:
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-				"Subscription owned by %s, but %s attempted to delete", old.Owner, owner)
-		}
-
-		ret, err = repo.DeleteSubscription(ctx, old)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error deleting Subscription from repo")
-		}
-		return nil
-	})
-	return ret, err
 }

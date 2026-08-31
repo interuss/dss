@@ -25,7 +25,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newTestStore(ctx, t, connectParameters)
+	store, err := newTestStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, cleanUp(ctx, store))
@@ -33,8 +33,8 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*sqlstore.Store[repos.Repository], error) {
-	s, err := Init(ctx, logging.Logger, false, false)
+func newTestStore(ctx context.Context) (*sqlstore.Store[repos.Repository], error) {
+	s, err := Init(ctx, logging.Logger, false)
 
 	if err != nil {
 		return nil, err

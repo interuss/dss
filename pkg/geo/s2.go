@@ -1,11 +1,7 @@
 package geo
 
 import (
-	"bufio"
-	"bytes"
 	"math"
-	"strconv"
-	"strings"
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
@@ -49,22 +45,6 @@ func ValidateCell(cell s2.CellID) error {
 		return stacktrace.NewError("Cells must be at level 13 at current implementation")
 	}
 	return nil
-}
-
-func splitAtComma(data []byte, atEOF bool) (int, []byte, error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-
-	if i := bytes.IndexByte(data, ','); i >= 0 {
-		return i + 1, data[:i], nil
-	}
-
-	if atEOF {
-		return len(data), data, nil
-	}
-
-	return 0, nil, nil
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts
@@ -133,51 +113,4 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 		return RegionCoverer.Covering(&pl), nil
 	}
 	return RegionCoverer.Covering(loop), nil
-}
-
-// AreaToCellIDs parses "area" in the format 'lat0,lon0,lat1,lon1,...'
-// and returns the resulting s2.CellUnion, or else:
-// * ErrOddNumberOfCoordinatesInAreaString
-// * ErrNotEnoughPointsInPolygon
-// * ErrBadCoordSet
-//
-// TODO(tvoss):
-// * Agree and implement a maximum number of points in area
-func AreaToCellIDs(area string) (s2.CellUnion, error) {
-	var (
-		lat, lng float64
-		points   = []s2.Point{}
-		counter  = 0
-		scanner  = bufio.NewScanner(strings.NewReader(area))
-	)
-	numCoords := strings.Count(area, ",") + 1
-	if numCoords%2 == 1 {
-		return nil, ErrOddNumberOfCoordinatesInAreaString
-	}
-	if numCoords/2 < 3 {
-		return nil, ErrNotEnoughPointsInPolygon
-	}
-	scanner.Split(splitAtComma)
-
-	for scanner.Scan() {
-		trimmed := strings.TrimSpace(scanner.Text())
-		switch counter % 2 {
-		case 0:
-			f, err := strconv.ParseFloat(trimmed, 64)
-			if err != nil {
-				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lat: %s", err.Error())
-			}
-			lat = f
-		case 1:
-			f, err := strconv.ParseFloat(trimmed, 64)
-			if err != nil {
-				return nil, stacktrace.Propagate(ErrBadCoordSet, "Unable to parse lng: %s", err.Error())
-			}
-			lng = f
-			points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)))
-		}
-
-		counter++
-	}
-	return Covering(points)
 }

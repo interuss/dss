@@ -13,6 +13,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
 
@@ -165,7 +166,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete operational intent")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -221,7 +222,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get operational intent")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -252,7 +253,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := dssmodels.Volume4DFromSCDRest(aoi)
+	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -288,7 +289,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not query operational intent")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -479,11 +480,11 @@ func validateAndReturnOIRUpsertParams(
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
 	// The end time may not be in the past.
-	valid.uExtent, err = dssmodels.UnionVolumes4DFromSCDRest(
+	valid.uExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
-		dssmodels.WithRequireTimeBounds(),
-		dssmodels.WithRequireAltitudeBounds(),
-		dssmodels.WithRequireEndTimeAfter(now),
+		scdmodels.WithRequireTimeBounds(),
+		scdmodels.WithRequireAltitudeBounds(),
+		scdmodels.WithRequireEndTimeAfter(now),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")
@@ -627,22 +628,11 @@ func getRelevantSubscriptionsAndIncrementIndices(
 	notifyVolume *dssmodels.Volume4D,
 ) (repos.Subscriptions, error) {
 
-	// Find Subscriptions that may need to be notified
-	allsubs, err := r.SearchSubscriptions(ctx, notifyVolume)
+	// Find the Subscriptions interested in OperationalIntents and increment their
+	// notification indices
+	subs, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to search for impacted subscriptions.")
-	}
-
-	// Limit Subscription notifications to only those interested in OperationalIntents
-	subs := repos.Subscriptions{}
-	for _, sub := range allsubs {
-		if sub.NotifyForOperationalIntents {
-			subs = append(subs, sub)
-		}
-	}
-
-	// Increment notification indices for relevant Subscriptions
-	if err := subs.IncrementNotificationIndices(ctx, r); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to increment notification indices of relevant subscriptions")
 	}
 
@@ -945,7 +935,7 @@ func (a *Server) upsertOperationalIntentReference(ctx context.Context, now time.
 		return nil
 	}
 
-	err = a.Store.Transact(ctx, action)
+	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
 	if err != nil {
 		return nil, responseConflict, err // No need to Propagate this error as this is not a useful stacktrace line
 	}

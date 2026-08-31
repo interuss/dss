@@ -152,6 +152,10 @@ func migrate(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if currentStepIndex == -1 {
+		return fmt.Errorf("unexpected migration, this migration is not present locally: %s\nPlease downgrade the database using the version that contains this migration first", *currentVersion)
+	}
+
 	// Perform migration steps until current version matches target version
 	for !currentVersion.Equal(*targetVersion) {
 		// Compute which migration step to run next and how it will change the schema version

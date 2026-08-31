@@ -1,10 +1,12 @@
 package sql
 
 import (
+	"slices"
+	"time"
+
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
 	"github.com/interuss/stacktrace"
-	"slices"
 )
 
 func CellUnionToCellIds(cu s2.CellUnion) []int64 {
@@ -32,4 +34,10 @@ func ForUpdate(forUpdate bool) string {
 		return "FOR UPDATE"
 	}
 	return ""
+}
+
+func MillisSinceMidnight() int {
+	now := time.Now().UTC()
+	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	return int(now.Sub(midnight).Milliseconds())
 }

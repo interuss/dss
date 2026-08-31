@@ -14,12 +14,21 @@ else
   DATASTORE_CONNECTION="-datastore_host local-dss-crdb"
 fi
 
+if [ "${COMPOSE_PROFILES#*"with-monitoring"}" != "${COMPOSE_PROFILES}" ]; then
+  echo "Monitoring: enabled"
+  MONITORING_FLAGS="-enable_metrics -enable_tracing"
+else
+  echo "Monitoring: disabled"
+  MONITORING_FLAGS=""
+fi
+
 if [ "$DEBUG_ON" = "1" ]; then
   echo "Debug Mode: on"
 
-  # Linter is disabled to properly unwrap $DATASTORE_CONNECTION.
+  # Linter is disabled to properly unwrap connection and monitoring arguments.
   # shellcheck disable=SC2086
   dlv --headless --listen=:4000 --api-version=2 --accept-multiclient exec --continue /usr/bin/core-service -- ${DATASTORE_CONNECTION} \
+  ${MONITORING_FLAGS} \
   -public_key_files /var/test-certs/auth2.pem \
   -log_format console \
   -dump_requests \
@@ -28,14 +37,16 @@ if [ "$DEBUG_ON" = "1" ]; then
   -enable_scd \
   -allow_http_base_urls \
   -locality local_dev \
-  -public_endpoint http://127.0.0.1:8082
+  -public_endpoint http://127.0.0.1:8082 \
+  ${CORE_SERVICE_EXTRA_FLAGS}
 else
   echo "Debug Mode: off"
   # Use exec so docker-compose's SIGTERM is forwarded to the binary
-  # Linter is disabled to properly unwrap $DATASTORE_CONNECTION.
+  # Linter is disabled to properly unwrap connection and monitoring arguments.
   # shellcheck disable=SC2086
   exec /usr/bin/core-service \
   ${DATASTORE_CONNECTION} \
+  ${MONITORING_FLAGS} \
   -public_key_files /var/test-certs/auth2.pem \
   -log_format console \
   -dump_requests \
@@ -44,5 +55,6 @@ else
   -enable_scd \
   -allow_http_base_urls \
   -locality local_dev \
-  -public_endpoint http://127.0.0.1:8082
+  -public_endpoint http://127.0.0.1:8082 \
+  ${CORE_SERVICE_EXTRA_FLAGS}
 fi

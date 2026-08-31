@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/sqlstore/params"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	// Reset the clock for every test.
 	fakeClock = clockwork.NewFakeClock()
 
-	store, err := newTestStore(ctx, t, connectParameters)
+	store, err := newTestStore(ctx)
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, cleanUp(ctx, store))
@@ -42,7 +43,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	}
 }
 
-func newTestStore(ctx context.Context, t *testing.T, connectParameters params.ConnectParameters) (*sqlstore.Store[repos.Repository], error) {
+func newTestStore(ctx context.Context) (*sqlstore.Store[repos.Repository], error) {
 	s, err := Init(ctx, logging.Logger, false)
 
 	if err != nil {
@@ -97,12 +98,12 @@ func TestTxnRetrier(t *testing.T) {
 	require.NotNil(t, store)
 	defer tearDownStore()
 
-	err := store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err := store.Transact(ctx, dssstore.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		isa, err := repo.InsertISA(ctx, serviceArea)
 		require.NotNil(t, isa)
 		return err
-	})
+	}))
 	require.NoError(t, err)
 	// can query afterwads
 	repo, err := store.Interact(ctx)
@@ -118,12 +119,12 @@ func TestTxnRetrier(t *testing.T) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 	defer cancel()
 	count := 0
-	err = store.Transact(ctx, func(ctx context.Context, repo repos.Repository) error {
+	_, err = store.Transact(ctx, dssstore.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
 		// can query within this
 		count++
 		// Postgre retryable error
 		return &pgconn.PgError{Code: "40001"}
-	})
+	}))
 	require.Error(t, err)
 	// Ensure it was retried.
 	require.Greater(t, count, 1)
@@ -141,18 +142,18 @@ func TestTransactor(t *testing.T) {
 	subscription2 := subscriptionsPool[1].input
 
 	txnCount := 0
-	err := store.Transact(ctx, func(ctx context.Context, s1 repos.Repository) error {
+	_, err := store.Transact(ctx, dssstore.NewFuncOperation(func(ctx context.Context, s1 repos.Repository) error {
 		// We should get to this retry, then return nothing.
 		if txnCount > 0 {
 			return errors.New("already failed")
 		}
 		txnCount++
-		err := store.Transact(ctx, func(ctx context.Context, s2 repos.Repository) error {
+		_, err := store.Transact(ctx, dssstore.NewFuncOperation(func(ctx context.Context, s2 repos.Repository) error {
 			subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 			require.NoError(t, err)
-			require.Len(t, subs, 0)
+			require.Empty(t, subs)
 			subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
-			require.Len(t, subs, 0)
+			require.Empty(t, subs)
 			require.NoError(t, err)
 
 			// Tx1 conflicts first
@@ -164,9 +165,9 @@ func TestTransactor(t *testing.T) {
 			require.NoError(t, err)
 
 			return nil
-		})
+		}))
 		return err
-	})
+	}))
 	require.Error(t, err)
 
 	repo, err := store.Interact(ctx)
@@ -219,9 +220,9 @@ func TestBasicTxn(t *testing.T) {
 
 	subs, err := s1.SearchSubscriptions(ctx, subscription1.Cells)
 	require.NoError(t, err)
-	require.Len(t, subs, 0)
+	require.Empty(t, subs)
 	subs, err = s2.SearchSubscriptions(ctx, subscription1.Cells)
-	require.Len(t, subs, 0)
+	require.Empty(t, subs)
 	require.NoError(t, err)
 
 	// Tx1 conflicts first

@@ -62,20 +62,23 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds          = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname            = var.app_hostname
-        publicEndpoint      = "https://${var.app_hostname}"
-        enableScd           = var.enable_scd
-        enableScdGlobalLock = var.enable_scd_global_lock
-        enableDssMetrics    = var.enable_dss_metrics
-        locality            = "zone=${var.locality}"
+        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname                         = var.app_hostname
+        publicEndpoint                   = "https://${var.app_hostname}"
+        enableScd                        = var.enable_scd
+        enableScdGlobalLock              = var.enable_scd_global_lock
+        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
+        enableDssMetrics                 = var.enable_dss_metrics
+        locality                         = "zone=${var.locality}"
+        datastoreMaxOpenConns            = var.datastore_max_open_conns
 
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
+            timeout : var.evict_scd_timeout
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -83,6 +86,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_rid_cron
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
+            timeout : var.evict_rid_timeout
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
@@ -269,20 +273,23 @@ resource "local_file" "helm_chart_values" {
         pubKeys = [
           "/test-certs/auth2.pem"
         ]
-        jwksEndpoint        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds          = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        hostname            = var.app_hostname
-        publicEndpoint      = "https://${var.app_hostname}"
-        enableScd           = var.enable_scd
-        enableScdGlobalLock = var.enable_scd_global_lock
-        enableDssMetrics    = var.enable_dss_metrics
-        locality            = "zone=${var.locality}"
+        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        hostname                         = var.app_hostname
+        publicEndpoint                   = "https://${var.app_hostname}"
+        enableScd                        = var.enable_scd
+        enableScdGlobalLock              = var.enable_scd_global_lock
+        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
+        enableDssMetrics                 = var.enable_dss_metrics
+        locality                         = "zone=${var.locality}"
+        datastoreMaxOpenConns            = var.datastore_max_open_conns
 
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
+            timeout : var.evict_scd_timeout
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -290,6 +297,7 @@ resource "local_file" "helm_chart_values" {
             enableCron = var.evict_enable_rid_cron
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
+            timeout : var.evict_rid_timeout
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }

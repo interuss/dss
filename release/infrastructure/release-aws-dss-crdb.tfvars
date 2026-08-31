@@ -13,7 +13,7 @@ cluster_name                 = "dss-r-crdb"
 kubernetes_version           = 1.35
 node_count                   = 3
 aws_instance_type            = "m5.xlarge"
-aws_kubernetes_storage_class = "gp2"
+aws_kubernetes_storage_class = "gp3"
 
 # DSS configuration
 image = "${IMAGE}"

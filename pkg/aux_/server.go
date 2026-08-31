@@ -7,6 +7,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/auxv1"
 	auxstore "github.com/interuss/dss/pkg/aux_/store"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	storeparams "github.com/interuss/dss/pkg/store/params"
 
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/stacktrace"
@@ -14,9 +15,9 @@ import (
 
 // Server implements auxv1.Implementation.
 type Server struct {
-	Store         auxstore.Store
-	Locality      string
-	ScdGlobalLock bool
+	Store    auxstore.Store
+	Locality string
+	Options  storeparams.Options
 }
 
 // GetVersion returns information about the version of the server.

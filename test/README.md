@@ -54,6 +54,10 @@ After a `make probe-locally` run, the Core Service logs can be examined in the
 Core Service container (usually `dss_sandbox-local-dss-core-service-1`) or
 dumped to core-service-for-testing.log using `make collect-local-logs`.
 
+### Changing dss core options
+
+You can use the environment variable `CORE_SERVICE_EXTRA_FLAGS` to set extra command-line arguments passed directly to `core-service` within DSS container (default: `<none>`). E.g., `--enable_time_based_notification_index`.
+
 ## Continuous integration
 The other tests involved in continuous integration presubmit checks are
 described in [the continuous integration folder](../.github/workflows/CI.md).

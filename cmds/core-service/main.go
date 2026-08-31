@@ -23,6 +23,8 @@ import (
 	aux "github.com/interuss/dss/pkg/aux_"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
+	dsserr "github.com/interuss/dss/pkg/errors"
+	requestlocality "github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
@@ -30,8 +32,8 @@ import (
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
-	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/store/params"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
 	"github.com/interuss/stacktrace"
@@ -60,13 +62,13 @@ var (
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
 
-	pkFile            = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
-	jwksEndpoint      = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
-	jwksKeyIDs        = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
-	keyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "Timeout for refreshing keys for JWT verification")
-	jwtAudiences      = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
-
-	scdGlobalLock = flag.Bool("enable_scd_global_lock", false, "Experimental: Use a global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas.")
+	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
+	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
+	jwksKeyIDs              = flag.String("jwks_key_ids", "", "IDs of a set of key in a JWKS, separated by commas")
+	legacyKeyRefreshTimeout = flag.Duration("key_refresh_timeout", 1*time.Minute, "DEPRECATED (replaced by jwks_refresh_interval) Cadence at which the keys used for JWT verification are refreshed")
+	jwksRefreshInterval     = flag.Duration("jwks_refresh_interval", 1*time.Minute, "Cadence at which the keys used for JWT verification are refreshed")
+	jwksKeyTTL              = flag.Duration("jwks_key_ttl", 1*time.Hour, "Maximum duration during which keys that could not be refreshed are still used before shutting down the service")
+	jwtAudiences            = flag.String("accepted_jwt_audiences", "", "comma-separated acceptable JWT `aud` claims")
 )
 
 func createKeyResolver() (auth.KeyResolver, error) {
@@ -90,8 +92,16 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context, locality string, publicEndpoint string, scdGlobalLock bool, logger *zap.Logger) (*aux.Server, error) {
-	auxStore, err := auxs.Init(ctx, logger, true)
+func createAuxServer(ctx context.Context, locality string, publicEndpoint string, opts params.Options, logger *zap.Logger) (*aux.Server, error) {
+	if locality == "" {
+		return nil, stacktrace.NewError("Locality not set")
+	}
+
+	if publicEndpoint == "" {
+		return nil, stacktrace.NewError("Public endpoint not set")
+	}
+
+	auxStore, err := auxs.Init(ctx, logger, true, locality)
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +117,12 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore, Locality: locality, ScdGlobalLock: scdGlobalLock}, nil
+	return &aux.Server{Store: auxStore, Locality: locality, Options: opts}, nil
 }
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true)
+	ridStore, err := rids.Init(ctx, logger, true, locality)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -123,7 +133,7 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}
 
 	if *enableMetrics {
-		err = registerRIDMetrics(ctx, ridStore)
+		err = registerRIDMetrics(ridStore)
 
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -132,25 +142,27 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
+			Store:             ridStore,
 			App:               app,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 		}, &rid_v2.Server{
+			Store:             ridStore,
 			App:               app,
 			Locality:          locality,
 			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 		}, nil
 }
 
-func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
+func createSCDServer(ctx context.Context, logger *zap.Logger, locality string) (*scd.Server, error) {
 
-	scdStore, err := scds.Init(ctx, logger, true, *scdGlobalLock)
+	scdStore, err := scds.Init(ctx, logger, true, locality)
 	if err != nil {
 		return nil, err
 	}
 
 	if *enableMetrics {
-		err = registerSCDMetrics(ctx, scdStore)
+		err = registerSCDMetrics(scdStore)
 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -164,7 +176,7 @@ func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, erro
 	}, nil
 }
 
-func registerRIDMetrics(ctx context.Context, store rids.Store) error {
+func registerRIDMetrics(store rids.Store) error {
 
 	meter := otel.Meter("rid")
 
@@ -200,7 +212,7 @@ func registerRIDMetrics(ctx context.Context, store rids.Store) error {
 	return err
 }
 
-func registerSCDMetrics(ctx context.Context, store scds.Store) error {
+func registerSCDMetrics(store scds.Store) error {
 
 	meter := otel.Meter("scd")
 
@@ -256,7 +268,21 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger.Info("version", zap.Any("version", version.Current()))
 	logger.Info("build", zap.Any("description", build.Describe()))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
-	logger.Info("config", zap.Bool("scdGlobalLock", *scdGlobalLock))
+	storeOptions := params.GetStoreOptions()
+	logger.Info("config", zap.Bool("scdGlobalLock", storeOptions.GlobalLock))
+	logger.Info("config", zap.Bool("scdHashLock", storeOptions.HashLock))
+	logger.Info("config", zap.Bool("timeBasedNotificationIndex", storeOptions.TimeBasedNotificationIndex))
+
+	enabledOptions := 0
+	for _, enabled := range []bool{storeOptions.GlobalLock, storeOptions.HashLock, storeOptions.TimeBasedNotificationIndex} {
+		if enabled {
+			enabledOptions++
+		}
+	}
+	if enabledOptions > 1 {
+		return stacktrace.NewError("At most one of --enable_scd_global_lock, --enable_scd_hash_lock and --enable_time_based_notification_index may be enabled")
+	}
+
 	// params.StoreParameters should not be used directly in this file but this log warning is temporarily helpful and will be removed in the future.
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {
 		logger.Warn("The raft datastore is experimental and its implementation is in progress. See issue for more details: https://github.com/interuss/dss/issues/1463")
@@ -281,7 +307,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	defer ctxCancel()
 
 	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, *scdGlobalLock, logger)
+	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, storeOptions, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
@@ -303,9 +329,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	authorizer, err := auth.NewRSAAuthorizer(
 		ctx, auth.Configuration{
-			KeyResolver:       keyResolver,
-			KeyRefreshTimeout: *keyRefreshTimeout,
-			AcceptedAudiences: strings.Split(*jwtAudiences, ","),
+			KeyResolver:        keyResolver,
+			KeyRefreshInterval: *jwksRefreshInterval,
+			KeyTTL:             *jwksKeyTTL,
+			AcceptedAudiences:  strings.Split(*jwtAudiences, ","),
 		},
 	)
 	if err != nil {
@@ -326,7 +353,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
+		scdV1Server, err = createSCDServer(ctx, logger, locality)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
@@ -340,11 +367,16 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
+	handler = timestamp.RequestTimestampMiddleware(handler)
+	handler = requestlocality.LocalityMiddleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
 		handler = otelhttp.NewHandler(handler, "http")
 	}
+
+	// Keep this middleware in first position: no processing shall be done before the body size is checked.
+	handler = maxBodySizeMiddleware(1<<22, handler) // 4 MB
 
 	httpServer := &http.Server{
 		Addr:              address,
@@ -406,6 +438,20 @@ func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handl
 	})
 }
 
+func maxBodySizeMiddleware(limit int64, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.ContentLength > limit {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+
+		// The client may lie in the Header, limit reading
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func SetDeprecatingHttpFlag(logger *zap.Logger, newFlag **bool, deprecatedFlag **bool) {
 	if **deprecatedFlag {
 		logger.Warn("DEPRECATED: enable_http has been renamed to allow_http_base_urls.")
@@ -433,6 +479,10 @@ func main() {
 			*timeout = *legacyTimeout
 			logger.Warn("'server timeout' has been renamed to 'server_timeout'")
 		}
+		if f.Name == "key_refresh_timeout" {
+			*jwksRefreshInterval = *legacyKeyRefreshTimeout
+			logger.Warn("'key_refresh_timeout' has been renamed to 'jwks_refresh_interval'")
+		}
 	})
 
 	SetDeprecatingHttpFlag(logger, &allowHTTPBaseUrls, &enableHTTP)
@@ -455,7 +505,7 @@ func main() {
 			logger.Panic("Failed to initialize OpenTelemetry", zap.Error(err))
 		}
 		// Handle shutdown properly so nothing leaks.
-		defer otelShutdown(context.Background())
+		defer func() { _ = otelShutdown(context.Background()) }()
 	}
 
 	backoffs := []time.Duration{
@@ -464,7 +514,7 @@ func main() {
 	backoff := 0
 	for {
 		if err := RunHTTPServer(ctx, cancel, *address, *locality); err != nil {
-			if stacktrace.GetCode(err) == store.CodeRetryable {
+			if stacktrace.GetCode(err) == dsserr.Unavailable {
 				logger.Info(fmt.Sprintf("Prerequisites not yet satisfied; waiting %.fs to retry...", backoffs[backoff].Seconds()), zap.Error(err))
 				time.Sleep(backoffs[backoff])
 				if backoff < len(backoffs)-1 {

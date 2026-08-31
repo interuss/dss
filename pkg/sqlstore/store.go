@@ -2,7 +2,9 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math/rand/v2"
 	"strings"
 	"time"
 
@@ -10,12 +12,14 @@ import (
 	crdbpgx "github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgxv5"
 	"github.com/coreos/go-semver/semver"
 	"github.com/exaring/otelpgx"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/sqlstore/params"
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jonboulle/clockwork"
 	"github.com/robfig/cron/v3"
@@ -32,6 +36,7 @@ type Store[R any] struct {
 	Clock         clockwork.Clock
 	schemaVersion *semver.Version
 	newRepo       func(dsssql.Queryable) R
+	registry      map[string]store.OperationHandler[R]
 	maxRetries    int
 }
 
@@ -42,9 +47,10 @@ type Config[R any] struct {
 	CrdbMajorSchemaVersion int64
 	YbMajorSchemaVersion   int64
 	NewRepo                func(q dsssql.Queryable, clock clockwork.Clock, v *Version) R
+	Registry               map[string]store.OperationHandler[R]
 }
 
-func checkMajorSchemaVersion[R any](ctx context.Context, db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
+func checkMajorSchemaVersion[R any](db *Store[R], vs *semver.Version, crdbExpected int64, ybExpected int64) error {
 	if vs == UnknownVersion {
 		return stacktrace.NewError("%s has not been bootstrapped with Schema Manager, please check https://github.com/interuss/dss/tree/master/build#updgrading-database-schemas", db.Pool.Config().ConnConfig.Database)
 	}
@@ -128,7 +134,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db, err := Dial[R](ctx, cp)
 	if err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
-			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to connect to database server for %s", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Failed to connect to database server for %s", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to connect to %s database", cfg.DBName)
 	}
@@ -136,12 +142,12 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	vs, err := db.GetSchemaVersion(ctx, cfg.DBName)
 
 	if err == nil {
-		err = checkMajorSchemaVersion(ctx, db, vs, cfg.CrdbMajorSchemaVersion, cfg.YbMajorSchemaVersion)
+		err = checkMajorSchemaVersion(db, vs, cfg.CrdbMajorSchemaVersion, cfg.YbMajorSchemaVersion)
 	}
 	if err != nil {
 		db.Pool.Close()
 		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
-			return nil, stacktrace.PropagateWithCode(err, store.CodeRetryable, "Failed to create %s store", cfg.DBName)
+			return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Failed to create %s store", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create %s store", cfg.DBName)
 	}
@@ -152,6 +158,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	db.newRepo = func(q dsssql.Queryable) R {
 		return cfg.NewRepo(q, db.Clock, db.Version)
 	}
+	db.registry = cfg.Registry
 
 	if withCheckCron {
 		c := cron.New()
@@ -173,11 +180,63 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.newRepo(s.Pool), nil
 }
 
-func (s *Store[R]) Transact(ctx context.Context, f func(context.Context, R) error) error {
+func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest) (any, error) {
+	if s.Version.Type == Yugabyte {
+		return s.transactYugabyte(ctx, request)
+	}
+
 	ctx = crdb.WithMaxRetries(ctx, s.maxRetries)
-	return crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		return f(ctx, s.newRepo(tx))
+	var result any
+	var err error
+	err = crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+		result, err = s.execute(ctx, s.newRepo(tx), request)
+		return err
 	})
+	return result, err
+}
+
+func (s *Store[R]) transactYugabyte(ctx context.Context, request store.OperationRequest) (any, error) {
+	var result any
+	var err error
+	for attempt := 0; attempt <= s.maxRetries; attempt++ {
+		err = pgx.BeginTxFunc(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+			result, err = s.execute(ctx, s.newRepo(tx), request)
+			return err
+		})
+		if err == nil || !isYugabyteRetryable(err) {
+			return result, err
+		}
+		if attempt == s.maxRetries {
+			break
+		}
+		backoff := time.Duration(1<<min(attempt, 6)) * time.Millisecond
+		select {
+		case <-ctx.Done():
+			return result, err
+		case <-time.After(backoff + time.Duration(rand.Int64N(int64(backoff)+1))):
+		}
+	}
+	return result, err
+}
+
+func (s *Store[R]) execute(ctx context.Context, repo R, request store.OperationRequest) (any, error) {
+	// TODO: This should be removed once all operations are registered properly.
+	if fn, ok := request.(*store.FuncOperation[R]); ok {
+		return nil, fn.Execute(ctx, repo)
+	}
+	handler, ok := s.registry[request.OperationID()]
+	if !ok {
+		return nil, stacktrace.NewError("no handler registered for operation %q", request.OperationID())
+	}
+	return handler.Execute(ctx, repo, request)
+}
+
+func isYugabyteRetryable(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "40001" || pgErr.Code == "40P01"
+	}
+	return false
 }
 
 func (s *Store[R]) Close() error {

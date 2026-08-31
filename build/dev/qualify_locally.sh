@@ -49,14 +49,15 @@ for container_name in "${localhost_containers[@]}"; do
 	fi
 done
 
-if ! docker run --link "$OAUTH_CONTAINER":oauth \
+
+if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
 	-v "$(pwd)/build/dev/dss_probing_qualifier_config.yaml:/app/monitoring/uss_qualifier/dss_probing_qualifier_config.yaml" \
 	-w /app/monitoring/uss_qualifier \
 	-e AUTH_SPEC='DummyOAuth(http://oauth:8085/token,uss_qualifier)' \
 	-e AUTH_SPEC_2='DummyOAuth(http://oauth:8085/token,uss_qualifier_2)' \
-	interuss/monitoring:v0.28.0 \
+	interuss/monitoring:v0.33.0 \
     python main.py --config dss_probing_qualifier_config; then
 
     if [ "$CI" == "true" ]; then

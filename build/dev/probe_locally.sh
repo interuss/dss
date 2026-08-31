@@ -54,12 +54,17 @@ RESULTFILE="$(pwd)/e2e_test_result"
 touch "${RESULTFILE}"
 cat /dev/null > "${RESULTFILE}"
 
-if ! docker run --link "$OAUTH_CONTAINER":oauth \
+PROBER_EXTRA_ARGS=()
+if [[ "${CORE_SERVICE_EXTRA_FLAGS:-}" == *"-enable_time_based_notification_index"* ]]; then
+	PROBER_EXTRA_ARGS+=(--scd-time-based-notification-index true)
+fi
+
+if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
 	--network dss_sandbox-default \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
-	interuss/monitoring:v0.28.0 \
+	interuss/monitoring:v0.33.0 \
 	pytest \
 	"${1:-.}" \
 	-rsx \
@@ -69,7 +74,8 @@ if ! docker run --link "$OAUTH_CONTAINER":oauth \
 	--rid-v2-auth "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth1 "DummyOAuth(http://oauth:8085/token,sub=fake_uss)" \
 	--scd-auth2 "DummyOAuth(http://oauth:8085/token,sub=fake_uss2)"	\
-	--scd-api-version 1.0.0; then
+	--scd-api-version 1.0.0 \
+    "${PROBER_EXTRA_ARGS[@]}"; then
 
     if [ "$CI" == "true" ]; then
         echo "=== END OF TEST RESULTS ==="

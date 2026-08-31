@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: dss
+    static_configs:
+      - targets:
+          - local-dss-core-service:8079

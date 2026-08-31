@@ -20,7 +20,7 @@ The following table describes the variables of this terraform module.
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>authorization (<code>object({<br/>'public_key_pem_path': '${optional(string)}',<br/> 'jwks': "${optional(object({<br/>'endpoint': '${string}',<br/> 'key_id': '${string}'})<br/>)}"})<br/></code>)</td>
+                <td>authorization (<code>object({<br/>public_key_pem_path = optional(string),<br/> jwks = optional(object({<br/>endpoint = string,<br/> key_id = string})<br/>)})<br/></code>)</td>
                 <td><p>One of <code>public_key_pem_path</code> or <code>jwks</code> should be provided but not both.</p>
 <ul>
 <li>
@@ -97,6 +97,10 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
                 <td><p>This variable has been renamed to locality and is left to warn users about migration.</p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>datastore_max_open_conns (<code>number</code>)</td>
+                <td><p>Maximum number of open connections to the datastore.</p>
+<br/>Default value: <code>4</code></td>
+            </tr><tr>
                 <td>datastore_type (<code>string</code>)</td>
                 <td><p>Type of datastore used</p>
 <p>Supported technologies: cockroachdb, yugabyte</p>
@@ -146,6 +150,10 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>Set this boolean true to enable experimental global lock when working with SCD subscriptions. Reduce global throughput but improve throughput with lot of subscriptions in the same areas. Must be enabled on all instances part of the pool.</p>
 <br/>Default value: <code>false</code></td>
             </tr><tr>
+                <td>enable_time_based_notification_index (<code>bool</code>)</td>
+                <td><p>Set this boolean to true to use a time-based notification index when working with RID and SCD subscriptions. Must be enabled on all instances part of the pool.</p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>evict_enable_rid_cron (<code>bool</code>)</td>
                 <td><p>Set this to true to enable the cron job that automatically cleanup RID entries.</p>
 <br/>Default value: <code>true</code></td>
@@ -166,6 +174,12 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>Set this to true to enable cleanup of RID subscriptions.</p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>evict_rid_timeout (<code>string</code>)</td>
+                <td><p>Timeout of the RID eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+Leave empty to use the default value of the command.</p>
+<p>Example: <code>10m</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>evict_rid_ttl (<code>string</code>)</td>
                 <td><p>How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"30m"</code></td>
@@ -181,6 +195,12 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td>evict_scd_subscriptions (<code>bool</code>)</td>
                 <td><p>Set this to true to enable cleanup of SCD subscriptions.</p>
 <br/>Default value: <code>true</code></td>
+            </tr><tr>
+                <td>evict_scd_timeout (<code>string</code>)</td>
+                <td><p>Timeout of the SCD eviction command; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).
+Leave empty to use the default value of the command.</p>
+<p>Example: <code>10m</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>evict_scd_ttl (<code>string</code>)</td>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>

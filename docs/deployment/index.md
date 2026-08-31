@@ -44,7 +44,7 @@ This checklist outlines the major decisions and steps required to deploy a non-l
     * This repository provides [Tanka](https://github.com/interuss/dss/blob/master/deploy/services/tanka/) files and [Helm Charts](https://github.com/interuss/dss/blob/master/deploy/services/helm-charts/dss) to be used to deploy Services into a Kubernetes cluster. Terraform will automatically generate these configurations if needed.
 * [ ] Prepare sufficient resources for the services.
     * In particular, review the [CockroachDB recommendations](https://www.cockroachlabs.com/docs/v24.1/recommended-production-settings#cloud-specific-recommendations) and [YugabyteDB recommendations](https://docs.yugabyte.com/stable/deploy/checklist/#public-clouds); the datastore will consume the majority of the resources.
-    * Example sizing is also describled in [architecture](../background/architecture.md#sizing).
+    * Example sizing is also describled in [sizing](../background/sizing.md).
 
 ### Deployment
 

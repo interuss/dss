@@ -39,5 +39,6 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				version:   version,
 			}
 		},
+		Registry: nil,
 	}, withCheckCron)
 }
