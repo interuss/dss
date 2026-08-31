@@ -41,13 +41,15 @@ func (rec *subscriptionRecord) toModel() *ridmodels.Subscription {
 		URL:               rec.URL,
 		NotificationIndex: rec.NotificationIndex,
 		Owner:             rec.Owner,
-		Cells:             slices.Clone(rec.Cells),
-		StartTime:         utils.ClonePtr(rec.StartTime),
-		EndTime:           utils.ClonePtr(rec.EndTime),
 		Version:           dssmodels.VersionFromTime(rec.UpdatedAt),
-		AltitudeHi:        utils.ClonePtr(rec.AltitudeHi),
-		AltitudeLo:        utils.ClonePtr(rec.AltitudeLo),
 		Writer:            rec.Writer,
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			Cells:      slices.Clone(rec.Cells),
+			StartTime:  utils.ClonePtr(rec.StartTime),
+			EndTime:    utils.ClonePtr(rec.EndTime),
+			AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
+			AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
+		},
 	}
 }
 

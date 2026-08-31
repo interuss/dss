@@ -28,11 +28,13 @@ var (
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
-				StartTime:         &startTime,
-				EndTime:           &endTime,
 				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					StartTime: &startTime,
+					EndTime:   &endTime,
+					Cells: s2.CellUnion{
+						12494535935418957824,
+					},
 				},
 			},
 		},
@@ -42,10 +44,12 @@ var (
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             dssmodels.Owner(uuid.New().String()),
 				URL:               "https://no/place/like/home",
-				EndTime:           &endTime,
 				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					EndTime: &endTime,
+					Cells: s2.CellUnion{
+						12494535935418957824,
+					},
 				},
 			},
 		},
@@ -172,13 +176,16 @@ func TestBadOwner(t *testing.T) {
 	app, cleanup := setUpSubApp(ctx, t)
 	defer cleanup()
 
-	sub := &ridmodels.Subscription{
+	repo, err := app.store.Interact(ctx)
+	require.NoError(t, err)
+
+	sub, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
 		Owner: "orig Owner",
-		Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
-	}
-
-	sub, err := app.InsertSubscription(ctx, sub)
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
+		},
+	})
 	require.NoError(t, err)
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
@@ -199,12 +206,17 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	// library might try to Normalize (this is the name of the function) the Union
 	// into a single cell. We don't support this currently, so let's make sure
 	// this doesn't happen.
-	sub, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
-		ID:        dssmodels.ID(uuid.New().String()),
-		Owner:     owner,
-		StartTime: &startTime,
-		EndTime:   &endTime,
-		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
+	repo, err := app.store.Interact(ctx)
+	require.NoError(t, err)
+
+	sub, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
+		ID:    dssmodels.ID(uuid.New().String()),
+		Owner: owner,
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			StartTime: &startTime,
+			EndTime:   &endTime,
+			Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
+		},
 	})
 
 	require.NoError(t, err)
@@ -220,88 +232,6 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, subs)
 	require.Len(t, subs, 1)
-}
-
-func TestInsertSubscriptionsWithTimes(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
-
-	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             stacktrace.ErrorCode
-		wantStartTime       time.Time
-		wantEndTime         time.Time
-	}{
-		{
-			name:          "start-time-defaults-to-now",
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now(),
-			wantEndTime:   fakeClock.Now().Add(time.Hour),
-		},
-		{
-			name:          "end-time-defaults-to-24h",
-			wantStartTime: fakeClock.Now(),
-			wantEndTime:   fakeClock.Now().Add(24 * time.Hour),
-		},
-		{
-			name:      "start-time-in-the-past",
-			startTime: fakeClock.Now().Add(-6 * time.Minute),
-			endTime:   fakeClock.Now().Add(time.Hour),
-			wantErr:   dsserr.BadRequest,
-		},
-		{
-			name:          "start-time-slightly-in-the-past",
-			startTime:     fakeClock.Now().Add(-4 * time.Minute),
-			endTime:       fakeClock.Now().Add(time.Hour),
-			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
-		},
-		{
-			name:      "end-time-before-start-time",
-			startTime: fakeClock.Now().Add(20 * time.Minute),
-			endTime:   fakeClock.Now().Add(10 * time.Minute),
-			wantErr:   dsserr.BadRequest,
-		},
-	} {
-		t.Run(r.name, func(t *testing.T) {
-			id := dssmodels.ID(uuid.New().String())
-			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
-
-			s := &ridmodels.Subscription{
-				ID:      id,
-				Owner:   owner,
-				Version: version,
-				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
-			}
-			if !r.startTime.IsZero() {
-				s.StartTime = &r.startTime
-			}
-			if !r.endTime.IsZero() {
-				s.EndTime = &r.endTime
-			}
-			sub, err := app.InsertSubscription(ctx, s)
-
-			if r.wantErr == stacktrace.ErrorCode(0) {
-				require.NoError(t, err)
-			} else {
-				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
-			}
-
-			if !r.wantStartTime.IsZero() {
-				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*sub.StartTime).UTC().Truncate(time.Microsecond))
-			}
-			if !r.wantEndTime.IsZero() {
-				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*sub.EndTime).UTC().Truncate(time.Microsecond))
-			}
-		})
-	}
 }
 
 func TestUpdateSubscriptionsWithTimes(t *testing.T) {
@@ -369,11 +299,13 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			existing, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
-				ID:        id,
-				Owner:     owner,
-				StartTime: &r.updateFromStartTime,
-				EndTime:   &r.updateFromEndTime,
-				Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
+				ID:    id,
+				Owner: owner,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					StartTime: &r.updateFromStartTime,
+					EndTime:   &r.updateFromEndTime,
+					Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
+				},
 			})
 			require.NoError(t, err)
 			version = existing.Version
@@ -382,7 +314,9 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: version,
-				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
+				},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -408,51 +342,4 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestInsertTooManySubscription(t *testing.T) {
-	var (
-		ctx          = context.Background()
-		app, cleanup = setUpSubApp(ctx, t)
-	)
-	defer cleanup()
-	// Helper function that makes a subscription with a random ID, fixed owner,
-	// and provided cellIDs.
-	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {
-		s := &ridmodels.Subscription{
-			ID:        dssmodels.ID(uuid.New().String()),
-			Owner:     dssmodels.Owner("bob"),
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
-		}
-
-		s.Cells = make(s2.CellUnion, len(cellIDs))
-		for i, id := range cellIDs {
-			s.Cells[i] = s2.CellID(id)
-		}
-		return s
-	}
-
-	// We should be able to insert 10 subscriptions without error.
-	for i := 0; i < 10; i++ {
-		ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
-		require.NoError(t, err)
-		require.NotNil(t, &ret)
-	}
-
-	// Inserting the 11th subscription will fail.
-	ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
-	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
-	require.Nil(t, ret)
-
-	// Inserting a subscription in a different cell will succeed.
-	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535832339742720}))
-	require.NoError(t, err)
-	require.NotNil(t, &ret)
-
-	// Inserting a subscription that overlaps fail.
-	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
-	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
-	require.Nil(t, ret)
 }

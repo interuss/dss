@@ -26,13 +26,9 @@ type Subscription struct {
 	URL               string
 	NotificationIndex int
 	Owner             dssmodels.Owner
-	Cells             s2.CellUnion
-	StartTime         *time.Time
-	EndTime           *time.Time
 	Version           *dssmodels.Version
-	AltitudeHi        *float32
-	AltitudeLo        *float32
 	Writer            string
+	*dssmodels.CellsVolume4D
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts

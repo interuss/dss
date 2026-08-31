@@ -33,7 +33,7 @@ func (r *repo) process(ctx context.Context, query string, args ...interface{}) (
 
 	var writer pgtype.Text
 	for rows.Next() {
-		s := new(ridmodels.Subscription)
+		s := &ridmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}}
 
 		var updateTime time.Time
 
