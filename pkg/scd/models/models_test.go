@@ -13,6 +13,42 @@ func TestOVNFromTimeIsValid(t *testing.T) {
 	require.True(t, NewOVNFromTime(time.Now(), uuid.New().String()).Valid())
 }
 
+func TestNewDeterministicImplicitSubscriptionID(t *testing.T) {
+	now := time.Now()
+	oiID := dssmodels.ID(uuid.NewString())
+
+	t.Run("is a valid v4 UUID", func(t *testing.T) {
+		id, err := NewDeterministicImplicitSubscriptionID(now, oiID)
+		require.NoError(t, err)
+		_, err = dssmodels.IDFromString(id.String())
+		require.NoError(t, err)
+	})
+
+	t.Run("is deterministic for the same inputs", func(t *testing.T) {
+		id1, err := NewDeterministicImplicitSubscriptionID(now, oiID)
+		require.NoError(t, err)
+		id2, err := NewDeterministicImplicitSubscriptionID(now, oiID)
+		require.NoError(t, err)
+		require.Equal(t, id1, id2)
+	})
+
+	t.Run("differs when the operational intent ID differs", func(t *testing.T) {
+		id1, err := NewDeterministicImplicitSubscriptionID(now, oiID)
+		require.NoError(t, err)
+		id2, err := NewDeterministicImplicitSubscriptionID(now, "e72589d4-8c14-4d6f-bd9c-1bfb8704e332")
+		require.NoError(t, err)
+		require.NotEqual(t, id1, id2)
+	})
+
+	t.Run("differs when the timestamp differs", func(t *testing.T) {
+		id1, err := NewDeterministicImplicitSubscriptionID(now, oiID)
+		require.NoError(t, err)
+		id2, err := NewDeterministicImplicitSubscriptionID(now.Add(time.Nanosecond), oiID)
+		require.NoError(t, err)
+		require.NotEqual(t, id1, id2)
+	})
+}
+
 func TestNewOVNFromUUIDv7Suffix(t *testing.T) {
 	type cases []struct {
 		name string
