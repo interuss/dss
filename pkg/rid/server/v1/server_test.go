@@ -14,6 +14,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
+	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
@@ -89,13 +90,6 @@ func (ma *mockApp) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 	defer cancel()
 	args := ma.Called(ctx, id)
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Error(1)
-}
-
-func (ma *mockApp) DeleteISA(ctx context.Context, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, id, owner, version)
-	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
 }
 
 func (ma *mockApp) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
@@ -590,26 +584,28 @@ func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
 func TestDeleteIdentificationServiceArea(t *testing.T) {
 	var (
 		id = dssmodels.ID(uuid.New().String())
-		ma = &mockApp{}
+		ms = &mockStore{}
 
 		s = &Server{
-			App: ma,
+			Store: ms,
 		}
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	ma.On("DeleteISA", mock.Anything, id, dssmodels.Owner(testdata.Owner), mock.Anything).Return(
-		&ridmodels.IdentificationServiceArea{
-			ID:      id,
-			Owner:   dssmodels.Owner("me-myself-and-i"),
-			URL:     "https://no/place/like/home",
-			Version: testdata.Version,
-		},
-		[]*ridmodels.Subscription{
-			{
-				NotificationIndex: 42,
-				URL:               "https://no/place/like/home",
+	ms.On("Transact", mock.Anything, mock.Anything).Return(
+		&operations.ISAResult{
+			ISA: &ridmodels.IdentificationServiceArea{
+				ID:      id,
+				Owner:   dssmodels.Owner("me-myself-and-i"),
+				URL:     "https://no/place/like/home",
+				Version: testdata.Version,
+			},
+			Subscriptions: []*ridmodels.Subscription{
+				{
+					NotificationIndex: 42,
+					URL:               "https://no/place/like/home",
+				},
 			},
 		}, error(nil),
 	)
@@ -620,7 +616,7 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 
 	require.NotNil(t, respSet.Response200)
 	require.Len(t, respSet.Response200.Subscribers, 1)
-	require.True(t, ma.AssertExpectations(t))
+	require.True(t, ms.AssertExpectations(t))
 }
 
 func TestSearchIdentificationServiceAreas(t *testing.T) {
