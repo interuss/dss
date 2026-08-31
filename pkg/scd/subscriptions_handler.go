@@ -2,7 +2,6 @@ package scd
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api"
@@ -290,7 +289,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 ) restapi.GetSubscriptionResponseSet {
 
 	// Retrieve Subscription ID
-	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
+	_, err := dssmodels.IDFromString(string(req.Subscriptionid))
 	if err != nil {
 		return restapi.GetSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Subscriptionid))}}
@@ -302,45 +301,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	var response *restapi.GetSubscriptionResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Get Subscription from Store
-		sub, err := r.GetSubscription(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not get Subscription from repo")
-		}
-		if sub == nil {
-			return stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
-		}
-
-		// Check if the client is authorized to view this Subscription
-		if dssmodels.Manager(*req.Auth.ClientID) != sub.Manager {
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-				"Subscription owned by %s, but %s attempted to view", sub.Manager, *req.Auth.ClientID)
-		}
-
-		// Get dependent Operations
-		dependentOps, err := r.GetDependentOperationalIntents(ctx, id)
-		if err != nil {
-			return stacktrace.Propagate(err, "Could not find dependent Operations")
-		}
-
-		// Convert Subscription to REST
-		p, err := sub.ToRest(dependentOps)
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to convert Subscription to REST")
-		}
-
-		// Return response to client
-		response = &restapi.GetSubscriptionResponse{
-			Subscription: *p,
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetSubscriptionResponse](ctx, a.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -363,7 +324,6 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 // QuerySubscriptions queries existing subscriptions in the given bounds.
 func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubscriptionsRequest,
 ) restapi.QuerySubscriptionsResponseSet {
-	nowMarker := time.Now()
 
 	if req.BodyParseError != nil {
 		return restapi.QuerySubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
@@ -378,7 +338,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 	}
 
 	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	_, err := scdmodels.Volume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QuerySubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
@@ -390,41 +350,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	var response *restapi.QuerySubscriptionsResponse
-	action := func(ctx context.Context, r repos.Repository) (err error) {
-		// Perform search query on Store
-		subs, err := r.SearchSubscriptions(ctx, vol4)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error searching Subscriptions in repo")
-		}
-
-		// Return response to client
-		response = &restapi.QuerySubscriptionsResponse{
-			Subscriptions: make([]restapi.Subscription, 0),
-		}
-		for _, sub := range subs {
-			// Do not return subscriptions which are expired.
-			// This implementation decision is described and motivated in https://github.com/interuss/tsc/pull/12.
-			isExpired := sub.EndTime.Before(nowMarker)
-			if !isExpired && sub.Manager == dssmodels.Manager(*req.Auth.ClientID) {
-				// Get dependent Operations
-				dependentOps, err := r.GetDependentOperationalIntents(ctx, sub.ID)
-				if err != nil {
-					return stacktrace.Propagate(err, "Could not find dependent Operations")
-				}
-
-				p, err := sub.ToRest(dependentOps)
-				if err != nil {
-					return stacktrace.Propagate(err, "Error converting Subscription model to REST")
-				}
-				response.Subscriptions = append(response.Subscriptions, *p)
-			}
-		}
-
-		return nil
-	}
-
-	_, err = a.Store.Transact(ctx, dssstore.NewFuncOperation(action))
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QuerySubscriptionsResponse](ctx, a.Store, req)
 	if err != nil {
 
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
