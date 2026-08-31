@@ -6,7 +6,7 @@ import (
 	dssql "github.com/interuss/dss/pkg/sql"
 
 	"github.com/interuss/dss/pkg/logging"
-	"github.com/interuss/dss/pkg/scd/actions"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/store/params"
@@ -51,6 +51,6 @@ func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (*sqlstor
 				version:                    version,
 			}
 		},
-		Registry: actions.Registry,
+		Registry: operations.Registry,
 	}, withCheckCron)
 }
