@@ -44,24 +44,6 @@ func (s *Subscription) SetCells(cids []int64) {
 	s.Cells = cells
 }
 
-// SetExtents performs some data validation and sets the 4D volume on the
-// Subscription.
-func (s *Subscription) SetExtents(extents *dssmodels.Volume4D) error {
-	var err error
-	if extents == nil {
-		return nil
-	}
-	s.StartTime = extents.StartTime
-	s.EndTime = extents.EndTime
-	s.AltitudeHi = extents.SpatialVolume.AltitudeHi
-	s.AltitudeLo = extents.SpatialVolume.AltitudeLo
-	s.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return stacktrace.Propagate(err, "Error calculating covering for Subscription")
-	}
-	return nil
-}
-
 // AdjustTimeRange adjusts the time range to the max allowed ranges on a
 // subscription.
 func (s *Subscription) AdjustTimeRange(now time.Time, old *Subscription) error {
