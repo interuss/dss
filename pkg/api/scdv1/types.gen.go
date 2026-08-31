@@ -117,12 +117,18 @@ type SubscriberToNotify struct {
 	// Subscription(s) prompting this notification.
 	Subscriptions []SubscriptionState `json:"subscriptions"`
 
+	// Created by the DSS based on creating client's ID (via access token)
+	Manager string `json:"manager"`
+
 	UssBaseUrl SubscriptionUssBaseURL `json:"uss_base_url"`
 }
 
 // Specification of a geographic area that a client is interested in on an ongoing basis (e.g., "planning area").
 type Subscription struct {
 	Id SubscriptionID `json:"id"`
+
+	// Created by the DSS based on creating client's ID (via access token). Used internal to the DSS for restricting read, mutation and deletion operations to manager.
+	Manager string `json:"manager"`
 
 	// Version of the subscription that the DSS changes every time a USS changes the subscription.  The DSS incrementing the notification_index does not constitute a change that triggers a new version.  A USS must specify this version when modifying an existing subscription to ensure consistency in read-modify-write operations and distributed systems.
 	Version string `json:"version"`
