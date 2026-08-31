@@ -11,6 +11,9 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv2 "github.com/interuss/dss/pkg/rid/models/api/v2"
+	"github.com/interuss/dss/pkg/rid/operations"
+	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -200,7 +203,10 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-	isa, subscribers, err := s.App.DeleteISA(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
+
+	payload := operations.NewDeleteISAPayload(id, dssmodels.Owner(*req.Auth.ClientID), version)
+
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -217,10 +223,10 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv2.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.DeleteIdentificationServiceAreaResponseSet{Response200: &restapi.DeleteIdentificationServiceAreaResponse{
-		ServiceArea: *apiv2.ToIdentificationServiceArea(isa),
+		ServiceArea: *apiv2.ToIdentificationServiceArea(result.ISA),
 		Subscribers: &apiSubscribers,
 	}}
 }
