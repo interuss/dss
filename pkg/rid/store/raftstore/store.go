@@ -6,7 +6,7 @@ import (
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
-	"github.com/interuss/dss/pkg/rid/actions"
+	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridmemstore "github.com/interuss/dss/pkg/rid/store/memstore"
 	ridraftparams "github.com/interuss/dss/pkg/rid/store/raftstore/params"
@@ -21,7 +21,7 @@ type repo struct {
 	memRepo   repos.Repository
 }
 
-func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
 	params, err := ridraftparams.GetConnectParameters()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get rid raft parameters")
@@ -33,7 +33,7 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	}
 
 	r := &repo{memStore: memStore, memRepo: memStore.GetRepo()}
-	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "rid")), params, r, actions.Registry)
+	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "rid")), locality, params, r, operations.Registry)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize rid raftstore")
 	}
@@ -57,7 +57,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	switch proposal.RequestType {
 
 	default:
-		handler, ok := actions.Registry[string(proposal.RequestType)]
+		handler, ok := operations.Registry[string(proposal.RequestType)]
 		if !ok {
 			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
 		}
