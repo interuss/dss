@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 
+	"github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -26,6 +27,13 @@ type RaftRepo[R any] interface {
 	// RestoreFromSnapshot replaces all state with the snapshot in data.
 	// data is always the output of a prior GetSnapshot.
 	RestoreFromSnapshot(data []byte) error
+
+	// Checkpoint saves the current state, called before every proposal is applied.
+	Checkpoint()
+
+	// Restore reverts the state to the last Checkpoint, called when Apply returns an error so a
+	// failed proposal cannot leave a partial mutation in place.
+	Restore()
 }
 
 type Store[R any] struct {
@@ -40,7 +48,7 @@ type Store[R any] struct {
 	done chan struct{}
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, locality string, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	store := &Store[R]{
@@ -56,7 +64,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 		store.processCommits(ctx, commitC)
 	}()
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, locality, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
@@ -114,8 +122,13 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 				continue
 			}
 
-			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
+			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
+			proposalCtx = locality.NewContext(proposalCtx, commit.Prop.Locality)
+			s.raftRepo.Checkpoint()
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
+			if err != nil {
+				s.raftRepo.Restore()
+			}
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
 	}
