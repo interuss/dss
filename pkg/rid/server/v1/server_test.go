@@ -92,11 +92,6 @@ func (ma *mockApp) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Error(1)
 }
 
-func (ma *mockApp) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	args := ma.Called(ctx, isa)
-	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
-}
-
 func (ma *mockApp) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	args := ma.Called(ctx, isa)
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
@@ -414,43 +409,6 @@ func TestCreateISA(t *testing.T) {
 			},
 		},
 		{
-			name:       "missing-extents",
-			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name:       "missing-extents-spatial-volume",
-			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents:    restapi.Volume4D{},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{},
-			},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{
-					Footprint: restapi.GeoPolygon{},
-				},
-			},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
 			name:    "missing-flights-url",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
@@ -459,13 +417,13 @@ func TestCreateISA(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
+			ms := &mockStore{}
 			if r.wantISA != nil {
-				ma.On("InsertISA", mock.Anything, r.wantISA).Return(
-					r.wantISA, []*ridmodels.Subscription(nil), nil)
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
+					&operations.ISAResult{ISA: r.wantISA}, nil)
 			}
 			s := &Server{
-				App: ma,
+				Store: ms,
 			}
 
 			respSet = s.CreateIdentificationServiceArea(context.Background(), &restapi.CreateIdentificationServiceAreaRequest{
@@ -481,7 +439,7 @@ func TestCreateISA(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }

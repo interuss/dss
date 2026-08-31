@@ -64,12 +64,18 @@ func newTestContext() context.Context {
 	return locality.NewContext(ctx, "test-locality")
 }
 
+// fakeSubscriptionRepo is a minimal in-memory repos.Repository backing the operations
+// package's tests.
 type fakeSubscriptionRepo struct {
 	subs map[dssmodels.ID]*ridmodels.Subscription
+	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
 }
 
 func newFakeSubscriptionRepo() *fakeSubscriptionRepo {
-	return &fakeSubscriptionRepo{subs: make(map[dssmodels.ID]*ridmodels.Subscription)}
+	return &fakeSubscriptionRepo{
+		subs: make(map[dssmodels.ID]*ridmodels.Subscription),
+		isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
+	}
 }
 
 func (r *fakeSubscriptionRepo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
@@ -175,32 +181,53 @@ func (r *fakeSubscriptionRepo) CountSubscriptions(_ context.Context) (int64, err
 	return int64(len(r.subs)), nil
 }
 
-func (r *fakeSubscriptionRepo) GetISA(_ context.Context, _ dssmodels.ID, _ bool) (*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+func (r *fakeSubscriptionRepo) GetISA(_ context.Context, id dssmodels.ID, _ bool) (*ridmodels.IdentificationServiceArea, error) {
+	if isa, ok := r.isas[id]; ok {
+		return isa, nil
+	}
+	return nil, nil
 }
 
-func (r *fakeSubscriptionRepo) DeleteISA(_ context.Context, _ *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+func (r *fakeSubscriptionRepo) DeleteISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	if stored, ok := r.isas[isa.ID]; ok {
+		delete(r.isas, isa.ID)
+		return stored, nil
+	}
+	return nil, nil
 }
 
-func (r *fakeSubscriptionRepo) InsertISA(_ context.Context, _ *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+func (r *fakeSubscriptionRepo) InsertISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	storedCopy := *isa
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	r.isas[isa.ID] = &storedCopy
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
 }
 
-func (r *fakeSubscriptionRepo) UpdateISA(_ context.Context, _ *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+func (r *fakeSubscriptionRepo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	storedCopy := *isa
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	r.isas[isa.ID] = &storedCopy
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
 }
 
-func (r *fakeSubscriptionRepo) SearchISAs(_ context.Context, _ s2.CellUnion, _ *time.Time, _ *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+func (r *fakeSubscriptionRepo) SearchISAs(_ context.Context, cells s2.CellUnion, _ *time.Time, _ *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	var isas []*ridmodels.IdentificationServiceArea
+	for _, isa := range r.isas {
+		if isa.Cells.Intersects(cells) {
+			isas = append(isas, isa)
+		}
+	}
+	return isas, nil
 }
 
 func (r *fakeSubscriptionRepo) ListExpiredISAs(_ context.Context, _ string, _ time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
+	return nil, nil
 }
 
 func (r *fakeSubscriptionRepo) CountISAs(_ context.Context) (int64, error) {
-	panic("not implemented")
+	return int64(len(r.isas)), nil
 }
 
 func TestBadOwner(t *testing.T) {

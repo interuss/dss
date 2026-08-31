@@ -1,10 +1,8 @@
 package operations
 
 import (
-	"context"
-	"time"
-
 	"testing"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
@@ -15,218 +13,134 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fakeISARepo struct {
-	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
-	subs map[dssmodels.ID]*ridmodels.Subscription
-}
+func TestInsertISA(t *testing.T) {
+	ctx := newTestContext()
+	repo := newFakeSubscriptionRepo()
 
-func newFakeISARepo() *fakeISARepo {
-	return &fakeISARepo{
-		isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
-		subs: make(map[dssmodels.ID]*ridmodels.Subscription),
-	}
-}
-
-func (r *fakeISARepo) GetISA(_ context.Context, id dssmodels.ID, _ bool) (*ridmodels.IdentificationServiceArea, error) {
-	if isa, ok := r.isas[id]; ok {
-		return isa, nil
-	}
-	return nil, nil
-}
-
-func (r *fakeISARepo) DeleteISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	if existing, ok := r.isas[isa.ID]; ok {
-		delete(r.isas, isa.ID)
-		return existing, nil
-	}
-	return nil, nil
-}
-
-func (r *fakeISARepo) InsertISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	storedCopy := *isa
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	r.isas[isa.ID] = &storedCopy
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-func (r *fakeISARepo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
-	storedCopy := *isa
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	r.isas[isa.ID] = &storedCopy
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-func (r *fakeISARepo) SearchISAs(_ context.Context, _ s2.CellUnion, _ *time.Time, _ *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
-}
-
-func (r *fakeISARepo) ListExpiredISAs(_ context.Context, _ string, _ time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
-	panic("not implemented")
-}
-
-func (r *fakeISARepo) CountISAs(_ context.Context) (int64, error) {
-	panic("not implemented")
-}
-
-func (r *fakeISARepo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	if sub, ok := r.subs[id]; ok {
-		return sub, nil
-	}
-	return nil, nil
-}
-
-func (r *fakeISARepo) DeleteSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	if sub, ok := r.subs[s.ID]; ok {
-		delete(r.subs, s.ID)
-		return sub, nil
-	}
-	return nil, nil
-}
-
-func (r *fakeISARepo) InsertSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	storedCopy := *s
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	r.subs[s.ID] = &storedCopy
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-func (r *fakeISARepo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	storedCopy := *s
-	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	r.subs[s.ID] = &storedCopy
-	returnedCopy := storedCopy
-	return &returnedCopy, nil
-}
-
-func (r *fakeISARepo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	var subs []*ridmodels.Subscription
-	for _, s := range r.subs {
-		for _, c1 := range s.Cells {
-			for _, c2 := range cells {
-				if c1 == c2 {
-					subs = append(subs, s)
-					break
-				}
+	for _, r := range []struct {
+		name          string
+		startTime     time.Time
+		endTime       time.Time
+		wantErr       stacktrace.ErrorCode
+		wantStartTime time.Time
+		wantEndTime   time.Time
+	}{
+		{
+			name:    "missing-end-time",
+			wantErr: dsserr.BadRequest,
+		},
+		{
+			name:          "start-time-defaults-to-now",
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now(),
+		},
+		{
+			name:      "start-time-in-the-past",
+			startTime: fakeClock.Now().Add(-6 * time.Minute),
+			endTime:   fakeClock.Now().Add(time.Hour),
+			wantErr:   dsserr.BadRequest,
+		},
+		{
+			name:          "start-time-slightly-in-the-past",
+			startTime:     fakeClock.Now().Add(-4 * time.Minute),
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
+		},
+		{
+			name:      "end-time-before-start-time",
+			startTime: fakeClock.Now().Add(20 * time.Minute),
+			endTime:   fakeClock.Now().Add(10 * time.Minute),
+			wantErr:   dsserr.BadRequest,
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			sa := &ridmodels.IdentificationServiceArea{
+				ID:    dssmodels.ID(uuid.New().String()),
+				Owner: dssmodels.Owner(uuid.New().String()),
+				Cells: s2.CellUnion{12494535935418957824},
 			}
-		}
-	}
-	return subs, nil
-}
-
-func (r *fakeISARepo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
-	res, err := r.SearchSubscriptions(ctx, cells)
-	if err != nil {
-		return nil, err
-	}
-	var subs []*ridmodels.Subscription
-	for _, s := range res {
-		if s.Owner == owner {
-			subs = append(subs, s)
-		}
-	}
-	return subs, nil
-}
-
-func (r *fakeISARepo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	subs, err := r.SearchSubscriptions(ctx, cells)
-	if err != nil {
-		return nil, err
-	}
-	for i := range subs {
-		subs[i].NotificationIndex++
-	}
-	return subs, nil
-}
-
-func (r *fakeISARepo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	maxValue := 0
-	subs, err := r.SearchSubscriptionsByOwner(ctx, cells, owner)
-	if err != nil {
-		return 0, err
-	}
-
-	cellMap := make(map[s2.CellID]int)
-	for _, s := range subs {
-		for _, cid := range s.Cells {
-			cellMap[cid]++
-			if cellMap[cid] > maxValue {
-				maxValue = cellMap[cid]
+			if !r.startTime.IsZero() {
+				sa.StartTime = &r.startTime
 			}
-		}
+			if !r.endTime.IsZero() {
+				sa.EndTime = &r.endTime
+			}
+			result, err := insertISA(ctx, repo, sa)
+
+			if r.wantErr == stacktrace.ErrorCode(0) {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
+			}
+
+			if !r.wantStartTime.IsZero() {
+				require.NotNil(t, result.ISA.StartTime)
+				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*result.ISA.StartTime).UTC().Truncate(time.Microsecond))
+			}
+			if !r.wantEndTime.IsZero() {
+				require.NotNil(t, result.ISA.EndTime)
+				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*result.ISA.EndTime).UTC().Truncate(time.Microsecond))
+			}
+		})
 	}
-	return maxValue, nil
-}
-
-func (r *fakeISARepo) ListExpiredSubscriptions(_ context.Context, _ string, _ time.Time) ([]*ridmodels.Subscription, error) {
-	panic("not implemented")
-}
-
-func (r *fakeISARepo) CountSubscriptions(_ context.Context) (int64, error) {
-	panic("not implemented")
 }
 
 func TestDeleteISA(t *testing.T) {
-	var (
-		ctx  = newTestContext()
-		repo = newFakeISARepo()
-	)
+	ctx := newTestContext()
+	repo := newFakeSubscriptionRepo()
 
-	insertedSubscriptions := []*ridmodels.Subscription{}
-	for _, r := range subscriptionsPool {
-		subscriptionCopy := *r.input
-		s1, err := InsertSubscription(ctx, repo, &subscriptionCopy)
+	insertedSubscriptions := make([]*ridmodels.Subscription, 0, 2)
+	for range 2 {
+		s, err := InsertSubscription(ctx, repo, &ridmodels.Subscription{
+			ID:        dssmodels.ID(uuid.New().String()),
+			Owner:     "owner",
+			URL:       "https://no/place/like/home",
+			StartTime: &startTime,
+			EndTime:   &endTime,
+			Cells:     s2.CellUnion{12494535935418957824},
+		})
 		require.NoError(t, err)
-		require.NotNil(t, s1)
-		require.Equal(t, 42, s1.NotificationIndex)
-		insertedSubscriptions = append(insertedSubscriptions, s1)
+		insertedSubscriptions = append(insertedSubscriptions, s)
 	}
-	serviceArea := &ridmodels.IdentificationServiceArea{
+	for _, s := range insertedSubscriptions {
+		require.Equal(t, 0, s.NotificationIndex)
+	}
+
+	// Insert the ISA.
+	insertResult, err := insertISA(ctx, repo, &ridmodels.IdentificationServiceArea{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     dssmodels.Owner(uuid.New().String()),
 		URL:       "https://no/place/like/home/for/flights",
 		StartTime: &startTime,
 		EndTime:   &endTime,
-		Cells: s2.CellUnion{
-			s2.CellID(12494535935418957824),
-		},
+		Cells:     s2.CellUnion{12494535935418957824},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, insertResult)
+	require.Len(t, insertResult.Subscriptions, len(insertedSubscriptions))
+	for _, s := range insertResult.Subscriptions {
+		require.Equal(t, 1, s.NotificationIndex)
 	}
 
-	// Insert the ISA
-	serviceAreaCopy := *serviceArea
-	subscriptionsOut, err := repo.UpdateNotificationIdxsInCells(ctx, serviceAreaCopy.Cells)
-	require.NoError(t, err)
-	isa, err := repo.InsertISA(ctx, &serviceAreaCopy)
-	require.NoError(t, err)
-	require.NotNil(t, isa)
-	require.Len(t, subscriptionsOut, len(insertedSubscriptions))
-
-	for i := range insertedSubscriptions {
-		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
-	}
+	isa := insertResult.ISA
 
 	// Can't delete with different owner.
 	_, err = deleteISA(ctx, repo, isa.ID, "bad-owner", isa.Version)
-	require.Error(t, err)
 	require.Equal(t, dsserr.PermissionDenied, stacktrace.GetCode(err))
 
-	// Delete the ISA.
-	// Ensure a fresh Get, then delete still updates the subscription indexes.
-	isa, err = repo.GetISA(ctx, isa.ID, false)
-	require.NoError(t, err)
+	// Can't delete with a stale version.
+	_, err = deleteISA(ctx, repo, isa.ID, isa.Owner, dssmodels.VersionFromTime(time.Now().Add(-time.Hour)))
+	require.Equal(t, dsserr.VersionMismatch, stacktrace.GetCode(err))
 
-	result, err := deleteISA(ctx, repo, isa.ID, isa.Owner, isa.Version)
+	deleteResult, err := deleteISA(ctx, repo, isa.ID, isa.Owner, isa.Version)
 	require.NoError(t, err)
-	require.Equal(t, isa, result.ISA)
-	require.NotNil(t, result.Subscriptions)
-	require.Len(t, result.Subscriptions, len(subscriptionsPool))
-	for i, s := range subscriptionsPool {
-		require.Equal(t, s.input.URL, result.Subscriptions[i].URL)
+	require.Equal(t, isa, deleteResult.ISA)
+	require.Len(t, deleteResult.Subscriptions, len(insertedSubscriptions))
+	for _, s := range deleteResult.Subscriptions {
+		require.Equal(t, 2, s.NotificationIndex)
 	}
 
-	for i := range insertedSubscriptions {
-		require.Equal(t, 44, result.Subscriptions[i].NotificationIndex)
-	}
+	// Deleting again fails since it no longer exists.
+	_, err = deleteISA(ctx, repo, isa.ID, isa.Owner, isa.Version)
+	require.Equal(t, dsserr.NotFound, stacktrace.GetCode(err))
 }
