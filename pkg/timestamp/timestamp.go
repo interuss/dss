@@ -8,13 +8,13 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-type timestampKey struct{}
+type key struct{}
 
-// requestTimestampFromContext returns the request timestamp from the context, or an error if the value is not present or if it is zero.
+// fromContext returns the request timestamp from the context, or an error if the value is not present or if it is zero.
 // The timestamp is set by the Middleware when a query is received then (on the receiver side) by the Raftstore when the query is applied.
 // It is then used for deterministic execution of time-dependent queries.
-func requestTimestampFromContext(ctx context.Context) (time.Time, error) {
-	timestamp, ok := ctx.Value(timestampKey{}).(time.Time)
+func fromContext(ctx context.Context) (time.Time, error) {
+	timestamp, ok := ctx.Value(key{}).(time.Time)
 	if !ok {
 		return time.Time{}, stacktrace.NewError("timestamp not found in context")
 	}
@@ -26,10 +26,10 @@ func requestTimestampFromContext(ctx context.Context) (time.Time, error) {
 	return timestamp, nil
 }
 
-// MustGetRequestTimestamp returns the request timestamp from the context and panics if it is not
+// MustFromContext returns the request timestamp from the context and panics if it is not
 // present or invalid, which is a programming error.
-func MustGetRequestTimestamp(ctx context.Context) time.Time {
-	timestamp, err := requestTimestampFromContext(ctx)
+func MustFromContext(ctx context.Context) time.Time {
+	timestamp, err := fromContext(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -37,18 +37,18 @@ func MustGetRequestTimestamp(ctx context.Context) time.Time {
 	return timestamp
 }
 
-// WithRequestTimestamp returns a new context with the given timestamp.
-func WithRequestTimestamp(ctx context.Context, timestamp time.Time) context.Context {
-	return context.WithValue(ctx, timestampKey{}, timestamp)
+// NewContext returns a new context with the given timestamp.
+func NewContext(ctx context.Context, timestamp time.Time) context.Context {
+	return context.WithValue(ctx, key{}, timestamp)
 }
 
-// RequestTimestampMiddleware is an HTTP middleware that stamps each incoming
+// Middleware is an HTTP middleware that stamps each incoming
 // request with its received time. This timestamp is later used as the
 // timestamp of the Raft proposal, so that time-dependent queries
 // execute deterministically across nodes and contexts (catchup / restart etc.).
-func RequestTimestampMiddleware(next http.Handler) http.Handler {
+func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := WithRequestTimestamp(r.Context(), time.Now())
+		ctx := NewContext(r.Context(), time.Now())
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
