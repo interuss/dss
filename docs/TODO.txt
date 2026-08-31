@@ -1,4 +1,4 @@
-TO BE CONVERTED TO ISSUE TICKETS AND REMOVED BEFORE MERGING THIS BRANCH
+Remaining documentation enhancement tasks:
 
 * Ensure deployment/pooling instructions are accurate, especially regarding the expected working directory when calling make_certs.py
 * When linking to the repository, ensure repo version matches documentation version (e.g., 0.22.0 tag)
