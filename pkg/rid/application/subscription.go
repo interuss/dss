@@ -25,9 +25,6 @@ const (
 type SubscriptionApp interface {
 	GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error)
 
-	// InsertSubscription inserts or updates an Subscription.
-	InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
-
 	// UpdateSubscription
 	UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error)
 
@@ -49,46 +46,6 @@ func (a *app) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 	return repo.SearchSubscriptionsByOwner(ctx, cells, owner)
-}
-
-func (a *app) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := s.AdjustTimeRange(a.clock.Now(), nil); err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to adjust time range")
-	}
-	var sub *ridmodels.Subscription
-	_, err := a.store.Transact(ctx, store.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
-
-		// ensure it doesn't exist yet
-		old, err := repo.GetSubscription(ctx, s.ID)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error getting Subscription from repo")
-		}
-		if old != nil {
-			return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "Subscription %s already exists", s.ID)
-		}
-
-		// Check the user hasn't created too many subscriptions in this area.
-		count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, s.Cells, s.Owner)
-		if err != nil {
-			a.logger.Error("Error fetching max subscription count", zap.Error(err))
-			return stacktrace.Propagate(err,
-				"Failed to fetch subscription count, rejecting request")
-		}
-		if count >= maxSubscriptionsPerArea {
-			return stacktrace.Propagate(
-				stacktrace.NewErrorWithCode(dsserr.Exhausted, "Too many existing subscriptions in this area already"),
-				"%s had %d subscriptions in the area", s.Owner, count)
-		}
-
-		sub, err = repo.InsertSubscription(ctx, s)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error inserting Subscription into repo")
-		}
-
-		return nil
-	}))
-	return sub, err
 }
 
 // InsertSubscription implements the App InsertSubscription method
