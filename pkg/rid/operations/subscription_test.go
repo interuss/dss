@@ -26,6 +26,39 @@ var (
 	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
+var subscriptionsPool = []struct {
+	name  string
+	input *ridmodels.Subscription
+}{
+	{
+		name: "a subscription with startTime and endTime",
+		input: &ridmodels.Subscription{
+			ID:                dssmodels.ID(uuid.New().String()),
+			Owner:             dssmodels.Owner(uuid.New().String()),
+			URL:               "https://no/place/like/home",
+			StartTime:         &startTime,
+			EndTime:           &endTime,
+			NotificationIndex: 42,
+			Cells: s2.CellUnion{
+				12494535935418957824,
+			},
+		},
+	},
+	{
+		name: "a subscription without startTime and with endTime",
+		input: &ridmodels.Subscription{
+			ID:                dssmodels.ID(uuid.New().String()),
+			Owner:             dssmodels.Owner(uuid.New().String()),
+			URL:               "https://no/place/like/home",
+			EndTime:           &endTime,
+			NotificationIndex: 42,
+			Cells: s2.CellUnion{
+				12494535935418957824,
+			},
+		},
+	},
+}
+
 func newTestContext() context.Context {
 	ctx := timestamp.NewContext(context.Background(), fakeClock.Now())
 	return locality.NewContext(ctx, "test-locality")
