@@ -61,7 +61,7 @@ func (r *repo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServi
 		return nil, stacktrace.NewError("ISA with id %s already exists", isa.ID)
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := isaRecordFromModel(isa, now)
 	r.state.ISAs[isa.ID] = rec
@@ -77,7 +77,7 @@ func (r *repo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServi
 		return nil, nil
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := isaRecordFromModel(isa, now)
 	rec.Owner = prev.Owner // It's not possible to update the owner of an ISA, this ensure it's to changed to a new value.
