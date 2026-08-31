@@ -81,6 +81,16 @@ func init() {
 		Decode:  dssstore.DecodeJSON[*putSubscriptionPayload],
 		Execute: executeInsertSubscription,
 	}
+	Registry[ridv1.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*putSubscriptionPayload],
+		Execute: executeUpdateSubscription,
+	}
+	Registry[ridv2.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*putSubscriptionPayload],
+		Execute: executeUpdateSubscription,
+	}
 }
 
 func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
@@ -184,6 +194,70 @@ func InsertSubscription(ctx context.Context, repo repos.Repository, sub *ridmode
 	ret, err := repo.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error inserting Subscription into repo")
+	}
+	return ret, nil
+}
+
+func executeUpdateSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(*putSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateSubscriptionOperationID)
+	}
+
+	sub := &ridmodels.Subscription{
+		ID:         payload.ID,
+		Owner:      payload.Owner,
+		URL:        payload.URL,
+		Version:    payload.Version,
+		Cells:      payload.Cells,
+		StartTime:  payload.StartTime,
+		EndTime:    payload.EndTime,
+		AltitudeLo: payload.AltitudeLo,
+		AltitudeHi: payload.AltitudeHi,
+		Writer:     locality.MustFromContext(ctx),
+	}
+
+	return updateSubscription(ctx, repo, sub)
+}
+
+func updateSubscription(ctx context.Context, repo repos.Repository, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	old, err := repo.GetSubscription(ctx, sub.ID)
+	switch {
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Error getting Subscription from repo")
+	case old == nil:
+		// The user wants to update an existing subscription, but one wasn't found.
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", sub.ID.String())
+	case !sub.Version.Matches(old.Version):
+		// The user wants to update a subscription but the version doesn't match.
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", sub.Version),
+			"Subscription currently at version %s but client specified %s", old.Version, sub.Version)
+	case old.Owner != sub.Owner:
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+			"Subscription owned by %s, but %s attempted to update", old.Owner, sub.Owner)
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := sub.AdjustTimeRange(timestamp.MustFromContext(ctx), old); err != nil {
+		return nil, stacktrace.Propagate(err, "Error adjusting time range")
+	}
+
+	// Check the user hasn't created too many subscriptions in this area.
+	count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, sub.Cells, sub.Owner)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to fetch subscription count, rejecting request")
+	}
+	if count >= maxSubscriptionsPerArea {
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.Exhausted, "Too many existing subscriptions in this area already"),
+			"%s had %d subscriptions in the area", sub.Owner, count)
+	}
+
+	ret, err := repo.UpdateSubscription(ctx, sub)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating Subscription in repo")
 	}
 	return ret, nil
 }
