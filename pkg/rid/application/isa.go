@@ -20,9 +20,6 @@ import (
 type ISAApp interface {
 	GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error)
 
-	// InsertISA inserts or updates an ISA.
-	InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
-
 	// UpdateISA
 	UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error)
 
@@ -51,44 +48,6 @@ func (a *app) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time
 	}
 
 	return repo.SearchISAs(ctx, cells, earliest, latest)
-}
-
-// InsertISA implments the AppInterface InsertISA method
-func (a *app) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	// Validate and perhaps correct StartTime and EndTime.
-	if err := isa.AdjustTimeRange(a.clock.Now(), nil); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error adjusting time range")
-	}
-	// Update the notification index for both cells removed and added.
-	var (
-		ret  *ridmodels.IdentificationServiceArea
-		subs []*ridmodels.Subscription
-	)
-	// The following will automatically retry TXN retry errors.
-	_, err := a.store.Transact(ctx, store.NewFuncOperation(func(ctx context.Context, repo repos.Repository) error {
-		// ensure it doesn't exist yet
-		old, err := repo.GetISA(ctx, isa.ID, false)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error getting ISA")
-		}
-		if old != nil {
-			return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "ISA %s already exists", isa.ID)
-		}
-
-		// UpdateNotificationIdxsInCells is done in a Txn along with insert since
-		// they are both modifying the db. Insert a susbcription alone does
-		// not do this, so that does not need to use a txn (in subscription.go).
-		subs, err = repo.UpdateNotificationIdxsInCells(ctx, isa.Cells)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error updating notification indices")
-		}
-		ret, err = repo.InsertISA(ctx, isa)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error inserting ISA")
-		}
-		return nil
-	}))
-	return ret, subs, err // No need to Propagate this error as this stack layer does not add useful information
 }
 
 // UpdateISA implments the AppInterface UpdateISA method

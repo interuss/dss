@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -12,16 +11,12 @@ import (
 
 // IdentificationServiceArea represents a USS ISA over a given 4D volume.
 type IdentificationServiceArea struct {
-	ID         dssmodels.ID
-	URL        string
-	Owner      dssmodels.Owner
-	Cells      s2.CellUnion
-	StartTime  *time.Time
-	EndTime    *time.Time
-	Version    *dssmodels.Version
-	AltitudeHi *float32
-	AltitudeLo *float32
-	Writer     string
+	ID      dssmodels.ID
+	URL     string
+	Owner   dssmodels.Owner
+	Version *dssmodels.Version
+	Writer  string
+	*dssmodels.CellsVolume4D
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts
@@ -39,6 +34,9 @@ func (i *IdentificationServiceArea) SetExtents(extents *dssmodels.Volume4D) erro
 	var err error
 	if extents == nil {
 		return nil
+	}
+	if i.CellsVolume4D == nil {
+		i.CellsVolume4D = &dssmodels.CellsVolume4D{}
 	}
 	i.StartTime = extents.StartTime
 	i.EndTime = extents.EndTime

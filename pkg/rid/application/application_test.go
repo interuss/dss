@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"testing"
-	"time"
 
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -23,8 +22,6 @@ import (
 
 var (
 	fakeClock = clockwork.NewFakeClock()
-	startTime = fakeClock.Now().Add(-time.Minute)
-	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
 type mockRepo struct {

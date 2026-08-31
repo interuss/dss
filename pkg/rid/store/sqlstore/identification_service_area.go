@@ -33,7 +33,7 @@ func (r *repo) fetchISAs(ctx context.Context, query string, args ...interface{})
 
 	var writer pgtype.Text
 	for rows.Next() {
-		i := new(ridmodels.IdentificationServiceArea)
+		i := &ridmodels.IdentificationServiceArea{CellsVolume4D: &dssmodels.CellsVolume4D{}}
 
 		var updateTime time.Time
 
