@@ -54,17 +54,18 @@ func DecodeJSON[T OperationRequest](buf []byte) (OperationRequest, error) {
 }
 
 // TransactWithResult wraps Store.Transact and casts the result to ResultType, avoiding a cast at every call site.
+// The result (if any) is returned alongside a non-nil error since some operations may return both (e.g. AirspaceConflictResponse in CreateOperationalIntentReference).
 func TransactWithResult[R any, ResultType any](ctx context.Context, store Store[R], request OperationRequest) (ResultType, error) {
 	var empty ResultType
 	transactionResult, err := store.Transact(ctx, request)
-	if err != nil {
-		return empty, err
-	}
 	resultType, ok := transactionResult.(ResultType)
 	if !ok {
+		if err != nil {
+			return empty, err
+		}
 		return empty, stacktrace.NewError("unexpected result type %T, want %T", transactionResult, empty)
 	}
-	return resultType, nil
+	return resultType, err
 }
 
 // FuncOperation wraps a closure as an OperationRequest for gradual migration.
