@@ -30,7 +30,7 @@ func setUpStore(t *testing.T) *repo {
 
 func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	var (
@@ -50,7 +50,7 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 
 func TestCheckpointRestoreISA(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	_, err := repo.InsertISA(ctx, serviceArea)
@@ -76,7 +76,7 @@ func TestCheckpointRestoreISA(t *testing.T) {
 
 func TestCheckpointIsolatesNotificationIndex(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	sub, err := repo.InsertSubscription(ctx, subscriptionsPool[0].input)

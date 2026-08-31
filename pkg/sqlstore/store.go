@@ -17,6 +17,7 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/sqlstore/params"
 	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -189,7 +190,10 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	var result any
 	var err error
 	err = crdbpgx.ExecuteTx(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-		result, err = s.execute(ctx, s.newRepo(tx), request)
+		// Each retry attempt gets its own timestamp, so that the request timestamp is always "now" for the current attempt.
+		// This is important because the request timestamp is used to generate deterministic IDs, and we want each attempt to have a unique ID.
+		attemptCtx := timestamp.NewContext(ctx, time.Now())
+		result, err = s.execute(attemptCtx, s.newRepo(tx), request)
 		return err
 	})
 	return result, err
@@ -200,7 +204,9 @@ func (s *Store[R]) transactYugabyte(ctx context.Context, request store.Operation
 	var err error
 	for attempt := 0; attempt <= s.maxRetries; attempt++ {
 		err = pgx.BeginTxFunc(ctx, s.Pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-			result, err = s.execute(ctx, s.newRepo(tx), request)
+			// See the comment in Transact above: each retry attempt gets its own timestamp.
+			attemptCtx := timestamp.NewContext(ctx, time.Now())
+			result, err = s.execute(attemptCtx, s.newRepo(tx), request)
 			return err
 		})
 		if err == nil || !isYugabyteRetryable(err) {
