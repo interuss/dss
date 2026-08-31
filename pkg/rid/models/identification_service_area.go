@@ -28,27 +28,6 @@ func (i *IdentificationServiceArea) SetCells(cids []int64) {
 	i.Cells = geo.CellUnionFromInt64(cids)
 }
 
-// SetExtents performs some data validation and sets the 4D volume on the
-// IdentificationServiceArea.
-func (i *IdentificationServiceArea) SetExtents(extents *dssmodels.Volume4D) error {
-	var err error
-	if extents == nil {
-		return nil
-	}
-	if i.CellsVolume4D == nil {
-		i.CellsVolume4D = &dssmodels.CellsVolume4D{}
-	}
-	i.StartTime = extents.StartTime
-	i.EndTime = extents.EndTime
-	i.AltitudeHi = extents.SpatialVolume.AltitudeHi
-	i.AltitudeLo = extents.SpatialVolume.AltitudeLo
-	i.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return stacktrace.Propagate(err, "Error calculating covering for ISA")
-	}
-	return nil
-}
-
 // AdjustTimeRange adjusts the time range to the max allowed ranges on a
 // IdentificationServiceArea.
 func (i *IdentificationServiceArea) AdjustTimeRange(now time.Time, old *IdentificationServiceArea) error {

@@ -9,7 +9,6 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv1 "github.com/interuss/dss/pkg/rid/models/api/v1"
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -130,6 +129,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents"))}}
 	}
+
 	extents, err := apiv1.FromVolume4D(&req.Body.Extents)
 	if err != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -141,20 +141,15 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	isa := &ridmodels.IdentificationServiceArea{
-		ID:      id,
-		URL:     string(req.Body.FlightsUrl),
-		Owner:   dssmodels.Owner(*req.Auth.ClientID),
-		Version: version,
-		Writer:  s.Locality,
-	}
+	url := string(req.Body.FlightsUrl)
 
-	if err := isa.SetExtents(extents); err != nil {
+	payload, err := operations.NewUpdateISAPayload(id, dssmodels.Owner(*req.Auth.ClientID), url, s.Locality, version, extents, s.AllowHTTPBaseUrls)
+	if err != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
+			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not update ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -171,10 +166,10 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv1.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv1.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.UpdateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
-		ServiceArea: *apiv1.ToIdentificationServiceArea(insertedISA),
+		ServiceArea: *apiv1.ToIdentificationServiceArea(result.ISA),
 		Subscribers: apiSubscribers,
 	}}
 }
