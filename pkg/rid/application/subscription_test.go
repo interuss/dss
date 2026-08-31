@@ -2,17 +2,12 @@ package application
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	"github.com/interuss/stacktrace"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 var (
@@ -51,12 +46,6 @@ var (
 		},
 	}
 )
-
-func setUpSubApp(ctx context.Context, t *testing.T) (*app, func()) {
-	l := zap.L()
-	transactor, cleanup := setUpStore(ctx, t, l)
-	return NewFromTransactor(transactor, l).(*app), cleanup
-}
 
 type subscriptionStore struct {
 	subs map[dssmodels.ID]*ridmodels.Subscription
@@ -165,169 +154,4 @@ func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, wr
 // Implements repos.ISA.CountSubscriptions
 func (store *subscriptionStore) CountSubscriptions(ctx context.Context) (int64, error) {
 	return int64(len(store.subs)), nil
-}
-
-func TestBadOwner(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
-
-	repo, err := app.store.Interact(ctx)
-	require.NoError(t, err)
-
-	sub, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: "orig Owner",
-		Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
-	})
-	require.NoError(t, err)
-	// Test changing owner fails
-	sub.Owner = "new bad owner"
-	_, err = app.UpdateSubscription(ctx, sub)
-	require.Equal(t, dsserr.PermissionDenied, stacktrace.GetCode(err))
-}
-
-func TestSubscriptionUpdateCells(t *testing.T) {
-	ctx := context.Background()
-	owner := dssmodels.Owner("owner")
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
-
-	// ensure that when we do an update, nothing in the s2 library joins multiple
-	// cells together at a lower level.
-
-	// These 4 cells are fully encompassed by the parent cell, meaning the s2
-	// library might try to Normalize (this is the name of the function) the Union
-	// into a single cell. We don't support this currently, so let's make sure
-	// this doesn't happen.
-	repo, err := app.store.Interact(ctx)
-	require.NoError(t, err)
-
-	sub, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
-		ID:        dssmodels.ID(uuid.New().String()),
-		Owner:     owner,
-		StartTime: &startTime,
-		EndTime:   &endTime,
-		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
-	})
-
-	require.NoError(t, err)
-	require.NotNil(t, sub)
-
-	sub.Cells = s2.CellUnion{17106221953846345728}
-
-	sub, err = app.UpdateSubscription(ctx, sub)
-	require.NoError(t, err)
-	require.NotNil(t, sub)
-
-	subs, err := app.SearchSubscriptionsByOwner(ctx, sub.Cells, owner)
-	require.NoError(t, err)
-	require.NotNil(t, subs)
-	require.Len(t, subs, 1)
-}
-
-func TestUpdateSubscriptionsWithTimes(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
-
-	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             stacktrace.ErrorCode
-		wantStartTime       time.Time
-		wantEndTime         time.Time
-	}{
-		{
-			name:                "updating-keeps-old-times",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-start-time-to-past",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(-3 * time.Hour),
-			wantErr:             dsserr.BadRequest,
-		},
-		{
-			name:                "changing-start-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			startTime:           fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(3 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(6 * time.Hour),
-		},
-		{
-			name:                "changing-end-time-to-future",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			endTime:             fakeClock.Now().Add(3 * time.Hour),
-			wantStartTime:       fakeClock.Now().Add(-6 * time.Hour),
-			wantEndTime:         fakeClock.Now().Add(3 * time.Hour),
-		},
-		{
-			name:                "changing-end-time-more-than-24h",
-			updateFromStartTime: fakeClock.Now().Add(-6 * time.Hour),
-			updateFromEndTime:   fakeClock.Now().Add(6 * time.Hour),
-			endTime:             fakeClock.Now().Add(24 * time.Hour),
-			wantErr:             dsserr.BadRequest,
-		},
-	} {
-		t.Run(r.name, func(t *testing.T) {
-			var (
-				id      = dssmodels.ID(uuid.New().String())
-				owner   = dssmodels.Owner(uuid.New().String())
-				version *dssmodels.Version
-			)
-
-			repo, err := app.store.Interact(ctx)
-			require.NoError(t, err)
-
-			// Insert a pre-existing subscription to simulate updating from something.
-			existing, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
-				ID:        id,
-				Owner:     owner,
-				StartTime: &r.updateFromStartTime,
-				EndTime:   &r.updateFromEndTime,
-				Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
-			})
-			require.NoError(t, err)
-			version = existing.Version
-
-			s := &ridmodels.Subscription{
-				ID:      id,
-				Owner:   owner,
-				Version: version,
-				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
-			}
-			if !r.startTime.IsZero() {
-				s.StartTime = &r.startTime
-			}
-			if !r.endTime.IsZero() {
-				s.EndTime = &r.endTime
-			}
-			sub, err := app.UpdateSubscription(ctx, s)
-
-			if r.wantErr == stacktrace.ErrorCode(0) {
-				require.NoError(t, err)
-			} else {
-				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
-			}
-
-			if !r.wantStartTime.IsZero() {
-				require.NotNil(t, sub.StartTime)
-				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*sub.StartTime).UTC().Truncate(time.Microsecond))
-			}
-			if !r.wantEndTime.IsZero() {
-				require.NotNil(t, sub.EndTime)
-				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*sub.EndTime).UTC().Truncate(time.Microsecond))
-			}
-		})
-	}
 }

@@ -41,6 +41,16 @@ func init() {
 		Decode:  dssstore.DecodeJSON[*ridv2.CreateSubscriptionRequest],
 		Execute: executeInsertSubscription,
 	}
+	Registry[ridv1.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*ridv1.UpdateSubscriptionRequest],
+		Execute: executeUpdateSubscription,
+	}
+	Registry[ridv2.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*ridv2.UpdateSubscriptionRequest],
+		Execute: executeUpdateSubscription,
+	}
 }
 
 func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
@@ -177,6 +187,108 @@ func InsertSubscription(ctx context.Context, repo repos.Repository, sub *ridmode
 	ret, err := repo.InsertSubscription(ctx, sub)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error inserting Subscription into repo")
+	}
+	return ret, nil
+}
+
+func executeUpdateSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	var (
+		rawID      string
+		rawVersion string
+		url        string
+		clientID   *string
+		extents    *dssmodels.Volume4D
+	)
+
+	switch req := request.(type) {
+	case *ridv1.UpdateSubscriptionRequest:
+		if req.Body.Callbacks.IdentificationServiceAreaUrl == nil {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required callbacks")
+		}
+		if len(req.Body.Extents.SpatialVolume.Footprint.Vertices) == 0 {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents")
+		}
+		e, err := apiv1.FromVolume4D(&req.Body.Extents)
+		if err != nil {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
+		}
+		rawID, rawVersion, url, clientID, extents = string(req.Id), req.Version, string(*req.Body.Callbacks.IdentificationServiceAreaUrl), req.Auth.ClientID, e
+
+	case *ridv2.UpdateSubscriptionRequest:
+		if req.Body.UssBaseUrl == "" {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL")
+		}
+		e, err := apiv2.FromVolume4D(&req.Body.Extents)
+		if err != nil {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err))
+		}
+		rawID, rawVersion, url, clientID, extents = string(req.Id), req.Version, string(req.Body.UssBaseUrl), req.Auth.ClientID, e
+
+	default:
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateSubscriptionOperationID)
+	}
+
+	version, err := dssmodels.VersionFromString(rawVersion)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version")
+	}
+	id, err := dssmodels.IDFromString(rawID)
+	if err != nil {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format")
+	}
+
+	sub := &ridmodels.Subscription{
+		ID:      id,
+		Owner:   dssmodels.Owner(*clientID),
+		URL:     url,
+		Version: version,
+		Writer:  locality.MustFromContext(ctx),
+	}
+	if err := sub.SetExtents(extents); err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents")
+	}
+
+	return updateSubscription(ctx, repo, sub)
+}
+
+func updateSubscription(ctx context.Context, repo repos.Repository, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	old, err := repo.GetSubscription(ctx, sub.ID)
+	switch {
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Error getting Subscription from repo")
+	case old == nil:
+		// The user wants to update an existing subscription, but one wasn't found.
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", sub.ID.String())
+	case !sub.Version.Matches(old.Version):
+		// The user wants to update a subscription but the version doesn't match.
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", sub.Version),
+			"Subscription currently at version %s but client specified %s", old.Version, sub.Version)
+	case old.Owner != sub.Owner:
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
+			"Subscription owned by %s, but %s attempted to update", old.Owner, sub.Owner)
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := sub.AdjustTimeRange(timestamp.MustFromContext(ctx), old); err != nil {
+		return nil, stacktrace.Propagate(err, "Error adjusting time range")
+	}
+
+	// Check the user hasn't created too many subscriptions in this area.
+	count, err := repo.MaxSubscriptionCountInCellsByOwner(ctx, sub.Cells, sub.Owner)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to fetch subscription count, rejecting request")
+	}
+	if count >= maxSubscriptionsPerArea {
+		return nil, stacktrace.Propagate(
+			stacktrace.NewErrorWithCode(dsserr.Exhausted, "Too many existing subscriptions in this area already"),
+			"%s had %d subscriptions in the area", sub.Owner, count)
+	}
+
+	ret, err := repo.UpdateSubscription(ctx, sub)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating Subscription in repo")
 	}
 	return ret, nil
 }
