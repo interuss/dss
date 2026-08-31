@@ -8,6 +8,7 @@ import (
 	ridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	"github.com/interuss/dss/pkg/locality"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -83,6 +84,16 @@ func init() {
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*putISAPayload],
 		Execute: executeInsertISA,
+	}
+	Registry[ridv1.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*putISAPayload],
+		Execute: executeUpdateISA,
+	}
+	Registry[ridv2.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*putISAPayload],
+		Execute: executeUpdateISA,
 	}
 }
 
@@ -189,6 +200,67 @@ func insertISA(ctx context.Context, repo repos.Repository, isa *ridmodels.Identi
 	ret, err := repo.InsertISA(ctx, isa)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error inserting ISA")
+	}
+
+	return &ISAResult{ISA: ret, Subscriptions: subs}, nil
+}
+
+func executeUpdateISA(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(*putISAPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateIdentificationServiceAreaOperationID)
+	}
+
+	isa := &ridmodels.IdentificationServiceArea{
+		ID:         payload.ID,
+		Owner:      payload.Owner,
+		URL:        payload.URL,
+		Version:    payload.Version,
+		Cells:      payload.Cells,
+		StartTime:  payload.StartTime,
+		EndTime:    payload.EndTime,
+		AltitudeLo: payload.AltitudeLo,
+		AltitudeHi: payload.AltitudeHi,
+		Writer:     locality.MustFromContext(ctx),
+	}
+
+	return updateISA(ctx, repo, isa)
+}
+
+func updateISA(ctx context.Context, repo repos.Repository, isa *ridmodels.IdentificationServiceArea) (*ISAResult, error) {
+	old, err := repo.GetISA(ctx, isa.ID, true)
+	switch {
+	case err != nil:
+		return nil, stacktrace.Propagate(err, "Error getting ISA")
+	case old == nil:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", isa.ID)
+	case old.Owner != isa.Owner:
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			"ISA owned by %s, but %s attempted to modify", old.Owner, isa.Owner)
+	case !old.Version.Matches(isa.Version):
+		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+			"ISA currently at version %s but client specified %s", old.Version, isa.Version)
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := isa.AdjustTimeRange(timestamp.MustFromContext(ctx), old); err != nil {
+		return nil, stacktrace.Propagate(err, "Error adjusting time range")
+	}
+
+	ret, err := repo.UpdateISA(ctx, isa)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating ISA")
+	}
+
+	// TODO steeling, we should change this to a Custom type, to obfuscate
+	// some of these metrics and prevent us from doing the wrong thing.
+	cells := s2.CellUnionFromUnion(old.Cells, isa.Cells)
+	geo.Levelify(&cells)
+	// UpdateNotificationIdxsInCells is done in the same transaction as the insert since they
+	// are both modifying the store.
+	subs, err := repo.UpdateNotificationIdxsInCells(ctx, cells)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating notification indices")
 	}
 
 	return &ISAResult{ISA: ret, Subscriptions: subs}, nil
