@@ -14,9 +14,7 @@ to scale down the Statefulset and that removes the last node first (ex:
 `cockroachdb-n` where `n` is the `size of statefulset - 1`, `n` starts at 0)
 
 1. Check if all nodes are healthy and there are no
-   under-replicated/unavailable ranges:
-
-   `kubectl exec -it cockroachdb-0 -- cockroach node status --ranges --certs-dir=cockroach-certs/`
+   under-replicated/unavailable ranges:<br>`kubectl exec -it cockroachdb-0 -- cockroach node status --ranges --certs-dir=cockroach-certs/`
 
     1. If there are under-replicated ranges changes are it is because of a node
        failure. If all nodes are healthy then it should auto recover.
@@ -27,17 +25,13 @@ to scale down the Statefulset and that removes the last node first (ex:
 1. Identify the node id we intend to decommission from the previous commands
    then decommission them. The following command assumes that `cockroachdb-0` is
    not targeted for decommission otherwise select a different instance to
-   connect to:
-
-   `kubectl exec -it cockroachdb-0 -- cockroach node decommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
+   connect to:<br>`kubectl exec -it cockroachdb-0 -- cockroach node decommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
 
 1. If the command executes successfully all targeted nodes should not host any
    ranges. Repeat step one to verify
 
     a. In the event of a hung decommission please recommission the nodes and
-    repeat the above step with smaller number of nodes to decommission:
-
-    `kubectl exec -it cockroachdb-0 -- cockroach node recommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
+    repeat the above step with smaller number of nodes to decommission:<br>`kubectl exec -it cockroachdb-0 -- cockroach node recommission <node id 1> [<node id 2> ...] --certs-dir=cockroach-certs/`
 
 1. Power down the pods or delete the Statefulset, whichever is applicable
 
