@@ -3,11 +3,11 @@ This directory provides an [Helm Chart](https://helm.sh/) to deploy the DSS and 
 
 ## Requirements
 1. A Kubernetes cluster should be running and you should be properly authenticated. Requirements and instructions to create a new Kubernetes cluster can be found here:
-    * [AWS](../../../../docs/infrastructure/aws.md)
-    * [Google](../../../../docs/infrastructure/google.md)
-    * [Minikube](../../../../docs/infrastructure/minikube.md)
+    * [AWS](../../../../docs/deployment/infrastructure/aws.md)
+    * [Google](../../../../docs/deployment/infrastructure/google.md)
+    * [Minikube](../../../../docs/deployment/infrastructure/minikube.md)
 
-2. Create the certificates and apply them to the cluster using the instructions [here](../../../../docs/operations/certificates-management.md)
+2. Create the certificates and apply them to the cluster using the instructions [here](../../../../docs/deployment/pooling/index.md)
 3. Install [Helm](https://helm.sh/) version 3.11.3 or higher
 
 ## Usage

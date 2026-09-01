@@ -5,11 +5,11 @@ This folder contains a set of configuration to be used with [tanka](https://tank
 ## Requirements
 
 1. A Kubernetes cluster should be running and you should be properly authenticated. Requirements and instructions to create a new Kubernetes cluster can be found here:
-    * [AWS](../../../docs/infrastructure/aws.md)
-    * [Google](../../../docs/infrastructure/google.md)
-    * [Minikube](../../../docs/infrastructure/minikube.md)
+    * [AWS](../../../docs/deployment/infrastructure/aws.md)
+    * [Google](../../../docs/deployment/infrastructure/google.md)
+    * [Minikube](../../../docs/deployment/infrastructure/minikube.md)
 
-2. Create the certificates and apply them to the cluster using the instructions [here](../../../docs/operations/certificates-management.md)
+2. Create the certificates and apply them to the cluster using the instructions [here](../../../docs/deployment/pooling/index.md)
 3. Install [Tanka](https://tanka.dev/install)
 
 ## Usage
