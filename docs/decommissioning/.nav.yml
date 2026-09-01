@@ -2,5 +2,5 @@ nav:
   - "Overview": index.md
   - "Leaving a CockroachDB pool": depooling-crdb.md
   - "Leaving a YugabyteDB pool": depooling-yugabyte.md
-  - "After terraform": after-terraform.md
+  - "Terraform": terraform.md
   - "Minikube": minikube.md

@@ -7,5 +7,5 @@ Before infrastructure decommissioning, the DSS instance must gracefully leave th
 
 Final decommissioning depends on how the DSS was deployed:
 
-* [Terraform](./after-terraform.md)
+* [Terraform](./terraform.md)
 * [Minikube](./minikube.md)
