@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 	"time"
@@ -37,6 +38,16 @@ type (
 	// Primarily used as a fencing token in data mutations.
 	VersionNumber int32
 )
+
+// NewDeterministicImplicitSubscriptionID derives a deterministic UUID from the given source.
+// This allows the same ID to be generated across multiple Raft nodes and replays.
+func NewDeterministicImplicitSubscriptionID(reader io.Reader) (dssmodels.ID, error) {
+	id, err := uuid.NewRandomFromReader(reader)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to build UUID")
+	}
+	return dssmodels.ID(id.String()), nil
+}
 
 // NewOVNFromTime encodes t as an OVN.
 func NewOVNFromTime(t time.Time, salt string) OVN {

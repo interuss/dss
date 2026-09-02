@@ -26,6 +26,7 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	requestlocality "github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/random"
 	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
@@ -368,6 +369,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 	handler = timestamp.RequestTimestampMiddleware(handler)
+	handler = random.Middleware(handler)
 	handler = requestlocality.LocalityMiddleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {

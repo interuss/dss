@@ -3,6 +3,7 @@
 Background information on various aspects of the InterUSS DSS product may be found here.
 
 * [Architecture](./architecture.md)
+* [Authentication](./authentication.md)
 * [Sizing](./sizing.md)
 * [Pooling](./pooling.md)
     * [With CockroachDB](./pooling-crdb.md)

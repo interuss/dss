@@ -35,7 +35,9 @@ Download & install the following tools to your workstation:
         2. output.tf
         3. terraform.tfvars
         4. variables.gen.tf
-    3. Set the variables in `terraform.tfvars` according to your environment. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
+    3. Set the variables in `terraform.tfvars` according to your environment.
+        1. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
+        2. See [authentication documentation](../../background/authentication.md) for additional information.
     4. Initialize terraform: `terraform init`.
     5. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
     6. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
