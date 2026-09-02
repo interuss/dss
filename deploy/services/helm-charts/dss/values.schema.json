@@ -260,6 +260,12 @@
                 "type": "string"
               }
             },
+            "jwksRefreshInterval": {
+              "type": "string"
+            },
+            "jwksKeyTtl": {
+              "type": "string"
+            },
             "enableScd": {
               "type": "boolean"
             },

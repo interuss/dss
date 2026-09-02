@@ -251,8 +251,10 @@ variable "authorization" {
   type = object({
     public_key_pem_path = optional(string)
     jwks = optional(object({
-      endpoint = string
-      key_id   = string
+      endpoint         = string
+      key_id           = string
+      refresh_interval = optional(string)
+      key_ttl          = optional(string)
     }))
   })
   description = <<-EOT
@@ -285,12 +287,21 @@ variable "authorization" {
         Example: https://auth.example.com/.well-known/jwks.json
       - key_id:
         If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
+      - refresh_interval:
+        Cadence at which the keys are fetched again from the JWKS endpoint. Defaults to the core-service default when omitted.
+        Example: 1m
+      - key_ttl:
+        Duration during which keys that could not be refreshed are still used before the core-service shuts down.
+        Defaults to the core-service default when omitted.
+        Example: 1h
     Example:
     ```
     {
       jwks = {
         endpoint = "https://auth.example.com/.well-known/jwks.json"
         key_id = "9C6DF78B-77A7-4E89-8990-E654841A7826"
+        refresh_interval = "1m"
+        key_ttl = "1h"
       }
     }
     ```
@@ -301,6 +312,7 @@ variable "authorization" {
     error_message = "Public key to validate incoming access tokens shall be provided exclusively either with a .pem file or via JWKS."
   }
 }
+
 
 variable "enable_scd" {
   type        = bool
