@@ -1,0 +1,5 @@
+nav:
+  - "Overview": index.md
+  - "After terraform": after-terraform.md
+  - "To Minikube": to-minikube.md
+  - "Support services": support.md

@@ -47,7 +47,7 @@ of the versions listed above.
 
 ### Flags compatibility
 
-Feature flags (particularly those detailed on [the performance page](./performances.md)) are
+Feature flags (particularly those detailed on [the performance page](./performance.md)) are
 activated per node, with no global synchronization. Modifying these flags via a progressive
 rollout restart triggers a transitional state with the following impacts:
 
