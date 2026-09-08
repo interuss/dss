@@ -26,7 +26,7 @@ func (r *repo) GetUssAvailability(_ context.Context, id dssmodels.Manager) (*scd
 }
 
 func (r *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := &availabilityRecord{
 		Uss:          s.Uss,

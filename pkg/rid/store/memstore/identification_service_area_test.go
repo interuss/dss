@@ -34,7 +34,7 @@ var (
 
 func TestStoreSearchISAs(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	cells := s2.CellUnion{
 		s2.CellID(17106221850767130624),
 		s2.CellID(17106221885126868992),
@@ -137,7 +137,7 @@ func TestStoreSearchISAs(t *testing.T) {
 
 func TestBadVersion(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	saOut1, err := repo.InsertISA(ctx, serviceArea)
@@ -159,7 +159,7 @@ func TestBadVersion(t *testing.T) {
 
 func TestStoreExpiredISA(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	saOut, err := repo.InsertISA(ctx, serviceArea)
@@ -194,7 +194,7 @@ func TestStoreExpiredISA(t *testing.T) {
 
 func TestStoreDeleteISAs(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert the ISA.
@@ -215,7 +215,7 @@ func TestStoreDeleteISAs(t *testing.T) {
 
 func TestStoreISAWithNoGeoData(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
@@ -230,7 +230,7 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 
 func TestListExpiredISAs(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert ISA with endtime 1 day from now
@@ -261,7 +261,7 @@ func TestListExpiredISAs(t *testing.T) {
 
 func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert ISA with endtime 1 day from now
@@ -294,7 +294,7 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 
 func TestStoreCountISAs(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	repo := setUpStore(t)
 
 	// Insert the ISA.
