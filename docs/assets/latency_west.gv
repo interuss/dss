@@ -1,0 +1,14 @@
+digraph time_to_answer {
+    rankdir=LR;
+    node [shape=circle, colorscheme=paired8, width=2.0, fixedsize=true];
+    graph [dpi = 300];
+
+    N1 [label="N1\nProvider 1\nRegion 1\nZone 1",color=1]
+    N2 [label="N2\nProvider 1\nRegion 1\nZone 2",color=2]
+    N3 [label="N3\nProvider 2\nRegion 1",color=3]
+
+    N1 -> N2 [label="~0.78ms",dir=both]
+    N1 -> N3 [label="~13.4ms",dir=both]
+    N2 -> N3 [label="~12.6ms",dir=both]
+
+}
