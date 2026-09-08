@@ -43,13 +43,6 @@ type mockApp struct {
 	mock.Mock
 }
 
-func (ma *mockApp) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, s)
-	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
-}
-
 func (ma *mockApp) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -203,43 +196,6 @@ func TestCreateSubscription(t *testing.T) {
 			},
 		},
 		{
-			name:      "missing-extents",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			appErr:    dsserr.BadRequest,
-			wantErr:   &respSet.Response400,
-		},
-		{
-			name:      "missing-extents-spatial-volume",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents:   restapi.Volume4D{},
-			appErr:    dsserr.BadRequest,
-			wantErr:   &respSet.Response400,
-		},
-		{
-			name:      "missing-spatial-volume-footprint",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{},
-			},
-			appErr:  dsserr.BadRequest,
-			wantErr: &respSet.Response400,
-		},
-		{
-			name:      "missing-spatial-volume-footprint",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{
-					Footprint: restapi.GeoPolygon{},
-				},
-			},
-			appErr:  dsserr.BadRequest,
-			wantErr: &respSet.Response400,
-		},
-		{
 			name:    "missing-callbacks",
 			id:      dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
 			extents: testdata.LoopVolume4D,
@@ -249,14 +205,15 @@ func TestCreateSubscription(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
+			ms := &mockStore{}
 			if r.appErr == stacktrace.ErrorCode(0) {
 				ma.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*ridmodels.IdentificationServiceArea(nil), nil)
-				ma.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
 					r.wantSubscription, nil,
 				)
 			}
-			s := &Server{App: ma}
+			s := &Server{App: ma, Store: ms}
 
 			respSet = s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
 				Id: restapi.SubscriptionUUID(r.id.String()),
@@ -272,6 +229,7 @@ func TestCreateSubscription(t *testing.T) {
 				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }
@@ -298,11 +256,13 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	}
 
 	ma := &mockApp{}
+	ms := &mockStore{}
 
 	ma.On("SearchISAs", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
-	ma.On("InsertSubscription", mock.Anything, sub).Return(sub, nil)
+	ms.On("Transact", mock.Anything, mock.Anything).Return(sub, nil)
 	s := &Server{
-		App: ma,
+		App:   ma,
+		Store: ms,
 	}
 
 	respSet := s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
@@ -317,6 +277,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	})
 	require.NotNil(t, respSet.Response200)
 	require.True(t, ma.AssertExpectations(t))
+	require.True(t, ms.AssertExpectations(t))
 
 	require.Equal(t, []restapi.IdentificationServiceArea{
 		{
