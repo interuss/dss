@@ -40,7 +40,7 @@ func setUpStore(t *testing.T) *repo {
 // writeCtx returns a context carrying a deterministic write timestamp so that
 // updated_at is controlled in tests.
 func writeCtx() context.Context {
-	return timestamp.WithRequestTimestamp(context.Background(), writeTime)
+	return timestamp.NewContext(context.Background(), writeTime)
 }
 
 func sampleConstraint() *scdmodels.Constraint {
