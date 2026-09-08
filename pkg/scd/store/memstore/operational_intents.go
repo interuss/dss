@@ -98,7 +98,7 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		ussRequestedOVN = operation.OVN.String()
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := &operationalIntentRecord{
 		ID:              operation.ID,

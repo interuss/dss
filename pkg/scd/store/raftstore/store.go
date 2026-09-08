@@ -6,7 +6,7 @@ import (
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
-	"github.com/interuss/dss/pkg/scd/actions"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
 	scdraftparams "github.com/interuss/dss/pkg/scd/store/raftstore/params"
@@ -17,8 +17,7 @@ import (
 // repo is a full implementation of scd.repos.Repository for Raft-based storage.
 type repo struct {
 	consensus *consensus.Consensus
-	memStore  *memstore.Store[repos.Repository]
-	memRepo   repos.Repository
+	*memstore.Store[repos.Repository]
 }
 
 func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
@@ -32,8 +31,8 @@ func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.
 		return nil, stacktrace.Propagate(err, "failed to initialize scd memstore")
 	}
 
-	r := &repo{memStore: memStore, memRepo: memStore.GetRepo()}
-	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "scd")), locality, params, r, actions.Registry)
+	r := &repo{Store: memStore}
+	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "scd")), locality, params, r, operations.Registry)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize scd raftstore")
 	}
@@ -45,19 +44,13 @@ func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.
 
 func (r *repo) GetRepo() repos.Repository { return r }
 
-func (r *repo) GetSnapshot() ([]byte, error) {
-	return r.memStore.GetSnapshot()
-}
-
-func (r *repo) RestoreFromSnapshot(data []byte) error {
-	return r.memStore.RestoreFromSnapshot(data)
-}
-
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case searchConstraints, getConstraint, upsertConstraint, deleteConstraint, countConstraints:
+		return r.applyConstraint(ctx, proposal)
 
 	default:
-		handler, ok := actions.Registry[string(proposal.RequestType)]
+		handler, ok := operations.Registry[string(proposal.RequestType)]
 		if !ok {
 			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
 		}
@@ -67,6 +60,6 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 			return nil, stacktrace.Propagate(err, "failed to decode %s payload", proposal.RequestType)
 		}
 
-		return handler.Execute(ctx, r.memRepo, request)
+		return handler.Execute(ctx, r.Store.GetRepo(), request)
 	}
 }

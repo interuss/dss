@@ -11,7 +11,7 @@ import (
 )
 
 func (r *repo) SaveOwnMetadata(ctx context.Context, loc string, publicEndpoint string) error {
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	r.state.Participants[locality(loc)] = &participant{
 		PublicEndpoint: publicEndpoint,
