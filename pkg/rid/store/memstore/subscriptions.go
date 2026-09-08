@@ -67,7 +67,7 @@ func (r *repo) InsertSubscription(ctx context.Context, s *ridmodels.Subscription
 		return nil, stacktrace.NewError("Subscription with id %s already exists", s.ID)
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := subRecordFromModel(s, now)
 	r.state.Subscriptions[s.ID] = rec
@@ -83,7 +83,7 @@ func (r *repo) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription
 		return nil, nil
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := subRecordFromModel(s, now)
 	rec.Owner = prev.Owner // It's not possible to update the owner of a subscription, this ensure it's to changed to a new value.
@@ -137,7 +137,7 @@ func (r *repo) searchSubscriptions(ctx context.Context, cells s2.CellUnion, owne
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	var out []*ridmodels.Subscription
 	for rec := range r.liveSubscriptionsInCells(now, cells, owner) {
@@ -154,7 +154,7 @@ func (r *repo) searchSubscriptions(ctx context.Context, cells s2.CellUnion, owne
 // subscription in the given cells.
 func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	var out []*ridmodels.Subscription
 	for rec := range r.liveSubscriptionsInCells(now, cells, nil) {
@@ -166,7 +166,7 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 
 func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	want := cellSet(cells)
 	counts := make(map[s2.CellID]int, len(cells))
