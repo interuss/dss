@@ -1,4 +1,4 @@
-package actions
+package operations
 
 import (
 	"context"
@@ -16,16 +16,16 @@ func init() {
 	Registry[ridv1.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*ridv1.DeleteSubscriptionRequest],
-		Execute: ExecuteDeleteSubscription,
+		Execute: executeDeleteSubscription,
 	}
 	Registry[ridv2.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*ridv2.DeleteSubscriptionRequest],
-		Execute: ExecuteDeleteSubscription,
+		Execute: executeDeleteSubscription,
 	}
 }
 
-func ExecuteDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	var (
 		rawID      string
 		rawVersion string

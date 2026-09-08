@@ -7,12 +7,12 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-type localityKey struct{}
+type key struct{}
 
-// MustGetRequestLocality returns the request locality from the context and panics if it is not
+// MustFromContext returns the request locality from the context and panics if it is not
 // present, which is a programming error.
-func MustGetRequestLocality(ctx context.Context) string {
-	locality, ok := ctx.Value(localityKey{}).(string)
+func MustFromContext(ctx context.Context) string {
+	locality, ok := ctx.Value(key{}).(string)
 	if !ok {
 		panic(stacktrace.NewError("request locality not present in context"))
 	}
@@ -20,17 +20,17 @@ func MustGetRequestLocality(ctx context.Context) string {
 	return locality
 }
 
-// WithRequestLocality returns a new context with the given locality.
-func WithRequestLocality(ctx context.Context, locality string) context.Context {
-	return context.WithValue(ctx, localityKey{}, locality)
+// NewContext returns a new context with the given locality.
+func NewContext(ctx context.Context, locality string) context.Context {
+	return context.WithValue(ctx, key{}, locality)
 }
 
-// LocalityMiddleware is an HTTP middleware that stamps each incoming request with this
+// Middleware is an HTTP middleware that stamps each incoming request with this
 // DSS instance's locality so that locality-dependent operations execute deterministically across nodes.
-func LocalityMiddleware(locality string) func(http.Handler) http.Handler {
+func Middleware(locality string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r.WithContext(WithRequestLocality(r.Context(), locality)))
+			next.ServeHTTP(w, r.WithContext(NewContext(r.Context(), locality)))
 		})
 	}
 }
