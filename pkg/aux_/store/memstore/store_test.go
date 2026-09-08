@@ -10,7 +10,7 @@ import (
 
 func TestCheckpointRestore(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 
 	r := newRepo()
 
@@ -34,7 +34,7 @@ func TestCheckpointRestore(t *testing.T) {
 
 func TestCheckpointIsolatesUpsert(t *testing.T) {
 	ctx := context.Background()
-	ctx = timestamp.WithRequestTimestamp(ctx, fakeClock.Now())
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
 	r := newRepo()
 
 	require.NoError(t, r.SaveOwnMetadata(ctx, "dss-1", "https://old.example.com"))

@@ -67,7 +67,7 @@ func (r *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
 	}
 
-	now := timestamp.MustGetRequestTimestamp(ctx)
+	now := timestamp.MustFromContext(ctx)
 
 	rec := &constraintRecord{
 		ID:            s.ID,

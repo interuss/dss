@@ -96,7 +96,7 @@ func (a *Server) PutDSSInstancesHeartbeat(ctx context.Context, req *restapi.PutD
 		}
 		heartbeat.Timestamp = &ts
 	} else {
-		now := timestamp.MustGetRequestTimestamp(ctx)
+		now := timestamp.MustFromContext(ctx)
 		heartbeat.Timestamp = &now
 	}
 
