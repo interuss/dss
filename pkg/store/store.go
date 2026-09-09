@@ -60,11 +60,10 @@ func TransactWithResult[R any, ResultType any](ctx context.Context, store Store[
 	if err != nil {
 		return empty, err
 	}
-	resultType, ok := transactionResult.(ResultType)
-	if !ok {
-		return empty, stacktrace.NewError("unexpected result type %T, want %T", transactionResult, empty)
+	if resultType, ok := transactionResult.(ResultType); ok {
+		return resultType, nil
 	}
-	return resultType, nil
+	return empty, stacktrace.NewError("unexpected result type %T, want %T", transactionResult, empty)
 }
 
 // FuncOperation wraps a closure as an OperationRequest for gradual migration.

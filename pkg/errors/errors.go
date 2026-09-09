@@ -16,10 +16,6 @@ const (
 	// larger than the max area allowed. See geo/s2.go.
 	AreaTooLarge = stacktrace.ErrorCode(iota)
 
-	// MissingOVNs is the error to signal that an AirspaceConflictResponse should
-	// be returned rather than the standard error response.
-	MissingOVNs
-
 	// AlreadyExists is used when attempting to create a resource that already
 	// exists.
 	AlreadyExists
