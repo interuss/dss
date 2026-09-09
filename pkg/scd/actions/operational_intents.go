@@ -517,7 +517,7 @@ func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Reposito
 
 // validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
 // - If all required keys are provided, (nil, nil) will be returned.
-// - If keys are missing, the conflict response to be sent back as well as an error with the dsserr.MissingOVNs code will be returned.
+// - If keys are missing, the conflict response will be returned (conflict, nil).
 // - In case of any other error, (nil, error) will be returned.
 func validateKeyAndProvideConflictResponse(
 	ctx context.Context,
@@ -589,7 +589,7 @@ func validateKeyAndProvideConflictResponse(
 			}
 		}
 
-		return responseConflict, stacktrace.NewErrorWithCode(dsserr.MissingOVNs, "Missing OVNs: %v", msg)
+		return responseConflict, nil
 	}
 
 	return nil, nil
@@ -637,7 +637,7 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 }
 
 // PutOperationalIntentReferenceResult is the result of an Operational Intent Reference put operation.
-// Exactly one of Response or Conflict is set: Conflict is set when the upsert failed because of missing OVNs (a dsserr.MissingOVNs error is returned alongside it)
+// Exactly one of Response or Conflict is set: Conflict is set when the upsert failed because of missing OVNs,
 // and Response is set on success.
 type PutOperationalIntentReferenceResult struct {
 	Response *restapi.ChangeOperationalIntentReferenceResponse
@@ -788,13 +788,13 @@ func ExecutePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 	}
 
-	var responseConflict *restapi.AirspaceConflictResponse
 	if validParams.State.RequiresKey() {
-		responseConflict, err = validateKeyAndProvideConflictResponse(ctx, repo, manager, validParams, attachedSub)
+		responseConflict, err := validateKeyAndProvideConflictResponse(ctx, repo, manager, validParams, attachedSub)
 		if err != nil {
-			// responseConflict is non-nil here on a dsserr.MissingOVNs error: return it alongside
-			// the error so the handler can still send it to the client. See the doc comment above.
-			return &PutOperationalIntentReferenceResult{Conflict: responseConflict}, stacktrace.PropagateWithCode(err, stacktrace.GetCode(err), "Failed to validate key")
+			return nil, stacktrace.Propagate(err, "Failed to validate key")
+		}
+		if responseConflict != nil {
+			return &PutOperationalIntentReferenceResult{Conflict: responseConflict}, nil
 		}
 	}
 

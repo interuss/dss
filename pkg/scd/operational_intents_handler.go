@@ -161,12 +161,14 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		case dsserr.VersionMismatch:
 			return restapi.CreateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		case dsserr.MissingOVNs:
-			return restapi.CreateOperationalIntentReferenceResponseSet{Response409: result.Conflict}
 		default:
 			return restapi.CreateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+	}
+
+	if result.Conflict != nil {
+		return restapi.CreateOperationalIntentReferenceResponseSet{Response409: result.Conflict}
 	}
 
 	return restapi.CreateOperationalIntentReferenceResponseSet{Response201: result.Response}
@@ -202,12 +204,14 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		case dsserr.VersionMismatch:
 			return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
 				Message: dsserr.Handle(ctx, err)}}
-		case dsserr.MissingOVNs:
-			return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: result.Conflict}
 		default:
 			return restapi.UpdateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
 		}
+	}
+
+	if result.Conflict != nil {
+		return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: result.Conflict}
 	}
 
 	return restapi.UpdateOperationalIntentReferenceResponseSet{Response200: result.Response}
