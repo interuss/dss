@@ -1,14 +1,12 @@
 nav:
   - "Overview": index.md
-  - "Certificates management (Yugabyte)": certificates-management.md
-  - "Pooling (Yugabyte)": pooling.md
-  - "Pooling (CockroachDB)": pooling-crdb.md
+  - "Database cleanup": cleanup.md
   - "Monitoring": monitoring.md
   - "Health checks": healthchecks.md
-  - "Migrations": migrations.md
-  - "Upgrades": upgrades.md
+  - "Performance": performance.md
   - "Database migrations": database-migrations.md
-  - "Performances": performances.md
-  - "Cleanup": cleanup.md
-  - "Authentication": authentication.md
+  - "DSS upgrades": upgrades.md
+  - "CockroachDB version upgrades": crdb-upgrades.md
+  - "Kubernetes upgrades": kubernetes-upgrades.md
+  - "Pooling": pooling.md
   - "Troubleshooting": troubleshooting.md

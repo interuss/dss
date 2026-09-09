@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Some of these [tools](../infrastructure/index.md#prerequisites) are required to interact with monitoring services.
+Some of these [tools](../deployment/services/index.md#prerequisites) are required to interact with monitoring services.
 
 ## Grafana / Prometheus stack
 
@@ -182,5 +182,5 @@ configured (use `admin` for both the username and password), Prometheus is
 available at http://localhost:9090, and Jaeger is available at
 http://localhost:16686.
 
-See the [standalone local instance documentation](../../build/dev/standalone_instance.md#monitoring)
+See the [standalone local instance documentation](https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md#monitoring)
 for more details.

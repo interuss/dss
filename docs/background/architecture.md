@@ -1,4 +1,4 @@
-# Architecture
+# Deployment architecture
 
 ## Introduction
 
@@ -29,20 +29,6 @@ Top level simplified view, with one replica shown and yugabyte services regroupe
 
 To reduce the number of required public load balancers, we do use an intermediate reverse proxy to expose the ports of Yugabyte master and tserver on a shared public IP per stateful set instance.
 Usual Kubernetes load balancers can't assign connection based on ports out of the box, so we use the reverse proxy to dispatch connections on both services depending on the connected port.
-
-### Terminology notes
-
-See [teminology notes](../operations/pooling.md#terminology-notes).
-
-## Pooling
-
-### Objective
-
-See [Pooling Objective](../operations/pooling.md#objective) and subsections.
-
-### Additional requirements
-
-See [Additional requirements](../operations/pooling.md#additional-requirements).
 
 ### Survivability
 
