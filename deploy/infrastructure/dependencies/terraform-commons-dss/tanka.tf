@@ -36,6 +36,9 @@ resource "local_file" "tanka_config_main" {
     VAR_PUBLIC_KEY_PEM_PATH                  = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""
     VAR_JWKS_ENDPOINT                        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
     VAR_JWKS_KEY_ID                          = var.authorization.jwks != null ? var.authorization.jwks.key_id : ""
+    VAR_JWKS_REFRESH_INTERVAL                = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
+    VAR_JWKS_KEY_TTL                         = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
+    VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION               = local.scd_db_schema
     VAR_DESIRED_AUX_DB_VERSION               = local.aux_db_schema

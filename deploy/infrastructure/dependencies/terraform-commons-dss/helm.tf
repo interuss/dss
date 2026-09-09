@@ -64,6 +64,8 @@ resource "local_file" "helm_chart_values" {
         ]
         jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
         jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        jwksRefreshInterval              = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
+        jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
         enableScd                        = var.enable_scd
@@ -275,6 +277,8 @@ resource "local_file" "helm_chart_values" {
         ]
         jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
         jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        jwksRefreshInterval              = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
+        jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
         enableScd                        = var.enable_scd
