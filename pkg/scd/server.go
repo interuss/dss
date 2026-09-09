@@ -9,17 +9,26 @@ import (
 func makeSubscribersToNotify(subscriptions []*scdmodels.Subscription) []restapi.SubscriberToNotify {
 	result := []restapi.SubscriberToNotify{}
 
-	subscriptionsByURL := map[string][]restapi.SubscriptionState{}
+	type uss struct {
+		manager string
+		baseUrl restapi.SubscriptionUssBaseURL
+	}
+	subscriptionsByUSS := map[uss][]restapi.SubscriptionState{}
 	for _, sub := range subscriptions {
 		subState := restapi.SubscriptionState{
 			SubscriptionId:    restapi.SubscriptionID(sub.ID.String()),
 			NotificationIndex: restapi.SubscriptionNotificationIndex(sub.NotificationIndex),
 		}
-		subscriptionsByURL[sub.USSBaseURL] = append(subscriptionsByURL[sub.USSBaseURL], subState)
+		uss := uss{
+			manager: sub.Manager.String(),
+			baseUrl: restapi.SubscriptionUssBaseURL(sub.USSBaseURL),
+		}
+		subscriptionsByUSS[uss] = append(subscriptionsByUSS[uss], subState)
 	}
-	for url, states := range subscriptionsByURL {
+	for uss, states := range subscriptionsByUSS {
 		result = append(result, restapi.SubscriberToNotify{
-			UssBaseUrl:    restapi.SubscriptionUssBaseURL(url),
+			Manager:       uss.manager,
+			UssBaseUrl:    uss.baseUrl,
 			Subscriptions: states,
 		})
 	}

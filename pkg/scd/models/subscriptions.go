@@ -42,6 +42,7 @@ type Subscription struct {
 func (s *Subscription) ToRest(dependentOperationalIntents []dssmodels.ID) (*restapi.Subscription, error) {
 	result := &restapi.Subscription{
 		Id:                          restapi.SubscriptionID(s.ID.String()),
+		Manager:                     s.Manager.String(),
 		Version:                     s.Version.String(),
 		NotificationIndex:           restapi.SubscriptionNotificationIndex(s.NotificationIndex),
 		UssBaseUrl:                  restapi.SubscriptionUssBaseURL(s.USSBaseURL),
