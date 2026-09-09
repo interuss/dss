@@ -2,6 +2,8 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,6 +12,9 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -356,4 +361,46 @@ func TestStoreCountISAs(t *testing.T) {
 	count, err = repo.CountISAs(ctx)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), count)
+}
+
+// recordingQueryable captures the query it is handed and then fails the call, which is enough to
+// assert on query construction without a datastore: fetchISAs returns as soon as Query does.
+type recordingQueryable struct {
+	query string
+}
+
+var errRecorded = errors.New("query recorded")
+
+func (q *recordingQueryable) Query(_ context.Context, query string, _ ...interface{}) (pgx.Rows, error) {
+	q.query = query
+	return nil, errRecorded
+}
+
+func (q *recordingQueryable) QueryRow(_ context.Context, _ string, _ ...interface{}) pgx.Row {
+	panic("not needed by these tests")
+}
+
+func (q *recordingQueryable) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
+	panic("not needed by these tests")
+}
+
+func TestFetchISAsAppliesRowLimit(t *testing.T) {
+	var (
+		ctx       = context.Background()
+		q         = &recordingQueryable{}
+		r         = &repo{Queryable: q}
+		pastLimit = fmt.Sprintf("LIMIT %d", dssmodels.MaxResultLimit+1)
+	)
+
+	// A search asks for one row past the limit, so that an over-limit result set can be told
+	// apart from one that exactly fills it.
+	_, err := r.SearchISAs(ctx, serviceArea.Cells, &startTime, &endTime)
+	require.Equal(t, errRecorded, stacktrace.RootCause(err))
+	require.Contains(t, q.query, pastLimit)
+
+	// The evict sweep keeps its own truncating limit rather than the search one.
+	_, err = r.ListExpiredISAs(ctx, writer, endTime)
+	require.Equal(t, errRecorded, stacktrace.RootCause(err))
+	require.NotContains(t, q.query, pastLimit)
+	require.Contains(t, q.query, "LIMIT $3")
 }
