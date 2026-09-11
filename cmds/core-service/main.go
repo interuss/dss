@@ -112,6 +112,15 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
+	ctx = timestamp.NewContext(ctx, time.Now())
+
+	seed, err := random.NewSeed()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to generate seed")
+	}
+
+	ctx = random.NewContext(ctx, seed)
+
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
 	if err != nil {
