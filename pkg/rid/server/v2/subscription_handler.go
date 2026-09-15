@@ -77,7 +77,12 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
 	}
 
-	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.SearchSubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	subscriptions, err := repo.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search Subscriptions")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -108,7 +113,12 @@ func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	subscription, err := s.App.GetSubscription(ctx, id)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	subscription, err := repo.GetSubscription(ctx, id)
 	if err != nil {
 		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get Subscription"))}}
@@ -180,7 +190,12 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	isas, err := searchISAs(ctx, repo, insertedSub.Cells, nil, nil)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -268,7 +283,12 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	isas, err := searchISAs(ctx, repo, insertedSub.Cells, nil, nil)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
