@@ -1,4 +1,4 @@
-package actions
+package operations
 
 import (
 	"github.com/interuss/dss/pkg/rid/repos"
