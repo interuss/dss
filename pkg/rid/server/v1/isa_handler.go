@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -28,10 +29,15 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	isa, err := s.App.GetISA(ctx, id)
+	repo, err := s.Store.Interact(ctx)
 	if err != nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get ISA from application layer"))}}
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	isa, err := repo.GetISA(ctx, id, false)
+	if err != nil {
+		return restapi.GetIdentificationServiceAreaResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get ISA"))}}
 	}
 	if isa == nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response404: &restapi.ErrorResponse{
@@ -256,7 +262,12 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 		latest = &ts
 	}
 
-	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.SearchIdentificationServiceAreasResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	isas, err := searchISAs(ctx, repo, cu, earliest, latest)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Unable to search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -275,4 +286,13 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 	return restapi.SearchIdentificationServiceAreasResponseSet{Response200: &restapi.SearchIdentificationServiceAreasResponse{
 		ServiceAreas: areas,
 	}}
+}
+
+// searchISAs searches for ISAs within cells, defaulting earliest to now if unset or in the past.
+func searchISAs(ctx context.Context, repo repos.Repository, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	now := time.Now()
+	if earliest == nil || earliest.Before(now) {
+		earliest = &now
+	}
+	return repo.SearchISAs(ctx, cells, earliest, latest)
 }
