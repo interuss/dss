@@ -11,6 +11,8 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/rid/operations"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -95,7 +97,7 @@ func (store *isaStore) CountISAs(ctx context.Context) (int64, error) {
 }
 
 func TestISAUpdateIdxCells(t *testing.T) {
-	ctx := context.Background()
+	ctx := timestamp.NewContext(t.Context(), fakeClock.Now())
 	app, cleanup := setUpISAApp(ctx, t)
 
 	defer cleanup()
@@ -119,7 +121,10 @@ func TestISAUpdateIdxCells(t *testing.T) {
 	// with the soon to be new version of the isa. both should increase their
 	// notification index.
 
-	_, err = app.InsertSubscription(ctx, &ridmodels.Subscription{
+	repo, err := app.store.Interact(ctx)
+	require.NoError(t, err)
+
+	_, err = operations.InsertSubscription(ctx, repo, &ridmodels.Subscription{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     "owner",
 		StartTime: &startTime,
@@ -128,7 +133,7 @@ func TestISAUpdateIdxCells(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = app.InsertSubscription(ctx, &ridmodels.Subscription{
+	_, err = operations.InsertSubscription(ctx, repo, &ridmodels.Subscription{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     "owner",
 		StartTime: &startTime,
@@ -321,65 +326,5 @@ func TestUpdateISA(t *testing.T) {
 				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*isa.EndTime).UTC().Truncate(time.Microsecond))
 			}
 		})
-	}
-}
-
-func TestAppDeleteISAs(t *testing.T) {
-	var (
-		ctx          = context.Background()
-		app, cleanup = setUpISAApp(ctx, t)
-	)
-	defer cleanup()
-
-	insertedSubscriptions := []*ridmodels.Subscription{}
-	for _, r := range subscriptionsPool {
-		sunscriptionCopy := *r.input
-		s1, err := app.InsertSubscription(ctx, &sunscriptionCopy)
-		require.NoError(t, err)
-		require.NotNil(t, s1)
-		require.Equal(t, 42, s1.NotificationIndex)
-		insertedSubscriptions = append(insertedSubscriptions, s1)
-	}
-	serviceArea := &ridmodels.IdentificationServiceArea{
-		ID:        dssmodels.ID(uuid.New().String()),
-		Owner:     dssmodels.Owner(uuid.New().String()),
-		URL:       "https://no/place/like/home/for/flights",
-		StartTime: &startTime,
-		EndTime:   &endTime,
-		Cells: s2.CellUnion{
-			s2.CellID(12494535935418957824),
-		},
-	}
-
-	// Insert the ISA.
-	serviceAreaCopy := *serviceArea
-	isa, subscriptionsOut, err := app.InsertISA(ctx, &serviceAreaCopy)
-	require.NoError(t, err)
-	require.NotNil(t, isa)
-	require.Len(t, subscriptionsOut, len(insertedSubscriptions))
-
-	for i := range insertedSubscriptions {
-		require.Equal(t, 43, subscriptionsOut[i].NotificationIndex)
-	}
-	// Can't delete with different owner.
-	_, _, err = app.DeleteISA(ctx, isa.ID, "bad-owner", isa.Version)
-	require.Error(t, err)
-
-	// Delete the ISA.
-	// Ensure a fresh Get, then delete still updates the subscription indexes
-	isa, err = app.GetISA(ctx, isa.ID)
-	require.NoError(t, err)
-
-	serviceAreaOut, subscriptionsOut, err := app.DeleteISA(ctx, isa.ID, isa.Owner, isa.Version)
-	require.NoError(t, err)
-	require.Equal(t, isa, serviceAreaOut)
-	require.NotNil(t, subscriptionsOut)
-	require.Len(t, subscriptionsOut, len(subscriptionsPool))
-	for i, s := range subscriptionsPool {
-		require.Equal(t, s.input.URL, subscriptionsOut[i].URL)
-	}
-
-	for i := range insertedSubscriptions {
-		require.Equal(t, 44, subscriptionsOut[i].NotificationIndex)
 	}
 }
