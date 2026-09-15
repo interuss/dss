@@ -140,38 +140,25 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents"))}}
 	}
-	extents, err := apiv1.FromVolume4D(&req.Body.Extents)
+	_, err := apiv1.FromVolume4D(&req.Body.Extents)
 	if err != nil {
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err)))}}
 	}
-	id, err := dssmodels.IDFromString(string(req.Id))
+	_, err = dssmodels.IDFromString(string(req.Id))
 	if err != nil {
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-
 	if !s.AllowHTTPBaseUrls {
-		err = ridmodels.ValidateURL(string(*req.Body.Callbacks.IdentificationServiceAreaUrl))
+		err := ridmodels.ValidateURL(string(*req.Body.Callbacks.IdentificationServiceAreaUrl))
 		if err != nil {
 			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate IdentificationServiceAreaUrl"))}}
 		}
 	}
 
-	sub := &ridmodels.Subscription{
-		ID:     id,
-		Owner:  dssmodels.Owner(*req.Auth.ClientID),
-		URL:    string(*req.Body.Callbacks.IdentificationServiceAreaUrl),
-		Writer: s.Locality,
-	}
-
-	if err := sub.SetExtents(extents); err != nil {
-		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
-	}
-
-	insertedSub, err := s.App.InsertSubscription(ctx, sub)
+	insertedSub, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not insert Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -189,7 +176,7 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
+	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -215,13 +202,12 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 // UpdateSubscription updates a single subscription.
 func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubscriptionRequest,
 ) restapi.UpdateSubscriptionResponseSet {
-
-	version, err := dssmodels.VersionFromString(req.Version)
+	_, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
 	}
-	id, err := dssmodels.IDFromString(string(req.Id))
+	_, err = dssmodels.IDFromString(string(req.Id))
 	if err != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
@@ -243,26 +229,19 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required extents"))}}
 	}
-	extents, err := apiv1.FromVolume4D(&req.Body.Extents)
+	_, err = apiv1.FromVolume4D(&req.Body.Extents)
 	if err != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Error parsing Volume4D: %v", stacktrace.RootCause(err)))}}
 	}
-
-	sub := &ridmodels.Subscription{
-		ID:      id,
-		Owner:   dssmodels.Owner(*req.Auth.ClientID),
-		URL:     string(*req.Body.Callbacks.IdentificationServiceAreaUrl),
-		Version: version,
-		Writer:  s.Locality,
+	if !s.AllowHTTPBaseUrls {
+		if err := ridmodels.ValidateURL(string(*req.Body.Callbacks.IdentificationServiceAreaUrl)); err != nil {
+			return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate IdentificationServiceAreaUrl"))}}
+		}
 	}
 
-	if err := sub.SetExtents(extents); err != nil {
-		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
-	}
-
-	insertedSub, err := s.App.UpdateSubscription(ctx, sub)
+	insertedSub, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not update Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -282,7 +261,7 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 	}
 
 	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, sub.Cells, nil, nil)
+	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {

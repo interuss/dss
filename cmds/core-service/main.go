@@ -112,6 +112,15 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
+	ctx = timestamp.NewContext(ctx, time.Now())
+
+	seed, err := random.NewSeed()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to generate seed")
+	}
+
+	ctx = random.NewContext(ctx, seed)
+
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
 	if err != nil {
@@ -368,9 +377,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
-	handler = timestamp.RequestTimestampMiddleware(handler)
+	handler = timestamp.Middleware(handler)
 	handler = random.Middleware(handler)
-	handler = requestlocality.LocalityMiddleware(locality)(handler)
+	handler = requestlocality.Middleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
