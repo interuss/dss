@@ -29,6 +29,12 @@ type updateSubscriptionPayload struct {
 
 func (p *updateSubscriptionPayload) OperationID() string { return ridv2.UpdateSubscriptionOperationID }
 
+// SubscriptionResult bundles the affected Subscription with the relevant ISAs.
+type SubscriptionResult struct {
+	Subscription *ridmodels.Subscription
+	ISAs         []*ridmodels.IdentificationServiceArea
+}
+
 // NewInsertSubscriptionPayload performs the request validation that can be done ahead of the
 // transaction for a Subscription creation request.
 func NewInsertSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, extents *dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
@@ -170,7 +176,14 @@ func executeCreateSubscription(ctx context.Context, repo repos.Repository, reque
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error inserting Subscription into repo")
 	}
-	return ret, nil
+
+	now := timestamp.MustFromContext(ctx)
+	isas, err := repo.SearchISAs(ctx, ret.Cells, &now, nil)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error searching ISAs")
+	}
+
+	return &SubscriptionResult{Subscription: ret, ISAs: isas}, nil
 }
 
 func executeUpdateSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
@@ -211,7 +224,14 @@ func executeUpdateSubscription(ctx context.Context, repo repos.Repository, reque
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error updating Subscription in repo")
 	}
-	return ret, nil
+
+	now := timestamp.MustFromContext(ctx)
+	isas, err := repo.SearchISAs(ctx, ret.Cells, &now, nil)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error searching ISAs")
+	}
+
+	return &SubscriptionResult{Subscription: ret, ISAs: isas}, nil
 }
 
 // checkSubscriptionCount checks if the owner already has too many Subscriptions in the area covered by sub.

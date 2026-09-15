@@ -47,7 +47,7 @@ func insertSubscription(ctx context.Context, repo repos.Repository, s *ridmodels
 	if ret == nil {
 		return nil, nil
 	}
-	return ret.(*ridmodels.Subscription), nil
+	return ret.(*SubscriptionResult).Subscription, nil
 }
 
 func updateSubscription(ctx context.Context, repo repos.Repository, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
@@ -68,7 +68,7 @@ func updateSubscription(ctx context.Context, repo repos.Repository, s *ridmodels
 	if ret == nil {
 		return nil, nil
 	}
-	return ret.(*ridmodels.Subscription), nil
+	return ret.(*SubscriptionResult).Subscription, nil
 }
 
 // fakeSubscriptionRepo is a minimal in-memory repos.Repository backing the operations

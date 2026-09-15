@@ -89,7 +89,12 @@ func (s *Server) SearchSubscriptions(ctx context.Context, req *restapi.SearchSub
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area"))}}
 	}
 
-	subscriptions, err := s.App.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.SearchSubscriptionsResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	subscriptions, err := repo.SearchSubscriptionsByOwner(ctx, cu, dssmodels.Owner(*req.Auth.ClientID))
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not search Subscriptions")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
@@ -120,7 +125,12 @@ func (s *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	subscription, err := s.App.GetSubscription(ctx, id)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	subscription, err := repo.GetSubscription(ctx, id)
 	if err != nil {
 		return restapi.GetSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get Subscription"))}}
@@ -166,7 +176,7 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedSub, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, payload)
+	result, err := store.TransactWithResult[repos.Repository, *operations.SubscriptionResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not insert Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -183,26 +193,14 @@ func (s *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		}
 	}
 
-	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
-	if err != nil {
-		err = stacktrace.Propagate(err, "Could not search ISAs")
-		if stacktrace.GetCode(err) == dsserr.BadRequest {
-			return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-				Message: dsserr.Handle(ctx, err)}}
-		}
-		return restapi.CreateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
-	}
-
 	// Convert the ISAs to REST.
-	restIsas := make([]restapi.IdentificationServiceArea, 0, len(isas))
-	for _, isa := range isas {
+	restIsas := make([]restapi.IdentificationServiceArea, 0, len(result.ISAs))
+	for _, isa := range result.ISAs {
 		restIsas = append(restIsas, *apiv2.ToIdentificationServiceArea(isa))
 	}
 
 	return restapi.CreateSubscriptionResponseSet{Response200: &restapi.PutSubscriptionResponse{
-		Subscription: *apiv2.ToSubscription(insertedSub),
+		Subscription: *apiv2.ToSubscription(result.Subscription),
 		ServiceAreas: &restIsas,
 	}}
 }
@@ -245,7 +243,7 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedSub, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, payload)
+	result, err := store.TransactWithResult[repos.Repository, *operations.SubscriptionResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not update Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -264,26 +262,14 @@ func (s *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		}
 	}
 
-	// Find ISAs that were in this subscription's area.
-	isas, err := s.App.SearchISAs(ctx, insertedSub.Cells, nil, nil)
-	if err != nil {
-		err = stacktrace.Propagate(err, "Could not search ISAs")
-		if stacktrace.GetCode(err) == dsserr.BadRequest {
-			return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
-				Message: dsserr.Handle(ctx, err)}}
-		}
-		return restapi.UpdateSubscriptionResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
-	}
-
 	// Convert the ISAs to REST.
-	restIsas := make([]restapi.IdentificationServiceArea, 0, len(isas))
-	for _, isa := range isas {
+	restIsas := make([]restapi.IdentificationServiceArea, 0, len(result.ISAs))
+	for _, isa := range result.ISAs {
 		restIsas = append(restIsas, *apiv2.ToIdentificationServiceArea(isa))
 	}
 
 	return restapi.UpdateSubscriptionResponseSet{Response200: &restapi.PutSubscriptionResponse{
-		Subscription: *apiv2.ToSubscription(insertedSub),
+		Subscription: *apiv2.ToSubscription(result.Subscription),
 		ServiceAreas: &restIsas,
 	}}
 }

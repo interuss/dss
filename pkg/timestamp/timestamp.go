@@ -42,6 +42,14 @@ func NewContext(ctx context.Context, timestamp time.Time) context.Context {
 	return context.WithValue(ctx, key{}, timestamp)
 }
 
+// NotBeforeNow returns val if it is non-nil and not before now, or now otherwise.
+func NotBeforeNow(now time.Time, val *time.Time) time.Time {
+	if val == nil || val.Before(now) {
+		return now
+	}
+	return *val
+}
+
 // Middleware is an HTTP middleware that stamps each incoming
 // request with its received time. This timestamp is later used as the
 // timestamp of the Raft proposal, so that time-dependent queries

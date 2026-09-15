@@ -17,12 +17,17 @@ import (
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var timeout = time.Second * 10
+
+func newTestContext() context.Context {
+	return timestamp.NewContext(context.Background(), time.Now())
+}
 
 func mustTimestamp(ts *string) *time.Time {
 	t, err := time.Parse(time.RFC3339Nano, *ts)
@@ -38,24 +43,6 @@ func mustPolygonToCellIDs(p *restapi.GeoPolygon) s2.CellUnion {
 		panic(err)
 	}
 	return cells
-}
-
-type mockApp struct {
-	mock.Mock
-}
-
-func (ma *mockApp) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, s)
-	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
-}
-
-func (ma *mockApp) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, id)
-	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
 }
 
 type mockStore struct {
@@ -78,24 +65,38 @@ func (ms *mockStore) Close() error {
 	return args.Error(0)
 }
 
-func (ma *mockApp) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+// mockRepo mocks repos.Repository, implementing only the methods exercised via
+// Store.Interact by these tests. The rest panic if called.
+type mockRepo struct {
+	mock.Mock
+	repos.Repository
+}
+
+func (mr *mockRepo) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	args := ma.Called(ctx, cells, owner)
+	args := mr.Called(ctx, id)
+	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
+}
+
+func (mr *mockRepo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	args := mr.Called(ctx, cells, owner)
 	return args.Get(0).([]*ridmodels.Subscription), args.Error(1)
 }
 
-func (ma *mockApp) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.IdentificationServiceArea, error) {
+func (mr *mockRepo) GetISA(ctx context.Context, id dssmodels.ID, forUpdate bool) (*ridmodels.IdentificationServiceArea, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	args := ma.Called(ctx, id)
+	args := mr.Called(ctx, id, forUpdate)
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Error(1)
 }
 
-func (ma *mockApp) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (mr *mockRepo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	args := ma.Called(ctx, cells, earliest, latest)
+	args := mr.Called(ctx, cells, earliest, latest)
 	return args.Get(0).([]*ridmodels.IdentificationServiceArea), args.Error(1)
 }
 
@@ -190,18 +191,15 @@ func TestCreateSubscription(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
 			ms := &mockStore{}
 			if r.appErr == stacktrace.ErrorCode(0) {
-				ma.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-					[]*ridmodels.IdentificationServiceArea(nil), nil)
 				ms.On("Transact", mock.Anything, mock.Anything).Return(
-					r.wantSubscription, nil,
+					&operations.SubscriptionResult{Subscription: r.wantSubscription}, nil,
 				)
 			}
-			s := &Server{App: ma, Store: ms}
+			s := &Server{Store: ms}
 
-			respSet = s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
+			respSet = s.CreateSubscription(newTestContext(), &restapi.CreateSubscriptionRequest{
 				Id: restapi.SubscriptionUUID(r.id.String()),
 				Body: &restapi.CreateSubscriptionParameters{
 					Callbacks: r.callbacks,
@@ -214,7 +212,6 @@ func TestCreateSubscription(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
 			require.True(t, ms.AssertExpectations(t))
 		})
 	}
@@ -244,17 +241,16 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		},
 	}
 
-	ma := &mockApp{}
 	ms := &mockStore{}
 
-	ma.On("SearchISAs", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
-	ms.On("Transact", mock.Anything, mock.Anything).Return(sub, nil)
+	ms.On("Transact", mock.Anything, mock.Anything).Return(
+		&operations.SubscriptionResult{Subscription: sub, ISAs: isas}, nil,
+	)
 	s := &Server{
-		App:   ma,
 		Store: ms,
 	}
 
-	respSet := s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
+	respSet := s.CreateSubscription(newTestContext(), &restapi.CreateSubscriptionRequest{
 		Id: restapi.SubscriptionUUID(sub.ID.String()),
 		Body: &restapi.CreateSubscriptionParameters{
 			Callbacks: restapi.SubscriptionCallbacks{
@@ -265,7 +261,6 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 		Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
 	})
 	require.NotNil(t, respSet.Response200)
-	require.True(t, ma.AssertExpectations(t))
 	require.True(t, ms.AssertExpectations(t))
 
 	require.Equal(t, []restapi.IdentificationServiceArea{
@@ -297,12 +292,14 @@ func TestGetSubscription(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
-			ma.On("GetSubscription", mock.Anything, r.id).Return(
+			mr := &mockRepo{}
+			ms := &mockStore{}
+			ms.On("Interact", mock.Anything).Return(mr, nil)
+			mr.On("GetSubscription", mock.Anything, r.id).Return(
 				r.subscription, nil,
 			)
 			s := &Server{
-				App: ma,
+				Store: ms,
 			}
 
 			respSet = s.GetSubscription(context.Background(), &restapi.GetSubscriptionRequest{
@@ -313,34 +310,24 @@ func TestGetSubscription(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, mr.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }
 
 func TestSearchSubscriptionsFailsIfOwnerMissingFromContext(t *testing.T) {
-	var (
-		ma = &mockApp{}
-		s  = &Server{
-			App: ma,
-		}
-	)
+	s := &Server{}
 
 	respSet := s.SearchSubscriptions(context.Background(), &restapi.SearchSubscriptionsRequest{
 		Area: (*restapi.GeoPolygonString)(&testdata.Loop),
 	})
 
 	require.NotNil(t, respSet.Response403)
-	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
-	var (
-		ma = &mockApp{}
-		s  = &Server{
-			App: ma,
-		}
-	)
+	s := &Server{}
 
 	respSet := s.SearchSubscriptions(context.Background(), &restapi.SearchSubscriptionsRequest{
 		Area: (*restapi.GeoPolygonString)(&testdata.LoopWithOddNumberOfCoordinates),
@@ -348,20 +335,19 @@ func TestSearchSubscriptionsFailsForInvalidArea(t *testing.T) {
 	})
 
 	require.NotNil(t, respSet.Response400)
-	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestSearchSubscriptions(t *testing.T) {
-	var (
-		ma = &mockApp{}
-		s  = &Server{
-			App: ma,
-		}
-	)
+	mr := &mockRepo{}
+	ms := &mockStore{}
+	s := &Server{
+		Store: ms,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	ma.On("SearchSubscriptionsByOwner", mock.Anything, mock.Anything, dssmodels.Owner(testdata.Owner)).Return(
+	ms.On("Interact", mock.Anything).Return(mr, nil)
+	mr.On("SearchSubscriptionsByOwner", mock.Anything, mock.Anything, dssmodels.Owner(testdata.Owner)).Return(
 		[]*ridmodels.Subscription{
 			{
 				ID:                dssmodels.ID(uuid.New().String()),
@@ -379,7 +365,8 @@ func TestSearchSubscriptions(t *testing.T) {
 
 	require.NotNil(t, respSet.Response200)
 	require.Len(t, respSet.Response200.Subscriptions, 1)
-	require.True(t, ma.AssertExpectations(t))
+	require.True(t, mr.AssertExpectations(t))
+	require.True(t, ms.AssertExpectations(t))
 }
 
 func TestCreateISA(t *testing.T) {
@@ -534,21 +521,14 @@ func TestUpdateISA(t *testing.T) {
 }
 
 func TestDeleteIdentificationServiceAreaRequiresOwnerInContext(t *testing.T) {
-	var (
-		id = uuid.New().String()
-		ma = &mockApp{}
-
-		s = &Server{
-			App: ma,
-		}
-	)
+	id := uuid.New().String()
+	s := &Server{}
 
 	respSet := s.DeleteIdentificationServiceArea(context.Background(), &restapi.DeleteIdentificationServiceAreaRequest{
 		Id: restapi.EntityUUID(id),
 	})
 
 	require.NotNil(t, respSet.Response403)
-	require.True(t, ma.AssertExpectations(t))
 }
 
 func TestDeleteIdentificationServiceArea(t *testing.T) {
@@ -591,17 +571,16 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 }
 
 func TestSearchIdentificationServiceAreas(t *testing.T) {
-	var (
-		ma = &mockApp{}
+	mr := &mockRepo{}
+	ms := &mockStore{}
+	s := &Server{
+		Store: ms,
+	}
 
-		s = &Server{
-			App: ma,
-		}
-	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(newTestContext(), timeout)
 	defer cancel()
-	ma.On("SearchISAs", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
+	ms.On("Interact", mock.Anything).Return(mr, nil)
+	mr.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, (*time.Time)(nil)).Return(
 		[]*ridmodels.IdentificationServiceArea{
 			{
 				ID:            dssmodels.ID(uuid.New().String()),
@@ -618,7 +597,8 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 
 	require.NotNil(t, respSet.Response200)
 	require.Len(t, respSet.Response200.ServiceAreas, 1)
-	require.True(t, ma.AssertExpectations(t))
+	require.True(t, mr.AssertExpectations(t))
+	require.True(t, ms.AssertExpectations(t))
 }
 
 func TestDefaultRegionCovererProducesResults(t *testing.T) {
