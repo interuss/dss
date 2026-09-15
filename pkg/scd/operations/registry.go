@@ -1,4 +1,4 @@
-package actions
+package operations
 
 import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
