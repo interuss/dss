@@ -1,4 +1,4 @@
-package application
+package operations
 
 import (
 	"context"
@@ -7,140 +7,78 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	"github.com/interuss/dss/pkg/api"
+	restapi "github.com/interuss/dss/pkg/api/ridv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo/testdata"
+	"github.com/interuss/dss/pkg/locality"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 var (
-	// Ensure the struct conforms to the interface
-	_                 SubscriptionApp = &app{}
-	subscriptionsPool                 = []struct {
-		name  string
-		input *ridmodels.Subscription
-	}{
-		{
-			name: "a subscription with startTime and endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				StartTime:         &startTime,
-				EndTime:           &endTime,
-				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
-				},
-			},
-		},
-		{
-			name: "a subscription without startTime and with endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				EndTime:           &endTime,
-				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
-				},
-			},
-		},
-	}
+	fakeClock = clockwork.NewFakeClock()
+	startTime = fakeClock.Now().Add(-time.Minute)
+	endTime   = fakeClock.Now().Add(time.Hour)
 )
 
-func setUpSubApp(ctx context.Context, t *testing.T) (*app, func()) {
-	l := zap.L()
-	transactor, cleanup := setUpStore(ctx, t, l)
-	return NewFromTransactor(transactor, l).(*app), cleanup
+func newTestContext() context.Context {
+	ctx := timestamp.NewContext(context.Background(), fakeClock.Now())
+	return locality.NewContext(ctx, "test-locality")
 }
 
-type subscriptionStore struct {
+// fakeSubscriptionRepo is a minimal in-memory repos.Repository backing the operations
+// package's tests.
+type fakeSubscriptionRepo struct {
 	subs map[dssmodels.ID]*ridmodels.Subscription
+	isas map[dssmodels.ID]*ridmodels.IdentificationServiceArea
 }
 
-func (store *subscriptionStore) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
-	if sub, ok := store.subs[id]; ok {
+func newFakeSubscriptionRepo() *fakeSubscriptionRepo {
+	return &fakeSubscriptionRepo{
+		subs: make(map[dssmodels.ID]*ridmodels.Subscription),
+		isas: make(map[dssmodels.ID]*ridmodels.IdentificationServiceArea),
+	}
+}
+
+func (r *fakeSubscriptionRepo) GetSubscription(_ context.Context, id dssmodels.ID) (*ridmodels.Subscription, error) {
+	if sub, ok := r.subs[id]; ok {
 		return sub, nil
 	}
 	return nil, nil
 }
 
-// DeleteSubscription deletes the Subscription identified by "id" and owned by "owner".
-// Returns the delete Subscription and all IdentificationServiceAreas affected by the delete.
-func (store *subscriptionStore) DeleteSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	if sub, ok := store.subs[s.ID]; ok {
-		delete(store.subs, s.ID)
+func (r *fakeSubscriptionRepo) DeleteSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+	if sub, ok := r.subs[s.ID]; ok {
+		delete(r.subs, s.ID)
 		return sub, nil
 	}
 	return nil, nil
 }
 
-func (store *subscriptionStore) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *fakeSubscriptionRepo) InsertSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	storedCopy := *s
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	store.subs[s.ID] = &storedCopy
-
+	r.subs[s.ID] = &storedCopy
 	returnedCopy := storedCopy
 	return &returnedCopy, nil
 }
 
-func (store *subscriptionStore) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
+func (r *fakeSubscriptionRepo) UpdateSubscription(_ context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	storedCopy := *s
 	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
-	store.subs[s.ID] = &storedCopy
-
+	r.subs[s.ID] = &storedCopy
 	returnedCopy := storedCopy
 	return &returnedCopy, nil
 }
 
-func (store *subscriptionStore) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+func (r *fakeSubscriptionRepo) SearchSubscriptions(_ context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
 	var subs []*ridmodels.Subscription
-
-	res, _ := store.SearchSubscriptions(ctx, cells)
-	for _, s := range res {
-		if s.Owner == owner {
-			subs = append(subs, s)
-		}
-	}
-	return subs, nil
-}
-
-func (store *subscriptionStore) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	subs, _ := store.SearchSubscriptions(ctx, cells)
-	for i := range subs {
-		subs[i].NotificationIndex++
-	}
-	return subs, nil
-}
-
-func (store *subscriptionStore) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
-	maxValue := 0
-	subs, _ := store.SearchSubscriptionsByOwner(ctx, cells, owner)
-
-	cellMap := make(map[s2.CellID]int)
-	for _, s := range subs {
-		for _, cid := range s.Cells {
-			if _, ok := cellMap[cid]; !ok {
-				cellMap[cid] = 1
-			} else {
-				cellMap[cid]++
-			}
-			if cellMap[cid] > maxValue {
-				maxValue = cellMap[cid]
-			}
-		}
-	}
-	return maxValue, nil
-}
-
-func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
-	var subs []*ridmodels.Subscription
-	for _, s := range store.subs {
-		// Don't call Intersects, since that's smarter code than we implement in the DB.
+	for _, s := range r.subs {
 		appended := false
 		for _, c1 := range s.Cells {
 			for _, c2 := range cells {
@@ -158,19 +96,110 @@ func (store *subscriptionStore) SearchSubscriptions(ctx context.Context, cells s
 	return subs, nil
 }
 
-func (store *subscriptionStore) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
-	return make([]*ridmodels.Subscription, 0), nil
+func (r *fakeSubscriptionRepo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
+	var subs []*ridmodels.Subscription
+	res, err := r.SearchSubscriptions(ctx, cells)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range res {
+		if s.Owner == owner {
+			subs = append(subs, s)
+		}
+	}
+	return subs, nil
 }
 
-// Implements repos.ISA.CountSubscriptions
-func (store *subscriptionStore) CountSubscriptions(ctx context.Context) (int64, error) {
-	return int64(len(store.subs)), nil
+func (r *fakeSubscriptionRepo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
+	subs, err := r.SearchSubscriptions(ctx, cells)
+	if err != nil {
+		return nil, err
+	}
+	for i := range subs {
+		subs[i].NotificationIndex++
+	}
+	return subs, nil
+}
+
+func (r *fakeSubscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
+	maxValue := 0
+	subs, err := r.SearchSubscriptionsByOwner(ctx, cells, owner)
+	if err != nil {
+		return 0, err
+	}
+
+	cellMap := make(map[s2.CellID]int)
+	for _, s := range subs {
+		for _, cid := range s.Cells {
+			cellMap[cid]++
+			if cellMap[cid] > maxValue {
+				maxValue = cellMap[cid]
+			}
+		}
+	}
+	return maxValue, nil
+}
+
+func (r *fakeSubscriptionRepo) ListExpiredSubscriptions(_ context.Context, _ string, _ time.Time) ([]*ridmodels.Subscription, error) {
+	return nil, nil
+}
+
+func (r *fakeSubscriptionRepo) CountSubscriptions(_ context.Context) (int64, error) {
+	return int64(len(r.subs)), nil
+}
+
+func (r *fakeSubscriptionRepo) GetISA(_ context.Context, id dssmodels.ID, _ bool) (*ridmodels.IdentificationServiceArea, error) {
+	if isa, ok := r.isas[id]; ok {
+		return isa, nil
+	}
+	return nil, nil
+}
+
+func (r *fakeSubscriptionRepo) DeleteISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	if stored, ok := r.isas[isa.ID]; ok {
+		delete(r.isas, isa.ID)
+		return stored, nil
+	}
+	return nil, nil
+}
+
+func (r *fakeSubscriptionRepo) InsertISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	storedCopy := *isa
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	r.isas[isa.ID] = &storedCopy
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
+}
+
+func (r *fakeSubscriptionRepo) UpdateISA(_ context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
+	storedCopy := *isa
+	storedCopy.Version = dssmodels.VersionFromTime(time.Now())
+	r.isas[isa.ID] = &storedCopy
+	returnedCopy := storedCopy
+	return &returnedCopy, nil
+}
+
+func (r *fakeSubscriptionRepo) SearchISAs(_ context.Context, cells s2.CellUnion, _ *time.Time, _ *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	var isas []*ridmodels.IdentificationServiceArea
+	for _, isa := range r.isas {
+		if isa.Cells.Intersects(cells) {
+			isas = append(isas, isa)
+		}
+	}
+	return isas, nil
+}
+
+func (r *fakeSubscriptionRepo) ListExpiredISAs(_ context.Context, _ string, _ time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+	panic("not implemented")
+}
+
+func (r *fakeSubscriptionRepo) CountISAs(_ context.Context) (int64, error) {
+	return int64(len(r.isas)), nil
 }
 
 func TestBadOwner(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
+	ctx := newTestContext()
+	repo := newFakeSubscriptionRepo()
 
 	sub := &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
@@ -178,19 +207,18 @@ func TestBadOwner(t *testing.T) {
 		Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 	}
 
-	sub, err := app.InsertSubscription(ctx, sub)
+	sub, err := InsertSubscription(ctx, repo, sub)
 	require.NoError(t, err)
 	// Test changing owner fails
 	sub.Owner = "new bad owner"
-	_, err = app.UpdateSubscription(ctx, sub)
+	_, err = updateSubscription(ctx, repo, sub)
 	require.Equal(t, dsserr.PermissionDenied, stacktrace.GetCode(err))
 }
 
 func TestSubscriptionUpdateCells(t *testing.T) {
-	ctx := context.Background()
+	ctx := newTestContext()
 	owner := dssmodels.Owner("owner")
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
+	repo := newFakeSubscriptionRepo()
 
 	// ensure that when we do an update, nothing in the s2 library joins multiple
 	// cells together at a lower level.
@@ -199,7 +227,7 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	// library might try to Normalize (this is the name of the function) the Union
 	// into a single cell. We don't support this currently, so let's make sure
 	// this doesn't happen.
-	sub, err := app.InsertSubscription(ctx, &ridmodels.Subscription{
+	sub, err := InsertSubscription(ctx, repo, &ridmodels.Subscription{
 		ID:        dssmodels.ID(uuid.New().String()),
 		Owner:     owner,
 		StartTime: &startTime,
@@ -212,30 +240,26 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 
 	sub.Cells = s2.CellUnion{17106221953846345728}
 
-	sub, err = app.UpdateSubscription(ctx, sub)
+	sub, err = updateSubscription(ctx, repo, sub)
 	require.NoError(t, err)
 	require.NotNil(t, sub)
 
-	subs, err := app.SearchSubscriptionsByOwner(ctx, sub.Cells, owner)
+	subs, err := repo.SearchSubscriptionsByOwner(ctx, sub.Cells, owner)
 	require.NoError(t, err)
 	require.NotNil(t, subs)
 	require.Len(t, subs, 1)
 }
 
 func TestInsertSubscriptionsWithTimes(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
+	repo := newFakeSubscriptionRepo()
 
 	for _, r := range []struct {
-		name                string
-		updateFromStartTime time.Time
-		updateFromEndTime   time.Time
-		startTime           time.Time
-		endTime             time.Time
-		wantErr             stacktrace.ErrorCode
-		wantStartTime       time.Time
-		wantEndTime         time.Time
+		name          string
+		startTime     time.Time
+		endTime       time.Time
+		wantErr       stacktrace.ErrorCode
+		wantStartTime time.Time
+		wantEndTime   time.Time
 	}{
 		{
 			name:          "start-time-defaults-to-now",
@@ -268,15 +292,14 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
+			ctx := newTestContext()
 			id := dssmodels.ID(uuid.New().String())
 			owner := dssmodels.Owner(uuid.New().String())
-			var version *dssmodels.Version
 
 			s := &ridmodels.Subscription{
-				ID:      id,
-				Owner:   owner,
-				Version: version,
-				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
+				ID:    id,
+				Owner: owner,
+				Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -284,7 +307,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			if !r.endTime.IsZero() {
 				s.EndTime = &r.endTime
 			}
-			sub, err := app.InsertSubscription(ctx, s)
+			sub, err := InsertSubscription(ctx, repo, s)
 
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
@@ -305,9 +328,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 }
 
 func TestUpdateSubscriptionsWithTimes(t *testing.T) {
-	ctx := context.Background()
-	app, cleanup := setUpSubApp(ctx, t)
-	defer cleanup()
+	repo := newFakeSubscriptionRepo()
 
 	for _, r := range []struct {
 		name                string
@@ -358,14 +379,11 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
+			ctx := newTestContext()
 			var (
-				id      = dssmodels.ID(uuid.New().String())
-				owner   = dssmodels.Owner(uuid.New().String())
-				version *dssmodels.Version
+				id    = dssmodels.ID(uuid.New().String())
+				owner = dssmodels.Owner(uuid.New().String())
 			)
-
-			repo, err := app.store.Interact(ctx)
-			require.NoError(t, err)
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			existing, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
@@ -376,12 +394,11 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 				Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
 			})
 			require.NoError(t, err)
-			version = existing.Version
 
 			s := &ridmodels.Subscription{
 				ID:      id,
 				Owner:   owner,
-				Version: version,
+				Version: existing.Version,
 				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
 			}
 			if !r.startTime.IsZero() {
@@ -390,7 +407,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 			if !r.endTime.IsZero() {
 				s.EndTime = &r.endTime
 			}
-			sub, err := app.UpdateSubscription(ctx, s)
+			sub, err := updateSubscription(ctx, repo, s)
 
 			if r.wantErr == stacktrace.ErrorCode(0) {
 				require.NoError(t, err)
@@ -411,11 +428,9 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 }
 
 func TestInsertTooManySubscription(t *testing.T) {
-	var (
-		ctx          = context.Background()
-		app, cleanup = setUpSubApp(ctx, t)
-	)
-	defer cleanup()
+	ctx := newTestContext()
+	repo := newFakeSubscriptionRepo()
+
 	// Helper function that makes a subscription with a random ID, fixed owner,
 	// and provided cellIDs.
 	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {
@@ -424,7 +439,6 @@ func TestInsertTooManySubscription(t *testing.T) {
 			Owner:     dssmodels.Owner("bob"),
 			StartTime: &startTime,
 			EndTime:   &endTime,
-			Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
 		}
 
 		s.Cells = make(s2.CellUnion, len(cellIDs))
@@ -436,23 +450,67 @@ func TestInsertTooManySubscription(t *testing.T) {
 
 	// We should be able to insert 10 subscriptions without error.
 	for i := 0; i < 10; i++ {
-		ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
+		ret, err := InsertSubscription(ctx, repo, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
 		require.NoError(t, err)
 		require.NotNil(t, &ret)
 	}
 
 	// Inserting the 11th subscription will fail.
-	ret, err := app.InsertSubscription(ctx, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
+	ret, err := InsertSubscription(ctx, repo, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
 	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
 	require.Nil(t, ret)
 
 	// Inserting a subscription in a different cell will succeed.
-	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535832339742720}))
+	ret, err = InsertSubscription(ctx, repo, makeSubscription([]uint64{12494535832339742720}))
 	require.NoError(t, err)
 	require.NotNil(t, &ret)
 
 	// Inserting a subscription that overlaps fail.
-	ret, err = app.InsertSubscription(ctx, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
+	ret, err = InsertSubscription(ctx, repo, makeSubscription([]uint64{12494535935418957824, 12494535866699481088}))
 	require.Equal(t, dsserr.Exhausted, stacktrace.GetCode(err))
 	require.Nil(t, ret)
+}
+
+func TestExecuteInsertSubscriptionValidatesRequest(t *testing.T) {
+	for _, r := range []struct {
+		name    string
+		extents restapi.Volume4D
+	}{
+		{
+			name:    "missing-extents",
+			extents: restapi.Volume4D{},
+		},
+		{
+			name: "missing-extents-spatial-volume",
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{},
+			},
+		},
+		{
+			name: "missing-spatial-volume-footprint",
+			extents: restapi.Volume4D{
+				SpatialVolume: restapi.Volume3D{
+					Footprint: restapi.GeoPolygon{},
+				},
+			},
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			ctx := newTestContext()
+			repo := newFakeSubscriptionRepo()
+
+			req := &restapi.CreateSubscriptionRequest{
+				Id: restapi.SubscriptionUUID(uuid.New().String()),
+				Body: &restapi.CreateSubscriptionParameters{
+					Callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
+					Extents:   r.extents,
+				},
+				Auth: api.AuthorizationResult{ClientID: &testdata.Owner},
+			}
+
+			ret, err := executeInsertSubscription(ctx, repo, req)
+			require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+			require.Nil(t, ret)
+		})
+	}
 }
