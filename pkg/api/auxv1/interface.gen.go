@@ -49,7 +49,7 @@ type GetVersionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetVersionOperationID = "GetVersion"
+const GetVersionOperationID = "auxv1.GetVersion"
 
 func (request *GetVersionRequest) OperationID() string { return GetVersionOperationID }
 
@@ -69,7 +69,7 @@ type ValidateOauthRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const ValidateOauthOperationID = "ValidateOauth"
+const ValidateOauthOperationID = "auxv1.ValidateOauth"
 
 func (request *ValidateOauthRequest) OperationID() string { return ValidateOauthOperationID }
 
@@ -92,7 +92,7 @@ type GetPoolRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetPoolOperationID = "GetPool"
+const GetPoolOperationID = "auxv1.GetPool"
 
 func (request *GetPoolRequest) OperationID() string { return GetPoolOperationID }
 
@@ -118,7 +118,7 @@ type GetDSSInstancesRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetDSSInstancesOperationID = "GetDSSInstances"
+const GetDSSInstancesOperationID = "auxv1.GetDSSInstances"
 
 func (request *GetDSSInstancesRequest) OperationID() string { return GetDSSInstancesOperationID }
 
@@ -153,7 +153,7 @@ type PutDSSInstancesHeartbeatRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const PutDSSInstancesHeartbeatOperationID = "PutDSSInstancesHeartbeat"
+const PutDSSInstancesHeartbeatOperationID = "auxv1.PutDSSInstancesHeartbeat"
 
 func (request *PutDSSInstancesHeartbeatRequest) OperationID() string {
 	return PutDSSInstancesHeartbeatOperationID
@@ -184,7 +184,7 @@ type GetAcceptedCAsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetAcceptedCAsOperationID = "GetAcceptedCAs"
+const GetAcceptedCAsOperationID = "auxv1.GetAcceptedCAs"
 
 func (request *GetAcceptedCAsRequest) OperationID() string { return GetAcceptedCAsOperationID }
 
@@ -204,7 +204,7 @@ type GetInstanceCAsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetInstanceCAsOperationID = "GetInstanceCAs"
+const GetInstanceCAsOperationID = "auxv1.GetInstanceCAs"
 
 func (request *GetInstanceCAsRequest) OperationID() string { return GetInstanceCAsOperationID }
 
@@ -224,7 +224,7 @@ type GetGlobalOptionsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetGlobalOptionsOperationID = "GetGlobalOptions"
+const GetGlobalOptionsOperationID = "auxv1.GetGlobalOptions"
 
 func (request *GetGlobalOptionsRequest) OperationID() string { return GetGlobalOptionsOperationID }
 
