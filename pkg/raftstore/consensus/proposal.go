@@ -27,10 +27,8 @@ type Proposal struct {
 	Seed        int64       `json:"seed"`
 	RequestType RequestType `json:"request_type"`
 	Value       []byte      `json:"value"`
-	// ReadOnly proposals do not modify the state machine and,
-	// therefore, do not need to be applied by nodes who did not initiate them.
-	// TODO: This is a temporary solution. In the future, we will use ReadIndex
-	// for read-only operations without needing to propose them to Raft.
+	// ReadOnly proposals are served ReadIndex. They are not replicated in the Raft log.
+	// This flag must not be set for proposals that modify state, as it would break linearizability.
 	ReadOnly bool `json:"read_only"`
 }
 
@@ -64,14 +62,6 @@ func newProposalsTracker() *proposalsTracker {
 	return &proposalsTracker{
 		pending: make(map[string]chan ProposalResult),
 	}
-}
-
-func (p *proposalsTracker) isPending(id string) bool {
-	p.Lock()
-	defer p.Unlock()
-
-	_, ok := p.pending[id]
-	return ok
 }
 
 func (p *proposalsTracker) track(id string) chan ProposalResult {
