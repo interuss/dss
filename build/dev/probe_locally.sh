@@ -13,9 +13,8 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
-declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER")
+# shellcheck source=build/dev/local_containers.sh
+source "build/dev/local_containers.sh"
 
 for container_name in "${localhost_containers[@]}"; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
@@ -79,8 +78,10 @@ if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 
     if [ "$CI" == "true" ]; then
         echo "=== END OF TEST RESULTS ==="
-        echo "Dumping core-service logs"
-        docker logs "$CORE_SERVICE_CONTAINER"
+        for container_name in "${localhost_containers[@]}"; do
+            echo "Dumping $container_name logs"
+            docker logs "$container_name"
+        done
     fi
     echo "Prober did not succeed."
     exit 1

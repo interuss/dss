@@ -3,6 +3,15 @@
 
 # To bring up this system, see standalone_instance.md.
 
+x-raft-cluster-peers: &raft-cluster-peers
+  RID_RAFT_PEERS: "1=http://local-dss-core-service-1:9011,2=http://local-dss-core-service-2:9011,3=http://local-dss-core-service-3:9011"
+  SCD_RAFT_PEERS: "1=http://local-dss-core-service-1:9021,2=http://local-dss-core-service-2:9021,3=http://local-dss-core-service-3:9021"
+  AUX_RAFT_PEERS: "1=http://local-dss-core-service-1:9031,2=http://local-dss-core-service-2:9031,3=http://local-dss-core-service-3:9031"
+  COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+  GOCOVERDIR: "/startup/coverdata"
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
+  CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
+
 services:
 
   local-dss-crdb:
@@ -111,6 +120,7 @@ services:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
       - $PWD/startup/coverdata:/startup/coverdata:rw  # we will save coverage info here
+      - raftdata:/raftdata
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
@@ -147,7 +157,118 @@ services:
       interval: 3m
       start_period: 30s
       start_interval: 5s
-    profiles: ["", "with-yugabyte", "with-monitoring"]
+    profiles: ["", "with-yugabyte", "with-monitoring", "with-raft"]
+
+  # 3-node raft cluster, used by the "with-raft-cluster" profile.
+  # Requests are spread across all three nodes by local-dss-raft-lb.
+  local-dss-core-service-1:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+          EXTRA_GO_INSTALL_FLAGS: "-cover"
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - $PWD/startup/coverdata:/startup/coverdata:rw
+      - raftdata1:/raftdata
+    environment:
+      <<: *raft-cluster-peers
+      RAFT_NODE_ID: 1
+    command: /startup/core_service.sh ${DEBUG_ON:-0}
+    depends_on:
+      local-dss-rid-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-scd-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-aux-bootstrapper:
+        condition: service_completed_successfully
+    networks:
+      - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://localhost:8082/healthy' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
+    profiles: ["with-raft-cluster"]
+
+  local-dss-core-service-2:
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - $PWD/startup/coverdata:/startup/coverdata:rw
+      - raftdata2:/raftdata
+    environment:
+      <<: *raft-cluster-peers
+      RAFT_NODE_ID: 2
+    command: /startup/core_service.sh ${DEBUG_ON:-0}
+    depends_on:
+      local-dss-rid-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-scd-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-aux-bootstrapper:
+        condition: service_completed_successfully
+    networks:
+      - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://localhost:8082/healthy' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
+    profiles: ["with-raft-cluster"]
+
+  local-dss-core-service-3:
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - $PWD/startup/coverdata:/startup/coverdata:rw
+      - raftdata3:/raftdata
+    environment:
+      <<: *raft-cluster-peers
+      RAFT_NODE_ID: 3
+    command: /startup/core_service.sh ${DEBUG_ON:-0}
+    depends_on:
+      local-dss-rid-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-scd-bootstrapper:
+        condition: service_completed_successfully
+      local-dss-aux-bootstrapper:
+        condition: service_completed_successfully
+    networks:
+      - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://localhost:8082/healthy' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
+    profiles: ["with-raft-cluster"]
+
+  # Round-robins requests across the 3 raft nodes
+  local-dss-raft-lb:
+    image: nginx:1.29-alpine
+    volumes:
+      - $PWD/nginx/raft-lb.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8082:8082"
+    depends_on:
+      local-dss-core-service-1:
+        condition: service_healthy
+      local-dss-core-service-2:
+        condition: service_healthy
+      local-dss-core-service-3:
+        condition: service_healthy
+    networks:
+      - dss_sandbox_default_network
+    healthcheck:
+      test: wget -O - 'http://127.0.0.1:8082/healthy' || exit 1
+      interval: 3m
+      start_period: 10s
+      start_interval: 5s
+    profiles: ["with-raft-cluster"]
 
   local-dss-dummy-oauth:
     build:
@@ -216,3 +337,7 @@ networks:
 
 volumes:
   local-dss-data:
+  raftdata:
+  raftdata1:
+  raftdata2:
+  raftdata3:

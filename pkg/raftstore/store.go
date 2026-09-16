@@ -5,6 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/dss/pkg/random"
@@ -15,19 +16,12 @@ import (
 )
 
 type RaftRepo[R any] interface {
-	GetRepo() R
+	memstore.MemRepo[R]
+
 	// Apply is called on every committed entry. The proposal must be applied atomically.
 	// The any return mirrors store.OperationHandler.Execute: different requests yield different
 	// concrete result types. Callers recover the type via store.TransactWithResult.
 	Apply(ctx context.Context, proposal consensus.Proposal) (any, error)
-
-	// GetSnapshot returns a serialized view of current state, suitable
-	// for restoring via RestoreFromSnapshot.
-	GetSnapshot() ([]byte, error)
-
-	// RestoreFromSnapshot replaces all state with the snapshot in data.
-	// data is always the output of a prior GetSnapshot.
-	RestoreFromSnapshot(data []byte) error
 }
 
 type Store[R any] struct {
@@ -116,10 +110,15 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 				continue
 			}
 
-			proposalCtx := timestamp.WithRequestTimestamp(ctx, commit.Prop.Timestamp)
-			proposalCtx = locality.WithRequestLocality(proposalCtx, commit.Prop.Locality)
+			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
+			proposalCtx = locality.NewContext(proposalCtx, commit.Prop.Locality)
 			proposalCtx = random.NewContext(proposalCtx, commit.Prop.Seed)
+			s.raftRepo.Checkpoint()
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
+			if err != nil {
+				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", string(commit.Prop.RequestType)), zap.Error(err))
+				s.raftRepo.Restore()
+			}
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}
 	}
