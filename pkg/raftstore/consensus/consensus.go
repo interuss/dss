@@ -39,7 +39,8 @@ type Consensus struct {
 	serverErrC      chan error    // http server errors
 	stopC           chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
 
-	tracker *proposalsTracker
+	tracker     *proposalsTracker
+	readTracker *readIndexTracker
 
 	confState     raftpb.ConfState
 	snapshotIndex uint64
@@ -85,7 +86,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, locality string, conn
 		serverErrC:      make(chan error, 1),
 		stopC:           make(chan struct{}),
 
-		tracker: newProposalsTracker(),
+		tracker:     newProposalsTracker(),
+		readTracker: newReadIndexTracker(),
 	}
 
 	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
@@ -141,6 +143,23 @@ func (c *Consensus) HandleClientRequest[Result any](ctx context.Context, request
 	var zero Result
 
 	proposal := c.newProposal(ctx, string(requestType), value, readOnly)
+
+	if readOnly {
+		res, err := c.handleReadOnlyRequest(ctx, proposal)
+		if err != nil {
+			return zero, err
+		}
+		// See the identical nil check below: a literal nil result is an untyped nil interface,
+		// which fails a type assertion to any Result type, including any itself.
+		if res == nil {
+			return zero, nil
+		}
+		result, ok := res.(Result)
+		if !ok {
+			return zero, stacktrace.NewError("unexpected result type for %q: got %T", requestType, res)
+		}
+		return result, nil
+	}
 	buf, err := json.Marshal(proposal)
 	if err != nil {
 		return zero, stacktrace.Propagate(err, "failed to marshal proposal")
@@ -174,6 +193,42 @@ func (c *Consensus) HandleClientRequest[Result any](ctx context.Context, request
 	case <-ctx.Done():
 		c.tracker.untrack(proposal.ID, ProposalResult{Error: ctx.Err()})
 		return zero, ctx.Err()
+	}
+}
+
+// handleReadOnlyRequest serves a read-only proposal via ReadIndex instead of proposing to consensus.
+// ReadIndex confirms (via a quorum-backed leader check) the current commit index, waits
+// for this node's own appliedIndex to catch up to it, and only then executes the read against
+// local state. This gives the same linearizability guarantee as proposing through the log,
+// without writing an entry that every node would otherwise have to persist and replicate.
+func (c *Consensus) handleReadOnlyRequest(ctx context.Context, proposal Proposal) (any, error) {
+	ready := c.readTracker.track(proposal.ID)
+
+	err := c.node.ReadIndex(ctx, []byte(proposal.ID))
+	if err != nil {
+		c.readTracker.untrack(proposal.ID)
+		return nil, stacktrace.Propagate(err, "failed to request read index from Raft")
+	}
+
+	select {
+	case <-ready:
+	case <-ctx.Done():
+		c.readTracker.untrack(proposal.ID)
+		return nil, ctx.Err()
+	}
+
+	applyDoneC := make(chan ProposalResult, 1)
+	select {
+	case c.commitC <- EntryCommit{Prop: proposal, Done: applyDoneC}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	select {
+	case res := <-applyDoneC:
+		return res.Result, res.Error
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 
@@ -294,6 +349,13 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					return
 				}
 
+				for _, rs := range raftUpdate.ReadStates {
+					c.readTracker.setIndex(string(rs.RequestCtx), rs.Index, c.appliedIndex)
+				}
+				// A read's ReadState may have arrived in an earlier Ready() batch than the
+				// entries it depends on, so re-check pending reads on every apply too.
+				c.readTracker.releaseUpTo(c.appliedIndex)
+
 				c.node.Advance()
 			case err := <-c.transport.ErrorC:
 				c.logger.Error("transport error", zap.Error(err))
@@ -362,11 +424,6 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 	err := json.Unmarshal(data, &proposal)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
-	}
-
-	//if readOnly proposal and we did not initiate it, skip it (noop)
-	if proposal.ReadOnly && !c.tracker.isPending(proposal.ID) {
-		return nil
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)
