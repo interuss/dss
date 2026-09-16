@@ -30,7 +30,7 @@ type GetTokenRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetTokenOperationID = "GetToken"
+const GetTokenOperationID = "dummyoauth.GetToken"
 
 func (request *GetTokenRequest) OperationID() string { return GetTokenOperationID }
 
