@@ -29,7 +29,7 @@ func (r *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.C
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchSubscriptions, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchSubscriptions, buf)
 }
 
 func (r *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
@@ -38,7 +38,7 @@ func (r *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getSubscription, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getSubscription, buf)
 }
 
 func (r *repo) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
@@ -47,7 +47,7 @@ func (r *repo) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscripti
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, upsertSubscription, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, upsertSubscription, buf)
 }
 
 func (r *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
@@ -56,7 +56,7 @@ func (r *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 		return stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	_, err = r.consensus.HandleClientRequest(ctx, deleteSubscription, buf, false)
+	_, err = r.consensus.HandleWriteRequest(ctx, deleteSubscription, buf)
 	return err
 }
 
@@ -66,7 +66,7 @@ func (r *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, incrementNotificationIndicesForOperationalIntents, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, incrementNotificationIndicesForOperationalIntents, buf)
 }
 
 func (r *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
@@ -75,7 +75,7 @@ func (r *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, c
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, incrementNotificationIndicesForConstraints, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, incrementNotificationIndicesForConstraints, buf)
 }
 
 // LockSubscriptionsOnCells is a no-op in the raftstore implementation since raft requests are executed sequentially
@@ -89,9 +89,9 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, listExpiredSubscriptions, buf, true)
+	return r.consensus.HandleReadRequest(ctx, listExpiredSubscriptions, buf)
 }
 
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
-	return r.consensus.HandleClientRequest(ctx, countSubscriptions, nil, true)
+	return r.consensus.HandleReadRequest(ctx, countSubscriptions, nil)
 }

@@ -26,12 +26,12 @@ func (r *repo) SaveOwnMetadata(ctx context.Context, locality string, publicEndpo
 		return stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	_, err = r.consensus.HandleClientRequest(ctx, saveOwnMetadata, buf, false)
+	_, err = r.consensus.HandleWriteRequest(ctx, saveOwnMetadata, buf)
 	return err
 }
 
 func (r *repo) GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, error) {
-	return r.consensus.HandleClientRequest(ctx, getDSSMetadata, nil, true)
+	return r.consensus.HandleReadRequest(ctx, getDSSMetadata, nil)
 }
 
 func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbeat) error {
@@ -40,7 +40,7 @@ func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbea
 		return stacktrace.Propagate(err, "failed to marshal heartbeat")
 	}
 
-	_, err = r.consensus.HandleClientRequest(ctx, recordHeartbeat, buf, false)
+	_, err = r.consensus.HandleWriteRequest(ctx, recordHeartbeat, buf)
 	return err
 }
 
