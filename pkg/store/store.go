@@ -54,16 +54,14 @@ func DecodeJSON[T OperationRequest](buf []byte) (OperationRequest, error) {
 }
 
 // TransactWithResult wraps Store.Transact and casts the result to ResultType, avoiding a cast at every call site.
-// The cast is attempted even when Transact returns an error, since some operations intentionally return
-// a partial result alongside an error (e.g. a conflict response).
 func TransactWithResult[R any, ResultType any](ctx context.Context, store Store[R], request OperationRequest) (ResultType, error) {
 	var empty ResultType
 	transactionResult, err := store.Transact(ctx, request)
-	if resultType, ok := transactionResult.(ResultType); ok {
-		return resultType, err
-	}
 	if err != nil {
 		return empty, err
+	}
+	if resultType, ok := transactionResult.(ResultType); ok {
+		return resultType, nil
 	}
 	return empty, stacktrace.NewError("unexpected result type %T, want %T", transactionResult, empty)
 }
