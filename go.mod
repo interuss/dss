@@ -1,6 +1,6 @@
 module github.com/interuss/dss
 
-go 1.26.2
+go 1.27.1
 
 require (
 	cloud.google.com/go/profiler v0.4.0

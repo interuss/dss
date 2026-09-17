@@ -1,6 +1,6 @@
 module example
 
-go 1.25.0
+go 1.27.1
 
 require (
 	github.com/interuss/dss v0.0.1
