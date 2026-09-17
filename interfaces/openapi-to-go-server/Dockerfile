@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
-COPY --from=golang:1.22-alpine /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.27-alpine /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 ADD . /app
