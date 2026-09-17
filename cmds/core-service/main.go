@@ -143,16 +143,16 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
-			Store:             ridStore,
-			App:               app,
-			Locality:          locality,
-			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-		}, &rid_v2.Server{
-			Store:             ridStore,
-			App:               app,
-			Locality:          locality,
-			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-		}, nil
+		Store:             ridStore,
+		App:               app,
+		Locality:          locality,
+		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+	}, &rid_v2.Server{
+		Store:             ridStore,
+		App:               app,
+		Locality:          locality,
+		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+	}, nil
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger, locality string) (*scd.Server, error) {
