@@ -94,7 +94,7 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateConstraintReferenceOperationID)
 	}
 
-	validParams, err := ValidateAndReturnConstraintUpsertParams(timestamp.MustGetRequestTimestamp(ctx), entityid, params)
+	validParams, err := ValidateAndReturnConstraintUpsertParams(timestamp.MustFromContext(ctx), entityid, params)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters")
 	}
