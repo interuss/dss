@@ -46,6 +46,17 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case searchConstraints, getConstraint, upsertConstraint, deleteConstraint, countConstraints:
+		return r.applyConstraint(ctx, proposal)
+
+	case searchSubscriptions, getSubscription, upsertSubscription, deleteSubscription,
+		incrementNotificationIndicesForOperationalIntents, incrementNotificationIndicesForConstraints,
+		listExpiredSubscriptions, countSubscriptions:
+		return r.applySubscription(ctx, proposal)
+
+	case getOperationalIntent, deleteOperationalIntent, upsertOperationalIntent, searchOperationalIntents,
+		getDependentOperationalIntents, listExpiredOperationalIntents, countOperationalIntents:
+		return r.applyOperationalIntent(ctx, proposal)
 
 	default:
 		handler, ok := operations.Registry[string(proposal.RequestType)]
