@@ -145,18 +145,15 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	}
 
 	// Gather the subscriptions that need to be notified
-	notifyVolume := &dssmodels.Volume4D{
-		StartTime: old.StartTime,
-		EndTime:   old.EndTime,
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeHi: old.AltitudeUpper,
-			AltitudeLo: old.AltitudeLower,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return old.Cells, nil
-			}),
-		}}
+	notifyCellsVol4D := &dssmodels.CellsVolume4D{
+		Cells:      old.Cells,
+		StartTime:  old.StartTime,
+		EndTime:    old.EndTime,
+		AltitudeLo: old.AltitudeLower,
+		AltitudeHi: old.AltitudeUpper,
+	}
 
-	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyCellsVol4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "could not obtain relevant subscriptions")
 	}
@@ -227,9 +224,13 @@ func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Rep
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry")
 	}
+	cellsVolume4D, err := vol4.ToCellsVolume4D()
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
+	}
 
 	// Perform search query on Store
-	ops, err := repo.SearchOperationalIntents(ctx, vol4)
+	ops, err := repo.SearchOperationalIntents(ctx, cellsVolume4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to query for OperationalIntents in repo")
 	}
@@ -292,28 +293,32 @@ func validateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
-// computeNotificationVolume computes the volume that needs to be queried for subscriptions
+// computeNotificationCellsVolume computes the volume that needs to be queried for subscriptions
 // given the requested extent and the (possibly nil) previous operational intent.
-// The returned volume is either the union of the requested extent and the previous OIR's extent, or just the requested extent
+// The returned volume covers either the union of the requested extent and the previous OIR's extent, or just the requested extent
 // if the previous OIR is nil.
-func computeNotificationVolume(
+func computeNotificationCellsVolume(
 	previousOIR *scdmodels.OperationalIntent,
-	requestedExtent *dssmodels.Volume4D) (*dssmodels.Volume4D, error) {
+	requestedExtent *dssmodels.Volume4D,
+	requestedCells s2.CellUnion) (*dssmodels.CellsVolume4D, error) {
 
 	if previousOIR == nil {
-		return requestedExtent, nil
+		return &dssmodels.CellsVolume4D{
+			Cells:      requestedCells,
+			StartTime:  requestedExtent.StartTime,
+			EndTime:    requestedExtent.EndTime,
+			AltitudeLo: requestedExtent.SpatialVolume.AltitudeLo,
+			AltitudeHi: requestedExtent.SpatialVolume.AltitudeHi,
+		}, nil
 	}
 
-	// Compute total affected Volume4D for notification purposes
+	// Compute total affected extent for notification purposes
 	oldVolume := &dssmodels.Volume4D{
 		StartTime: previousOIR.StartTime,
 		EndTime:   previousOIR.EndTime,
 		SpatialVolume: &dssmodels.Volume3D{
 			AltitudeHi: previousOIR.AltitudeUpper,
 			AltitudeLo: previousOIR.AltitudeLower,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return previousOIR.Cells, nil
-			}),
 		},
 	}
 	notifyVolume, err := dssmodels.UnionVolumes4D(requestedExtent, oldVolume)
@@ -321,7 +326,13 @@ func computeNotificationVolume(
 		return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
 	}
 
-	return notifyVolume, nil
+	return &dssmodels.CellsVolume4D{
+		Cells:      s2.CellUnionFromUnion(requestedCells, previousOIR.Cells),
+		StartTime:  notifyVolume.StartTime,
+		EndTime:    notifyVolume.EndTime,
+		AltitudeLo: notifyVolume.SpatialVolume.AltitudeLo,
+		AltitudeHi: notifyVolume.SpatialVolume.AltitudeHi,
+	}, nil
 }
 
 type validOIRParams struct {
@@ -527,9 +538,17 @@ func validateKeyAndProvideConflictResponse(
 	attachedSubscription *scdmodels.Subscription,
 ) (*restapi.AirspaceConflictResponse, error) {
 
+	cellsVolume4D := &dssmodels.CellsVolume4D{
+		Cells:      params.Cells,
+		StartTime:  params.UExtent.StartTime,
+		EndTime:    params.UExtent.EndTime,
+		AltitudeLo: params.UExtent.SpatialVolume.AltitudeLo,
+		AltitudeHi: params.UExtent.SpatialVolume.AltitudeHi,
+	}
+
 	// Identify OperationalIntents missing from the key
 	var missingOps []*scdmodels.OperationalIntent
-	relevantOps, err := r.SearchOperationalIntents(ctx, params.UExtent)
+	relevantOps, err := r.SearchOperationalIntents(ctx, cellsVolume4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to SearchOperations")
 	}
@@ -544,7 +563,7 @@ func validateKeyAndProvideConflictResponse(
 	// Identify Constraints missing from the key
 	var missingConstraints []*scdmodels.Constraint
 	if attachedSubscription != nil && attachedSubscription.NotifyForConstraints {
-		constraints, err := r.SearchConstraints(ctx, params.UExtent)
+		constraints, err := r.SearchConstraints(ctx, cellsVolume4D)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to SearchConstraints")
 		}
@@ -815,13 +834,13 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 	}
 
-	notifyVolume, err := computeNotificationVolume(old, validParams.UExtent)
+	notifyCellsVol4D, err := computeNotificationCellsVolume(old, validParams.UExtent, validParams.Cells)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to compute notification volume")
+		return nil, stacktrace.Propagate(err, "Failed to compute notification cells volume")
 	}
 
 	// Notify relevant Subscriptions
-	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyCellsVol4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 	}

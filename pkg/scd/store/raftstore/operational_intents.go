@@ -22,7 +22,7 @@ func (r *repo) UpsertOperationalIntent(_ context.Context, operation *scdmodels.O
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpsertOperationalIntent not implemented for raftstore")
 }
 
-func (r *repo) SearchOperationalIntents(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
+func (r *repo) SearchOperationalIntents(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchOperationalIntents not implemented for raftstore")
 }
 
