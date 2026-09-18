@@ -20,43 +20,39 @@ func (rec *subscriptionRecord) toModel() *scdmodels.Subscription {
 		Version:                     scdmodels.NewOVNFromTime(rec.UpdatedAt, rec.ID.String()),
 		NotificationIndex:           rec.NotificationIndex,
 		Manager:                     rec.Manager,
-		StartTime:                   utils.ClonePtr(rec.StartTime),
-		EndTime:                     utils.ClonePtr(rec.EndTime),
 		USSBaseURL:                  rec.USSBaseURL,
 		NotifyForOperationalIntents: rec.NotifyForOperationalIntents,
 		NotifyForConstraints:        rec.NotifyForConstraints,
 		ImplicitSubscription:        rec.ImplicitSubscription,
-		Cells:                       slices.Clone(rec.Cells),
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			StartTime: utils.ClonePtr(rec.StartTime),
+			EndTime:   utils.ClonePtr(rec.EndTime),
+			Cells:     slices.Clone(rec.Cells),
+		},
 	}
 }
 
-// subscriptionsInVolume4D yields the subscriptions intersecting v4d.
-func (r *repo) subscriptionsInVolume4D(v4d *dssmodels.Volume4D) (iter.Seq[*subscriptionRecord], error) {
-	want, err := coveringSet(v4d)
-	if err != nil {
-		return nil, err
-	}
+// subscriptionsInCellsVolume yields the subscriptions intersecting cellsVolume.
+func (r *repo) subscriptionsInCellsVolume(cellsVolume *dssmodels.CellsVolume4D) iter.Seq[*subscriptionRecord] {
+	want := cellSet(cellsVolume.Cells)
 
 	return func(yield func(*subscriptionRecord) bool) {
 		for _, rec := range r.state.Subscriptions {
 			if !overlaps(rec.Cells, want) {
 				continue
 			}
-			if !overlapsTime(rec.StartTime, rec.EndTime, v4d) {
+			if !overlapsTime(rec.StartTime, rec.EndTime, cellsVolume) {
 				continue
 			}
 			if !yield(rec) {
 				return
 			}
 		}
-	}, nil
+	}
 }
 
-func (r *repo) SearchSubscriptions(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
-	subscriptions, err := r.subscriptionsInVolume4D(v4d)
-	if err != nil {
-		return nil, err
-	}
+func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	subscriptions := r.subscriptionsInCellsVolume(cellsVolume)
 
 	var out []*scdmodels.Subscription
 	for rec := range subscriptions {
@@ -105,21 +101,18 @@ func (r *repo) DeleteSubscription(_ context.Context, id dssmodels.ID) error {
 	return nil
 }
 
-func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
-	return r.incrementNotificationIndices(v4d, func(rec *subscriptionRecord) bool { return rec.NotifyForOperationalIntents })
+func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	return r.incrementNotificationIndices(cellsVolume, func(rec *subscriptionRecord) bool { return rec.NotifyForOperationalIntents })
 }
 
-func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
-	return r.incrementNotificationIndices(v4d, func(rec *subscriptionRecord) bool { return rec.NotifyForConstraints })
+func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	return r.incrementNotificationIndices(cellsVolume, func(rec *subscriptionRecord) bool { return rec.NotifyForConstraints })
 }
 
 // incrementNotificationIndices increments the notification index of each subscription
-// intersecting v4d and asking for the notifications selected by notified.
-func (r *repo) incrementNotificationIndices(v4d *dssmodels.Volume4D, notified func(*subscriptionRecord) bool) ([]*scdmodels.Subscription, error) {
-	subscriptions, err := r.subscriptionsInVolume4D(v4d)
-	if err != nil {
-		return nil, err
-	}
+// intersecting cellsVolume and asking for the notifications selected by notified.
+func (r *repo) incrementNotificationIndices(cellsVolume *dssmodels.CellsVolume4D, notified func(*subscriptionRecord) bool) ([]*scdmodels.Subscription, error) {
+	subscriptions := r.subscriptionsInCellsVolume(cellsVolume)
 
 	var out []*scdmodels.Subscription
 	for rec := range subscriptions {

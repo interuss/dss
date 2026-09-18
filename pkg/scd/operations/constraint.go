@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -124,25 +123,10 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 		version = old.Version + 1
 	}
 
-	// Compute total affected Volume4D for notification purposes
-	var notifyVol4 *dssmodels.Volume4D
-	if old == nil {
-		notifyVol4 = validParams.uExtent
-	} else {
-		oldVol4 := &dssmodels.Volume4D{
-			StartTime: old.StartTime,
-			EndTime:   old.EndTime,
-			SpatialVolume: &dssmodels.Volume3D{
-				AltitudeHi: old.AltitudeUpper,
-				AltitudeLo: old.AltitudeLower,
-				Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-					return old.Cells, nil
-				}),
-			}}
-		notifyVol4, err = dssmodels.UnionVolumes4D(validParams.uExtent, oldVol4)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
-		}
+	// Compute total affected cellsVolume for notification purposes
+	notifyCellsVol4D := validParams.volume
+	if old != nil {
+		notifyCellsVol4D = dssmodels.UnionCellsVolumes4D(validParams.volume, old.CellsVolume4D)
 	}
 
 	// Construct the new Constraint
@@ -156,7 +140,7 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 
 	// Find the Subscriptions interested in Constraints and increment their
 	// notification indices.
-	subs, err := repo.IncrementNotificationIndicesForConstraints(ctx, notifyVol4)
+	subs, err := repo.IncrementNotificationIndicesForConstraints(ctx, notifyCellsVol4D)
 	if err != nil {
 		return nil, err
 	}
@@ -170,24 +154,17 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 
 type validConstraintParams struct {
 	id         dssmodels.ID
-	uExtent    *dssmodels.Volume4D
-	cells      s2.CellUnion
+	volume     *dssmodels.CellsVolume4D
 	ussBaseURL string
 }
 
 func (vp *validConstraintParams) toConstraint(manager dssmodels.Manager, version scdmodels.VersionNumber) *scdmodels.Constraint {
 	return &scdmodels.Constraint{
-		ID:      vp.id,
-		Manager: manager,
-		Version: version,
-
-		StartTime:     vp.uExtent.StartTime,
-		EndTime:       vp.uExtent.EndTime,
-		AltitudeLower: vp.uExtent.SpatialVolume.AltitudeLo,
-		AltitudeUpper: vp.uExtent.SpatialVolume.AltitudeHi,
-
-		USSBaseURL: vp.ussBaseURL,
-		Cells:      vp.cells,
+		ID:            vp.id,
+		Manager:       manager,
+		Version:       version,
+		USSBaseURL:    vp.ussBaseURL,
+		CellsVolume4D: vp.volume,
 	}
 }
 
@@ -213,7 +190,7 @@ func ValidateAndReturnConstraintUpsertParams(
 
 	// Start and end times are required for each volume
 	// The end time may not be in the past
-	valid.uExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
+	uExtent, err := scdmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
 		scdmodels.WithRequireTimeBounds(),
 		scdmodels.WithRequireEndTimeAfter(now),
@@ -222,7 +199,7 @@ func ValidateAndReturnConstraintUpsertParams(
 		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
 
-	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
+	valid.volume, err = uExtent.ToCellsVolume4D()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
@@ -242,14 +219,14 @@ func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
 	}
 
-	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	// Parse area of interest to a cells-native volume
+	cellsVol4, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
 	}
 
 	// Perform search query on Store
-	constraints, err := repo.SearchConstraints(ctx, vol4)
+	constraints, err := repo.SearchConstraints(ctx, cellsVol4)
 	if err != nil {
 		return nil, err
 	}
@@ -305,16 +282,7 @@ func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request
 
 	// Find the Subscriptions interested in Constraints and increment their
 	// notification indices.
-	subs, err := repo.IncrementNotificationIndicesForConstraints(ctx, &dssmodels.Volume4D{
-		StartTime: old.StartTime,
-		EndTime:   old.EndTime,
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeHi: old.AltitudeUpper,
-			AltitudeLo: old.AltitudeLower,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return old.Cells, nil
-			}),
-		}})
+	subs, err := repo.IncrementNotificationIndicesForConstraints(ctx, old.CellsVolume4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to increment notification indices")
 	}

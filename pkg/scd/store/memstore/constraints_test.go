@@ -54,19 +54,19 @@ func TestSearchConstraints(t *testing.T) {
 	require.NoError(t, err)
 
 	// Overlapping volume with no time bounds matches.
-	res, err := r.SearchConstraints(ctx, volume4D(cells, nil, nil, nil, nil))
+	res, err := r.SearchConstraints(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 
 	// Time window after the constraint's end excludes it.
 	afterStart := endTime.Add(time.Hour)
 	afterEnd := afterStart.Add(time.Hour)
-	res, err = r.SearchConstraints(ctx, volume4D(cells, &afterStart, &afterEnd, nil, nil))
+	res, err = r.SearchConstraints(ctx, cellsVolume4D(cells, &afterStart, &afterEnd, nil, nil))
 	require.NoError(t, err)
 	require.Empty(t, res)
 
 	// No covering cells returns an empty (non-nil) slice.
-	res, err = r.SearchConstraints(ctx, volume4D(s2.CellUnion{}, nil, nil, nil, nil))
+	res, err = r.SearchConstraints(ctx, cellsVolume4D(s2.CellUnion{}, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Empty(t, res)

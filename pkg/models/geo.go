@@ -1,10 +1,12 @@
 package models
 
 import (
+	"slices"
 	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/geo"
+	"github.com/interuss/dss/pkg/memstore/utils"
 	"github.com/interuss/stacktrace"
 )
 
@@ -52,10 +54,6 @@ type Geometry interface {
 	// The returned CellUnion must be sorted.
 	CalculateCovering() (s2.CellUnion, error)
 }
-
-// GeometryFunc is an implementation of Geometry.
-// Per the Geometry interface, the wrapped function must return a sorted CellUnion.
-type GeometryFunc func() (s2.CellUnion, error)
 
 type precomputedCellGeometry map[s2.CellID]struct{}
 
@@ -171,6 +169,96 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
+// UnionCellsVolumes4D unions cells volumes and returns a volume that covers all the individual volumes in space (cells) and time.
+func UnionCellsVolumes4D(volumes ...*CellsVolume4D) *CellsVolume4D {
+	result := &CellsVolume4D{}
+	unbounded := struct{ startTime, endTime, altitudeLo, altitudeHi bool }{}
+	cellUnions := make([]s2.CellUnion, 0, len(volumes))
+
+	for _, volume := range volumes {
+		cellUnions = append(cellUnions, volume.Cells)
+
+		if volume.EndTime == nil {
+			unbounded.endTime = true
+			result.EndTime = nil
+		} else if !unbounded.endTime {
+			if result.EndTime != nil {
+				if volume.EndTime.After(*result.EndTime) {
+					result.EndTime = timeP(*volume.EndTime)
+				}
+			} else {
+				result.EndTime = timeP(*volume.EndTime)
+			}
+		}
+
+		if volume.StartTime == nil {
+			unbounded.startTime = true
+			result.StartTime = nil
+		} else if !unbounded.startTime {
+			if result.StartTime != nil {
+				if volume.StartTime.Before(*result.StartTime) {
+					result.StartTime = timeP(*volume.StartTime)
+				}
+			} else {
+				result.StartTime = timeP(*volume.StartTime)
+			}
+		}
+
+		if volume.AltitudeLo == nil {
+			unbounded.altitudeLo = true
+			result.AltitudeLo = nil
+		} else if !unbounded.altitudeLo {
+			if result.AltitudeLo != nil {
+				if *volume.AltitudeLo < *result.AltitudeLo {
+					result.AltitudeLo = float32p(*volume.AltitudeLo)
+				}
+			} else {
+				result.AltitudeLo = float32p(*volume.AltitudeLo)
+			}
+		}
+
+		if volume.AltitudeHi == nil {
+			unbounded.altitudeHi = true
+			result.AltitudeHi = nil
+		} else if !unbounded.altitudeHi {
+			if result.AltitudeHi != nil {
+				if *volume.AltitudeHi > *result.AltitudeHi {
+					result.AltitudeHi = float32p(*volume.AltitudeHi)
+				}
+			} else {
+				result.AltitudeHi = float32p(*volume.AltitudeHi)
+			}
+		}
+	}
+
+	result.Cells = s2.CellUnionFromUnion(cellUnions...)
+	geo.Levelify(&result.Cells)
+	return result
+}
+
+// CellsVolume4D is the cells-native counterpart to Volume4D
+type CellsVolume4D struct {
+	Cells      s2.CellUnion
+	StartTime  *time.Time
+	EndTime    *time.Time
+	AltitudeLo *float32
+	AltitudeHi *float32
+}
+
+// Clone returns a deep copy of v
+func (v *CellsVolume4D) Clone() *CellsVolume4D {
+	if v == nil {
+		return nil
+	}
+	return &CellsVolume4D{
+		Cells:      slices.Clone(v.Cells),
+		StartTime:  utils.ClonePtr(v.StartTime),
+		EndTime:    utils.ClonePtr(v.EndTime),
+		AltitudeLo: utils.ClonePtr(v.AltitudeLo),
+		AltitudeHi: utils.ClonePtr(v.AltitudeHi),
+	}
+}
+
 // CalculateSpatialCovering returns the spatial covering of vol4, or one of:
 // * geo.ErrMissingSpatialVolume
 // * geo.ErrMissingFootprint
@@ -184,6 +272,24 @@ func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	return vol4.SpatialVolume.CalculateCovering()
 }
 
+// ToCellsVolume4D translates a Volume4D into a CellsVolume4D
+func (v *Volume4D) ToCellsVolume4D() (*CellsVolume4D, error) {
+	cells, err := v.CalculateSpatialCovering()
+	if err != nil {
+		return nil, err
+	}
+	filter := &CellsVolume4D{
+		Cells:     cells,
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+	if v.SpatialVolume != nil {
+		filter.AltitudeLo = v.SpatialVolume.AltitudeLo
+		filter.AltitudeHi = v.SpatialVolume.AltitudeHi
+	}
+	return filter, nil
+}
+
 // CalculateCovering returns the (sorted) spatial covering of vol3, or one of:
 // * geo.ErrMissingFootprint
 // * geo.ErrNotEnoughPointsInPolygon
@@ -194,14 +300,6 @@ func (vol3 *Volume3D) CalculateCovering() (s2.CellUnion, error) {
 		return nil, geo.ErrMissingFootprint
 	}
 	return vol3.Footprint.CalculateCovering()
-}
-
-// CalculateCovering returns the result of invoking gf, with possible errors:
-// * geo.ErrNotEnoughPointsInPolygon
-// * geo.ErrBadCoordSet
-// * geo.ErrRadiusMustBeLargerThan0
-func (gf GeometryFunc) CalculateCovering() (s2.CellUnion, error) {
-	return gf()
 }
 
 // GeoCircle models a circular enclosed area on earth's surface.

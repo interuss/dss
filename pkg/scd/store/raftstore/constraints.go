@@ -9,7 +9,7 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) SearchConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error) {
+func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchConstraints not implemented for raftstore")
 }
 

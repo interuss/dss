@@ -68,6 +68,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
+			volume    = new(dssmodels.CellsVolume4D)
 			updatedAt time.Time
 		)
 		err := rows.Scan(
@@ -75,10 +76,10 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 			&o.Manager,
 			&o.Version,
 			&o.USSBaseURL,
-			&o.AltitudeLower,
-			&o.AltitudeUpper,
-			&o.StartTime,
-			&o.EndTime,
+			&volume.AltitudeLo,
+			&volume.AltitudeHi,
+			&volume.StartTime,
+			&volume.EndTime,
 			&o.SubscriptionID,
 			&updatedAt,
 			&o.State,
@@ -90,6 +91,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error scanning Operation row")
 		}
+		o.CellsVolume4D = volume
 
 		// If the managing USS has requested a specific OVN on this operational intent, it will be persisted in DB.
 		// If not, a default DSS-generated OVN based on the last update time is used.
@@ -252,8 +254,8 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		operation.Manager,
 		operation.Version,
 		operation.USSBaseURL,
-		operation.AltitudeLower,
-		operation.AltitudeUpper,
+		operation.AltitudeLo,
+		operation.AltitudeHi,
 		operation.StartTime,
 		operation.EndTime,
 		subid,
@@ -269,7 +271,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return operation, nil
 }
 
-func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
+func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -291,24 +293,17 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 			LIMIT $6`, operationFieldsWithPrefix)
 	)
 
-	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
-	}
-	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
-	}
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	result, err := s.fetchOperationalIntents(
 		ctx, q, operationsIntersectingVolumeQuery,
-		dsssql.CellUnionToCellIds(cells),
-		v4d.SpatialVolume.AltitudeLo,
-		v4d.SpatialVolume.AltitudeHi,
-		v4d.StartTime,
-		v4d.EndTime,
+		dsssql.CellUnionToCellIds(cellsVolume.Cells),
+		cellsVolume.AltitudeLo,
+		cellsVolume.AltitudeHi,
+		cellsVolume.StartTime,
+		cellsVolume.EndTime,
 		dssmodels.MaxResultLimit,
 	)
 	if err != nil {
@@ -319,8 +314,8 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 }
 
 // SearchOperations implements repos.Operation.SearchOperations.
-func (s *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
-	return s.searchOperationalIntents(ctx, s.q, v4d)
+func (s *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+	return s.searchOperationalIntents(ctx, s.q, cellsVolume)
 }
 
 // GetDependentOperations implements repos.Operation.GetDependentOperations.

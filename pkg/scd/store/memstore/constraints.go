@@ -2,9 +2,7 @@ package memstore
 
 import (
 	"context"
-	"slices"
 
-	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	dsssql "github.com/interuss/dss/pkg/sql"
@@ -19,30 +17,23 @@ func (rec *constraintRecord) toModel() *scdmodels.Constraint {
 		Manager:       rec.Manager,
 		Version:       rec.Version,
 		OVN:           scdmodels.NewOVNFromTime(rec.UpdatedAt, rec.ID.String()),
-		StartTime:     utils.ClonePtr(rec.StartTime),
-		EndTime:       utils.ClonePtr(rec.EndTime),
 		USSBaseURL:    rec.USSBaseURL,
-		AltitudeLower: utils.ClonePtr(rec.AltitudeLower),
-		AltitudeUpper: utils.ClonePtr(rec.AltitudeUpper),
-		Cells:         slices.Clone(rec.Cells),
+		CellsVolume4D: rec.Volume.Clone(),
 	}
 }
 
-func (r *repo) SearchConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error) {
-	want, err := coveringSet(v4d)
-	if err != nil {
-		return nil, err
-	}
+func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
+	want := cellSet(cellsVolume.Cells)
 	if len(want) == 0 {
 		return []*scdmodels.Constraint{}, nil
 	}
 
 	var out []*scdmodels.Constraint
 	for _, rec := range r.state.Constraints {
-		if !overlaps(rec.Cells, want) {
+		if !overlaps(rec.Volume.Cells, want) {
 			continue
 		}
-		if !overlapsTime(rec.StartTime, rec.EndTime, v4d) {
+		if !overlapsTime(rec.Volume.StartTime, rec.Volume.EndTime, cellsVolume) {
 			continue
 		}
 		out = append(out, rec.toModel())
@@ -70,16 +61,12 @@ func (r *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 	now := timestamp.MustFromContext(ctx)
 
 	rec := &constraintRecord{
-		ID:            s.ID,
-		Manager:       s.Manager,
-		Version:       s.Version,
-		StartTime:     utils.ClonePtr(s.StartTime),
-		EndTime:       utils.ClonePtr(s.EndTime),
-		USSBaseURL:    s.USSBaseURL,
-		AltitudeLower: utils.ClonePtr(s.AltitudeLower),
-		AltitudeUpper: utils.ClonePtr(s.AltitudeUpper),
-		Cells:         slices.Clone(s.Cells),
-		UpdatedAt:     now,
+		ID:         s.ID,
+		Manager:    s.Manager,
+		Version:    s.Version,
+		USSBaseURL: s.USSBaseURL,
+		Volume:     s.Clone(),
+		UpdatedAt:  now,
 	}
 	r.state.Constraints[s.ID] = rec
 	return rec.toModel(), nil

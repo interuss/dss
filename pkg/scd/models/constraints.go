@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 )
@@ -15,12 +14,8 @@ type Constraint struct {
 	UssAvailability UssAvailabilityState
 	Version         VersionNumber
 	OVN             OVN
-	StartTime       *time.Time
-	EndTime         *time.Time
 	USSBaseURL      string
-	AltitudeLower   *float32
-	AltitudeUpper   *float32
-	Cells           s2.CellUnion
+	*dssmodels.CellsVolume4D
 }
 
 // ToRest converts the Constraint to its SCD v1 REST model API format

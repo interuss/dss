@@ -75,6 +75,15 @@ func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DV
 	return union, nil
 }
 
+// CellsVolume4DFromSCDRest converts vol4 SCD v1 REST model to a CellsVolume4D.
+func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
+	volume, err := Volume4DFromSCDRest(vol4)
+	if err != nil {
+		return nil, err
+	}
+	return volume.ToCellsVolume4D()
+}
+
 // Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
 func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)

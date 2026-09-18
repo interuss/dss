@@ -75,13 +75,9 @@ type OperationalIntent struct {
 	State           OperationalIntentState
 	OVN             OVN
 	PastOVNs        []OVN
-	StartTime       *time.Time
-	EndTime         *time.Time
 	USSBaseURL      string
 	SubscriptionID  *dssmodels.ID
-	AltitudeLower   *float32
-	AltitudeUpper   *float32
-	Cells           s2.CellUnion
+	*dssmodels.CellsVolume4D
 }
 
 func (s OperationalIntentState) String() string {
@@ -116,7 +112,6 @@ func (o *OperationalIntent) ToRest() *restapi.OperationalIntentReference {
 			Format: TimeFormatRFC3339,
 		}
 	}
-
 	if o.EndTime != nil {
 		result.TimeEnd = restapi.Time{
 			Value:  o.EndTime.Format(time.RFC3339Nano),

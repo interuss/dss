@@ -27,15 +27,11 @@ type Subscription struct {
 	Version                     OVN
 	NotificationIndex           int
 	Manager                     dssmodels.Manager
-	StartTime                   *time.Time
-	EndTime                     *time.Time
-	AltitudeHi                  *float32
-	AltitudeLo                  *float32
 	USSBaseURL                  string
 	NotifyForOperationalIntents bool
 	NotifyForConstraints        bool
 	ImplicitSubscription        bool
-	Cells                       s2.CellUnion
+	*dssmodels.CellsVolume4D
 }
 
 // ToRest converts the Subscription to its SCD v1 REST model API format
@@ -56,7 +52,6 @@ func (s *Subscription) ToRest(dependentOperationalIntents []dssmodels.ID) (*rest
 			Format: TimeFormatRFC3339,
 		}
 	}
-
 	if s.EndTime != nil {
 		result.TimeEnd = &restapi.Time{
 			Value:  s.EndTime.Format(time.RFC3339Nano),
@@ -145,7 +140,7 @@ func (s *Subscription) ValidateDependentOp(operationalIntent *OperationalIntent)
 		return stacktrace.NewError("Subscription does not cover dependent operation 2d area, %s", operationalIntent.ID)
 	}
 	// validate altitudes
-	if *operationalIntent.AltitudeLower < *s.AltitudeLo || *operationalIntent.AltitudeUpper > *s.AltitudeHi {
+	if *operationalIntent.AltitudeLo < *s.AltitudeLo || *operationalIntent.AltitudeHi > *s.AltitudeHi {
 		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operationalIntent.ID)
 	}
 	// validate time range

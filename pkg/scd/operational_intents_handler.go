@@ -105,8 +105,8 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest"))}}
 	}
 
-	// Parse area of interest to common Volume4D
-	_, err := scdmodels.Volume4DFromSCDRest(aoi)
+	// Parse area of interest to a cells-native volume
+	_, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
