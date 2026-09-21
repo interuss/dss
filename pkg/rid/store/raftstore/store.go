@@ -46,6 +46,8 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case string(getISA), string(deleteISA), string(insertISA), string(updateISA), string(searchISAs), string(listExpiredISAs), string(countISAs):
+		return r.applyISA(ctx, proposal)
 
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
