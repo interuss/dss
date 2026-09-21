@@ -31,16 +31,7 @@ func (r *repo) SaveOwnMetadata(ctx context.Context, locality string, publicEndpo
 }
 
 func (r *repo) GetDSSMetadata(ctx context.Context) ([]*auxmodels.DSSMetadata, error) {
-	result, err := r.consensus.HandleClientRequest(ctx, getDSSMetadata, nil, true)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to propose %s", getDSSMetadata)
-	}
-
-	if res, ok := result.([]*auxmodels.DSSMetadata); ok {
-		return res, nil
-	}
-
-	return nil, stacktrace.NewError("unexpected result type: %T", result)
+	return r.consensus.HandleClientRequest(ctx, getDSSMetadata, nil, true)
 }
 
 func (r *repo) RecordHeartbeat(ctx context.Context, heartbeat auxmodels.Heartbeat) error {
