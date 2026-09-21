@@ -1,6 +1,7 @@
 package models
 
 import (
+	"sort"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -74,6 +75,9 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 		result[idx] = id
 		idx++
 	}
+
+	// Map iteration order is random and some CellUnion methods like Contains require a sorted union.
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
 
 	return result, nil
 }
@@ -163,6 +167,15 @@ func UnionVolumes4D(volumes ...*Volume4D) (*Volume4D, error) {
 	return result, nil
 }
 
+// CellsVolume4D is the cells-native counterpart to Volume4D
+type CellsVolume4D struct {
+	Cells      s2.CellUnion
+	StartTime  *time.Time
+	EndTime    *time.Time
+	AltitudeLo *float32
+	AltitudeHi *float32
+}
+
 // CalculateSpatialCovering returns the spatial covering of vol4, or one of:
 // * geo.ErrMissingSpatialVolume
 // * geo.ErrMissingFootprint
@@ -174,6 +187,39 @@ func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 		return nil, geo.ErrMissingSpatialVolume
 	}
 	return vol4.SpatialVolume.CalculateCovering()
+}
+
+// ToCellsVolume4D translates a Volume4D into a CellsVolume4D
+func (v *Volume4D) ToCellsVolume4D() (*CellsVolume4D, error) {
+	cells, err := v.CalculateSpatialCovering()
+	if err != nil {
+		return nil, err
+	}
+	filter := &CellsVolume4D{
+		Cells:     cells,
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+	if v.SpatialVolume != nil {
+		filter.AltitudeLo = v.SpatialVolume.AltitudeLo
+		filter.AltitudeHi = v.SpatialVolume.AltitudeHi
+	}
+	return filter, nil
+}
+
+// CellsFromVolumes returns the S2 covering of the union of the given volumes' footprints
+func CellsFromVolumes(volumes ...*Volume4D) (s2.CellUnion, error) {
+	union, err := UnionVolumes4D(volumes...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to union volumes")
+	}
+
+	covering, err := union.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to calculate spatial covering")
+	}
+
+	return covering, nil
 }
 
 // CalculateCovering returns the spatial covering of vol3, or one of:

@@ -28,11 +28,8 @@ func (rec *constraintRecord) toModel() *scdmodels.Constraint {
 	}
 }
 
-func (r *repo) SearchConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error) {
-	want, err := coveringSet(v4d)
-	if err != nil {
-		return nil, err
-	}
+func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
+	want := cellSet(cellsVolume.Cells)
 	if len(want) == 0 {
 		return []*scdmodels.Constraint{}, nil
 	}
@@ -42,7 +39,7 @@ func (r *repo) SearchConstraints(_ context.Context, v4d *dssmodels.Volume4D) ([]
 		if !overlaps(rec.Cells, want) {
 			continue
 		}
-		if !overlapsTime(rec.StartTime, rec.EndTime, v4d) {
+		if !overlapsTime(rec.StartTime, rec.EndTime, cellsVolume) {
 			continue
 		}
 		out = append(out, rec.toModel())

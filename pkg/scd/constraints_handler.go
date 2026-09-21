@@ -101,13 +101,13 @@ func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.Cre
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	err := validateConstraintUpsertRequest(ctx, req.Entityid, req.Body, a.AllowHTTPBaseUrls)
+	payload, err := operations.NewPutConstraintPayload(restapi.CreateConstraintReferenceOperationID, req.Entityid, "", dssmodels.Manager(*req.Auth.ClientID), req.Body, a.AllowHTTPBaseUrls, timestamp.MustFromContext(ctx))
 	if err != nil {
 		return restapi.CreateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters"))}}
 	}
 
-	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, req)
+	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put constraint")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -139,13 +139,13 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	err := validateConstraintUpsertRequest(ctx, req.Entityid, req.Body, a.AllowHTTPBaseUrls)
+	payload, err := operations.NewPutConstraintPayload(restapi.UpdateConstraintReferenceOperationID, req.Entityid, req.Ovn, dssmodels.Manager(*req.Auth.ClientID), req.Body, a.AllowHTTPBaseUrls, timestamp.MustFromContext(ctx))
 	if err != nil {
 		return restapi.UpdateConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters"))}}
 	}
 
-	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, req)
+	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put constraint")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -163,24 +163,6 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 	}
 
 	return restapi.UpdateConstraintReferenceResponseSet{Response200: res}
-}
-
-// validateConstraintUpsertRequest performs the request validation that can be done ahead of the transaction.
-// Note that this does NOT check for anything related to access controls: any error returned should be labeled as a dsserr.BadRequest.
-func validateConstraintUpsertRequest(ctx context.Context, entityid restapi.EntityID, params *restapi.PutConstraintReferenceParameters, allowHTTPBaseUrls bool) error {
-	_, err := operations.ValidateAndReturnConstraintUpsertParams(timestamp.MustFromContext(ctx), entityid, params)
-	if err != nil {
-		return err
-	}
-
-	if !allowHTTPBaseUrls {
-		err = scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to validate base URL")
-		}
-	}
-
-	return nil
 }
 
 // QueryConstraintReferences queries existing contraint refs in the given

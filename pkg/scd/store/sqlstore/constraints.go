@@ -203,7 +203,7 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 }
 
 // Implements scd.repos.Constraint.SearchConstraints
-func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Constraint, error) {
+func (c *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -220,19 +220,12 @@ func (c *repo) SearchConstraints(ctx context.Context, v4d *dssmodels.Volume4D) (
 			`, constraintFieldsWithoutPrefix)
 	)
 
-	// TODO: Lazily calculate & cache spatial covering so that it is only ever
-	// computed once on a particular Volume4D
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return []*scdmodels.Constraint{}, nil
 	}
 
 	constraints, err := c.fetchConstraints(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Constraints")
 	}
