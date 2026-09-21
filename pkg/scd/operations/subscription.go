@@ -17,12 +17,12 @@ import (
 func init() {
 	Registry[restapi.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.CreateSubscriptionRequest],
+		Decode:  dssstore.DecodeJSON[*createSubscriptionPayload],
 		Execute: executePutSubscription,
 	}
 	Registry[restapi.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.UpdateSubscriptionRequest],
+		Decode:  dssstore.DecodeJSON[*updateSubscriptionPayload],
 		Execute: executePutSubscription,
 	}
 	Registry[restapi.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
@@ -44,39 +44,67 @@ func init() {
 	}
 }
 
-func executePutSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	var (
-		manager        string
-		subscriptionid restapi.SubscriptionID
-		version        string
-		params         *restapi.PutSubscriptionParameters
-	)
+type createSubscriptionPayload struct {
+	Subscription *scdmodels.Subscription
+}
 
-	switch req := request.(type) {
-	case *restapi.CreateSubscriptionRequest:
-		manager, subscriptionid, params = *req.Auth.ClientID, req.Subscriptionid, req.Body
-	case *restapi.UpdateSubscriptionRequest:
-		manager, subscriptionid, version, params = *req.Auth.ClientID, req.Subscriptionid, req.Version, req.Body
-	default:
-		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateSubscriptionOperationID)
+func (p *createSubscriptionPayload) OperationID() string {
+	return restapi.CreateSubscriptionOperationID
+}
+
+func (p *createSubscriptionPayload) subscription() *scdmodels.Subscription { return p.Subscription }
+
+type updateSubscriptionPayload struct {
+	Subscription *scdmodels.Subscription
+}
+
+func (p *updateSubscriptionPayload) OperationID() string {
+	return restapi.UpdateSubscriptionOperationID
+}
+
+func (p *updateSubscriptionPayload) subscription() *scdmodels.Subscription { return p.Subscription }
+
+// subscriptionPayload is implemented by createSubscriptionPayload and updateSubscriptionPayload
+type subscriptionPayload interface {
+	dssstore.OperationRequest
+	subscription() *scdmodels.Subscription
+}
+
+// NewCreateSubscriptionPayload performs the request validation that can be done ahead of the
+// transaction for a Subscription creation request.
+func NewCreateSubscriptionPayload(subscriptionid restapi.SubscriptionID, manager dssmodels.Manager, params *restapi.PutSubscriptionParameters, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
+	sub, err := newSubscription(subscriptionid, manager, "", params, allowHTTPBaseUrls)
+	if err != nil {
+		return nil, err
 	}
+	return &createSubscriptionPayload{Subscription: sub}, nil
+}
 
+// NewUpdateSubscriptionPayload performs the request validation that can be done ahead of the
+// transaction for a Subscription update request.
+func NewUpdateSubscriptionPayload(subscriptionid restapi.SubscriptionID, manager dssmodels.Manager, version string, params *restapi.PutSubscriptionParameters, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
+	sub, err := newSubscription(subscriptionid, manager, version, params, allowHTTPBaseUrls)
+	if err != nil {
+		return nil, err
+	}
+	return &updateSubscriptionPayload{Subscription: sub}, nil
+}
+
+// newSubscription performs the request validation that can be done ahead of the transaction.
+func newSubscription(subscriptionid restapi.SubscriptionID, manager dssmodels.Manager, version string, params *restapi.PutSubscriptionParameters, allowHTTPBaseUrls bool) (*scdmodels.Subscription, error) {
 	// Retrieve Subscription ID
 	id, err := dssmodels.IDFromString(string(subscriptionid))
 	if err != nil {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", subscriptionid)
 	}
 
-	// Parse extents
-	// If end time is not specified, the value will be chosen automatically by the DSS.
-	// If start time is not specified, it will default to the time the request is processed.
-	extents, err := scdmodels.Volume4DFromSCDRest(&params.Extents)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to parse extents")
+	if !allowHTTPBaseUrls {
+		if err := scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl)); err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
+		}
 	}
 
-	// Construct requested Subscription model
-	cells, err := extents.CalculateSpatialCovering()
+	volume, err := scdmodels.CellsVolume4DFromSCDRest(&params.Extents)
 	switch err {
 	case nil, geo.ErrMissingSpatialVolume, geo.ErrMissingFootprint:
 		// We may be able to fill these values from a previous Subscription or via defaults.
@@ -84,33 +112,36 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
 	}
 
-	subreq := &scdmodels.Subscription{
-		ID:      id,
-		Manager: dssmodels.Manager(manager),
-		Version: scdmodels.OVN(version),
-
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  extents.StartTime,
-			EndTime:    extents.EndTime,
-			AltitudeLo: extents.SpatialVolume.AltitudeLo,
-			AltitudeHi: extents.SpatialVolume.AltitudeHi,
-		},
-		USSBaseURL: string(params.UssBaseUrl),
+	sub := &scdmodels.Subscription{
+		ID:            id,
+		Manager:       manager,
+		Version:       scdmodels.OVN(version),
+		CellsVolume4D: volume,
+		USSBaseURL:    string(params.UssBaseUrl),
 	}
 	if params.NotifyForOperationalIntents != nil {
-		subreq.NotifyForOperationalIntents = *params.NotifyForOperationalIntents
+		sub.NotifyForOperationalIntents = *params.NotifyForOperationalIntents
 	}
 	if params.NotifyForConstraints != nil {
-		subreq.NotifyForConstraints = *params.NotifyForConstraints
+		sub.NotifyForConstraints = *params.NotifyForConstraints
 	}
 
 	// Validate requested Subscription
-	if !subreq.NotifyForOperationalIntents && !subreq.NotifyForConstraints {
+	if !sub.NotifyForOperationalIntents && !sub.NotifyForConstraints {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "No notification triggers requested for Subscription")
 	}
 
 	// TODO: Check scopes to verify requested information (op intents or constraints) may be requested
+
+	return sub, nil
+}
+
+func executePutSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(subscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateSubscriptionOperationID)
+	}
+	subreq := payload.subscription()
 
 	// Check existing Subscription (if any)
 	old, err := repo.GetSubscription(ctx, subreq.ID)
@@ -172,7 +203,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		return nil, stacktrace.Propagate(err, "Could not upsert Subscription into repo")
 	}
 	if sub == nil {
-		return nil, stacktrace.NewError("UpsertSubscription returned no Subscription for ID: %s", id)
+		return nil, stacktrace.NewError("UpsertSubscription returned no Subscription for ID: %s", subreq.ID)
 	}
 
 	// Convert Subscription to REST
@@ -203,7 +234,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		// Attach Operations to response
 		opIntentRefs := make([]restapi.OperationalIntentReference, 0, len(relevantOperations))
 		for _, op := range relevantOperations {
-			if op.Manager != dssmodels.Manager(manager) {
+			if op.Manager != subreq.Manager {
 				op.OVN = scdmodels.NoOvnPhrase
 			}
 
@@ -215,11 +246,11 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 	if sub.NotifyForConstraints {
 		// Query relevant Constraints
 		constraints, err := repo.SearchConstraints(ctx, &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  extents.StartTime,
-			EndTime:    extents.EndTime,
-			AltitudeLo: extents.SpatialVolume.AltitudeLo,
-			AltitudeHi: extents.SpatialVolume.AltitudeHi,
+			Cells:      sub.Cells,
+			StartTime:  sub.StartTime,
+			EndTime:    sub.EndTime,
+			AltitudeLo: sub.AltitudeLo,
+			AltitudeHi: sub.AltitudeHi,
 		})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Could not search Constraints in repo")
@@ -229,7 +260,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		constraintRefs := make([]restapi.ConstraintReference, 0, len(constraints))
 		for _, constraint := range constraints {
 			p := constraint.ToRest()
-			if constraint.Manager != dssmodels.Manager(manager) {
+			if constraint.Manager != subreq.Manager {
 				noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 				p.Ovn = &noOvnPhrase
 			}

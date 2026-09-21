@@ -19,6 +19,11 @@ const (
 	radiusEarthMeter        = 6371010.0
 
 	earthAreaKm2 = 510072000.0 // rough area of the earth in KM².
+
+	minLat = -90.0
+	maxLat = 90.0
+	minLng = -180.0
+	maxLng = 180.0
 )
 
 var (
@@ -43,6 +48,14 @@ func Levelify(cells *s2.CellUnion) {
 func ValidateCell(cell s2.CellID) error {
 	if cell.Level() < DefaultMinimumCellLevel || cell.Level() > DefaultMaximumCellLevel {
 		return stacktrace.NewError("Cells must be at level 13 at current implementation")
+	}
+	return nil
+}
+
+// ValidateLatLng returns ErrBadCoordSet if lat/lng do not describe a point.
+func ValidateLatLng(lat, lng float64) error {
+	if lat > maxLat || lat < minLat || lng > maxLng || lng < minLng {
+		return ErrBadCoordSet
 	}
 	return nil
 }
