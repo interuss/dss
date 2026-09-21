@@ -48,7 +48,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	switch proposal.RequestType {
 
 	default:
-		handler, ok := operations.Registry[string(proposal.RequestType)]
+		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
 			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
 		}
