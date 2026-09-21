@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -79,6 +80,58 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case string(countConstraints):
 		return r.Store.GetRepo().CountConstraints(ctx)
+
+	case string(searchSubscriptions):
+		var cellsVolume dssmodels.CellsVolume4D
+		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptions)
+		}
+		return r.Store.GetRepo().SearchSubscriptions(ctx, &cellsVolume)
+
+	case string(getSubscription):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getSubscription)
+		}
+		return r.Store.GetRepo().GetSubscription(ctx, id)
+
+	case string(upsertSubscription):
+		var sub scdmodels.Subscription
+		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertSubscription)
+		}
+		return r.Store.GetRepo().UpsertSubscription(ctx, &sub)
+
+	case string(deleteSubscription):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteSubscription)
+		}
+		return nil, r.Store.GetRepo().DeleteSubscription(ctx, id)
+
+	case string(incrementNotificationIndicesForOperationalIntents):
+		var cellsVolume dssmodels.CellsVolume4D
+		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", incrementNotificationIndicesForOperationalIntents)
+		}
+		return r.Store.GetRepo().IncrementNotificationIndicesForOperationalIntents(ctx, &cellsVolume)
+
+	case string(incrementNotificationIndicesForConstraints):
+		var cellsVolume dssmodels.CellsVolume4D
+		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", incrementNotificationIndicesForConstraints)
+		}
+		return r.Store.GetRepo().IncrementNotificationIndicesForConstraints(ctx, &cellsVolume)
+
+	case string(listExpiredSubscriptions):
+		var threshold time.Time
+		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
+		}
+		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, threshold)
+
+	case string(countSubscriptions):
+		return r.Store.GetRepo().CountSubscriptions(ctx)
 
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]

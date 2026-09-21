@@ -2,47 +2,96 @@ package raftstore
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/golang/geo/s2"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "SearchSubscriptions not implemented for raftstore")
+const (
+	searchSubscriptions                               consensus.RequestType[[]*scdmodels.Subscription] = "searchSubscriptions"
+	getSubscription                                   consensus.RequestType[*scdmodels.Subscription]   = "getSubscription"
+	upsertSubscription                                consensus.RequestType[*scdmodels.Subscription]   = "upsertSubscription"
+	deleteSubscription                                consensus.RequestType[any]                       = "deleteSubscription"
+	incrementNotificationIndicesForOperationalIntents consensus.RequestType[[]*scdmodels.Subscription] = "incrementNotificationIndicesForOperationalIntents"
+	incrementNotificationIndicesForConstraints        consensus.RequestType[[]*scdmodels.Subscription] = "incrementNotificationIndicesForConstraints"
+	listExpiredSubscriptions                          consensus.RequestType[[]*scdmodels.Subscription] = "listExpiredSubscriptions"
+	countSubscriptions                                consensus.RequestType[int64]                     = "countSubscriptions"
+)
+
+func (r *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(cellsVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, searchSubscriptions, buf, true)
 }
 
-func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetSubscription not implemented for raftstore")
+func (r *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(id)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, getSubscription, buf, true)
 }
 
-func (r *repo) UpsertSubscription(_ context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "UpsertSubscription not implemented for raftstore")
+func (r *repo) UpsertSubscription(ctx context.Context, sub *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(sub)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, upsertSubscription, buf, false)
 }
 
-func (r *repo) DeleteSubscription(_ context.Context, id dssmodels.ID) error {
-	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteSubscription not implemented for raftstore")
+func (r *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
+	buf, err := json.Marshal(id)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	_, err = r.consensus.HandleClientRequest(ctx, deleteSubscription, buf, false)
+	return err
 }
 
-func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "IncrementNotificationIndicesForOperationalIntents not implemented for raftstore")
+func (r *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(cellsVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, incrementNotificationIndicesForOperationalIntents, buf, false)
 }
 
-func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "IncrementNotificationIndicesForConstraints not implemented for raftstore")
+func (r *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(cellsVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, incrementNotificationIndicesForConstraints, buf, false)
 }
 
-func (r *repo) LockSubscriptionsOnCells(_ context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error {
-	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "LockSubscriptionsOnCells not implemented for raftstore")
+// LockSubscriptionsOnCells is a no-op in the raftstore implementation since raft requests are executed sequentially
+func (r *repo) LockSubscriptionsOnCells(_ context.Context, _ s2.CellUnion, _ []dssmodels.ID, _ *time.Time, _ *time.Time) error {
+	return nil
 }
 
-func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredSubscriptions not implemented for raftstore")
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+	buf, err := json.Marshal(threshold)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+
+	return r.consensus.HandleClientRequest(ctx, listExpiredSubscriptions, buf, true)
 }
 
-func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {
-	return 0, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "CountSubscriptions not implemented for raftstore")
+func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
+	return r.consensus.HandleClientRequest(ctx, countSubscriptions, nil, true)
 }
