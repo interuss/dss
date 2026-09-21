@@ -27,7 +27,6 @@ import (
 	requestlocality "github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/random"
-	"github.com/interuss/dss/pkg/rid/application"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	rids "github.com/interuss/dss/pkg/rid/store"
@@ -112,6 +111,15 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
+	ctx = timestamp.NewContext(ctx, time.Now())
+
+	seed, err := random.NewSeed()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to generate seed")
+	}
+
+	ctx = random.NewContext(ctx, seed)
+
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
 	if err != nil {
@@ -141,15 +149,12 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 		}
 	}
 
-	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
 		Store:             ridStore,
-		App:               app,
 		Locality:          locality,
 		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 	}, &rid_v2.Server{
 		Store:             ridStore,
-		App:               app,
 		Locality:          locality,
 		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
 	}, nil

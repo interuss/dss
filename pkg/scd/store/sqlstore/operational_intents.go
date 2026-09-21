@@ -269,7 +269,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return operation, nil
 }
 
-func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
+func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -291,24 +291,17 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 			LIMIT $6`, operationFieldsWithPrefix)
 	)
 
-	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
-	}
-	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
-	}
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
 	result, err := s.fetchOperationalIntents(
 		ctx, q, operationsIntersectingVolumeQuery,
-		dsssql.CellUnionToCellIds(cells),
-		v4d.SpatialVolume.AltitudeLo,
-		v4d.SpatialVolume.AltitudeHi,
-		v4d.StartTime,
-		v4d.EndTime,
+		dsssql.CellUnionToCellIds(cellsVolume.Cells),
+		cellsVolume.AltitudeLo,
+		cellsVolume.AltitudeHi,
+		cellsVolume.StartTime,
+		cellsVolume.EndTime,
 		dssmodels.MaxResultLimit,
 	)
 	if err != nil {
@@ -319,8 +312,8 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 }
 
 // SearchOperations implements repos.Operation.SearchOperations.
-func (s *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
-	return s.searchOperationalIntents(ctx, s.q, v4d)
+func (s *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+	return s.searchOperationalIntents(ctx, s.q, cellsVolume)
 }
 
 // GetDependentOperations implements repos.Operation.GetDependentOperations.
