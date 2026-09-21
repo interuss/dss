@@ -143,16 +143,16 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 
 	app := application.NewFromTransactor(ridStore, logger)
 	return &rid_v1.Server{
-			Store:             ridStore,
-			App:               app,
-			Locality:          locality,
-			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-		}, &rid_v2.Server{
-			Store:             ridStore,
-			App:               app,
-			Locality:          locality,
-			AllowHTTPBaseUrls: *allowHTTPBaseUrls,
-		}, nil
+		Store:             ridStore,
+		App:               app,
+		Locality:          locality,
+		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+	}, &rid_v2.Server{
+		Store:             ridStore,
+		App:               app,
+		Locality:          locality,
+		AllowHTTPBaseUrls: *allowHTTPBaseUrls,
+	}, nil
 }
 
 func createSCDServer(ctx context.Context, logger *zap.Logger, locality string) (*scd.Server, error) {
@@ -368,9 +368,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
-	handler = timestamp.RequestTimestampMiddleware(handler)
+	handler = timestamp.Middleware(handler)
 	handler = random.Middleware(handler)
-	handler = requestlocality.LocalityMiddleware(locality)(handler)
+	handler = requestlocality.Middleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.

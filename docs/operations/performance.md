@@ -51,6 +51,8 @@ This should be better than global lock, as long as cells used don't collide and 
 
 The number of locks (65535) is a compromise between lock contention (the more locks, the less unrelated cells share the same one) and the size of the `scd_locks` table. It is fixed and cannot be changed.
 
+Note that this flag creates intermittent load-sensitive test failures when used with Yugabyte. See PR [#1659](https://github.com/interuss/dss/pull/1659) for more details.
+
 ## The time-based notification index option
 
 !!! danger

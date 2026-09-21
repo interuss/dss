@@ -20,7 +20,7 @@ The following table describes the variables of this terraform module.
 <p>Example: <code>dss.example.com</code></p>
 </td>
             </tr><tr>
-                <td>authorization (<code>object({<br/>public_key_pem_path = optional(string),<br/> jwks = optional(object({<br/>endpoint = string,<br/> key_id = string})<br/>)})<br/></code>)</td>
+                <td>authorization (<code>object({<br/>public_key_pem_path = optional(string),<br/> jwks = optional(object({<br/>endpoint = string,<br/> key_id = string,<br/> refresh_interval = optional(string),<br/> key_ttl = optional(string)})<br/>)})<br/></code>)</td>
                 <td><p>One of <code>public_key_pem_path</code> or <code>jwks</code> should be provided but not both.</p>
 <ul>
 <li>
@@ -49,13 +49,22 @@ If providing a .pem file directly as the public key to validate incoming access 
 If providing the access token public key via JWKS, specify the JWKS endpoint here.
 Example: https://auth.example.com/.well-known/jwks.json</li>
 <li>key_id:
-If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.
+If providing the access token public key via JWKS, specify the kid (key ID) of they appropriate key in the JWKS file referenced above.</li>
+<li>refresh_interval:
+Cadence at which the keys are fetched again from the JWKS endpoint. Defaults to the core-service default when omitted.
+Example: 1m</li>
+<li>key_ttl:
+Duration during which keys that could not be refreshed are still used before the core-service shuts down.
+Defaults to the core-service default when omitted.
+Example: 1h
 Example:</li>
 </ul>
 <pre><code>{
   jwks = {
     endpoint = &quot;https://auth.example.com/.well-known/jwks.json&quot;
     key_id = &quot;9C6DF78B-77A7-4E89-8990-E654841A7826&quot;
+    refresh_interval = &quot;1m&quot;
+    key_ttl = &quot;1h&quot;
   }
 }
 </code></pre>

@@ -60,6 +60,8 @@
     pubKeys: [''],
     jwksEndpoint: '',
     jwksKeyIds: [],
+    jwksRefreshInterval: '',
+    jwksKeyTtl: '',
     hostname: error 'must specify hostname',
     publicEndpoint: '',
     dumpRequests: false,

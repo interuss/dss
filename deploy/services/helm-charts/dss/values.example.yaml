@@ -9,6 +9,8 @@ dss:
       - /test-certs/auth2.pem
     jwksEndpoint: ''
     jwksKeyIds: []
+    jwksRefreshInterval: ''
+    jwksKeyTtl: ''
     hostname: dss.example.com
     publicEndpoint: https://dss.example.com
     enableScd: true

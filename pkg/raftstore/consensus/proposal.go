@@ -35,7 +35,7 @@ type Proposal struct {
 }
 
 func (c *Consensus) newProposal(ctx context.Context, requestType RequestType, value []byte, readOnly bool) Proposal {
-	timestamp := timestamp.MustGetRequestTimestamp(ctx)
+	timestamp := timestamp.MustFromContext(ctx)
 	seed := random.MustFromContext(ctx)
 
 	return Proposal{
