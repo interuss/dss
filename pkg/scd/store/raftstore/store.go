@@ -58,6 +58,9 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		string(getDependentOperationalIntents), string(listExpiredOperationalIntents), string(countOperationalIntents):
 		return r.applyOperationalIntent(ctx, proposal)
 
+	case string(getUssAvailability), string(upsertUssAvailability):
+		return r.applyAvailability(ctx, proposal)
+
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
