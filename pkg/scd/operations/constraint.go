@@ -11,7 +11,6 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
-	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5"
 )
@@ -30,12 +29,12 @@ func init() {
 	}
 	Registry[restapi.CreateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.CreateConstraintReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*putConstraintPayload],
 		Execute: executePutConstraint,
 	}
 	Registry[restapi.UpdateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.UpdateConstraintReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*putConstraintPayload],
 		Execute: executePutConstraint,
 	}
 	Registry[restapi.QueryConstraintReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
@@ -75,34 +74,76 @@ func executeGetConstraint(ctx context.Context, repo repos.Repository, request ds
 	}, nil
 }
 
+type putConstraintPayload struct {
+	Op         string
+	Constraint *scdmodels.Constraint
+}
+
+func (p *putConstraintPayload) OperationID() string { return p.Op }
+
+// NewPutConstraintPayload performs the request validation that can be done ahead of the transaction.
+func NewPutConstraintPayload(opID string, entityid restapi.EntityID, ovn restapi.EntityOVN, manager dssmodels.Manager, params *restapi.PutConstraintReferenceParameters, allowHTTPBaseUrls bool, now time.Time) (*putConstraintPayload, error) {
+	id, err := dssmodels.IDFromString(string(entityid))
+	if err != nil {
+		return nil, stacktrace.NewError("Invalid ID format: `%s`", entityid)
+	}
+
+	if len(params.UssBaseUrl) == 0 {
+		return nil, stacktrace.NewError("Missing required UssBaseUrl")
+	}
+	if !allowHTTPBaseUrls {
+		if err := scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl)); err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to validate base URL")
+		}
+	}
+
+	// Start and end times are required for each volume
+	// The end time may not be in the past
+	uExtent, err := scdmodels.UnionVolumes4DFromSCDRest(
+		params.Extents,
+		scdmodels.WithRequireTimeBounds(),
+		scdmodels.WithRequireEndTimeAfter(now),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid extents")
+	}
+
+	cells, err := uExtent.CalculateSpatialCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid area")
+	}
+
+	constraint := &scdmodels.Constraint{
+		ID:      id,
+		Manager: manager,
+		OVN:     scdmodels.OVN(ovn),
+
+		StartTime:     uExtent.StartTime,
+		EndTime:       uExtent.EndTime,
+		AltitudeLower: uExtent.SpatialVolume.AltitudeLo,
+		AltitudeUpper: uExtent.SpatialVolume.AltitudeHi,
+
+		USSBaseURL: string(params.UssBaseUrl),
+		Cells:      cells,
+	}
+
+	return &putConstraintPayload{Op: opID, Constraint: constraint}, nil
+}
+
 // executePutConstraint inserts or updates a Constraint.
 // If ovn is empty (""), it will attempt to create a new Constraint.
 func executePutConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	var (
-		manager  string
-		entityid restapi.EntityID
-		ovn      restapi.EntityOVN
-		params   *restapi.PutConstraintReferenceParameters
-	)
-
-	switch req := request.(type) {
-	case *restapi.CreateConstraintReferenceRequest:
-		manager, entityid, params = *req.Auth.ClientID, req.Entityid, req.Body
-	case *restapi.UpdateConstraintReferenceRequest:
-		manager, entityid, ovn, params = *req.Auth.ClientID, req.Entityid, req.Ovn, req.Body
-	default:
+	payload, ok := request.(*putConstraintPayload)
+	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateConstraintReferenceOperationID)
 	}
-
-	validParams, err := ValidateAndReturnConstraintUpsertParams(timestamp.MustFromContext(ctx), entityid, params)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Constraint upsert parameters")
-	}
+	constraint := payload.Constraint
+	ovn := constraint.OVN
 
 	version := scdmodels.VersionNumber(1)
 
 	// Get existing Constraint, if any, and validate request
-	old, err := repo.GetConstraint(ctx, validParams.id)
+	old, err := repo.GetConstraint(ctx, constraint.ID)
 	switch {
 	case err == pgx.ErrNoRows:
 		// No existing Constraint; verify that creation was requested
@@ -113,28 +154,36 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 		return nil, stacktrace.Propagate(err, "Could not get Constraint from repo")
 	}
 	if old != nil {
-		if old.Manager != dssmodels.Manager(manager) {
+		if old.Manager != constraint.Manager {
 			return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-				"Constraint owned by %s, but %s attempted to modify", old.Manager, manager)
+				"Constraint owned by %s, but %s attempted to modify", old.Manager, constraint.Manager)
 		}
-		if old.OVN != scdmodels.OVN(ovn) {
+		if old.OVN != ovn {
 			return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 				"Current version is %s but client specified version %s", old.OVN, ovn)
 		}
 		version = old.Version + 1
 	}
+	constraint.Version = version
 
 	// Compute total affected cellsVolume for notification purposes
 	var notifyCellsVol4D *dssmodels.CellsVolume4D
 	if old == nil {
 		notifyCellsVol4D = &dssmodels.CellsVolume4D{
-			Cells:      validParams.cells,
-			StartTime:  validParams.uExtent.StartTime,
-			EndTime:    validParams.uExtent.EndTime,
-			AltitudeLo: validParams.uExtent.SpatialVolume.AltitudeLo,
-			AltitudeHi: validParams.uExtent.SpatialVolume.AltitudeHi,
+			Cells:      constraint.Cells,
+			StartTime:  constraint.StartTime,
+			EndTime:    constraint.EndTime,
+			AltitudeLo: constraint.AltitudeLower,
+			AltitudeHi: constraint.AltitudeUpper,
 		}
 	} else {
+		newVol4 := &dssmodels.Volume4D{
+			StartTime: constraint.StartTime,
+			EndTime:   constraint.EndTime,
+			SpatialVolume: &dssmodels.Volume3D{
+				AltitudeHi: constraint.AltitudeUpper,
+				AltitudeLo: constraint.AltitudeLower,
+			}}
 		oldVol4 := &dssmodels.Volume4D{
 			StartTime: old.StartTime,
 			EndTime:   old.EndTime,
@@ -142,21 +191,18 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 				AltitudeHi: old.AltitudeUpper,
 				AltitudeLo: old.AltitudeLower,
 			}}
-		notifyVol4, err := dssmodels.UnionVolumes4D(validParams.uExtent, oldVol4)
+		notifyVol4, err := dssmodels.UnionVolumes4D(newVol4, oldVol4)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
 		}
 		notifyCellsVol4D = &dssmodels.CellsVolume4D{
-			Cells:      s2.CellUnionFromUnion(validParams.cells, old.Cells),
+			Cells:      s2.CellUnionFromUnion(constraint.Cells, old.Cells),
 			StartTime:  notifyVol4.StartTime,
 			EndTime:    notifyVol4.EndTime,
 			AltitudeLo: notifyVol4.SpatialVolume.AltitudeLo,
 			AltitudeHi: notifyVol4.SpatialVolume.AltitudeHi,
 		}
 	}
-
-	// Construct the new Constraint
-	constraint := validParams.toConstraint(dssmodels.Manager(manager), version)
 
 	// Upsert the Constraint
 	constraint, err = repo.UpsertConstraint(ctx, constraint)
@@ -176,68 +222,6 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 		ConstraintReference: *constraint.ToRest(),
 		Subscribers:         makeSubscribersToNotify(subs),
 	}, nil
-}
-
-type validConstraintParams struct {
-	id         dssmodels.ID
-	uExtent    *dssmodels.Volume4D
-	cells      s2.CellUnion
-	ussBaseURL string
-}
-
-func (vp *validConstraintParams) toConstraint(manager dssmodels.Manager, version scdmodels.VersionNumber) *scdmodels.Constraint {
-	return &scdmodels.Constraint{
-		ID:      vp.id,
-		Manager: manager,
-		Version: version,
-
-		StartTime:     vp.uExtent.StartTime,
-		EndTime:       vp.uExtent.EndTime,
-		AltitudeLower: vp.uExtent.SpatialVolume.AltitudeLo,
-		AltitudeUpper: vp.uExtent.SpatialVolume.AltitudeHi,
-
-		USSBaseURL: vp.ussBaseURL,
-		Cells:      vp.cells,
-	}
-}
-
-// ValidateAndReturnConstraintUpsertParams performs validation of Constraint upsert requests and returns a validConstraintParams struct if successful.
-// Note that this does NOT check for anything related to access controls: any error returned should be labeled as a dsserr.BadRequest.
-func ValidateAndReturnConstraintUpsertParams(
-	now time.Time,
-	entityid restapi.EntityID,
-	params *restapi.PutConstraintReferenceParameters,
-) (*validConstraintParams, error) {
-	var err error
-	valid := &validConstraintParams{}
-	valid.id, err = dssmodels.IDFromString(string(entityid))
-	if err != nil {
-		return nil, stacktrace.NewError("Invalid ID format: `%s`", entityid)
-	}
-
-	if len(params.UssBaseUrl) == 0 {
-		return nil, stacktrace.NewError("Missing required UssBaseUrl")
-	}
-
-	valid.ussBaseURL = string(params.UssBaseUrl)
-
-	// Start and end times are required for each volume
-	// The end time may not be in the past
-	valid.uExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
-		params.Extents,
-		scdmodels.WithRequireTimeBounds(),
-		scdmodels.WithRequireEndTimeAfter(now),
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid extents")
-	}
-
-	valid.cells, err = valid.uExtent.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
-	}
-
-	return valid, nil
 }
 
 func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
