@@ -125,33 +125,26 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return built[0], nil
 }
 
-func (r *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
-	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
-	}
-	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
-	}
-	if len(cells) == 0 {
+func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
-	want := cellSet(cells)
+	want := cellSet(cellsVolume.Cells)
 	var matched []*operationalIntentRecord
 	for _, rec := range r.state.OperationalIntents {
 		if !overlaps(rec.Cells, want) {
 			continue
 		}
-		// COALESCE(altitude_upper >= $2, true) with $2 = SpatialVolume.AltitudeLo
-		if rec.AltitudeUpper != nil && v4d.SpatialVolume.AltitudeLo != nil && *rec.AltitudeUpper < *v4d.SpatialVolume.AltitudeLo {
+		// COALESCE(altitude_upper >= $2, true) with $2 = cellsVolume.AltitudeLo
+		if rec.AltitudeUpper != nil && cellsVolume.AltitudeLo != nil && *rec.AltitudeUpper < *cellsVolume.AltitudeLo {
 			continue
 		}
-		// COALESCE(altitude_lower <= $3, true) with $3 = SpatialVolume.AltitudeHi
-		if rec.AltitudeLower != nil && v4d.SpatialVolume.AltitudeHi != nil && *rec.AltitudeLower > *v4d.SpatialVolume.AltitudeHi {
+		// COALESCE(altitude_lower <= $3, true) with $3 = cellsVolume.AltitudeHi
+		if rec.AltitudeLower != nil && cellsVolume.AltitudeHi != nil && *rec.AltitudeLower > *cellsVolume.AltitudeHi {
 			continue
 		}
-		if !overlapsTime(rec.StartTime, rec.EndTime, v4d) {
+		if !overlapsTime(rec.StartTime, rec.EndTime, cellsVolume) {
 			continue
 		}
 		matched = append(matched, rec)

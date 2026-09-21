@@ -13,9 +13,8 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
-declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER")
+# shellcheck source=build/dev/local_containers.sh
+source "build/dev/local_containers.sh"
 
 for container_name in "${localhost_containers[@]}"; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
