@@ -138,18 +138,16 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustFromContext(ctx), req.Entityid, "", req.Body, a.AllowHTTPBaseUrls)
+	payload, err := operations.NewPutOIRPayload(restapi.CreateOperationalIntentReferenceOperationID, req.Entityid, "", req.Body, &req.Auth, a.AllowHTTPBaseUrls, timestamp.MustFromContext(ctx))
 	if err != nil {
-		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
-	}
-	_, err = operations.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
-	if err != nil {
-		return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state"))}}
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		if stacktrace.GetCode(err) == dsserr.PermissionDenied {
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: errResp}
+		}
+		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: errResp}
 	}
 
-	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, req)
+	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -181,18 +179,16 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
-	validParams, err := operations.ValidateAndReturnOIRUpsertParams(timestamp.MustFromContext(ctx), req.Entityid, req.Ovn, req.Body, a.AllowHTTPBaseUrls)
+	payload, err := operations.NewPutOIRPayload(restapi.UpdateOperationalIntentReferenceOperationID, req.Entityid, req.Ovn, req.Body, &req.Auth, a.AllowHTTPBaseUrls, timestamp.MustFromContext(ctx))
 	if err != nil {
-		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters"))}}
-	}
-	_, err = operations.CheckUpsertPermissionsAndReturnManager(&req.Auth, validParams.State)
-	if err != nil {
-		return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state"))}}
+		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
+		if stacktrace.GetCode(err) == dsserr.PermissionDenied {
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: errResp}
+		}
+		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: errResp}
 	}
 
-	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, req)
+	result, err := dssstore.TransactWithResult[repos.Repository, *operations.PutOperationalIntentReferenceResult](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put Operational Intent Reference")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
