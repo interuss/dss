@@ -14,7 +14,6 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
-	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -38,12 +37,12 @@ func init() {
 	}
 	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.CreateOperationalIntentReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*createOIRPayload],
 		Execute: executePutOperationalIntentReference,
 	}
 	Registry[restapi.UpdateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.UpdateOperationalIntentReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*updateOIRPayload],
 		Execute: executePutOperationalIntentReference,
 	}
 }
@@ -239,8 +238,8 @@ func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Rep
 	return response, nil
 }
 
-// CheckUpsertPermissionsAndReturnManager verifies that the client has the necessary permissions to upsert an Operational Intent with the requested state.
-func CheckUpsertPermissionsAndReturnManager(authorizedManager *api.AuthorizationResult, requestedState scdmodels.OperationalIntentState) (dssmodels.Manager, error) {
+// checkUpsertPermissionsAndReturnManager verifies that the client has the necessary permissions to upsert an Operational Intent with the requested state.
+func checkUpsertPermissionsAndReturnManager(authorizedManager *api.AuthorizationResult, requestedState scdmodels.OperationalIntentState) (dssmodels.Manager, error) {
 	if authorizedManager.ClientID == nil {
 		return "", stacktrace.NewError("Missing manager")
 	}
@@ -320,10 +319,10 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 	}
 }
 
-// ValidateAndReturnOIRUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
+// validateAndReturnOIRUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
-func ValidateAndReturnOIRUpsertParams(
+func validateAndReturnOIRUpsertParams(
 	now time.Time,
 	entityid restapi.EntityID,
 	ovn restapi.EntityOVN,
@@ -337,10 +336,6 @@ func ValidateAndReturnOIRUpsertParams(
 	valid.ID, err = dssmodels.IDFromString(string(entityid))
 	if err != nil {
 		return nil, stacktrace.NewError("Invalid ID format: `%s`", entityid)
-	}
-
-	if len(params.UssBaseUrl) == 0 {
-		return nil, stacktrace.NewError("Missing required UssBaseUrl")
 	}
 
 	valid.USSBaseURL = string(params.UssBaseUrl)
@@ -391,18 +386,14 @@ func ValidateAndReturnOIRUpsertParams(
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
 	// The end time may not be in the past.
-	uExtent, err := scdmodels.UnionVolumes4DFromSCDRest(
+	valid.Volume, err = scdmodels.UnionCellsVolume4DFromSCDRest(
 		params.Extents,
-		scdmodels.WithRequireTimeBounds(),
-		scdmodels.WithRequireAltitudeBounds(),
-		scdmodels.WithRequireEndTimeAfter(now),
+		scdmodels.WithRequireCellsTimeBounds(),
+		scdmodels.WithRequireCellsAltitudeBounds(),
+		scdmodels.WithRequireCellsEndTimeAfter(now),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")
-	}
-	valid.Volume, err = uExtent.ToCellsVolume4D()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
 
 	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
@@ -435,6 +426,72 @@ func ValidateAndReturnOIRUpsertParams(
 	}
 
 	return valid, nil
+}
+
+type createOIRPayload struct {
+	Manager dssmodels.Manager
+	Params  *validOIRParams
+}
+
+func (p *createOIRPayload) OperationID() string {
+	return restapi.CreateOperationalIntentReferenceOperationID
+}
+
+func (p *createOIRPayload) manager() dssmodels.Manager { return p.Manager }
+func (p *createOIRPayload) params() *validOIRParams    { return p.Params }
+
+type updateOIRPayload struct {
+	Manager dssmodels.Manager
+	Params  *validOIRParams
+}
+
+func (p *updateOIRPayload) OperationID() string {
+	return restapi.UpdateOperationalIntentReferenceOperationID
+}
+
+func (p *updateOIRPayload) manager() dssmodels.Manager { return p.Manager }
+func (p *updateOIRPayload) params() *validOIRParams    { return p.Params }
+
+// oirPayload is implemented by createOIRPayload and updateOIRPayload
+type oirPayload interface {
+	dssstore.OperationRequest
+	manager() dssmodels.Manager
+	params() *validOIRParams
+}
+
+// NewCreateOIRPayload performs the request validation that can be done ahead of the transaction
+// for an Operational Intent Reference creation request.
+func NewCreateOIRPayload(entityid restapi.EntityID, params *restapi.PutOperationalIntentReferenceParameters, auth *api.AuthorizationResult, allowHTTPBaseUrls bool, now time.Time) (dssstore.OperationRequest, error) {
+	manager, validParams, err := newOIRUpsert(entityid, "", params, auth, allowHTTPBaseUrls, now)
+	if err != nil {
+		return nil, err
+	}
+	return &createOIRPayload{Manager: manager, Params: validParams}, nil
+}
+
+// NewUpdateOIRPayload performs the request validation that can be done ahead of the transaction
+// for an Operational Intent Reference update request.
+func NewUpdateOIRPayload(entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters, auth *api.AuthorizationResult, allowHTTPBaseUrls bool, now time.Time) (dssstore.OperationRequest, error) {
+	manager, validParams, err := newOIRUpsert(entityid, ovn, params, auth, allowHTTPBaseUrls, now)
+	if err != nil {
+		return nil, err
+	}
+	return &updateOIRPayload{Manager: manager, Params: validParams}, nil
+}
+
+// newOIRUpsert performs the request validation that can be done ahead of the transaction.
+func newOIRUpsert(entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters, auth *api.AuthorizationResult, allowHTTPBaseUrls bool, now time.Time) (dssmodels.Manager, *validOIRParams, error) {
+	validParams, err := validateAndReturnOIRUpsertParams(now, entityid, ovn, params, allowHTTPBaseUrls)
+	if err != nil {
+		return "", nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
+	}
+
+	manager, err := checkUpsertPermissionsAndReturnManager(auth, validParams.State)
+	if err != nil {
+		return "", nil, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state")
+	}
+
+	return manager, validParams, nil
 }
 
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
@@ -594,34 +651,12 @@ type PutOperationalIntentReferenceResult struct {
 // executePutOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func executePutOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	var (
-		entityid restapi.EntityID
-		ovn      restapi.EntityOVN
-		params   *restapi.PutOperationalIntentReferenceParameters
-		auth     *api.AuthorizationResult
-	)
-
-	switch req := request.(type) {
-	case *restapi.CreateOperationalIntentReferenceRequest:
-		entityid, params, auth = req.Entityid, req.Body, &req.Auth
-	case *restapi.UpdateOperationalIntentReferenceRequest:
-		entityid, ovn, params, auth = req.Entityid, req.Ovn, req.Body, &req.Auth
-	default:
+	payload, ok := request.(oirPayload)
+	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
 	}
-
-	now := timestamp.MustFromContext(ctx)
-
-	// Base URL scheme validation is a pre-flight, request-only check performed by the handler
-	// before this action is proposed for consensus; skip it here (allowHTTPBaseUrls: true).
-	validParams, err := ValidateAndReturnOIRUpsertParams(now, entityid, ovn, params, true)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
-	}
-	if auth.ClientID == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager")
-	}
-	manager := dssmodels.Manager(*auth.ClientID)
+	validParams := payload.params()
+	manager := payload.manager()
 
 	// Get existing OperationalIntent, if any
 	old, err := repo.GetOperationalIntent(ctx, validParams.ID)
