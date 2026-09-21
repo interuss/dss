@@ -2,10 +2,13 @@ package raftstore
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/interuss/dss/pkg/memstore"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridmemstore "github.com/interuss/dss/pkg/rid/store/memstore"
@@ -46,6 +49,51 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	// ISA
+	case string(getISA):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getISA)
+		}
+		return r.Store.GetRepo().GetISA(ctx, id, false)
+
+	case string(deleteISA):
+		var isa ridmodels.IdentificationServiceArea
+		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteISA)
+		}
+		return r.Store.GetRepo().DeleteISA(ctx, &isa)
+
+	case string(insertISA):
+		var isa ridmodels.IdentificationServiceArea
+		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", insertISA)
+		}
+		return r.Store.GetRepo().InsertISA(ctx, &isa)
+
+	case string(updateISA):
+		var isa ridmodels.IdentificationServiceArea
+		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateISA)
+		}
+		return r.Store.GetRepo().UpdateISA(ctx, &isa)
+
+	case string(searchISAs):
+		var payload searchISAsPayload
+		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchISAs)
+		}
+		return r.Store.GetRepo().SearchISAs(ctx, payload.Cells, payload.Earliest, payload.Latest)
+
+	case string(listExpiredISAs):
+		var payload expiredPayload
+		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredISAs)
+		}
+		return r.Store.GetRepo().ListExpiredISAs(ctx, payload.Writer, payload.Threshold)
+
+	case string(countISAs):
+		return r.Store.GetRepo().CountISAs(ctx)
 
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
