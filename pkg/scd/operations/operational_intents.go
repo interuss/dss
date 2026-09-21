@@ -14,7 +14,6 @@ import (
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
-	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 )
 
@@ -38,12 +37,12 @@ func init() {
 	}
 	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.CreateOperationalIntentReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*putOIRPayload],
 		Execute: executePutOperationalIntentReference,
 	}
 	Registry[restapi.UpdateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.UpdateOperationalIntentReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*putOIRPayload],
 		Execute: executePutOperationalIntentReference,
 	}
 }
@@ -145,18 +144,15 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	}
 
 	// Gather the subscriptions that need to be notified
-	notifyVolume := &dssmodels.Volume4D{
-		StartTime: old.StartTime,
-		EndTime:   old.EndTime,
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeHi: old.AltitudeUpper,
-			AltitudeLo: old.AltitudeLower,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return old.Cells, nil
-			}),
-		}}
+	notifyCellsVol4D := &dssmodels.CellsVolume4D{
+		Cells:      old.Cells,
+		StartTime:  old.StartTime,
+		EndTime:    old.EndTime,
+		AltitudeLo: old.AltitudeLower,
+		AltitudeHi: old.AltitudeUpper,
+	}
 
-	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyCellsVol4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "could not obtain relevant subscriptions")
 	}
@@ -227,9 +223,13 @@ func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Rep
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry")
 	}
+	cellsVolume4D, err := vol4.ToCellsVolume4D()
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
+	}
 
 	// Perform search query on Store
-	ops, err := repo.SearchOperationalIntents(ctx, vol4)
+	ops, err := repo.SearchOperationalIntents(ctx, cellsVolume4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to query for OperationalIntents in repo")
 	}
@@ -292,28 +292,40 @@ func validateUpsertRequestAgainstPreviousOIR(
 	return nil
 }
 
-// computeNotificationVolume computes the volume that needs to be queried for subscriptions
+// computeNotificationCellsVolume computes the volume that needs to be queried for subscriptions
 // given the requested extent and the (possibly nil) previous operational intent.
-// The returned volume is either the union of the requested extent and the previous OIR's extent, or just the requested extent
+// The returned volume covers either the union of the requested extent and the previous OIR's extent, or just the requested extent
 // if the previous OIR is nil.
-func computeNotificationVolume(
+func computeNotificationCellsVolume(
 	previousOIR *scdmodels.OperationalIntent,
-	requestedExtent *dssmodels.Volume4D) (*dssmodels.Volume4D, error) {
+	startTime *time.Time,
+	endTime *time.Time,
+	altitudeLo *float32,
+	altitudeHi *float32,
+	requestedCells s2.CellUnion) (*dssmodels.CellsVolume4D, error) {
 
 	if previousOIR == nil {
-		return requestedExtent, nil
+		return &dssmodels.CellsVolume4D{
+			Cells:      requestedCells,
+			StartTime:  startTime,
+			EndTime:    endTime,
+			AltitudeLo: altitudeLo,
+			AltitudeHi: altitudeHi,
+		}, nil
 	}
 
-	// Compute total affected Volume4D for notification purposes
+	// Compute total affected extent for notification purposes
+	requestedExtent := &dssmodels.Volume4D{
+		StartTime:     startTime,
+		EndTime:       endTime,
+		SpatialVolume: &dssmodels.Volume3D{AltitudeLo: altitudeLo, AltitudeHi: altitudeHi},
+	}
 	oldVolume := &dssmodels.Volume4D{
 		StartTime: previousOIR.StartTime,
 		EndTime:   previousOIR.EndTime,
 		SpatialVolume: &dssmodels.Volume3D{
 			AltitudeHi: previousOIR.AltitudeUpper,
 			AltitudeLo: previousOIR.AltitudeLower,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return previousOIR.Cells, nil
-			}),
 		},
 	}
 	notifyVolume, err := dssmodels.UnionVolumes4D(requestedExtent, oldVolume)
@@ -321,7 +333,13 @@ func computeNotificationVolume(
 		return nil, stacktrace.Propagate(err, "Error constructing 4D volumes union")
 	}
 
-	return notifyVolume, nil
+	return &dssmodels.CellsVolume4D{
+		Cells:      s2.CellUnionFromUnion(requestedCells, previousOIR.Cells),
+		StartTime:  notifyVolume.StartTime,
+		EndTime:    notifyVolume.EndTime,
+		AltitudeLo: notifyVolume.SpatialVolume.AltitudeLo,
+		AltitudeHi: notifyVolume.SpatialVolume.AltitudeHi,
+	}, nil
 }
 
 type validOIRParams struct {
@@ -329,7 +347,10 @@ type validOIRParams struct {
 	OVN                  scdmodels.OVN
 	NewOVN               scdmodels.OVN
 	State                scdmodels.OperationalIntentState
-	UExtent              *dssmodels.Volume4D
+	StartTime            *time.Time
+	EndTime              *time.Time
+	AltitudeLo           *float32
+	AltitudeHi           *float32
 	Cells                s2.CellUnion
 	SubscriptionID       dssmodels.ID
 	USSBaseURL           string
@@ -357,10 +378,10 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 		OVN:      vp.NewOVN, // non-empty only if the USS has requested an OVN
 		PastOVNs: pastOVNs,
 
-		StartTime:     vp.UExtent.StartTime,
-		EndTime:       vp.UExtent.EndTime,
-		AltitudeLower: vp.UExtent.SpatialVolume.AltitudeLo,
-		AltitudeUpper: vp.UExtent.SpatialVolume.AltitudeHi,
+		StartTime:     vp.StartTime,
+		EndTime:       vp.EndTime,
+		AltitudeLower: vp.AltitudeLo,
+		AltitudeUpper: vp.AltitudeHi,
 		Cells:         vp.Cells,
 
 		USSBaseURL:     vp.USSBaseURL,
@@ -440,7 +461,7 @@ func ValidateAndReturnOIRUpsertParams(
 
 	// Start and end times, as well as lower and upper altitudes, are required for each volume
 	// The end time may not be in the past.
-	valid.UExtent, err = scdmodels.UnionVolumes4DFromSCDRest(
+	uExtent, err := scdmodels.UnionVolumes4DFromSCDRest(
 		params.Extents,
 		scdmodels.WithRequireTimeBounds(),
 		scdmodels.WithRequireAltitudeBounds(),
@@ -449,10 +470,14 @@ func ValidateAndReturnOIRUpsertParams(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid extents")
 	}
-	valid.Cells, err = valid.UExtent.CalculateSpatialCovering()
+	valid.Cells, err = uExtent.CalculateSpatialCovering()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid area")
 	}
+	valid.StartTime = uExtent.StartTime
+	valid.EndTime = uExtent.EndTime
+	valid.AltitudeLo = uExtent.SpatialVolume.AltitudeLo
+	valid.AltitudeHi = uExtent.SpatialVolume.AltitudeHi
 
 	if ovn == "" && params.State != restapi.OperationalIntentState_Accepted {
 		return nil, stacktrace.NewError("Invalid state for initial version: `%s`", params.State)
@@ -486,6 +511,29 @@ func ValidateAndReturnOIRUpsertParams(
 	return valid, nil
 }
 
+type putOIRPayload struct {
+	Op      string
+	Manager dssmodels.Manager
+	Params  *validOIRParams
+}
+
+func (p *putOIRPayload) OperationID() string { return p.Op }
+
+// NewPutOIRPayload performs the request validation that can be done ahead of the transaction.
+func NewPutOIRPayload(opID string, entityid restapi.EntityID, ovn restapi.EntityOVN, params *restapi.PutOperationalIntentReferenceParameters, auth *api.AuthorizationResult, allowHTTPBaseUrls bool, now time.Time) (*putOIRPayload, error) {
+	validParams, err := ValidateAndReturnOIRUpsertParams(now, entityid, ovn, params, allowHTTPBaseUrls)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
+	}
+
+	manager, err := CheckUpsertPermissionsAndReturnManager(auth, validParams.State)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.PermissionDenied, "Caller is not allowed to upsert with the requested state")
+	}
+
+	return &putOIRPayload{Op: opID, Manager: manager, Params: validParams}, nil
+}
+
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
 func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
@@ -501,10 +549,10 @@ func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Reposito
 	subToUpsert := scdmodels.Subscription{
 		ID:                          id,
 		Manager:                     manager,
-		StartTime:                   validParams.UExtent.StartTime,
-		EndTime:                     validParams.UExtent.EndTime,
-		AltitudeLo:                  validParams.UExtent.SpatialVolume.AltitudeLo,
-		AltitudeHi:                  validParams.UExtent.SpatialVolume.AltitudeHi,
+		StartTime:                   validParams.StartTime,
+		EndTime:                     validParams.EndTime,
+		AltitudeLo:                  validParams.AltitudeLo,
+		AltitudeHi:                  validParams.AltitudeHi,
 		Cells:                       validParams.Cells,
 		USSBaseURL:                  validParams.ImplicitSubscription.BaseURL,
 		NotifyForOperationalIntents: true,
@@ -527,9 +575,17 @@ func validateKeyAndProvideConflictResponse(
 	attachedSubscription *scdmodels.Subscription,
 ) (*restapi.AirspaceConflictResponse, error) {
 
+	cellsVolume4D := &dssmodels.CellsVolume4D{
+		Cells:      params.Cells,
+		StartTime:  params.StartTime,
+		EndTime:    params.EndTime,
+		AltitudeLo: params.AltitudeLo,
+		AltitudeHi: params.AltitudeHi,
+	}
+
 	// Identify OperationalIntents missing from the key
 	var missingOps []*scdmodels.OperationalIntent
-	relevantOps, err := r.SearchOperationalIntents(ctx, params.UExtent)
+	relevantOps, err := r.SearchOperationalIntents(ctx, cellsVolume4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to SearchOperations")
 	}
@@ -544,7 +600,7 @@ func validateKeyAndProvideConflictResponse(
 	// Identify Constraints missing from the key
 	var missingConstraints []*scdmodels.Constraint
 	if attachedSubscription != nil && attachedSubscription.NotifyForConstraints {
-		constraints, err := r.SearchConstraints(ctx, params.UExtent)
+		constraints, err := r.SearchConstraints(ctx, cellsVolume4D)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to SearchConstraints")
 		}
@@ -601,17 +657,17 @@ func validateKeyAndProvideConflictResponse(
 func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
 
 	updateSub := false
-	if sub.StartTime != nil && sub.StartTime.After(*params.UExtent.StartTime) {
+	if sub.StartTime != nil && sub.StartTime.After(*params.StartTime) {
 		if sub.ImplicitSubscription {
-			sub.StartTime = params.UExtent.StartTime
+			sub.StartTime = params.StartTime
 			updateSub = true
 		} else {
 			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
 		}
 	}
-	if sub.EndTime != nil && sub.EndTime.Before(*params.UExtent.EndTime) {
+	if sub.EndTime != nil && sub.EndTime.Before(*params.EndTime) {
 		if sub.ImplicitSubscription {
-			sub.EndTime = params.UExtent.EndTime
+			sub.EndTime = params.EndTime
 			updateSub = true
 		} else {
 			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
@@ -647,34 +703,12 @@ type PutOperationalIntentReferenceResult struct {
 // executePutOperationalIntentReference inserts or updates an Operational Intent.
 // If the ovn argument is empty (""), it will attempt to create a new Operational Intent.
 func executePutOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	var (
-		entityid restapi.EntityID
-		ovn      restapi.EntityOVN
-		params   *restapi.PutOperationalIntentReferenceParameters
-		auth     *api.AuthorizationResult
-	)
-
-	switch req := request.(type) {
-	case *restapi.CreateOperationalIntentReferenceRequest:
-		entityid, params, auth = req.Entityid, req.Body, &req.Auth
-	case *restapi.UpdateOperationalIntentReferenceRequest:
-		entityid, ovn, params, auth = req.Entityid, req.Ovn, req.Body, &req.Auth
-	default:
+	payload, ok := request.(*putOIRPayload)
+	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
 	}
-
-	now := timestamp.MustFromContext(ctx)
-
-	// Base URL scheme validation is a pre-flight, request-only check performed by the handler
-	// before this action is proposed for consensus; skip it here (allowHTTPBaseUrls: true).
-	validParams, err := ValidateAndReturnOIRUpsertParams(now, entityid, ovn, params, true)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Operational Intent Reference upsert parameters")
-	}
-	if auth.ClientID == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager")
-	}
-	manager := dssmodels.Manager(*auth.ClientID)
+	validParams := payload.Params
+	manager := payload.Manager
 
 	// Get existing OperationalIntent, if any
 	old, err := repo.GetOperationalIntent(ctx, validParams.ID)
@@ -695,7 +729,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		subscriptionIds = append(subscriptionIds, validParams.SubscriptionID)
 	}
 
-	err = repo.LockSubscriptionsOnCells(ctx, validParams.Cells, subscriptionIds, validParams.UExtent.StartTime, validParams.UExtent.EndTime)
+	err = repo.LockSubscriptionsOnCells(ctx, validParams.Cells, subscriptionIds, validParams.StartTime, validParams.EndTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to acquire lock")
 	}
@@ -815,13 +849,13 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 	}
 
-	notifyVolume, err := computeNotificationVolume(old, validParams.UExtent)
+	notifyCellsVol4D, err := computeNotificationCellsVolume(old, validParams.StartTime, validParams.EndTime, validParams.AltitudeLo, validParams.AltitudeHi, validParams.Cells)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to compute notification volume")
+		return nil, stacktrace.Propagate(err, "Failed to compute notification cells volume")
 	}
 
 	// Notify relevant Subscriptions
-	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyVolume)
+	subsToNotify, err := repo.IncrementNotificationIndicesForOperationalIntents(ctx, notifyCellsVol4D)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to notify relevant Subscriptions")
 	}
