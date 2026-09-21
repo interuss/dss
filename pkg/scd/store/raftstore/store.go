@@ -49,6 +49,11 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case string(searchConstraints), string(getConstraint), string(upsertConstraint), string(deleteConstraint), string(countConstraints):
 		return r.applyConstraint(ctx, proposal)
 
+	case string(searchSubscriptions), string(getSubscription), string(upsertSubscription), string(deleteSubscription),
+		string(incrementNotificationIndicesForOperationalIntents), string(incrementNotificationIndicesForConstraints),
+		string(listExpiredSubscriptions), string(countSubscriptions):
+		return r.applySubscription(ctx, proposal)
+
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
