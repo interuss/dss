@@ -50,6 +50,9 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+
+	// Constraints
+
 	case string(searchConstraints):
 		var cellsVolume dssmodels.CellsVolume4D
 		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
@@ -80,6 +83,8 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case string(countConstraints):
 		return r.Store.GetRepo().CountConstraints(ctx)
+
+	// Subscriptions
 
 	case string(searchSubscriptions):
 		var cellsVolume dssmodels.CellsVolume4D
@@ -133,6 +138,54 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case string(countSubscriptions):
 		return r.Store.GetRepo().CountSubscriptions(ctx)
 
+	// Operational Intents
+
+	case string(getOperationalIntent):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getOperationalIntent)
+		}
+		return r.Store.GetRepo().GetOperationalIntent(ctx, id)
+
+	case string(deleteOperationalIntent):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteOperationalIntent)
+		}
+		return nil, r.Store.GetRepo().DeleteOperationalIntent(ctx, id)
+
+	case string(upsertOperationalIntent):
+		var operation scdmodels.OperationalIntent
+		if err := json.Unmarshal(proposal.Value, &operation); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertOperationalIntent)
+		}
+		return r.Store.GetRepo().UpsertOperationalIntent(ctx, &operation)
+
+	case string(searchOperationalIntents):
+		var cellsVolume dssmodels.CellsVolume4D
+		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchOperationalIntents)
+		}
+		return r.Store.GetRepo().SearchOperationalIntents(ctx, &cellsVolume)
+
+	case string(getDependentOperationalIntents):
+		var subscriptionID dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &subscriptionID); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getDependentOperationalIntents)
+		}
+		return r.Store.GetRepo().GetDependentOperationalIntents(ctx, subscriptionID)
+
+	case string(listExpiredOperationalIntents):
+		var threshold time.Time
+		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredOperationalIntents)
+		}
+		return r.Store.GetRepo().ListExpiredOperationalIntents(ctx, threshold)
+
+	case string(countOperationalIntents):
+		return r.Store.GetRepo().CountOperationalIntents(ctx)
+
+	// Operations registry (transactions)
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
