@@ -11,7 +11,6 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
-	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -123,15 +122,6 @@ func cellSet(cells s2.CellUnion) map[s2.CellID]struct{} {
 	return set
 }
 
-// coveringSet builds a lookup set from the spatial covering of a volume.
-func coveringSet(v4d *dssmodels.Volume4D) (map[s2.CellID]struct{}, error) {
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-	return cellSet(cells), nil
-}
-
 // overlaps reports whether any cell is present in set (equivalent to the SQL
 // "cells && $x" array-overlap operator).
 func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
@@ -143,13 +133,13 @@ func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
 	return false
 }
 
-// overlapsTime reports whether the [start, end] interval of a record intersects the one of v4d
+// overlapsTime reports whether the [start, end] interval of a record intersects the one of cellsVolume
 // (equivalent to the SQL "COALESCE(starts_at <= $end, true) AND COALESCE(ends_at >= $start, true)").
-func overlapsTime(start, end *time.Time, v4d *dssmodels.Volume4D) bool {
-	if start != nil && v4d.EndTime != nil && start.After(*v4d.EndTime) { // TODO: Don't allow startup to be null, see #1492
+func overlapsTime(start, end *time.Time, cellsVolume *dssmodels.CellsVolume4D) bool {
+	if start != nil && cellsVolume.EndTime != nil && start.After(*cellsVolume.EndTime) { // TODO: Don't allow startup to be null, see #1492
 		return false
 	}
-	if end != nil && v4d.StartTime != nil && end.Before(*v4d.StartTime) { // TODO: Don't allow endtime to be null, see #1492
+	if end != nil && cellsVolume.StartTime != nil && end.Before(*cellsVolume.StartTime) { // TODO: Don't allow endtime to be null, see #1492
 		return false
 	}
 	return true

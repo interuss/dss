@@ -205,8 +205,8 @@ def implementation_interface(
         lines.append("")
 
         lines.append(
-            'const {}OperationID = "{}"'.format(
-                operation.interface_name, operation.interface_name
+            'const {}OperationID = "{}.{}"'.format(
+                operation.interface_name, api.package, operation.interface_name
             )
         )
         lines.append("")

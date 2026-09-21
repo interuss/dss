@@ -46,9 +46,23 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case string(searchConstraints), string(getConstraint), string(upsertConstraint), string(deleteConstraint), string(countConstraints):
+		return r.applyConstraint(ctx, proposal)
+
+	case string(searchSubscriptions), string(getSubscription), string(upsertSubscription), string(deleteSubscription),
+		string(incrementNotificationIndicesForOperationalIntents), string(incrementNotificationIndicesForConstraints),
+		string(listExpiredSubscriptions), string(countSubscriptions):
+		return r.applySubscription(ctx, proposal)
+
+	case string(getOperationalIntent), string(deleteOperationalIntent), string(upsertOperationalIntent), string(searchOperationalIntents),
+		string(getDependentOperationalIntents), string(listExpiredOperationalIntents), string(countOperationalIntents):
+		return r.applyOperationalIntent(ctx, proposal)
+
+	case string(getUssAvailability), string(upsertUssAvailability):
+		return r.applyAvailability(ctx, proposal)
 
 	default:
-		handler, ok := operations.Registry[string(proposal.RequestType)]
+		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
 			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
 		}

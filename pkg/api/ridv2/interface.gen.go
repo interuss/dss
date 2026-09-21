@@ -81,7 +81,7 @@ type SearchIdentificationServiceAreasRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const SearchIdentificationServiceAreasOperationID = "SearchIdentificationServiceAreas"
+const SearchIdentificationServiceAreasOperationID = "ridv2.SearchIdentificationServiceAreas"
 
 func (request *SearchIdentificationServiceAreasRequest) OperationID() string {
 	return SearchIdentificationServiceAreasOperationID
@@ -115,7 +115,7 @@ type GetIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetIdentificationServiceAreaOperationID = "GetIdentificationServiceArea"
+const GetIdentificationServiceAreaOperationID = "ridv2.GetIdentificationServiceArea"
 
 func (request *GetIdentificationServiceAreaRequest) OperationID() string {
 	return GetIdentificationServiceAreaOperationID
@@ -155,7 +155,7 @@ type CreateIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateIdentificationServiceAreaOperationID = "CreateIdentificationServiceArea"
+const CreateIdentificationServiceAreaOperationID = "ridv2.CreateIdentificationServiceArea"
 
 func (request *CreateIdentificationServiceAreaRequest) OperationID() string {
 	return CreateIdentificationServiceAreaOperationID
@@ -203,7 +203,7 @@ type UpdateIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateIdentificationServiceAreaOperationID = "UpdateIdentificationServiceArea"
+const UpdateIdentificationServiceAreaOperationID = "ridv2.UpdateIdentificationServiceArea"
 
 func (request *UpdateIdentificationServiceAreaRequest) OperationID() string {
 	return UpdateIdentificationServiceAreaOperationID
@@ -245,7 +245,7 @@ type DeleteIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteIdentificationServiceAreaOperationID = "DeleteIdentificationServiceArea"
+const DeleteIdentificationServiceAreaOperationID = "ridv2.DeleteIdentificationServiceArea"
 
 func (request *DeleteIdentificationServiceAreaRequest) OperationID() string {
 	return DeleteIdentificationServiceAreaOperationID
@@ -284,7 +284,7 @@ type SearchSubscriptionsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const SearchSubscriptionsOperationID = "SearchSubscriptions"
+const SearchSubscriptionsOperationID = "ridv2.SearchSubscriptions"
 
 func (request *SearchSubscriptionsRequest) OperationID() string {
 	return SearchSubscriptionsOperationID
@@ -318,7 +318,7 @@ type GetSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetSubscriptionOperationID = "GetSubscription"
+const GetSubscriptionOperationID = "ridv2.GetSubscription"
 
 func (request *GetSubscriptionRequest) OperationID() string { return GetSubscriptionOperationID }
 
@@ -356,7 +356,7 @@ type CreateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateSubscriptionOperationID = "CreateSubscription"
+const CreateSubscriptionOperationID = "ridv2.CreateSubscription"
 
 func (request *CreateSubscriptionRequest) OperationID() string { return CreateSubscriptionOperationID }
 
@@ -402,7 +402,7 @@ type UpdateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateSubscriptionOperationID = "UpdateSubscription"
+const UpdateSubscriptionOperationID = "ridv2.UpdateSubscription"
 
 func (request *UpdateSubscriptionRequest) OperationID() string { return UpdateSubscriptionOperationID }
 
@@ -442,7 +442,7 @@ type DeleteSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteSubscriptionOperationID = "DeleteSubscription"
+const DeleteSubscriptionOperationID = "ridv2.DeleteSubscription"
 
 func (request *DeleteSubscriptionRequest) OperationID() string { return DeleteSubscriptionOperationID }
 

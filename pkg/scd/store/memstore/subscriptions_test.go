@@ -53,12 +53,12 @@ func TestSearchSubscriptions(t *testing.T) {
 	_, err := r.UpsertSubscription(ctx, sampleSubscription())
 	require.NoError(t, err)
 
-	res, err := r.SearchSubscriptions(ctx, volume4D(cells, nil, nil, nil, nil))
+	res, err := r.SearchSubscriptions(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 
 	// No covering cells returns nil.
-	res, err = r.SearchSubscriptions(ctx, volume4D(s2.CellUnion{}, nil, nil, nil, nil))
+	res, err = r.SearchSubscriptions(ctx, cellsVolume4D(s2.CellUnion{}, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Nil(t, res)
 }
@@ -80,7 +80,7 @@ func TestIncrementNotificationIndicesForOperationalIntents(t *testing.T) {
 	_, err = r.UpsertSubscription(ctx, conSub)
 	require.NoError(t, err)
 
-	got, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, volume4D(cells, nil, nil, nil, nil))
+	got, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	require.Equal(t, opSub.ID, got[0].ID)
@@ -97,7 +97,7 @@ func TestIncrementNotificationIndicesForOperationalIntents(t *testing.T) {
 	require.Equal(t, conSub.NotificationIndex, other.NotificationIndex)
 
 	// No covering cells returns nil.
-	got, err = r.IncrementNotificationIndicesForOperationalIntents(ctx, volume4D(s2.CellUnion{}, nil, nil, nil, nil))
+	got, err = r.IncrementNotificationIndicesForOperationalIntents(ctx, cellsVolume4D(s2.CellUnion{}, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Nil(t, got)
 }
@@ -118,7 +118,7 @@ func TestIncrementNotificationIndicesForConstraints(t *testing.T) {
 	_, err = r.UpsertSubscription(ctx, opSub)
 	require.NoError(t, err)
 
-	got, err := r.IncrementNotificationIndicesForConstraints(ctx, volume4D(cells, nil, nil, nil, nil))
+	got, err := r.IncrementNotificationIndicesForConstraints(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	require.Equal(t, conSub.ID, got[0].ID)
