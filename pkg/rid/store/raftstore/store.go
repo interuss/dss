@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
@@ -94,6 +95,74 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case string(countISAs):
 		return r.Store.GetRepo().CountISAs(ctx)
+
+	// Subscriptions
+
+	case string(getSubscription):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getSubscription)
+		}
+		return r.Store.GetRepo().GetSubscription(ctx, id)
+
+	case string(deleteSubscription):
+		var sub ridmodels.Subscription
+		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteSubscription)
+		}
+		return r.Store.GetRepo().DeleteSubscription(ctx, &sub)
+
+	case string(insertSubscription):
+		var sub ridmodels.Subscription
+		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", insertSubscription)
+		}
+		return r.Store.GetRepo().InsertSubscription(ctx, &sub)
+
+	case string(updateSubscription):
+		var sub ridmodels.Subscription
+		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateSubscription)
+		}
+		return r.Store.GetRepo().UpdateSubscription(ctx, &sub)
+
+	case string(searchSubscriptions):
+		var cells s2.CellUnion
+		if err := json.Unmarshal(proposal.Value, &cells); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptions)
+		}
+		return r.Store.GetRepo().SearchSubscriptions(ctx, cells)
+
+	case string(searchSubscriptionsByOwner):
+		var payload cellsByOwnerPayload
+		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptionsByOwner)
+		}
+		return r.Store.GetRepo().SearchSubscriptionsByOwner(ctx, payload.Cells, payload.Owner)
+
+	case string(updateNotificationIdxsInCells):
+		var cells s2.CellUnion
+		if err := json.Unmarshal(proposal.Value, &cells); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateNotificationIdxsInCells)
+		}
+		return r.Store.GetRepo().UpdateNotificationIdxsInCells(ctx, cells)
+
+	case string(maxSubscriptionCountInCellsByOwner):
+		var payload cellsByOwnerPayload
+		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", maxSubscriptionCountInCellsByOwner)
+		}
+		return r.Store.GetRepo().MaxSubscriptionCountInCellsByOwner(ctx, payload.Cells, payload.Owner)
+
+	case string(listExpiredSubscriptions):
+		var payload expiredPayload
+		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
+		}
+		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, payload.Writer, payload.Threshold)
+
+	case string(countSubscriptions):
+		return r.Store.GetRepo().CountSubscriptions(ctx)
 
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
