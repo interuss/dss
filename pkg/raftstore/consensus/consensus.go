@@ -133,14 +133,17 @@ func (c *Consensus) Stop(ctx context.Context) {
 	})
 }
 
-type RequestType string
+// RequestType identifies a kind of client request and the concrete type its result is expected to have
+type RequestType[Result any] string
 
 // HandleClientRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
-func (c *Consensus) HandleClientRequest(ctx context.Context, requestType RequestType, value []byte, readOnly bool) (any, error) {
-	proposal := c.newProposal(ctx, requestType, value, readOnly)
+func (c *Consensus) HandleClientRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte, readOnly bool) (Result, error) {
+	var zero Result
+
+	proposal := c.newProposal(ctx, string(requestType), value, readOnly)
 	buf, err := json.Marshal(proposal)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
+		return zero, stacktrace.Propagate(err, "failed to marshal proposal")
 	}
 
 	applied := c.tracker.track(proposal.ID)
@@ -148,16 +151,29 @@ func (c *Consensus) HandleClientRequest(ctx context.Context, requestType Request
 	err = c.node.Propose(ctx, buf)
 	if err != nil {
 		c.tracker.untrack(proposal.ID, ProposalResult{Error: err})
-		return nil, stacktrace.Propagate(err, "failed to propose value to Raft")
+		return zero, stacktrace.Propagate(err, "failed to propose value to Raft")
 	}
 
 	select {
 	case res := <-applied:
-		return res.Result, res.Error
+		if res.Error != nil {
+			return zero, res.Error
+		}
+		// A nil res.Result (e.g. from a delete/void operation applied as `return nil, err`) is an
+		// untyped nil interface, which fails a type assertion to any Result type, including any
+		// itself. Treat it as the caller's zero value rather than an "unexpected result type" error.
+		if res.Result == nil {
+			return zero, nil
+		}
+		result, ok := res.Result.(Result)
+		if !ok {
+			return zero, stacktrace.NewError("unexpected result type for %q: got %T", requestType, res.Result)
+		}
+		return result, nil
 
 	case <-ctx.Done():
 		c.tracker.untrack(proposal.ID, ProposalResult{Error: ctx.Err()})
-		return nil, ctx.Err()
+		return zero, ctx.Err()
 	}
 }
 

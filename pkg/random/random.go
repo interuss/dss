@@ -17,7 +17,7 @@ import (
 
 type key struct{}
 
-func newSeed() (int64, error) {
+func NewSeed() (int64, error) {
 	var buf [8]byte
 	_, err := rand.Read(buf[:])
 	if err != nil {
@@ -66,7 +66,7 @@ func Generator(seed int64, label string) (*mrand.Rand, error) {
 // deterministically via Generator.
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seed, err := newSeed()
+		seed, err := NewSeed()
 		if err != nil {
 			http.Error(w, "failed to generate request seed", http.StatusInternalServerError)
 			return
