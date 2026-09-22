@@ -1,10 +1,12 @@
 package models
 
 import (
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/golang/geo/s2"
+	"github.com/interuss/dss/pkg/geo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,6 +56,39 @@ func TestPolygonCovering(t *testing.T) {
 	}
 	require.NoError(t, err)
 	require.Equal(t, want, got)
+	require.True(t, slices.IsSorted(got), "Geometry.CalculateCovering must return a sorted CellUnion")
+}
+
+func TestGeoCircleCoveringIsSorted(t *testing.T) {
+	got, err := (&GeoCircle{
+		Center:      LatLngPoint{Lat: 37.427636, Lng: -122.170502},
+		RadiusMeter: 300,
+	}).CalculateCovering()
+
+	require.NoError(t, err)
+	require.NotEmpty(t, got)
+	require.True(t, slices.IsSorted(got), "Geometry.CalculateCovering must return a sorted CellUnion")
+}
+
+func TestPrecomputedCellGeometryCoveringIsSorted(t *testing.T) {
+	parent := s2.CellIDFromToken("808fb0ac").Parent(geo.DefaultMinimumCellLevel - 1)
+	siblings := parent.Children()
+	extra := s2.CellIDFromToken("808fb744").Parent(geo.DefaultMinimumCellLevel)
+
+	pcg := precomputedCellGeometry{}.merge(siblings[3], siblings[1], extra, siblings[0], siblings[2])
+
+	got, err := pcg.CalculateCovering()
+
+	require.NoError(t, err)
+	require.True(t, slices.IsSorted(got), "Geometry.CalculateCovering must return a sorted CellUnion")
+
+	want := s2.CellUnion{siblings[0], siblings[1], siblings[2], siblings[3], extra}
+	slices.Sort(want)
+	require.Equal(t, want, got)
+
+	for _, id := range got {
+		require.Equal(t, geo.DefaultMinimumCellLevel, id.Level())
+	}
 }
 
 func TestUnionVolumes4D_Time(t *testing.T) {
