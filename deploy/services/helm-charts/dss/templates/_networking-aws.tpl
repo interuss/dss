@@ -18,12 +18,14 @@ loadBalancerClass: service.k8s.aws/nlb
 {{- include "aws-lb-default-annotations" . }}
 service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{.certName}}
 service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
 {{- end -}}
 
 {{- define "aws-ingress-prometheus-annotations" -}}
 {{- include "aws-lb-default-annotations" . }}
 service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{.certName}}
 service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
 {{- end -}}
 
 {{- define "aws-ingress-spec" -}}
