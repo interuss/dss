@@ -5,13 +5,13 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/troubleshooting/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/decommissioning/depooling-yugabyte/">
       
       
-        <link rel="prev" href="../pooling/">
+        <link rel="prev" href="../depooling-crdb/">
       
       
-        <link rel="next" href="../../decommissioning/">
+        <link rel="next" href="../terraform/">
       
       
         
@@ -22,7 +22,7 @@
     
     
       
-        <title>Troubleshooting - DSS User Documentation</title>
+        <title>Leaving a YugabyteDB pool - DSS User Documentation</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#troubleshooting" class="md-skip">
+        <a href="#leaving-a-pool" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Troubleshooting
+              Leaving a YugabyteDB pool
             
           </span>
         </div>
@@ -903,20 +903,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked="">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -937,12 +935,376 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
     Operate a DSS instance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/cleanup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database cleanup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/healthchecks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/database-migrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database migrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSS upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/crdb-upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CockroachDB version upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/kubernetes-upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked="">
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decommission a DSS instance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decommission a DSS instance
   
 
           </label>
@@ -983,238 +1345,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../cleanup/" class="md-nav__link">
+      <a href="../depooling-crdb/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Database cleanup
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Monitoring
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../healthchecks/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Health checks
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Performance
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../database-migrations/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Database migrations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../upgrades/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DSS upgrades
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../crdb-upgrades/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CockroachDB version upgrades
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../kubernetes-upgrades/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Kubernetes upgrades
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pooling/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pooling
+    Leaving a CockroachDB pool
   
 
     
@@ -1241,8 +1379,6 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -1251,7 +1387,7 @@
   <span class="md-ellipsis">
     
   
-    Troubleshooting
+    Leaving a YugabyteDB pool
   
 
     
@@ -1269,7 +1405,7 @@
   <span class="md-ellipsis">
     
   
-    Troubleshooting
+    Leaving a YugabyteDB pool
   
 
     
@@ -1285,8 +1421,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1295,71 +1429,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#check-if-the-cockroachdb-service-is-exposed" class="md-nav__link">
+  <a href="#leaving-a-pool" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Check if the CockroachDB service is exposed
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-cockroachdb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a CockroachDB SQL terminal
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-the-cockroachdb-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the CockroachDB web UI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using the CockroachDB web UI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-user-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create a user account
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the web UI
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-yugabytedb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a YugabyteDB SQL terminal
+        Leaving a pool
       
     </span>
   </a>
@@ -1375,60 +1448,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Decommission a DSS instance
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Decommission a DSS instance
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix="">
-            
               
                 
   
@@ -1436,91 +1455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../decommissioning/depooling-crdb/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Leaving a CockroachDB pool
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../decommissioning/depooling-yugabyte/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Leaving a YugabyteDB pool
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../decommissioning/terraform/" class="md-nav__link">
+      <a href="../terraform/" class="md-nav__link">
         
   
   
@@ -1548,7 +1483,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/minikube/" class="md-nav__link">
+      <a href="../minikube/" class="md-nav__link">
         
   
   
@@ -1843,8 +1778,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1853,71 +1786,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#check-if-the-cockroachdb-service-is-exposed" class="md-nav__link">
+  <a href="#leaving-a-pool" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Check if the CockroachDB service is exposed
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-cockroachdb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a CockroachDB SQL terminal
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-the-cockroachdb-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the CockroachDB web UI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using the CockroachDB web UI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-user-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create a user account
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the web UI
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-yugabytedb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a YugabyteDB SQL terminal
+        Leaving a pool
       
     </span>
   </a>
@@ -1970,7 +1842,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Operate a DSS instance
+    Decommission a DSS instance
   </span>
 
         </a>
@@ -1989,7 +1861,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/operations/troubleshooting.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/decommissioning/depooling-yugabyte.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1998,56 +1870,98 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/operations/troubleshooting.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/decommissioning/depooling-yugabyte.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">¶</a></h1>
-<h2 id="check-if-the-cockroachdb-service-is-exposed">Check if the CockroachDB service is exposed<a class="headerlink" href="#check-if-the-cockroachdb-service-is-exposed" title="Permanent link">¶</a></h2>
-<p>Unless specified otherwise in a deployment configuration, CockroachDB
-communicates on port 26257.  To check whether this port is open from Mac or
-Linux, e.g.: <code>nc -zvw3 0.db.dss.your-region.your-domain.com 26257</code>.  Or, search
-for a "port checker" web page/app.  Port 26257 will be open on a working
-CockroachDB node.</p>
-<p>A standard TLS diagnostic may also be run on this hostname:port combination and
-all results should be valid except Trust.  Certificates are signed by
-"Cockroach CA" which is not a generally-trusted CA, but this is ok.</p>
-<h2 id="accessing-a-cockroachdb-sql-terminal">Accessing a CockroachDB SQL terminal<a class="headerlink" href="#accessing-a-cockroachdb-sql-terminal" title="Permanent link">¶</a></h2>
-<p>To interact with the CockroachDB database directly via SQL terminal:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
-<span class="normal"><a href="#__codelineno-0-2">2</a></span>
-<span class="normal"><a href="#__codelineno-0-3">3</a></span>
-<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>kubectl \
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>  cockroachdb-0 -- \
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>  ./cockroach sql --certs-dir=cockroach-certs/
-</code></pre></div></td></tr></tbody></table></div>
-<h2 id="using-the-cockroachdb-web-ui">Using the CockroachDB web UI<a class="headerlink" href="#using-the-cockroachdb-web-ui" title="Permanent link">¶</a></h2>
-<p>The CockroachDB web UI is not exposed publicly, but you can forward a port to
-your local machine using kubectl:</p>
-<h3 id="create-a-user-account">Create a user account<a class="headerlink" href="#create-a-user-account" title="Permanent link">¶</a></h3>
-<p>Pick a username and create an account:</p>
-<p>Access the <a href="#accessing-a-cockroachdb-sql-terminal">CockrachDB SQL terminal</a> then create user with sql command</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>root@:26257/rid&gt; CREATE USER foo WITH PASSWORD 'foobar';
-</code></pre></div></td></tr></tbody></table></div>
-<h3 id="access-the-web-ui">Access the web UI<a class="headerlink" href="#access-the-web-ui" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
-</code></pre></div></td></tr></tbody></table></div>
-<p>Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
-warning.</p>
-<h2 id="accessing-a-yugabytedb-sql-terminal">Accessing a YugabyteDB SQL terminal<a class="headerlink" href="#accessing-a-yugabytedb-sql-terminal" title="Permanent link">¶</a></h2>
-<p>To interact with the YugabyteDB database directly via SQL terminal:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
-<span class="normal"><a href="#__codelineno-1-2">2</a></span>
-<span class="normal"><a href="#__codelineno-1-3">3</a></span>
-<span class="normal"><a href="#__codelineno-1-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>kubectl \
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a>  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a>  yb-tserver-0 -- \
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a>  ysqlsh "host=/tmp/.yb.0.0.0.0:5433 user=yugabyte dbname=postgres"
-</code></pre></div></td></tr></tbody></table></div>
+  <h1>Leaving a YugabyteDB pool</h1>
+
+<h2 id="leaving-a-pool">Leaving a pool<a class="headerlink" href="#leaving-a-pool" title="Permanent link">¶</a></h2>
+<p>In an event that requires removing Yugabyte nodes we need to properly and
+safely decommission to reduce risks of outages.</p>
+<p>It is never a good idea to take down more than half the number of nodes
+available in your cluster as doing so would break quorum. If you need to take
+down that many nodes please do it in smaller steps.</p>
+<p>Ensure placement info is how you want it after removal. Ensure you're not
+requesting impossible placement by removing nodes, otherwise it won't be
+possible to request node deletion. See the section below for placement
+requirements.</p>
+<p>Note: If you are removing a specific node in a Statefulset, please know that
+Kubernetes does not support removal of specific node; it automatically
+re-creates the node if you delete it with <code>kubectl delete pod</code>.  You will need
+to scale down the Statefulset and that removes the last node first (ex:
+<code>yb-tserver-n</code> where <code>n</code> is the <code>size of statefulset - 1</code>, <code>n</code> starts at 0)</p>
+<ol>
+<li>
+<p>Check if all nodes are healthy in the web ui.</p>
+</li>
+<li>
+<p>Connect to a Yugabyte master and copy certs, like introduced in the previous
+   section.</p>
+</li>
+<li>
+<p>For each TServer node to be removed:</p>
+<ol>
+<li>Blacklist one node in your cluster.</li>
+</ol>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist ADD [TSERVER_PUBLIC_HOSTNAME]</code></p>
+<ol>
+<li>
+<p>Wait for the node to be drained (no user tablet-peer or system-table-peer
+   in the gui). If node is not draining, you may have placement constraints
+   that prevent the removal of the node.</p>
+</li>
+<li>
+<p>Stop one node in your cluster.</p>
+</li>
+<li>
+<p>Wait until the node is marked as down and cluster will go into a
+   non-healthy state then wait for recovery. When everything is green again
+   proceed. Depending on settings, it may take time (15m) before the node is
+   marked as dead.</p>
+</li>
+<li>
+<p>Remove the node:</p>
+</li>
+</ol>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 remove_tablet_server [TSERVER_ID]</code></p>
+<p>If the command is giving you an error, data of the node may not have been
+drain correctly dues to placement constraints.</p>
+<ol>
+<li>Remove the node from the black list:</li>
+</ol>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_blacklist REMOVE [TSERVER_PUBLIC_HOSTNAME]</code></p>
+<ol>
+<li>
+<p>Fully remove the node in your cluster.</p>
+<p>E.g you may delete persistent volumes.</p>
+</li>
+</ol>
+</li>
+<li>
+<p>For each Master node to be removed:</p>
+<ol>
+<li>Remove the master from the master list</li>
+</ol>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config REMOVE_SERVER [PUBLIC HOSTNAME] 7100</code></p>
+<p>If the master node to be removed is the current leader, you may make it step
+down with the following command:</p>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 master_leader_stepdown</code></p>
+</li>
+</ol>
+<p>Finally, each pool participant should remove master addresses from the
+<code>yugabyte_external_nodes</code> list their Yugabyte nodes will attempt to contact upon
+restart and remove the CA of the participant.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Quick reminder for CA management:</p>
+<p>Remove the old CA, use <code>./dss-certs.sh remove-pool-ca &lt;Certificate id&gt;</code>
+Finally, apply certificates on the kubernetes cluster with
+<code>./dss-certs.sh apply</code></p>
+</div>
 
 
 
@@ -2068,7 +1982,7 @@ warning.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 2, 2026 08:50:33 UTC">June 2, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 22, 2026 02:49:15 UTC">September 22, 2026</span>
   </span>
 
     
@@ -2100,7 +2014,7 @@ warning.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../pooling/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pooling">
+          <a href="../depooling-crdb/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Leaving a CockroachDB pool">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2110,20 +2024,20 @@ warning.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Pooling
+                Leaving a CockroachDB pool
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../decommissioning/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="../terraform/" class="md-footer__link md-footer__link--next" aria-label="Next: Terraform">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                Terraform
               </div>
             </div>
             <div class="md-footer__button md-icon">

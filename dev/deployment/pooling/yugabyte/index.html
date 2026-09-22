@@ -5,31 +5,31 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/monitoring/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/deployment/pooling/yugabyte/">
       
       
-        <link rel="prev" href="../cleanup/">
+        <link rel="prev" href="../crdb/">
       
       
-        <link rel="next" href="../healthchecks/">
+        <link rel="next" href="../../services/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Monitoring - DSS User Documentation</title>
+        <title>With YugabyteDB - DSS User Documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -48,13 +48,13 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
     
     
-  <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+  <link href="../../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
             html.glightbox-open { overflow: initial; height: 100%; }
             .gslide-title { margin-top: 0px; user-select: text; }
             .gslide-desc { color: #666; user-select: text; }
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#monitoring" class="md-skip">
+        <a href="#pooling-configuration-with-yugabytedb" class="md-skip">
           Skip to content
         </a>
       
@@ -101,9 +101,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="DSS User Documentation" class="md-header__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
+    <a href="../../.." title="DSS User Documentation" class="md-header__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
       
-  <img src="../../assets/InterUSS_horizontal.svg" alt="logo">
+  <img src="../../../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Monitoring
+              With YugabyteDB
             
           </span>
         </div>
@@ -212,9 +212,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="DSS User Documentation" class="md-nav__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
+    <a href="../../.." title="DSS User Documentation" class="md-nav__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
       
-  <img src="../../assets/InterUSS_horizontal.svg" alt="logo">
+  <img src="../../../assets/InterUSS_horizontal.svg" alt="logo">
 
     </a>
     DSS User Documentation
@@ -241,7 +241,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -265,18 +265,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked="">
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -297,7 +299,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -315,7 +317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/" class="md-nav__link">
+      <a href="../../" class="md-nav__link">
         
   
   
@@ -390,7 +392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/" class="md-nav__link">
+      <a href="../../infrastructure/" class="md-nav__link">
         
   
   
@@ -418,7 +420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/aws/" class="md-nav__link">
+      <a href="../../infrastructure/aws/" class="md-nav__link">
         
   
   
@@ -446,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/google/" class="md-nav__link">
+      <a href="../../infrastructure/google/" class="md-nav__link">
         
   
   
@@ -474,7 +476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/minikube/" class="md-nav__link">
+      <a href="../../infrastructure/minikube/" class="md-nav__link">
         
   
   
@@ -507,18 +509,20 @@
                 
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked="">
         
           
           <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
@@ -539,7 +543,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -557,7 +561,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/pooling/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -585,7 +589,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/pooling/crdb/" class="md-nav__link">
+      <a href="../crdb/" class="md-nav__link">
         
   
   
@@ -610,10 +614,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../deployment/pooling/yugabyte/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With YugabyteDB
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -629,6 +660,320 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#certificates-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificates management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Certificates management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick start guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick start guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#single-dss-instance-in-minikube" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single DSS instance in minikube`
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pool-of-3-dss-instances-in-minikube-in-namespace-default-ns2-and-ns3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pool of 3 DSS instances in minikube, in namespace default, ns2 and ns3
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-cluster-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --cluster-context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-namespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --namespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-nodes-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --nodes-count
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apply" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        apply
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regenerate-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        regenerate-nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destroy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        destroy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-into-a-yugabytedb-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment into a YugabyteDB pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment into a YugabyteDB pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First instance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#joining-an-existing-pool-with-a-new-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Joining an existing pool with a new instance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -696,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/" class="md-nav__link">
+      <a href="../../services/" class="md-nav__link">
         
   
   
@@ -724,7 +1069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/after-terraform/" class="md-nav__link">
+      <a href="../../services/after-terraform/" class="md-nav__link">
         
   
   
@@ -752,7 +1097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/to-minikube/" class="md-nav__link">
+      <a href="../../services/to-minikube/" class="md-nav__link">
         
   
   
@@ -780,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/support/" class="md-nav__link">
+      <a href="../../services/support/" class="md-nav__link">
         
   
   
@@ -863,7 +1208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/verification/" class="md-nav__link">
+      <a href="../../verification/" class="md-nav__link">
         
   
   
@@ -903,20 +1248,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked="">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -937,7 +1280,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -955,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../../operations/" class="md-nav__link">
         
   
   
@@ -983,7 +1326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cleanup/" class="md-nav__link">
+      <a href="../../../operations/cleanup/" class="md-nav__link">
         
   
   
@@ -1008,37 +1351,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Monitoring
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -1054,154 +1370,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#grafana-prometheus-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grafana / Prometheus stack
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#grafana-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grafana access
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#prometheus-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus access
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-federation-multi-cluster-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus Federation (Multi Cluster Monitoring)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Prometheus Federation (Multi Cluster Monitoring)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#externally-exposing-prometheus" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Externally Exposing Prometheus
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#deploy-global-prometheus-instance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Deploy "Global Prometheus" instance
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opentelemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpenTelemetry
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="OpenTelemetry">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tracing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tracing
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1214,7 +1382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../healthchecks/" class="md-nav__link">
+      <a href="../../../operations/healthchecks/" class="md-nav__link">
         
   
   
@@ -1242,7 +1410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../../operations/performance/" class="md-nav__link">
         
   
   
@@ -1270,7 +1438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../database-migrations/" class="md-nav__link">
+      <a href="../../../operations/database-migrations/" class="md-nav__link">
         
   
   
@@ -1298,7 +1466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrades/" class="md-nav__link">
+      <a href="../../../operations/upgrades/" class="md-nav__link">
         
   
   
@@ -1326,7 +1494,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../crdb-upgrades/" class="md-nav__link">
+      <a href="../../../operations/crdb-upgrades/" class="md-nav__link">
         
   
   
@@ -1354,7 +1522,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../kubernetes-upgrades/" class="md-nav__link">
+      <a href="../../../operations/kubernetes-upgrades/" class="md-nav__link">
         
   
   
@@ -1382,7 +1550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pooling/" class="md-nav__link">
+      <a href="../../../operations/pooling/" class="md-nav__link">
         
   
   
@@ -1410,7 +1578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1492,7 +1660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/" class="md-nav__link">
+      <a href="../../../decommissioning/" class="md-nav__link">
         
   
   
@@ -1520,7 +1688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/depooling-crdb/" class="md-nav__link">
+      <a href="../../../decommissioning/depooling-crdb/" class="md-nav__link">
         
   
   
@@ -1548,7 +1716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/depooling-yugabyte/" class="md-nav__link">
+      <a href="../../../decommissioning/depooling-yugabyte/" class="md-nav__link">
         
   
   
@@ -1576,7 +1744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/terraform/" class="md-nav__link">
+      <a href="../../../decommissioning/terraform/" class="md-nav__link">
         
   
   
@@ -1604,7 +1772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../decommissioning/minikube/" class="md-nav__link">
+      <a href="../../../decommissioning/minikube/" class="md-nav__link">
         
   
   
@@ -1686,7 +1854,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/" class="md-nav__link">
+      <a href="../../../background/" class="md-nav__link">
         
   
   
@@ -1714,7 +1882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/architecture/" class="md-nav__link">
+      <a href="../../../background/architecture/" class="md-nav__link">
         
   
   
@@ -1742,7 +1910,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/authentication/" class="md-nav__link">
+      <a href="../../../background/authentication/" class="md-nav__link">
         
   
   
@@ -1770,7 +1938,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/sizing/" class="md-nav__link">
+      <a href="../../../background/sizing/" class="md-nav__link">
         
   
   
@@ -1798,7 +1966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/pooling/" class="md-nav__link">
+      <a href="../../../background/pooling/" class="md-nav__link">
         
   
   
@@ -1826,7 +1994,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/pooling-yugabyte/" class="md-nav__link">
+      <a href="../../../background/pooling-yugabyte/" class="md-nav__link">
         
   
   
@@ -1854,7 +2022,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../background/pooling-crdb/" class="md-nav__link">
+      <a href="../../../background/pooling-crdb/" class="md-nav__link">
         
   
   
@@ -1909,33 +2077,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#certificates-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        Certificates management
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#grafana-prometheus-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grafana / Prometheus stack
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Grafana / Prometheus stack">
+    <nav class="md-nav" aria-label="Certificates management">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grafana-access" class="md-nav__link">
+  <a href="#introduction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grafana access
+        Introduction
       
     </span>
   </a>
@@ -1943,10 +2100,33 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#prometheus-access" class="md-nav__link">
+  <a href="#quick-start-guide" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prometheus access
+        Quick start guide
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick start guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#single-dss-instance-in-minikube" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single DSS instance in minikube`
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pool-of-3-dss-instances-in-minikube-in-namespace-default-ns2-and-ns3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pool of 3 DSS instances in minikube, in namespace default, ns2 and ns3
       
     </span>
   </a>
@@ -1957,24 +2137,36 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-federation-multi-cluster-monitoring" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prometheus Federation (Multi Cluster Monitoring)
+        Operations
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Prometheus Federation (Multi Cluster Monitoring)">
+    <nav class="md-nav" aria-label="Operations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#externally-exposing-prometheus" class="md-nav__link">
+  <a href="#common-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Externally Exposing Prometheus
+        Common parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --name
       
     </span>
   </a>
@@ -1982,10 +2174,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#deploy-global-prometheus-instance" class="md-nav__link">
+  <a href="#-organization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploy "Global Prometheus" instance
+        --organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-cluster-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --cluster-context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-namespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --namespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-nodes-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --nodes-count
       
     </span>
   </a>
@@ -1996,24 +2221,12 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#opentelemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpenTelemetry
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="OpenTelemetry">
-      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#metrics" class="md-nav__link">
+  <a href="#init" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Metrics
+        init
       
     </span>
   </a>
@@ -2021,10 +2234,131 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#tracing" class="md-nav__link">
+  <a href="#apply" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tracing
+        apply
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regenerate-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        regenerate-nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-pool-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get-pool-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get-ca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destroy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        destroy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-into-a-yugabytedb-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment into a YugabyteDB pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment into a YugabyteDB pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First instance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#joining-an-existing-pool-with-a-new-instance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Joining an existing pool with a new instance
       
     </span>
   </a>
@@ -2061,7 +2395,7 @@
   
   
     <li class="md-path__item">
-      <a href="../.." class="md-path__link">
+      <a href="../../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Getting Started
@@ -2079,10 +2413,28 @@
     
     
       <li class="md-path__item">
+        <a href="../../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Deploy a DSS instance
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Operate a DSS instance
+    Pooling
   </span>
 
         </a>
@@ -2101,7 +2453,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/operations/monitoring.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/deployment/pooling/yugabyte.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -2110,172 +2462,180 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/operations/monitoring.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/deployment/pooling/yugabyte.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">¶</a></h1>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¶</a></h2>
-<p>Some of these <a href="../../deployment/services/#prerequisites">tools</a> are required to interact with monitoring services.</p>
-<h2 id="grafana-prometheus-stack">Grafana / Prometheus stack<a class="headerlink" href="#grafana-prometheus-stack" title="Permanent link">¶</a></h2>
-<p>When enabled, an instance of Grafana and Prometheus are deployed along with the
-core DSS services; this combination allows you to view (Grafana) metrics
-(collected by Prometheus).</p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_grafana_stack.png" data-desc-position="bottom"><img alt="Monitoring stack diagram" src="../../assets/generated/prometheus_grafana_stack.png"></a></p>
-<p>This can be enabled via:</p>
+<h1 id="pooling-configuration-with-yugabytedb">Pooling configuration with YugabyteDB<a class="headerlink" href="#pooling-configuration-with-yugabytedb" title="Permanent link">¶</a></h1>
+<h2 id="certificates-management">Certificates management<a class="headerlink" href="#certificates-management" title="Permanent link">¶</a></h2>
+<h3 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">¶</a></h3>
+<p>The <code>dss-certs.py</code> helps you manage the set of certificates used for your DSS deployment.</p>
+<p>Should this DSS beeing part of a pool, the script also provide some helpers to manage the set of CA certificates in the pool.</p>
+<p>To run the script, just run <code>./dss-certs.py</code>. The python script don't require any dependencies, just a recent version of python 3.</p>
+<h3 id="quick-start-guide">Quick start guide<a class="headerlink" href="#quick-start-guide" title="Permanent link">¶</a></h3>
+<h4 id="single-dss-instance-in-minikube">Single DSS instance in minikube`<a class="headerlink" href="#single-dss-instance-in-minikube" title="Permanent link">¶</a></h4>
 <ul>
-<li>The <code>enable_monitoring</code> option in terraform</li>
-<li>The <code>monitoring.enabled</code> option in helm</li>
-<li>By using tanka, which always enables it</li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default init</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default apply</code></li>
 </ul>
-<p>By default, DSS metrics are not enabled; see below, OpenTelemetry section, to activate them.</p>
-<h3 id="grafana-access">Grafana access<a class="headerlink" href="#grafana-access" title="Permanent link">¶</a></h3>
-<p>To access the Grafana interface, first ensure that the appropriate
-cluster context is selected (<code>kubectl config current-context</code>). Then, run the
-following command:</p>
-<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>grafana<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="m">3000</span>
-</code></pre></div></td></tr></tbody></table></div>
-<p>While that command is running, open a browser and navigate to
-<a href="http://localhost:3000">http://localhost:3000</a>.</p>
-<p>The default username is <code>admin</code> with a default password of <code>admin</code> if using tanka, or a random value in a kubernetes secret named <code>&lt;release&gt;-grafana</code> if using helm charts.</p>
-<p>Example to retrieve the secret in a default 'dss' release:</p>
-<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>kubectl<span class="w"> </span>get<span class="w"> </span>secrets/dss-grafana<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s2">"{.data.admin-password}"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d
-</code></pre></div></td></tr></tbody></table></div>
-<p>Click the magnifying glass on the left side to select a dashboard to view.</p>
-<h3 id="prometheus-access">Prometheus access<a class="headerlink" href="#prometheus-access" title="Permanent link">¶</a></h3>
-<p>Prometheus access is protected by a client certificate. If you need to access the web interface, you will need to import a valid client certificate in your browser.</p>
+<h4 id="pool-of-3-dss-instances-in-minikube-in-namespace-default-ns2-and-ns3">Pool of 3 DSS instances in minikube, in namespace <code>default</code>, <code>ns2</code> and <code>ns3</code><a class="headerlink" href="#pool-of-3-dss-instances-in-minikube-in-namespace-default-ns2-and-ns3" title="Permanent link">¶</a></h4>
+<ul>
+<li>Creation of the 3 DSS instances certificates</li>
+<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default init</code></li>
+<li><code>./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 init</code></li>
+<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace ns3 init</code></li>
+<li>Copy instance 2 and 3 CA certificates to the instance 1</li>
+<li><code>./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca</code></li>
+<li><code>./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca</code></li>
+<li>Reuse instance compiled 1 CA and copy it to instance 2 and 3.</li>
+<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default get-pool-ca | ./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 add-pool-ca</code></li>
+<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default get-pool-ca | ./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 add-pool-ca</code></li>
+<li>Application of certificates in respective clusters</li>
+<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default apply</code></li>
+<li><code>./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 apply</code></li>
+<li><code>./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 apply</code></li>
+</ul>
+<div class="admonition roll out restart required">
+<p class="admonition-title">Roll</p>
+</div>
+<h3 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">¶</a></h3>
+<h4 id="common-parameters">Common parameters<a class="headerlink" href="#common-parameters" title="Permanent link">¶</a></h4>
+<h5 id="-name"><code>--name</code><a class="headerlink" href="#-name" title="Permanent link">¶</a></h5>
+<p>The name of your DSS instance, that should identify it in a unique way. Used as main identifier for the set of certificates and in certificates.</p>
+<p>Example: <code>dss-west-1</code></p>
+<h5 id="-organization"><code>--organization</code><a class="headerlink" href="#-organization" title="Permanent link">¶</a></h5>
+<p>The name of the organization managing the DSS Instance. Used in certificates generation. The combination of (name, organization) shall be unique in a cluster.</p>
+<p>Example: <code>Interuss</code></p>
+<h5 id="-cluster-context"><code>--cluster-context</code><a class="headerlink" href="#-cluster-context" title="Permanent link">¶</a></h5>
+<p>The kubernetes context the script should use.</p>
+<p>Example: <code>dss-local-cluster</code></p>
+<h5 id="-namespace"><code>--namespace</code><a class="headerlink" href="#-namespace" title="Permanent link">¶</a></h5>
+<p>The kubernetes namespace to use.</p>
+<p>Example: <code>default</code></p>
+<h5 id="-nodes-count"><code>--nodes-count</code><a class="headerlink" href="#-nodes-count" title="Permanent link">¶</a></h5>
+<p>The number of yugabyte nodes of your DSS instance. Default to <code>3</code>.</p>
+<h4 id="init"><code>init</code><a class="headerlink" href="#init" title="Permanent link">¶</a></h4>
+<p>Initializes the certificates for a new DSS instance including a CA, a client certificate and a certificate for each yugabyte node.</p>
+<h4 id="apply"><code>apply</code><a class="headerlink" href="#apply" title="Permanent link">¶</a></h4>
+<p>Apply the current set of certificates to the kubernetes cluster. Shall be ran after each modification of the certificates, like addition / removal of CA in the pool, new <code>nodes-count</code> parameter.</p>
+<h4 id="regenerate-nodes"><code>regenerate-nodes</code><a class="headerlink" href="#regenerate-nodes" title="Permanent link">¶</a></h4>
+<p>Generate missing nodes certificates. Useful if you want to add new nodes in your DSS Instance. Don't forget to set the <code>nodes-count</code> parameters.</p>
+<h4 id="add-pool-ca"><code>add-pool-ca</code><a class="headerlink" href="#add-pool-ca" title="Permanent link">¶</a></h4>
+<p>Add a CA certificate(s) of another(s) DSS Instance to the set of trusted certificates.
+Existing certificates are not added again.</p>
+<p>You can set the file with certificate(s) with <code>--ca-file</code> or use stdin.</p>
+<p>Don't forget to use the <code>apply</code> command to update certificate on your kubernetes cluster.</p>
+<p>Examples:</p>
+<ul>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default add-pool-ca &lt; /tmp/new-dss-ca</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default --ca-file /tmp/new-dss-ca add-pool-ca</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default get-pool-ca | ./dss-certs.py --name test2 --cluster-context dss-local-cluster --namespace namespace2 add-pool-ca</code></li>
+</ul>
+<h4 id="remove-pool-ca"><code>remove-pool-ca</code><a class="headerlink" href="#remove-pool-ca" title="Permanent link">¶</a></h4>
+<p>Remove CA certificate(s) of DSS Instance(s) from the set of trusted certificates.
+Unknown certificates are not removed again.</p>
+<p>You can set the file with certificate(s) with <code>--ca-file</code>, use stdin or use <code>--ca-serial</code> to specify the serial / name of the certificate you want to remove.</p>
+<p>Don't forget to use the <code>apply</code> command to update certificate on your kubernetes cluster.</p>
+<p>Example:</p>
+<ul>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default remove-pool-ca &lt; /tmp/old-dss-ca</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default --ca-file /tmp/old-dss-ca remove-pool-ca</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default remove-pool-ca --ca-serial="SN=830ECFB0, O=generic-dss-organization, CN=CA.test"</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default remove-pool-ca --ca-serial="830ECFB0</code></li>
+<li><code>./dss-certs.py --name test --cluster-context dss-local-cluster --namespace default remove-pool-ca --ca-serial="46548B7CC9699A7CFA54FF8FA85A619E830ECFB0</code></li>
+</ul>
+<h4 id="list-pool-ca"><code>list-pool-ca</code><a class="headerlink" href="#list-pool-ca" title="Permanent link">¶</a></h4>
+<p>List the set of accepted CA certificates.</p>
+<p>Also display a 'hash' of CA serial, that you may use to compare other DSS Instances list of CA certificates easily.</p>
+<h4 id="get-pool-ca"><code>get-pool-ca</code><a class="headerlink" href="#get-pool-ca" title="Permanent link">¶</a></h4>
+<p>Return all CA certificate in the current pool.</p>
+<p>Can be used for debugging or to synchronize the set of CA certificates in a pool with others USS.</p>
+<h4 id="get-ca"><code>get-ca</code><a class="headerlink" href="#get-ca" title="Permanent link">¶</a></h4>
+<p>Return your own CA certificate .</p>
+<p>Display the compiled CA certificate. Can be used for debugging or to synchronize the set of CA certificates in a pool with others USS.</p>
+<h4 id="destroy"><code>destroy</code><a class="headerlink" href="#destroy" title="Permanent link">¶</a></h4>
+<p>Destroy a certificate set. Be careful, there are no way to undo the command.</p>
+<h2 id="deployment-into-a-yugabytedb-pool">Deployment into a YugabyteDB pool<a class="headerlink" href="#deployment-into-a-yugabytedb-pool" title="Permanent link">¶</a></h2>
+<h3 id="first-instance">First instance<a class="headerlink" href="#first-instance" title="Permanent link">¶</a></h3>
+<p>Use <a href="#certificates-management"><code>dss-certs.py</code> script</a> to create certificates for the Yugabyte nodes in this DSS instance.</p>
+<p>Each DSS instance must set <code>yugabyte_external_nodes</code> with the list of each
+others DSS instance Yugabyte master nodes public endpoints, and CA certificates
+must be exchanged.</p>
+<p>It's possible to have one DSS instance as starting point. In that case,
+<code>yugabyte_external_nodes</code> will be empty and no CA exchange is needed.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>For day to day usage, you don't need to access Prometheus, use Grafana instead. This is only useful for debugging.</p>
+<p>Quick reminder for CA management:</p>
+<p>Each DSS instance should use <code>./dss-certs.sh init</code> To get the CA that should
+be sent to others instances, use <code>./dss-certs.sh get-ca</code> To import the CA of
+others DSS instance, use <code>./dss-certs.sh add-pool-ca</code> Finally, apply
+certificates on the kubernetes cluster with <code>./dss-certs.sh apply</code></p>
 </div>
-<p>To build a pkcs12 file from a valid client certificate (use a random password):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="yugabyte" name="__tabbed_1" type="radio"><input id="cockroachdb" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="yugabyte">Yugabyte</label><label for="cockroachdb">CockroachDB</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>openssl pkcs12 -export -inkey deploy/operations/certificates-management/workspace/demo/clients/client.grafana.key -in deploy/operations/certificates-management/workspace/demo/clients/client.grafana.crt  -out /tmp/cert_key.p12
-</code></pre></div></td></tr></tbody></table></div>
-</div>
-<div class="tabbed-block">
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>openssl pkcs12 -export -inkey build/workspace/demo/client_certs_dir/client.grafana.key -in build/workspace/demo/client_certs_dir/client.grafana.crt -out /tmp/cert_key.p12
-</code></pre></div></td></tr></tbody></table></div>
-</div>
-</div>
-</div>
-<hr>
-<p>Then import this file as client certificate in your browser.</p>
-<ul>
-<li>Firefox: Preferences &gt; Privacy &amp; Security &gt; View Certificates &gt; Your Certificates &gt; Import</li>
-<li>Chrome: Privacy and security &gt; Security &gt; Manage Certificates &gt; Import</li>
-</ul>
-<p>Next time you access the interface, select the certificate you just imported.</p>
-<h2 id="prometheus-federation-multi-cluster-monitoring">Prometheus Federation (Multi Cluster Monitoring)<a class="headerlink" href="#prometheus-federation-multi-cluster-monitoring" title="Permanent link">¶</a></h2>
-<p><a href="https://prometheus.io/docs/prometheus/latest/federation/">Prometheus Federation</a>
-enables you to easily monitor multiple clusters of the DSS that you operate,
-unifying all the metrics into a single Prometheus instance where you can build
-Grafana Dashboards. Enabling Prometheus Federation is optional.</p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/prometheus_federation.png" data-desc-position="bottom"><img alt="Federation stack diagram" src="../../assets/generated/prometheus_federation.png"></a></p>
-<p>To enable it, you need to do two things:</p>
-<ol>
-<li>Externally expose the Prometheus service of the DSS clusters.</li>
-<li>Deploy a "Global Prometheus" instance to unify metrics.</li>
-</ol>
-<h3 id="externally-exposing-prometheus">Externally Exposing Prometheus<a class="headerlink" href="#externally-exposing-prometheus" title="Permanent link">¶</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="terraform-managed" name="__tabbed_2" type="radio"><input id="helm-managed" name="__tabbed_2" type="radio"><input id="tanka-managed" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="terraform-managed">Terraform managed</label><label for="helm-managed">Helm managed</label><label for="tanka-managed">Tanka managed</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<ol>
-<li>Set the option <code>prometheus_hostname</code> to the value of the public hostname that will be used to access your instance.</li>
-<li>Apply changes as usual, first by running terraform, and then tanka or helm</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<ol>
-<li>Set <code>monitoring.externalService.enabled</code> to <code>true</code></li>
-<li>[Optional] Set <code>monitoring.externalService.ip</code> set to a static external IP</li>
-<li>[Optional] Set <code>monitoring.externalService.subnet</code> if you use AWS.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<ol>
-<li>Set <code>expose_external</code> to <code>true</code></li>
-<li>[Optional] Supply a static external IP Address to <code>IP</code></li>
-</ol>
-</div>
-</div>
-</div>
-<h3 id="deploy-global-prometheus-instance">Deploy "Global Prometheus" instance<a class="headerlink" href="#deploy-global-prometheus-instance" title="Permanent link">¶</a></h3>
-<ol>
-<li>Follow guide to deploy Prometheus https://prometheus.io/docs/introduction/first_steps/</li>
-<li>The scrape rules for this global instance will scrape other prometheus <code>/federate</code> endpoints and are rather simple, please look at the <a href="https://prometheus.io/docs/prometheus/latest/federation/#configuring-federation">example configuration</a> as a starting point.</li>
-<li>
-<p>You will need to enable a client certificate, as this is used to protect the endpoint.</p>
-<ul>
-<li>This uses the same CAs in a cluster. You can use any generated certificate with all Prometheus instances in a cluster.</li>
-<li>Copy the private (<code>client.grafana.key</code>), public (<code>client.grafana.crt</code>), and CA (<code>ca.crt</code>) keys and make them available to your Prometheus instance, next to the config. Folders are:</li>
-</ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="yugabyte_1" name="__tabbed_3" type="radio"><input id="cockroachdb_1" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="yugabyte_1">Yugabyte</label><label for="cockroachdb_1">CockroachDB</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p><code>deploy/operations/certificates-management/workspace/demo/clients/</code></p>
-</div>
-<div class="tabbed-block">
-<p><code>build/workspace/demo/client_certs_dir/</code></p>
-</div>
-</div>
-</div>
-</li>
-</ol>
-<ol start="4"><li>Add encryption to your config:
-
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
-<span class="normal"><a href="#__codelineno-4-2">2</a></span>
-<span class="normal"><a href="#__codelineno-4-3">3</a></span>
-<span class="normal"><a href="#__codelineno-4-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>tls_config:
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a>    ca_file:   ca.pem
-<a id="__codelineno-4-3" name="__codelineno-4-3"></a>    cert_file: client.grafana.crt
-<a id="__codelineno-4-4" name="__codelineno-4-4"></a>    key_file:  client.grafana.key
-</code></pre></div></td></tr></tbody></table></div>
-
-</li></ol>
-
-<h2 id="opentelemetry">OpenTelemetry<a class="headerlink" href="#opentelemetry" title="Permanent link">¶</a></h2>
-<p><a href="https://opentelemetry.io/">OpenTelemetry</a> is an open-source observability framework for cloud-native software.</p>
-<p>You can enable it on the DSS server to get:</p>
-<ul>
-<li>Tracing for all queries</li>
-<li>A Prometheus endpoint with some metrics</li>
-</ul>
-<p>Currently, thoses settings are not yet available in Terraform, Helm or Tanka.</p>
+<p>Ensure placement info is how you want it. See the section below for placement
+requirements.</p>
+<h3 id="joining-an-existing-pool-with-a-new-instance">Joining an existing pool with a new instance<a class="headerlink" href="#joining-an-existing-pool-with-a-new-instance" title="Permanent link">¶</a></h3>
+<p>When a new SS instance
+will be joining an existing cluster, they will need to request all CAs that
+the pool is currently using (any one member of the pool may provide it). The
+joining USS will also need a list of Yugabyte node addresses.</p>
+<p>The joining USS must create his own CA with <code>./dss-certs.sh init</code> and retrieve
+it with <code>./dss-certs.sh get-ca</code>. This certificate must be provided to each
+existing DSS instance in the pool that will import it with <code>./dss-certs.sh
+add-pool-ca</code> and <code>./dss-certs.sh apply</code>.</p>
+<p>One of existing DSS instance shall provide to the joining USS all existing
+certificate, using <code>./dss-certs.sh get-pool-ca</code>. The joining USS can import them
+with <code>./dss-certs.sh add-pool-ca</code> and finally apply certificates with
+<code>./dss-certs.sh apply</code>. As an alternative, each DSS instance can provide its
+individual CA.</p>
+<p>Participants shall ensure they work with a coherent set of certificate by
+comparing the pool CA hash. It is displayed after adding certificates or using
+the <code>./dss-certs.sh list-pool-ca</code>.</p>
+<p>When CAs have been exchanged and configured everywhere, the joining participant
+can bring his system online (e.g. by applying helm charts onto his cluster). The
+<code>yugabyte_external_nodes</code> setting shall be set <strong>before</strong> starting the Yugabyte
+cluster.</p>
+<p>New nodes shall be allowed into the cluster. For each new Yugabyte master node,
+the following command shall be run on one master node of one existing DSS
+instance :</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>By default, when metrics are enabled, the metrics service listens on all addresses.</p>
+<p>The <code>master_addresses</code> in all commands below must include the Yugabyte master
+leader. Either always run commands in the cluster with the leader, or list all
+public addresses.</p>
 </div>
-<h3 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">¶</a></h3>
-<p>Use flag <code>--enable_metrics</code> to enable metrics.</p>
-<p>Point any Prometheus server to the endpoint (by default on port 8079).</p>
-<p>You can use the <code>--metrics_addr</code> flag to change the listening port and address.</p>
-<p>A dashboard is automatically deployed by Helm and Tanka. If you use you own grafana instance, it can be found <a href="https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/dss.json">there</a>.</p>
-<p>You can use the <code>enable_dss_metrics</code> option in Terraform, <code>dss.conf.enableDssMetrics</code> in Helm, or <code>enableDssMetrics</code> in Tanka to activate it when using these.
-This will also automatically enable collection by Prometheus if used.</p>
-<h3 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">¶</a></h3>
-<p>Use flag <code>--enable_tracing</code> to enable tracing.</p>
-<p>Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include <a href="https://www.jaegertracing.io/">Jaeger</a>, <a href="https://github.com/openobserve/openobserve">OpenObserve</a>, <a href="https://grafana.com/docs/tempo/latest/">Grafana Tempo</a>, and <a href="https://github.com/SigNoz/signoz">SigNoz</a>. Multiple SaaS solutions are also available (including some of the previously mentioned tools).</p>
-<p>You need to use the <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> environment variable to configure it. Point it toward your server by following its specific documentation.</p>
-<p><a href="https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/">Other variables for telemetry</a> (and <a href="https://opentelemetry.io/docs/languages/sdk-configuration/general/">variables in general</a>) supported by the Go language are available as well if needed.</p>
-<p>For local debugging, enable the <code>with-monitoring</code> profile in the standalone
-Docker Compose deployment:</p>
-<div class="language-bash highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="nv">COMPOSE_PROFILES</span><span class="o">=</span>with-monitoring<span class="w"> </span>./build/dev/run_locally.sh
-</code></pre></div></td></tr></tbody></table></div>
-<p>This enables DSS metrics and tracing and starts Prometheus, Grafana, and Jaeger.
-Grafana is available at http://localhost:3000 with the DSS dashboard already
-configured (use <code>admin</code> for both the username and password), Prometheus is
-available at http://localhost:9090, and Jaeger is available at
-http://localhost:16686.</p>
-<p>See the <a href="https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md#monitoring">standalone local instance documentation</a>
-for more details.</p>
+<ol>
+<li>
+<p>Connection to a master node:</p>
+<p><code>kubectl exec -it yb-master-0 -- sh</code></p>
+</li>
+<li>
+<p>Addition of a new master node</p>
+<p><code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 change_master_config ADD_SERVER [PUBLIC HOSTNAME] 7100</code></p>
+</li>
+</ol>
+<p>The last command can be repeated as needed, however a small delay is needed for
+the cluster to settle when adding a new node. If you get <code>Leader is not ready
+for Config Change, can try again</code>, just try again.</p>
+<p>You should have all masters listed in the web ui or using the
+<code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_masters</code>
+command.</p>
+<p>The tserver nodes will join automatically, using the list of provided master
+nodes. They can be listed for confirmation in the web ui or using the
+<code>yb-admin -certs_dir_name /opt/certs/yugabyte/ -client_node_name=`hostname -f` -master_addresses yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100 list_all_tablet_servers</code>
+command.</p>
+<p>The pool should then be re-verified for functionality
+by running the prober test on each DSS instance, and the
+<a href="https://github.com/interuss/monitoring/blob/main/monitoring/uss_qualifier/scenarios/astm/netrid/v19/dss_interoperability.md">interoperability test scenario</a>
+on the full pool (including the newly-added instance).</p>
+<p>Finally, the joining USS should provide its Yugabyte node addresses to all other
+participants in the pool, and each other participant should add those addresses
+to the <code>yugabyte_external_nodes</code> list their Yugabyte nodes will attempt to
+contact upon restart.</p>
+<p>Ensure placement info is how you want it. See the section below for placement
+requirements.</p>
 
 
 
@@ -2296,7 +2656,7 @@ for more details.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 22, 2026 02:49:15 UTC">September 22, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 8, 2026 16:34:22 UTC">January 8, 2026</span>
   </span>
 
     
@@ -2328,7 +2688,7 @@ for more details.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../cleanup/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Database cleanup">
+          <a href="../crdb/" class="md-footer__link md-footer__link--prev" aria-label="Previous: With CockroachDB">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2338,20 +2698,20 @@ for more details.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Database cleanup
+                With CockroachDB
               </div>
             </div>
           </a>
         
         
           
-          <a href="../healthchecks/" class="md-footer__link md-footer__link--next" aria-label="Next: Health checks">
+          <a href="../../services/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Health checks
+                Overview
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2406,12 +2766,12 @@ for more details.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
-        <script src="../../assets/checkbox.js"></script>
+        <script src="../../../assets/checkbox.js"></script>
       
     
   

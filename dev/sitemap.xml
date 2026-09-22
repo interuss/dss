@@ -2,90 +2,154 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://interuss.github.io/dss/dev/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/deployment_checklist/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/documentation_design/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/architecture/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/architecture/sizing/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/architecture/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/infrastructure/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/authentication/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/infrastructure/aws/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/pooling-crdb/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/infrastructure/google-manual/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/pooling-yugabyte/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/infrastructure/google/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/pooling/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/infrastructure/minikube/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/background/sizing/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/depooling-crdb/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/depooling-yugabyte/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/minikube/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/terraform/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/infrastructure/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/infrastructure/aws/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/infrastructure/google/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/infrastructure/minikube/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/pooling/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/pooling/crdb/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/pooling/yugabyte/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/services/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/services/after-terraform/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/services/support/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/services/to-minikube/</loc>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/verification/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/</loc>
-         <lastmod>2026-09-17</lastmod>
-    </url>
-    <url>
-         <loc>https://interuss.github.io/dss/dev/operations/authentication/</loc>
-         <lastmod>2026-09-17</lastmod>
-    </url>
-    <url>
-         <loc>https://interuss.github.io/dss/dev/operations/certificates-management/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/cleanup/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/operations/crdb-upgrades/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/database-migrations/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/healthchecks/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/operations/migrations/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/operations/kubernetes-upgrades/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/monitoring/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
-         <loc>https://interuss.github.io/dss/dev/operations/performances/</loc>
-         <lastmod>2026-09-17</lastmod>
-    </url>
-    <url>
-         <loc>https://interuss.github.io/dss/dev/operations/pooling-crdb/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <loc>https://interuss.github.io/dss/dev/operations/performance/</loc>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/pooling/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/troubleshooting/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/operations/upgrades/</loc>
-         <lastmod>2026-09-17</lastmod>
+         <lastmod>2026-09-22</lastmod>
     </url>
 </urlset>

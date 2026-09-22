@@ -5,13 +5,13 @@
       
       
       
-        <link rel="canonical" href="https://interuss.github.io/dss/dev/operations/troubleshooting/">
+        <link rel="canonical" href="https://interuss.github.io/dss/dev/deployment/pooling/">
       
       
-        <link rel="prev" href="../pooling/">
+        <link rel="prev" href="../infrastructure/minikube/">
       
       
-        <link rel="next" href="../../decommissioning/">
+        <link rel="next" href="crdb/">
       
       
         
@@ -22,7 +22,7 @@
     
     
       
-        <title>Troubleshooting - DSS User Documentation</title>
+        <title>Overview - DSS User Documentation</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#troubleshooting" class="md-skip">
+        <a href="#pooling-for-deployment" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Troubleshooting
+              Overview
             
           </span>
         </div>
@@ -265,18 +265,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked="">
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -297,7 +299,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -315,7 +317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -390,7 +392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/" class="md-nav__link">
+      <a href="../infrastructure/" class="md-nav__link">
         
   
   
@@ -418,7 +420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/aws/" class="md-nav__link">
+      <a href="../infrastructure/aws/" class="md-nav__link">
         
   
   
@@ -446,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/google/" class="md-nav__link">
+      <a href="../infrastructure/google/" class="md-nav__link">
         
   
   
@@ -474,7 +476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/infrastructure/minikube/" class="md-nav__link">
+      <a href="../infrastructure/minikube/" class="md-nav__link">
         
   
   
@@ -507,18 +509,20 @@
                 
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked="">
         
           
           <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
@@ -539,7 +543,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -554,10 +558,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../deployment/pooling/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -573,6 +604,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#data-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data stores
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -585,7 +647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/pooling/crdb/" class="md-nav__link">
+      <a href="crdb/" class="md-nav__link">
         
   
   
@@ -613,7 +675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/pooling/yugabyte/" class="md-nav__link">
+      <a href="yugabyte/" class="md-nav__link">
         
   
   
@@ -696,7 +758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/" class="md-nav__link">
+      <a href="../services/" class="md-nav__link">
         
   
   
@@ -724,7 +786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/after-terraform/" class="md-nav__link">
+      <a href="../services/after-terraform/" class="md-nav__link">
         
   
   
@@ -752,7 +814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/to-minikube/" class="md-nav__link">
+      <a href="../services/to-minikube/" class="md-nav__link">
         
   
   
@@ -780,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/services/support/" class="md-nav__link">
+      <a href="../services/support/" class="md-nav__link">
         
   
   
@@ -863,7 +925,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/verification/" class="md-nav__link">
+      <a href="../verification/" class="md-nav__link">
         
   
   
@@ -903,20 +965,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked="">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -937,7 +997,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -955,7 +1015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../operations/" class="md-nav__link">
         
   
   
@@ -983,7 +1043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cleanup/" class="md-nav__link">
+      <a href="../../operations/cleanup/" class="md-nav__link">
         
   
   
@@ -1011,7 +1071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
+      <a href="../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -1039,7 +1099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../healthchecks/" class="md-nav__link">
+      <a href="../../operations/healthchecks/" class="md-nav__link">
         
   
   
@@ -1067,7 +1127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../operations/performance/" class="md-nav__link">
         
   
   
@@ -1095,7 +1155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../database-migrations/" class="md-nav__link">
+      <a href="../../operations/database-migrations/" class="md-nav__link">
         
   
   
@@ -1123,7 +1183,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrades/" class="md-nav__link">
+      <a href="../../operations/upgrades/" class="md-nav__link">
         
   
   
@@ -1151,7 +1211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../crdb-upgrades/" class="md-nav__link">
+      <a href="../../operations/crdb-upgrades/" class="md-nav__link">
         
   
   
@@ -1179,7 +1239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../kubernetes-upgrades/" class="md-nav__link">
+      <a href="../../operations/kubernetes-upgrades/" class="md-nav__link">
         
   
   
@@ -1207,7 +1267,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pooling/" class="md-nav__link">
+      <a href="../../operations/pooling/" class="md-nav__link">
         
   
   
@@ -1232,37 +1292,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Troubleshooting
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../operations/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1278,98 +1311,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#check-if-the-cockroachdb-service-is-exposed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Check if the CockroachDB service is exposed
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-cockroachdb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a CockroachDB SQL terminal
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-the-cockroachdb-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the CockroachDB web UI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using the CockroachDB web UI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-user-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create a user account
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the web UI
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-yugabytedb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a YugabyteDB SQL terminal
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1853,71 +1794,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#check-if-the-cockroachdb-service-is-exposed" class="md-nav__link">
+  <a href="#data-stores" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Check if the CockroachDB service is exposed
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-cockroachdb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a CockroachDB SQL terminal
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-the-cockroachdb-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the CockroachDB web UI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using the CockroachDB web UI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-a-user-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create a user account
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-web-ui" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the web UI
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#accessing-a-yugabytedb-sql-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accessing a YugabyteDB SQL terminal
+        Data stores
       
     </span>
   </a>
@@ -1970,7 +1850,25 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Operate a DSS instance
+    Deploy a DSS instance
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Pooling
   </span>
 
         </a>
@@ -1989,7 +1887,7 @@
 
 
   
-    <a href="https://github.com/interuss/dss/edit/master/docs/operations/troubleshooting.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/interuss/dss/edit/master/docs/deployment/pooling/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1998,56 +1896,27 @@
     
       
     
-    <a href="https://github.com/interuss/dss/raw/master/docs/operations/troubleshooting.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/interuss/dss/raw/master/docs/deployment/pooling/index.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
     </a>
   
 
 
-<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">¶</a></h1>
-<h2 id="check-if-the-cockroachdb-service-is-exposed">Check if the CockroachDB service is exposed<a class="headerlink" href="#check-if-the-cockroachdb-service-is-exposed" title="Permanent link">¶</a></h2>
-<p>Unless specified otherwise in a deployment configuration, CockroachDB
-communicates on port 26257.  To check whether this port is open from Mac or
-Linux, e.g.: <code>nc -zvw3 0.db.dss.your-region.your-domain.com 26257</code>.  Or, search
-for a "port checker" web page/app.  Port 26257 will be open on a working
-CockroachDB node.</p>
-<p>A standard TLS diagnostic may also be run on this hostname:port combination and
-all results should be valid except Trust.  Certificates are signed by
-"Cockroach CA" which is not a generally-trusted CA, but this is ok.</p>
-<h2 id="accessing-a-cockroachdb-sql-terminal">Accessing a CockroachDB SQL terminal<a class="headerlink" href="#accessing-a-cockroachdb-sql-terminal" title="Permanent link">¶</a></h2>
-<p>To interact with the CockroachDB database directly via SQL terminal:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
-<span class="normal"><a href="#__codelineno-0-2">2</a></span>
-<span class="normal"><a href="#__codelineno-0-3">3</a></span>
-<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>kubectl \
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>  cockroachdb-0 -- \
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>  ./cockroach sql --certs-dir=cockroach-certs/
-</code></pre></div></td></tr></tbody></table></div>
-<h2 id="using-the-cockroachdb-web-ui">Using the CockroachDB web UI<a class="headerlink" href="#using-the-cockroachdb-web-ui" title="Permanent link">¶</a></h2>
-<p>The CockroachDB web UI is not exposed publicly, but you can forward a port to
-your local machine using kubectl:</p>
-<h3 id="create-a-user-account">Create a user account<a class="headerlink" href="#create-a-user-account" title="Permanent link">¶</a></h3>
-<p>Pick a username and create an account:</p>
-<p>Access the <a href="#accessing-a-cockroachdb-sql-terminal">CockrachDB SQL terminal</a> then create user with sql command</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>root@:26257/rid&gt; CREATE USER foo WITH PASSWORD 'foobar';
-</code></pre></div></td></tr></tbody></table></div>
-<h3 id="access-the-web-ui">Access the web UI<a class="headerlink" href="#access-the-web-ui" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>kubectl -n $NAMESPACE port-forward cockroachdb-0 8080
-</code></pre></div></td></tr></tbody></table></div>
-<p>Then go to https://localhost:8080. You'll have to ignore the HTTPS certificate
-warning.</p>
-<h2 id="accessing-a-yugabytedb-sql-terminal">Accessing a YugabyteDB SQL terminal<a class="headerlink" href="#accessing-a-yugabytedb-sql-terminal" title="Permanent link">¶</a></h2>
-<p>To interact with the YugabyteDB database directly via SQL terminal:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
-<span class="normal"><a href="#__codelineno-1-2">2</a></span>
-<span class="normal"><a href="#__codelineno-1-3">3</a></span>
-<span class="normal"><a href="#__codelineno-1-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>kubectl \
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a>  --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it \
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a>  yb-tserver-0 -- \
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a>  ysqlsh "host=/tmp/.yb.0.0.0.0:5433 user=yugabyte dbname=postgres"
-</code></pre></div></td></tr></tbody></table></div>
+<h1 id="pooling-for-deployment">Pooling for deployment<a class="headerlink" href="#pooling-for-deployment" title="Permanent link">¶</a></h1>
+<p>Before <a href="../services/">services</a> can be deployed to the
+<a href="../infrastructure/">infrastructure</a> of a DSS instance, the pool that the DSS
+instance will create or join must be defined.  This section describes how to
+define that pooling configuration.  See
+<a href="../../background/pooling/">pooling background documentation</a> for a
+conceptual overview.</p>
+<h2 id="data-stores">Data stores<a class="headerlink" href="#data-stores" title="Permanent link">¶</a></h2>
+<p>The pooling procedure differs depending on data store used by the DSS
+instance:</p>
+<ul>
+<li><a href="crdb/">CockroachDB pooling</a></li>
+<li><a href="yugabyte/">YugabyteDB pooling</a></li>
+</ul>
 
 
 
@@ -2068,7 +1937,7 @@ warning.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 2, 2026 08:50:33 UTC">June 2, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 22, 2026 02:49:15 UTC">September 22, 2026</span>
   </span>
 
     
@@ -2100,7 +1969,7 @@ warning.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="../pooling/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pooling">
+          <a href="../infrastructure/minikube/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Minikube">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2110,20 +1979,20 @@ warning.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Pooling
+                Minikube
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../decommissioning/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="crdb/" class="md-footer__link md-footer__link--next" aria-label="Next: With CockroachDB">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                With CockroachDB
               </div>
             </div>
             <div class="md-footer__button md-icon">
