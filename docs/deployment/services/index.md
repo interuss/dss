@@ -45,35 +45,43 @@ docker registry service, or you can set up your own.
 
 To build these images locally and, optionally, push them to a docker registry:
 
-1. Set the environment variable `DOCKER_URL` to your docker registry url
-endpoint.
+=== "Google Cloud"
+    1. Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
 
-    -   For Google Cloud, `DOCKER_URL` should be set similarly to as described
-        [here](https://cloud.google.com/container-registry/docs/pushing-and-pulling#tag_the_local_image_with_the_registry_name),
-        like `gcr.io/your-project-id` (do not include the image name;
-        it will be appended by the build script)
+        1. `DOCKER_URL` should be set similarly to as described
+           [here](https://cloud.google.com/container-registry/docs/pushing-and-pulling#tag_the_local_image_with_the_registry_name),
+           like `gcr.io/your-project-id` (do not include the image name;
+           it will be appended by the build script)
 
-    -   For Amazon Web Services, `DOCKER_URL` should be set similarly to as described
-        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html),
-        like `${aws_account_id}.dkr.ecr.${region}.amazonaws.com/` (do not include the image name;
-        it will be appended by the build script)
+    1. Ensure you are logged into your docker registry service.
 
-1. Ensure you are logged into your docker registry service.
+        1. [These](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
+           are the recommended instructions (`gcloud auth configure-docker`).
+           Ensure that
+           [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control).
 
-    -   For Google Cloud,
-        [these](https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper)
-        are the recommended instructions (`gcloud auth configure-docker`).
-        Ensure that
-        [appropriate permissions are enabled](https://cloud.google.com/container-registry/docs/access-control).
+    1. Use the [`build.sh` script](https://github.com/interuss/dss/blob/master/build/build.sh) to build and push
+       an image tagged with the current date and git commit hash.
 
-    -   For Amazon Web Services, create a private repository by following the instructions
-        [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html), then login
-        as described [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
+    1. Note the VAR_* value printed at the end of the script.
 
-1. Use the [`build.sh` script](https://github.com/interuss/dss/blob/master/build/build.sh) in this directory to build and push
-   an image tagged with the current date and git commit hash.
+=== "Amazon Web Services"
+    1. Set the environment variable `DOCKER_URL` to your docker registry url endpoint.
+        1. `DOCKER_URL` should be set similarly to as described
+           [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html),
+           like `${aws_account_id}.dkr.ecr.${region}.amazonaws.com/` (do not include the image name;
+           it will be appended by the build script)
 
-1. Note the VAR_* value printed at the end of the script.
+    1. Ensure you are logged into your docker registry service.
+
+        1. Create a private repository by following the instructions
+           [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html), then login
+           as described [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
+
+    1. Use the [`build.sh` script](https://github.com/interuss/dss/blob/master/build/build.sh) to build and push
+       an image tagged with the current date and git commit hash.
+
+    1. Note the VAR_* value printed at the end of the script.
 
 ### Access to private repository
 

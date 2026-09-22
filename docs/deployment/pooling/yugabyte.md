@@ -160,8 +160,8 @@ requirements.
 
 ### Joining an existing pool with a new instance
 
-They
-will be joining an existing cluster, and they will need to request all CAs that
+When a new SS instance
+will be joining an existing cluster, they will need to request all CAs that
 the pool is currently using (any one member of the pool may provide it). The
 joining USS will also need a list of Yugabyte node addresses.
 

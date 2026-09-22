@@ -93,7 +93,7 @@ following those instructions.
 
 ### Joining an existing pool with new instance
 A USS wishing to join an existing pool (of perhaps just one instance following
-the prior section) should follow [the deployment instructions](index.md).  They
+normal CRDB pooling) should follow [the deployment instructions](index.md).  They
 will be joining an existing cluster, and they will need to request the ca.crt
 that the pool is currently using (any one member of the pool may provide it).
 The joining USS will also need a list of node addresses to which they should

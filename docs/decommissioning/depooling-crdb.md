@@ -1,4 +1,4 @@
-## Leaving a pool
+# Leaving a pool
 
 In an event that requires removing CockroachDB nodes we need to properly and
 safely decommission to reduce risks of outages.

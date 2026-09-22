@@ -10,5 +10,5 @@ This section contains the instructions and related material used to operate a de
 - [DSS upgrades](upgrades.md)
 - [CockroachDB version upgrades](crdb-upgrades.md)
 - [Kubernetes upgrades](kubernetes-upgrades.md)
-- [Leaving a pool](pooling.md)
+- [Pooling](pooling.md)
 - [Troubleshooting](troubleshooting.md)
