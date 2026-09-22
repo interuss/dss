@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	saveOwnMetadata consensus.RequestType = "saveOwnMetadata"
-	getDSSMetadata  consensus.RequestType = "getDSSMetadata"
-	recordHeartbeat consensus.RequestType = "recordHeartbeat"
+	saveOwnMetadata consensus.RequestType[any]                      = "saveOwnMetadata"
+	getDSSMetadata  consensus.RequestType[[]*auxmodels.DSSMetadata] = "getDSSMetadata"
+	recordHeartbeat consensus.RequestType[any]                      = "recordHeartbeat"
 )
 
 // repo is a full implementation of aux_.repos.Repository for Raft-based storage.
@@ -53,7 +53,7 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
-	case saveOwnMetadata:
+	case string(saveOwnMetadata):
 		var payload saveOwnMetadataPayload
 		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", saveOwnMetadata)
@@ -61,10 +61,10 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 		return nil, r.Store.GetRepo().SaveOwnMetadata(ctx, payload.Locality, payload.PublicEndpoint)
 
-	case getDSSMetadata:
+	case string(getDSSMetadata):
 		return r.Store.GetRepo().GetDSSMetadata(ctx)
 
-	case recordHeartbeat:
+	case string(recordHeartbeat):
 		var heartbeat auxmodels.Heartbeat
 		if err := json.Unmarshal(proposal.Value, &heartbeat); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", recordHeartbeat)

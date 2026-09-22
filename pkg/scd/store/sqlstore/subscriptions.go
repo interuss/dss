@@ -269,7 +269,7 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 }
 
 // Implements SubscriptionStore.SearchSubscriptions
-func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -285,19 +285,12 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 				LIMIT $4`, subscriptionFieldsWithPrefix)
 	)
 
-	// TODO: Lazily calculate & cache spatial covering so that it is only ever
-	// computed once on a particular Volume4D
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, nil
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime, dssmodels.MaxResultLimit)
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime, dssmodels.MaxResultLimit)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
@@ -305,10 +298,10 @@ func (c *repo) SearchSubscriptions(ctx context.Context, v4d *dssmodels.Volume4D)
 	return subscriptions, nil
 }
 
-// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in v4d that
+// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in cellsVolume that
 // want operational intent notifications, increments their notification index and returns
 // them with the new index..
-func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 
 	var query string
 
@@ -347,21 +340,17 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 
 	}
 
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, nil
 	}
-	return c.fetchSubscriptions(ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
+	return c.fetchSubscriptions(ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 
 }
 
-// IncrementNotificationIndicesForConstraints finds the Subscriptions in v4d that want
+// IncrementNotificationIndicesForConstraints finds the Subscriptions in cellsVolume that want
 // constraint notifications, increments their notification index and returns them with the
 // new index.
-func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 
 	var query string
 
@@ -400,16 +389,12 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, v
 
 	}
 
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-	if len(cells) == 0 {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, nil
 	}
 
 	return c.fetchSubscriptions(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cells), v4d.StartTime, v4d.EndTime)
+		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 }
 
 // lockStripes is the number of rows of the scd_locks table used by the hash lock option, cells

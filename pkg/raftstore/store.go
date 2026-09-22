@@ -72,7 +72,7 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 	}
-	return s.Consensus.HandleClientRequest(ctx, consensus.RequestType(request.OperationID()), payload, handler.IsReadOnly)
+	return s.Consensus.HandleClientRequest(ctx, consensus.RequestType[any](request.OperationID()), payload, handler.IsReadOnly)
 }
 
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
@@ -113,11 +113,16 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
 			proposalCtx = locality.NewContext(proposalCtx, commit.Prop.Locality)
 			proposalCtx = random.NewContext(proposalCtx, commit.Prop.Seed)
-			s.raftRepo.Checkpoint()
+			// Read-only proposals don't mutate state so checkpoint and restore are unnecessary.
+			if !commit.Prop.ReadOnly {
+				s.raftRepo.Checkpoint()
+			}
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			if err != nil {
-				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", string(commit.Prop.RequestType)), zap.Error(err))
-				s.raftRepo.Restore()
+				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", commit.Prop.RequestType), zap.Error(err))
+				if !commit.Prop.ReadOnly {
+					s.raftRepo.Restore()
+				}
 			}
 			commit.Done <- consensus.ProposalResult{Result: result, Error: err}
 		}

@@ -78,7 +78,7 @@ type SearchIdentificationServiceAreasRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const SearchIdentificationServiceAreasOperationID = "SearchIdentificationServiceAreas"
+const SearchIdentificationServiceAreasOperationID = "rid.SearchIdentificationServiceAreas"
 
 func (request *SearchIdentificationServiceAreasRequest) OperationID() string {
 	return SearchIdentificationServiceAreasOperationID
@@ -112,7 +112,7 @@ type GetIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetIdentificationServiceAreaOperationID = "GetIdentificationServiceArea"
+const GetIdentificationServiceAreaOperationID = "rid.GetIdentificationServiceArea"
 
 func (request *GetIdentificationServiceAreaRequest) OperationID() string {
 	return GetIdentificationServiceAreaOperationID
@@ -152,7 +152,7 @@ type CreateIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateIdentificationServiceAreaOperationID = "CreateIdentificationServiceArea"
+const CreateIdentificationServiceAreaOperationID = "rid.CreateIdentificationServiceArea"
 
 func (request *CreateIdentificationServiceAreaRequest) OperationID() string {
 	return CreateIdentificationServiceAreaOperationID
@@ -200,7 +200,7 @@ type UpdateIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateIdentificationServiceAreaOperationID = "UpdateIdentificationServiceArea"
+const UpdateIdentificationServiceAreaOperationID = "rid.UpdateIdentificationServiceArea"
 
 func (request *UpdateIdentificationServiceAreaRequest) OperationID() string {
 	return UpdateIdentificationServiceAreaOperationID
@@ -242,7 +242,7 @@ type DeleteIdentificationServiceAreaRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteIdentificationServiceAreaOperationID = "DeleteIdentificationServiceArea"
+const DeleteIdentificationServiceAreaOperationID = "rid.DeleteIdentificationServiceArea"
 
 func (request *DeleteIdentificationServiceAreaRequest) OperationID() string {
 	return DeleteIdentificationServiceAreaOperationID
@@ -281,7 +281,7 @@ type SearchSubscriptionsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const SearchSubscriptionsOperationID = "SearchSubscriptions"
+const SearchSubscriptionsOperationID = "rid.SearchSubscriptions"
 
 func (request *SearchSubscriptionsRequest) OperationID() string {
 	return SearchSubscriptionsOperationID
@@ -315,7 +315,7 @@ type GetSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetSubscriptionOperationID = "GetSubscription"
+const GetSubscriptionOperationID = "rid.GetSubscription"
 
 func (request *GetSubscriptionRequest) OperationID() string { return GetSubscriptionOperationID }
 
@@ -353,7 +353,7 @@ type CreateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateSubscriptionOperationID = "CreateSubscription"
+const CreateSubscriptionOperationID = "rid.CreateSubscription"
 
 func (request *CreateSubscriptionRequest) OperationID() string { return CreateSubscriptionOperationID }
 
@@ -400,7 +400,7 @@ type UpdateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateSubscriptionOperationID = "UpdateSubscription"
+const UpdateSubscriptionOperationID = "rid.UpdateSubscription"
 
 func (request *UpdateSubscriptionRequest) OperationID() string { return UpdateSubscriptionOperationID }
 
@@ -441,7 +441,7 @@ type DeleteSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteSubscriptionOperationID = "DeleteSubscription"
+const DeleteSubscriptionOperationID = "rid.DeleteSubscription"
 
 func (request *DeleteSubscriptionRequest) OperationID() string { return DeleteSubscriptionOperationID }
 
