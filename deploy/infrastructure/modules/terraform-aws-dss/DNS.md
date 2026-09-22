@@ -1,3 +1,3 @@
-# Setup DNS
+# terraform-aws-dss
 
-This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss/dev/infrastructure/aws).
+This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss/dev/deployment/infrastructure/aws).

@@ -1,3 +1,3 @@
-# Setup DNS
+# terraform-google-dss
 
-This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss/dev/infrastructure/google).
+This documentation has been moved to [interuss.github.io/dss](https://interuss.github.io/dss/dev/deployment/infrastructure/google).
