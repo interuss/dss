@@ -46,9 +46,16 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case string(getISA), string(deleteISA), string(insertISA), string(updateISA), string(searchISAs), string(listExpiredISAs), string(countISAs):
+		return r.applyISA(ctx, proposal)
+
+	case string(getSubscription), string(deleteSubscription), string(insertSubscription), string(updateSubscription), string(searchSubscriptions),
+		string(searchSubscriptionsByOwner), string(updateNotificationIdxsInCells), string(maxSubscriptionCountInCellsByOwner),
+		string(listExpiredSubscriptions), string(countSubscriptions):
+		return r.applySubscription(ctx, proposal)
 
 	default:
-		handler, ok := operations.Registry[string(proposal.RequestType)]
+		handler, ok := operations.Registry[proposal.RequestType]
 		if !ok {
 			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
 		}

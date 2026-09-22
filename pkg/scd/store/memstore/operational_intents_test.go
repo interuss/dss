@@ -62,24 +62,24 @@ func TestSearchOperationalIntents(t *testing.T) {
 	_, err := r.UpsertOperationalIntent(ctx, sampleOperationalIntent())
 	require.NoError(t, err)
 
-	res, err := r.SearchOperationalIntents(ctx, volume4D(cells, nil, nil, nil, nil))
+	res, err := r.SearchOperationalIntents(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 
 	// Altitude window entirely above the operational intent excludes it.
 	var lo float32 = 200
-	res, err = r.SearchOperationalIntents(ctx, volume4D(cells, nil, nil, &lo, nil))
+	res, err = r.SearchOperationalIntents(ctx, cellsVolume4D(cells, nil, nil, &lo, nil))
 	require.NoError(t, err)
 	require.Empty(t, res)
 
 	// Altitude window entirely below the operational intent excludes it.
 	var hi float32 = 10
-	res, err = r.SearchOperationalIntents(ctx, volume4D(cells, nil, nil, nil, &hi))
+	res, err = r.SearchOperationalIntents(ctx, cellsVolume4D(cells, nil, nil, nil, &hi))
 	require.NoError(t, err)
 	require.Empty(t, res)
 
-	// Missing footprint is a bad request.
-	_, err = r.SearchOperationalIntents(ctx, &dssmodels.Volume4D{})
+	// Missing cells is a bad request.
+	_, err = r.SearchOperationalIntents(ctx, &dssmodels.CellsVolume4D{})
 	require.Error(t, err)
 }
 

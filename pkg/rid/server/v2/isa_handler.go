@@ -11,6 +11,9 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	apiv2 "github.com/interuss/dss/pkg/rid/models/api/v2"
+	"github.com/interuss/dss/pkg/rid/operations"
+	"github.com/interuss/dss/pkg/rid/repos"
+	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -66,27 +69,22 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
+	url := string(req.Body.UssBaseUrl)
 	if !s.AllowHTTPBaseUrls {
-		err = ridmodels.ValidateURL(string(req.Body.UssBaseUrl))
+		err := ridmodels.ValidateURL(url)
 		if err != nil {
 			return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL"))}}
 		}
 	}
 
-	isa := &ridmodels.IdentificationServiceArea{
-		ID:     id,
-		URL:    string(req.Body.UssBaseUrl),
-		Owner:  dssmodels.Owner(*req.Auth.ClientID),
-		Writer: s.Locality,
-	}
-
-	if err := isa.SetExtents(extents); err != nil {
+	payload, err := operations.NewPutISAPayload(restapi.CreateIdentificationServiceAreaOperationID, id, dssmodels.Owner(*req.Auth.ClientID), url, nil, extents)
+	if err != nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
+			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not insert ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -101,10 +99,10 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv2.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.CreateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
-		ServiceArea: *apiv2.ToIdentificationServiceArea(insertedISA),
+		ServiceArea: *apiv2.ToIdentificationServiceArea(result.ISA),
 		Subscribers: &apiSubscribers,
 	}}
 }
@@ -132,6 +130,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing required USS base URL"))}}
 	}
+
 	extents, err := apiv2.FromVolume4D(&req.Body.Extents)
 	if err != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
@@ -143,20 +142,13 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	isa := &ridmodels.IdentificationServiceArea{
-		ID:      id,
-		URL:     string(req.Body.UssBaseUrl),
-		Owner:   dssmodels.Owner(*req.Auth.ClientID),
-		Version: version,
-		Writer:  s.Locality,
-	}
-
-	if err := isa.SetExtents(extents); err != nil {
+	payload, err := operations.NewPutISAPayload(restapi.UpdateIdentificationServiceAreaOperationID, id, dssmodels.Owner(*req.Auth.ClientID), string(req.Body.UssBaseUrl), version, extents)
+	if err != nil {
 		return restapi.UpdateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
+			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedISA, subscribers, err := s.App.UpdateISA(ctx, isa)
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not update ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -173,10 +165,10 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv2.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.UpdateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
-		ServiceArea: *apiv2.ToIdentificationServiceArea(insertedISA),
+		ServiceArea: *apiv2.ToIdentificationServiceArea(result.ISA),
 		Subscribers: &apiSubscribers,
 	}}
 }
@@ -190,17 +182,17 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	version, err := dssmodels.VersionFromString(req.Version)
+	_, err := dssmodels.VersionFromString(req.Version)
 	if err != nil {
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
 	}
-	id, err := dssmodels.IDFromString(string(req.Id))
+	_, err = dssmodels.IDFromString(string(req.Id))
 	if err != nil {
 		return restapi.DeleteIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
-	isa, subscribers, err := s.App.DeleteISA(ctx, id, dssmodels.Owner(*req.Auth.ClientID), version)
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, req)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -217,10 +209,10 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv2.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.DeleteIdentificationServiceAreaResponseSet{Response200: &restapi.DeleteIdentificationServiceAreaResponse{
-		ServiceArea: *apiv2.ToIdentificationServiceArea(isa),
+		ServiceArea: *apiv2.ToIdentificationServiceArea(result.ISA),
 		Subscribers: &apiSubscribers,
 	}}
 }
