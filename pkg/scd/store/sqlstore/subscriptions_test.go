@@ -106,7 +106,7 @@ func TestListExpiredSubscriptions(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			threshold := testCase.timeRef.Add(-testCase.ttl)
-			expired, err := r.ListExpiredSubscriptions(ctx, threshold)
+			expired, err := r.ListExpiredSubscriptions(ctx, threshold, 0)
 			require.NoError(t, err)
 
 			expiredIDs := make([]models.ID, 0, len(expired))

@@ -581,9 +581,12 @@ func (c *repo) LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion,
 	return nil
 }
 
-// ListExpiredSubscriptions lists all subscriptions older than the threshold.
-// Their age is determined by their end time, or by their update time if they do not have an end time.
-func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+// ListExpiredSubscriptions lists up to `limit` subscriptions older than the threshold, ordered by
+// ID. A limit of 0 means unlimited.
+// Age is determined by their end time, or by their update time if they do not have an end time.
+func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error) {
+	clause, limitArg := dsssql.LimitClause(limit, 2)
+
 	expiredSubsQuery := fmt.Sprintf(`
         SELECT
             %s
@@ -593,19 +596,52 @@ func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time
             scd_subscriptions.ends_at IS NOT NULL AND scd_subscriptions.ends_at <= $1
             OR
             scd_subscriptions.ends_at IS NULL AND scd_subscriptions.updated_at <= $1 -- use last update time as reference if there is no end time
-        LIMIT $2`, subscriptionFieldsWithPrefix)
+        ORDER BY scd_subscriptions.id
+        %s`, subscriptionFieldsWithPrefix, clause)
 
-	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, expiredSubsQuery,
-		threshold,
-		dssmodels.MaxResultLimit,
-	)
+	args := []interface{}{threshold}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	subscriptions, err := c.fetchSubscriptions(ctx, c.q, expiredSubsQuery, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
 
 	return subscriptions, nil
 
+}
+
+// DeleteExpiredSubscriptions deletes up to `limit` expired subscriptions and returns the deleted subscriptions. A limit of 0 means unlimited.
+// Age is determined by their end time, or by their update time if they do not have an end time.
+func (c *repo) DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error) {
+	clause, limitArg := dsssql.LimitClause(limit, 2)
+
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (
+			SELECT id
+			FROM scd_subscriptions
+			WHERE
+				(ends_at IS NOT NULL AND ends_at <= $1)
+				OR
+				(ends_at IS NULL AND updated_at <= $1)
+			ORDER BY id
+			%s
+		)
+		DELETE FROM scd_subscriptions
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING %s`, clause, subscriptionFieldsWithoutPrefix)
+
+	args := []interface{}{threshold}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	subscriptions, err := c.fetchSubscriptions(ctx, c.q, deleteExpiredQuery, args...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to delete expired Subscriptions")
+	}
+
+	return subscriptions, nil
 }
 
 func (c *repo) CountSubscriptions(ctx context.Context) (int64, error) {

@@ -210,10 +210,12 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 	return r.fetchISAs(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit)
 }
 
-// ListExpiredISAs lists all expired ISAs based on writer.
+// ListExpiredISAs lists up to `limit` expired ISAs based on writer, ordered by ID. A limit of 0
+// means unlimited.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.IdentificationServiceArea, error) {
 	if len(writer) == 0 {
+		clause, limitArg := dssql.LimitClause(limit, 2)
 		isasInCellsQuery := fmt.Sprintf(`
             SELECT
                 %s
@@ -223,10 +225,16 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
                 ends_at <= $1
             AND
                 (writer = '' OR writer IS NULL)
-            LIMIT $2`, isaFields)
-		return r.fetchISAs(ctx, isasInCellsQuery, threshold, dssmodels.MaxResultLimit)
+            ORDER BY id
+            %s`, isaFields, clause)
+		args := []interface{}{threshold}
+		if limitArg != nil {
+			args = append(args, limitArg)
+		}
+		return r.fetchISAs(ctx, isasInCellsQuery, args...)
 	}
 
+	clause, limitArg := dssql.LimitClause(limit, 3)
 	isasInCellsQuery := fmt.Sprintf(`
         SELECT
             %s
@@ -236,8 +244,57 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
             ends_at <= $1
         AND
             writer = $2
-        LIMIT $3`, isaFields)
-	return r.fetchISAs(ctx, isasInCellsQuery, threshold, writer, dssmodels.MaxResultLimit)
+        ORDER BY id
+        %s`, isaFields, clause)
+	args := []interface{}{threshold, writer}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	return r.fetchISAs(ctx, isasInCellsQuery, args...)
+}
+
+// DeleteExpiredISAs deletes up to `limit` expired ISAs based on writer, ordered by ID, and returns
+// the deleted ISAs. A limit of 0 means unlimited.
+func (r *repo) DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.IdentificationServiceArea, error) {
+	if len(writer) == 0 {
+		clause, limitArg := dssql.LimitClause(limit, 2)
+		deleteExpiredQuery := fmt.Sprintf(`
+			WITH expired AS (
+				SELECT id
+				FROM identification_service_areas
+				WHERE ends_at <= $1
+				AND (writer = '' OR writer IS NULL)
+				ORDER BY id
+				%s
+			)
+			DELETE FROM identification_service_areas
+			WHERE id IN (SELECT id FROM expired)
+			RETURNING %s`, clause, isaFields)
+		args := []interface{}{threshold}
+		if limitArg != nil {
+			args = append(args, limitArg)
+		}
+		return r.fetchISAs(ctx, deleteExpiredQuery, args...)
+	}
+
+	clause, limitArg := dssql.LimitClause(limit, 3)
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (
+			SELECT id
+			FROM identification_service_areas
+			WHERE ends_at <= $1
+			AND writer = $2
+			ORDER BY id
+			%s
+		)
+		DELETE FROM identification_service_areas
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING %s`, clause, isaFields)
+	args := []interface{}{threshold, writer}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	return r.fetchISAs(ctx, deleteExpiredQuery, args...)
 }
 
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {

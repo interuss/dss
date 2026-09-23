@@ -333,7 +333,7 @@ func TestListExpiredSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, subOut2)
 
-	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer, fakeClock.Now().Add(-30*time.Minute))
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, writer, fakeClock.Now().Add(-30*time.Minute), 0)
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }
@@ -371,7 +371,7 @@ func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, subOut2)
 
-	subscriptions, err := repo.ListExpiredSubscriptions(ctx, "", fakeClock.Now().Add(-30*time.Minute))
+	subscriptions, err := repo.ListExpiredSubscriptions(ctx, "", fakeClock.Now().Add(-30*time.Minute), 0)
 	require.NoError(t, err)
 	require.Len(t, subscriptions, 1)
 }

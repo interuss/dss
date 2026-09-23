@@ -30,8 +30,12 @@ func (r *repo) GetDependentOperationalIntents(_ context.Context, subscriptionID 
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetDependentOperationalIntents not implemented for raftstore")
 }
 
-func (r *repo) ListExpiredOperationalIntents(_ context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
+func (r *repo) ListExpiredOperationalIntents(_ context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredOperationalIntents not implemented for raftstore")
+}
+
+func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for raftstore")
 }
 
 func (r *repo) CountOperationalIntents(_ context.Context) (int64, error) {

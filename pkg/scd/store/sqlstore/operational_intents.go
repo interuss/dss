@@ -355,9 +355,12 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 	return dependentOps, nil
 }
 
-// ListExpiredOperationalIntents lists all operational intents older than the threshold.
-// Their age is determined by their end time, or by their last update time if they do not have an end time.
-func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
+// ListExpiredOperationalIntents lists up to `limit` operational intents older than the threshold,
+// ordered by ID. A limit of 0 means unlimited.
+// Age is determined by their end time, or by their last update time if they do not have an end time.
+func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error) {
+	clause, limitArg := dsssql.LimitClause(limit, 2)
+
 	expiredOpIntentsQuery := fmt.Sprintf(`
         SELECT
             %s, scd_uss_availability.availability
@@ -369,15 +372,50 @@ func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time
             scd_operations.ends_at IS NOT NULL AND scd_operations.ends_at <= $1
             OR
             scd_operations.ends_at IS NULL AND scd_operations.updated_at <= $1 -- use last update time as reference if there is no end time
-        LIMIT $2`, operationFieldsWithPrefix)
+        ORDER BY scd_operations.id
+        %s`, operationFieldsWithPrefix, clause)
 
-	result, err := s.fetchOperationalIntents(
-		ctx, s.q, expiredOpIntentsQuery,
-		threshold,
-		dssmodels.MaxResultLimit,
-	)
+	args := []interface{}{threshold}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	result, err := s.fetchOperationalIntents(ctx, s.q, expiredOpIntentsQuery, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operations")
+	}
+
+	return result, nil
+}
+
+// DeleteExpiredOperationalIntents deletes up to `limit` expired operational intents and returns the deleted operational intents. A limit of 0 means unlimited.
+// Age is determined by their end time, or by their update time if they do not have an end time.
+func (s *repo) DeleteExpiredOperationalIntents(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error) {
+	clause, limitArg := dsssql.LimitClause(limit, 2)
+
+	// scd_uss_availability isn't joinable from a DELETE...RETURNING, so a NULL is returned in its
+	// place to match the column shape fetchOperationalIntents expects.
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (
+			SELECT id
+			FROM scd_operations
+			WHERE
+				(ends_at IS NOT NULL AND ends_at <= $1)
+				OR
+				(ends_at IS NULL AND updated_at <= $1)
+			ORDER BY id
+			%s
+		)
+		DELETE FROM scd_operations
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING %s, NULL::text`, clause, operationFieldsWithoutPrefix)
+
+	args := []interface{}{threshold}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	result, err := s.fetchOperationalIntents(ctx, s.q, deleteExpiredQuery, args...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error deleting expired Operations")
 	}
 
 	return result, nil
