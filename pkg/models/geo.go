@@ -49,10 +49,12 @@ type Volume3D struct {
 // Geometry models a geometry.
 type Geometry interface {
 	// CalculateCovering returns an s2 cell covering for a geometry.
+	// The returned CellUnion must be sorted.
 	CalculateCovering() (s2.CellUnion, error)
 }
 
-// GeometryFunc is an implementation of Geometry
+// GeometryFunc is an implementation of Geometry.
+// Per the Geometry interface, the wrapped function must return a sorted CellUnion.
 type GeometryFunc func() (s2.CellUnion, error)
 
 type precomputedCellGeometry map[s2.CellID]struct{}
@@ -74,6 +76,12 @@ func (pcg precomputedCellGeometry) CalculateCovering() (s2.CellUnion, error) {
 		result[idx] = id
 		idx++
 	}
+
+	// Geometry.CalculateCovering guarantees a sorted result.
+	// Map iteration order is random so we must sort the result before returning.
+	// We therefore normalize it and then call Levelify to ensure that the covering is at the appropriate level.
+	result.Normalize()
+	geo.Levelify(&result)
 
 	return result, nil
 }
@@ -176,7 +184,7 @@ func (vol4 *Volume4D) CalculateSpatialCovering() (s2.CellUnion, error) {
 	return vol4.SpatialVolume.CalculateCovering()
 }
 
-// CalculateCovering returns the spatial covering of vol3, or one of:
+// CalculateCovering returns the (sorted) spatial covering of vol3, or one of:
 // * geo.ErrMissingFootprint
 // * geo.ErrNotEnoughPointsInPolygon
 // * geo.ErrBadCoordSet
@@ -202,7 +210,7 @@ type GeoCircle struct {
 	RadiusMeter float32
 }
 
-// CalculateCovering returns the spatial covering of gc.
+// CalculateCovering returns the (sorted) spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
 		return nil, geo.ErrBadCoordSet
@@ -230,7 +238,7 @@ type GeoPolygon struct {
 	Vertices []*LatLngPoint
 }
 
-// CalculateCovering returns the spatial covering of gp.
+// CalculateCovering returns the (sorted) spatial covering of gp.
 func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 	var points []s2.Point
 	if gp == nil {
