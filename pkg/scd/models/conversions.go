@@ -17,8 +17,12 @@ const (
 	ReferenceW84      = "W84"
 )
 
+// TODO: remove along with UnionVolumes4DFromSCDRest; CellsVolume4DValidator is its cells-native
+// replacement.
 type Volume4DValidator func(*dssmodels.Volume4D) error
 
+// TODO: remove along with UnionVolumes4DFromSCDRest; WithRequireCellsTimeBounds is its cells-native
+// replacement.
 func WithRequireTimeBounds() Volume4DValidator {
 	return func(v *dssmodels.Volume4D) error {
 		if v.StartTime == nil {
@@ -31,6 +35,8 @@ func WithRequireTimeBounds() Volume4DValidator {
 	}
 }
 
+// TODO: remove along with UnionVolumes4DFromSCDRest; WithRequireCellsEndTimeAfter is its cells-native
+// replacement.
 func WithRequireEndTimeAfter(now time.Time) Volume4DValidator {
 	return func(v *dssmodels.Volume4D) error {
 		if v.EndTime != nil && v.EndTime.Before(now) {
@@ -40,6 +46,8 @@ func WithRequireEndTimeAfter(now time.Time) Volume4DValidator {
 	}
 }
 
+// TODO: remove along with UnionVolumes4DFromSCDRest, once operational intents (its only remaining
+// caller) migrates to the cells-native path.
 func WithRequireAltitudeBounds() Volume4DValidator {
 	return func(v *dssmodels.Volume4D) error {
 		if v.SpatialVolume.AltitudeLo == nil {
@@ -193,6 +201,49 @@ func polygonCellsFromSCDRest(p *restapi.Polygon) (s2.CellUnion, error) {
 	return geo.Covering(points)
 }
 
+type CellsVolume4DValidator func(*dssmodels.CellsVolume4D) error
+
+func WithRequireCellsTimeBounds() CellsVolume4DValidator {
+	return func(v *dssmodels.CellsVolume4D) error {
+		if v.StartTime == nil {
+			return stacktrace.NewError("Missing start time")
+		}
+		if v.EndTime == nil {
+			return stacktrace.NewError("Missing end time")
+		}
+		return nil
+	}
+}
+
+func WithRequireCellsEndTimeAfter(now time.Time) CellsVolume4DValidator {
+	return func(v *dssmodels.CellsVolume4D) error {
+		if v.EndTime != nil && v.EndTime.Before(now) {
+			return stacktrace.NewError("End time may not be in the past")
+		}
+		return nil
+	}
+}
+
+func UnionCellsVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...CellsVolume4DValidator) (*dssmodels.CellsVolume4D, error) {
+	cellsVolumes := make([]*dssmodels.CellsVolume4D, len(vol4s))
+	for idx, vol4 := range vol4s {
+		cellsVolume, err := CellsVolume4DFromSCDRest(&vol4)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
+		}
+		cellsVolumes[idx] = cellsVolume
+	}
+	union := dssmodels.UnionCellsVolumes4D(cellsVolumes...)
+
+	for _, validator := range validators {
+		if err := validator(union); err != nil {
+			return nil, stacktrace.Propagate(err, "Invalid volume union")
+		}
+	}
+
+	return union, nil
+}
+
 // TODO: remove along with UnionVolumes4DFromSCDRest.
 func volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
@@ -310,6 +361,8 @@ func GeoPolygonFromSCDRest(p *restapi.Polygon) *dssmodels.GeoPolygon {
 }
 
 // LatLngPointFromSCDRest converts a point SCD v1 REST model to a latlngpoint
+// TODO: remove along with UnionVolumes4DFromSCDRest; only GeoCircleFromSCDRest/GeoPolygonFromSCDRest
+// call it.
 func LatLngPointFromSCDRest(p *restapi.LatLngPoint) *dssmodels.LatLngPoint {
 	return &dssmodels.LatLngPoint{
 		Lat: float64(p.Lat),
