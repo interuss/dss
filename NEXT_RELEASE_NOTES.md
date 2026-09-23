@@ -49,7 +49,7 @@ The release notes should contain at least the following sections:
 
 ## Important information
 
-* [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 and aligns with the Google deployment. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1 will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
+* [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-Res-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 (aligning with the Google deployment) and restricts TLS 1.2 to AEAD (GCM/ChaCha20) cipher suites. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1, or to CBC cipher suites, will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
 
 ## Minimal database schema version
 
