@@ -33,13 +33,9 @@ func (rec *operationalIntentRecord) toModel() *scdmodels.OperationalIntent {
 		State:          rec.State,
 		OVN:            ovn,
 		PastOVNs:       slices.Clone(rec.PastOVNs),
-		StartTime:      utils.ClonePtr(rec.StartTime),
-		EndTime:        utils.ClonePtr(rec.EndTime),
 		USSBaseURL:     rec.USSBaseURL,
 		SubscriptionID: utils.ClonePtr(rec.SubscriptionID),
-		AltitudeLower:  utils.ClonePtr(rec.AltitudeLower),
-		AltitudeUpper:  utils.ClonePtr(rec.AltitudeUpper),
-		Cells:          slices.Clone(rec.Cells),
+		CellsVolume4D:  rec.CellsVolume4D.Clone(),
 	}
 }
 
@@ -105,16 +101,12 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		Manager:         operation.Manager,
 		Version:         operation.Version,
 		State:           operation.State,
-		StartTime:       utils.ClonePtr(operation.StartTime),
-		EndTime:         utils.ClonePtr(operation.EndTime),
 		USSBaseURL:      operation.USSBaseURL,
 		SubscriptionID:  utils.ClonePtr(operation.SubscriptionID),
-		AltitudeLower:   utils.ClonePtr(operation.AltitudeLower),
-		AltitudeUpper:   utils.ClonePtr(operation.AltitudeUpper),
-		Cells:           slices.Clone(operation.Cells),
 		USSRequestedOVN: ussRequestedOVN,
 		PastOVNs:        slices.Clone(operation.PastOVNs),
 		UpdatedAt:       now,
+		CellsVolume4D:   operation.Clone(),
 	}
 	r.state.OperationalIntents[operation.ID] = rec
 
@@ -125,33 +117,26 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return built[0], nil
 }
 
-func (r *repo) SearchOperationalIntents(ctx context.Context, v4d *dssmodels.Volume4D) ([]*scdmodels.OperationalIntent, error) {
-	if v4d.SpatialVolume == nil || v4d.SpatialVolume.Footprint == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing geospatial footprint for query")
-	}
-	cells, err := v4d.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to calculate footprint covering")
-	}
-	if len(cells) == 0 {
+func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+	if len(cellsVolume.Cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}
 
-	want := cellSet(cells)
+	want := cellSet(cellsVolume.Cells)
 	var matched []*operationalIntentRecord
 	for _, rec := range r.state.OperationalIntents {
-		if !overlaps(rec.Cells, want) {
+		if !overlaps(rec.CellsVolume4D.Cells, want) {
 			continue
 		}
-		// COALESCE(altitude_upper >= $2, true) with $2 = SpatialVolume.AltitudeLo
-		if rec.AltitudeUpper != nil && v4d.SpatialVolume.AltitudeLo != nil && *rec.AltitudeUpper < *v4d.SpatialVolume.AltitudeLo {
+		// COALESCE(altitude_upper >= $2, true) with $2 = cellsVolume.AltitudeLo
+		if rec.CellsVolume4D.AltitudeHi != nil && cellsVolume.AltitudeLo != nil && *rec.CellsVolume4D.AltitudeHi < *cellsVolume.AltitudeLo {
 			continue
 		}
-		// COALESCE(altitude_lower <= $3, true) with $3 = SpatialVolume.AltitudeHi
-		if rec.AltitudeLower != nil && v4d.SpatialVolume.AltitudeHi != nil && *rec.AltitudeLower > *v4d.SpatialVolume.AltitudeHi {
+		// COALESCE(altitude_lower <= $3, true) with $3 = cellsVolume.AltitudeHi
+		if rec.CellsVolume4D.AltitudeLo != nil && cellsVolume.AltitudeHi != nil && *rec.CellsVolume4D.AltitudeLo > *cellsVolume.AltitudeHi {
 			continue
 		}
-		if !overlapsTime(rec.StartTime, rec.EndTime, v4d) {
+		if !overlapsTime(rec.CellsVolume4D.StartTime, rec.CellsVolume4D.EndTime, cellsVolume) {
 			continue
 		}
 		matched = append(matched, rec)

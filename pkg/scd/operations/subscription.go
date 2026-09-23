@@ -3,7 +3,6 @@ package operations
 import (
 	"context"
 
-	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
@@ -90,12 +89,13 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		Manager: dssmodels.Manager(manager),
 		Version: scdmodels.OVN(version),
 
-		StartTime:  extents.StartTime,
-		EndTime:    extents.EndTime,
-		AltitudeLo: extents.SpatialVolume.AltitudeLo,
-		AltitudeHi: extents.SpatialVolume.AltitudeHi,
-		Cells:      cells,
-
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			Cells:      cells,
+			StartTime:  extents.StartTime,
+			EndTime:    extents.EndTime,
+			AltitudeLo: extents.SpatialVolume.AltitudeLo,
+			AltitudeHi: extents.SpatialVolume.AltitudeHi,
+		},
 		USSBaseURL: string(params.UssBaseUrl),
 	}
 	if params.NotifyForOperationalIntents != nil {
@@ -188,16 +188,12 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		// Find relevant Operations
 		var relevantOperations []*scdmodels.OperationalIntent
 		if len(sub.Cells) > 0 {
-			ops, err := repo.SearchOperationalIntents(ctx, &dssmodels.Volume4D{
-				StartTime: sub.StartTime,
-				EndTime:   sub.EndTime,
-				SpatialVolume: &dssmodels.Volume3D{
-					AltitudeLo: sub.AltitudeLo,
-					AltitudeHi: sub.AltitudeHi,
-					Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-						return sub.Cells, nil
-					}),
-				},
+			ops, err := repo.SearchOperationalIntents(ctx, &dssmodels.CellsVolume4D{
+				Cells:      sub.Cells,
+				StartTime:  sub.StartTime,
+				EndTime:    sub.EndTime,
+				AltitudeLo: sub.AltitudeLo,
+				AltitudeHi: sub.AltitudeHi,
 			})
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Could not search Operations in repo")
@@ -218,7 +214,13 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 
 	if sub.NotifyForConstraints {
 		// Query relevant Constraints
-		constraints, err := repo.SearchConstraints(ctx, extents)
+		constraints, err := repo.SearchConstraints(ctx, &dssmodels.CellsVolume4D{
+			Cells:      cells,
+			StartTime:  extents.StartTime,
+			EndTime:    extents.EndTime,
+			AltitudeLo: extents.SpatialVolume.AltitudeLo,
+			AltitudeHi: extents.SpatialVolume.AltitudeHi,
+		})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Could not search Constraints in repo")
 		}
@@ -361,14 +363,14 @@ func executeQuerySubscriptions(ctx context.Context, repo repos.Repository, reque
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
 	}
 
-	// Parse area of interest to common Volume4D
-	vol4, err := scdmodels.Volume4DFromSCDRest(aoi)
+	// Parse area of interest to a cells-native volume
+	cellsVolume, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
 	}
 
 	// Perform search query on Store
-	subs, err := repo.SearchSubscriptions(ctx, vol4)
+	subs, err := repo.SearchSubscriptions(ctx, cellsVolume)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error searching Subscriptions in repo")
 	}

@@ -11,7 +11,6 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
-	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -36,16 +35,12 @@ type state struct {
 // constraintRecord is the gob-serializable representation of a Constraint. The
 // model's OVN is never persisted: it is derived from UpdatedAt on read
 type constraintRecord struct {
-	ID            dssmodels.ID
-	Manager       dssmodels.Manager
-	Version       scdmodels.VersionNumber
-	StartTime     *time.Time
-	EndTime       *time.Time
-	USSBaseURL    string
-	AltitudeLower *float32
-	AltitudeUpper *float32
-	Cells         s2.CellUnion
-	UpdatedAt     time.Time
+	ID         dssmodels.ID
+	Manager    dssmodels.Manager
+	Version    scdmodels.VersionNumber
+	USSBaseURL string
+	Volume     *dssmodels.CellsVolume4D
+	UpdatedAt  time.Time
 }
 
 // subscriptionRecord is the gob-serializable representation of a Subscription.
@@ -72,16 +67,12 @@ type operationalIntentRecord struct {
 	Manager         dssmodels.Manager
 	Version         scdmodels.VersionNumber
 	State           scdmodels.OperationalIntentState
-	StartTime       *time.Time
-	EndTime         *time.Time
 	USSBaseURL      string
 	SubscriptionID  *dssmodels.ID
-	AltitudeLower   *float32
-	AltitudeUpper   *float32
-	Cells           s2.CellUnion
 	USSRequestedOVN string
 	PastOVNs        []scdmodels.OVN
 	UpdatedAt       time.Time
+	CellsVolume4D   *dssmodels.CellsVolume4D
 }
 
 // availabilityRecord is the gob-serializable representation of a
@@ -123,15 +114,6 @@ func cellSet(cells s2.CellUnion) map[s2.CellID]struct{} {
 	return set
 }
 
-// coveringSet builds a lookup set from the spatial covering of a volume.
-func coveringSet(v4d *dssmodels.Volume4D) (map[s2.CellID]struct{}, error) {
-	cells, err := v4d.CalculateSpatialCovering()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not calculate spatial covering")
-	}
-	return cellSet(cells), nil
-}
-
 // overlaps reports whether any cell is present in set (equivalent to the SQL
 // "cells && $x" array-overlap operator).
 func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
@@ -143,13 +125,13 @@ func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
 	return false
 }
 
-// overlapsTime reports whether the [start, end] interval of a record intersects the one of v4d
+// overlapsTime reports whether the [start, end] interval of a record intersects the one of cellsVolume
 // (equivalent to the SQL "COALESCE(starts_at <= $end, true) AND COALESCE(ends_at >= $start, true)").
-func overlapsTime(start, end *time.Time, v4d *dssmodels.Volume4D) bool {
-	if start != nil && v4d.EndTime != nil && start.After(*v4d.EndTime) { // TODO: Don't allow startup to be null, see #1492
+func overlapsTime(start, end *time.Time, cellsVolume *dssmodels.CellsVolume4D) bool {
+	if start != nil && cellsVolume.EndTime != nil && start.After(*cellsVolume.EndTime) { // TODO: Don't allow startup to be null, see #1492
 		return false
 	}
-	if end != nil && v4d.StartTime != nil && end.Before(*v4d.StartTime) { // TODO: Don't allow endtime to be null, see #1492
+	if end != nil && cellsVolume.StartTime != nil && end.Before(*cellsVolume.StartTime) { // TODO: Don't allow endtime to be null, see #1492
 		return false
 	}
 	return true
@@ -164,7 +146,7 @@ func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime }
 
 func (rec *subscriptionRecord) lastUpdate() time.Time { return rec.UpdatedAt }
 
-func (rec *operationalIntentRecord) endTime() *time.Time { return rec.EndTime }
+func (rec *operationalIntentRecord) endTime() *time.Time { return rec.CellsVolume4D.EndTime }
 
 func (rec *operationalIntentRecord) lastUpdate() time.Time { return rec.UpdatedAt }
 
@@ -192,11 +174,7 @@ func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time
 
 func (rec *constraintRecord) clone() *constraintRecord {
 	cp := *rec
-	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = utils.ClonePtr(rec.StartTime)
-	cp.EndTime = utils.ClonePtr(rec.EndTime)
-	cp.AltitudeLower = utils.ClonePtr(rec.AltitudeLower)
-	cp.AltitudeUpper = utils.ClonePtr(rec.AltitudeUpper)
+	cp.Volume = rec.Volume.Clone()
 	return &cp
 }
 
@@ -210,13 +188,9 @@ func (rec *subscriptionRecord) clone() *subscriptionRecord {
 
 func (rec *operationalIntentRecord) clone() *operationalIntentRecord {
 	cp := *rec
-	cp.Cells = slices.Clone(rec.Cells)
 	cp.PastOVNs = slices.Clone(rec.PastOVNs)
-	cp.StartTime = utils.ClonePtr(rec.StartTime)
-	cp.EndTime = utils.ClonePtr(rec.EndTime)
 	cp.SubscriptionID = utils.ClonePtr(rec.SubscriptionID)
-	cp.AltitudeLower = utils.ClonePtr(rec.AltitudeLower)
-	cp.AltitudeUpper = utils.ClonePtr(rec.AltitudeUpper)
+	cp.CellsVolume4D = rec.CellsVolume4D.Clone()
 	return &cp
 }
 

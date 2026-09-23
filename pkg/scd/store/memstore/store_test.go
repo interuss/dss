@@ -48,12 +48,8 @@ func sampleConstraint() *scdmodels.Constraint {
 		ID:            constraintId,
 		Manager:       manager,
 		Version:       1,
-		StartTime:     &startTime,
-		EndTime:       &endTime,
 		USSBaseURL:    "https://dummy.uss",
-		AltitudeLower: &altLow,
-		AltitudeUpper: &altHigh,
-		Cells:         cells,
+		CellsVolume4D: cellsVolume4D(cells, &startTime, &endTime, &altLow, &altHigh),
 	}
 }
 
@@ -65,9 +61,7 @@ func sampleSubscription() *scdmodels.Subscription {
 		USSBaseURL:                  "https://dummy.uss",
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        true,
-		StartTime:                   &startTime,
-		EndTime:                     &endTime,
-		Cells:                       cells,
+		CellsVolume4D:               cellsVolume4D(cells, &startTime, &endTime, nil, nil),
 	}
 }
 
@@ -78,13 +72,9 @@ func sampleOperationalIntent() *scdmodels.OperationalIntent {
 		Manager:        manager,
 		Version:        1,
 		State:          scdmodels.OperationalIntentStateAccepted,
-		StartTime:      &startTime,
-		EndTime:        &endTime,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sid,
-		AltitudeLower:  &altLow,
-		AltitudeUpper:  &altHigh,
-		Cells:          cells,
+		CellsVolume4D:  cellsVolume4D(cells, &startTime, &endTime, &altLow, &altHigh),
 	}
 }
 
@@ -95,18 +85,14 @@ func sampleAvailability() *scdmodels.UssAvailabilityStatus {
 	}
 }
 
-// volume4D builds a Volume4D whose footprint covers the provided cells.
-func volume4D(cu s2.CellUnion, start, end *time.Time, altLo, altHi *float32) *dssmodels.Volume4D {
-	return &dssmodels.Volume4D{
-		StartTime: start,
-		EndTime:   end,
-		SpatialVolume: &dssmodels.Volume3D{
-			AltitudeLo: altLo,
-			AltitudeHi: altHi,
-			Footprint: dssmodels.GeometryFunc(func() (s2.CellUnion, error) {
-				return cu, nil
-			}),
-		},
+// cellsVolume4D builds a SpatialTemporalcellsVolume covering the provided cells.
+func cellsVolume4D(cu s2.CellUnion, start, end *time.Time, altLo, altHi *float32) *dssmodels.CellsVolume4D {
+	return &dssmodels.CellsVolume4D{
+		Cells:      cu,
+		StartTime:  start,
+		EndTime:    end,
+		AltitudeLo: altLo,
+		AltitudeHi: altHi,
 	}
 }
 
@@ -154,7 +140,7 @@ func TestCheckpointIsolatesNotificationIndex(t *testing.T) {
 	r.Checkpoint()
 
 	// In-place notification-index bump must not leak into the checkpoint.
-	bumped, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, volume4D(cells, nil, nil, nil, nil))
+	bumped, err := r.IncrementNotificationIndicesForOperationalIntents(ctx, cellsVolume4D(cells, nil, nil, nil, nil))
 	require.NoError(t, err)
 	require.Len(t, bumped, 1)
 	require.Equal(t, sub.NotificationIndex+1, bumped[0].NotificationIndex)

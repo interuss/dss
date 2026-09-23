@@ -23,37 +23,43 @@ var (
 		ID:                          sub1ID,
 		NotificationIndex:           1,
 		Manager:                     "unittest",
-		StartTime:                   &start1,
-		EndTime:                     &end1,
 		USSBaseURL:                  "https://dummy.uss",
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		Cells:                       cells,
+		CellsVolume4D: &models.CellsVolume4D{
+			StartTime: &start1,
+			EndTime:   &end1,
+			Cells:     cells,
+		},
 	}
 	sub2 = &scdmodels.Subscription{
 		ID:                          sub2ID,
 		NotificationIndex:           1,
 		Manager:                     "unittest",
-		StartTime:                   &start2,
-		EndTime:                     &end2,
 		USSBaseURL:                  "https://dummy.uss",
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		Cells:                       cells,
+		CellsVolume4D: &models.CellsVolume4D{
+			StartTime: &start2,
+			EndTime:   &end2,
+			Cells:     cells,
+		},
 	}
 	sub3 = &scdmodels.Subscription{
 		ID:                          sub3ID,
 		NotificationIndex:           1,
 		Manager:                     "unittest",
-		StartTime:                   &start3,
-		EndTime:                     &end3,
 		USSBaseURL:                  "https://dummy.uss",
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		Cells:                       cells,
+		CellsVolume4D: &models.CellsVolume4D{
+			StartTime: &start3,
+			EndTime:   &end3,
+			Cells:     cells,
+		},
 	}
 )
 
