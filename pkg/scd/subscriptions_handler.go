@@ -6,9 +6,9 @@ import (
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
@@ -25,11 +25,12 @@ func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	if err := a.validatePutSubscriptionParams(req.Subscriptionid, req.Body); err != nil {
+	payload, err := operations.NewCreateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Body, a.AllowHTTPBaseUrls)
+	if err != nil {
 		return restapi.CreateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
 	}
 
-	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.PutSubscriptionResponse](ctx, a.Store, req)
+	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.PutSubscriptionResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -60,11 +61,12 @@ func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
-	if err := a.validatePutSubscriptionParams(req.Subscriptionid, req.Body); err != nil {
+	payload, err := operations.NewUpdateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Version, req.Body, a.AllowHTTPBaseUrls)
+	if err != nil {
 		return restapi.UpdateSubscriptionResponseSet{Response400: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}}
 	}
 
-	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.PutSubscriptionResponse](ctx, a.Store, req)
+	res, err := dssstore.TransactWithResult[repos.Repository, *restapi.PutSubscriptionResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not put subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -82,50 +84,6 @@ func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 	}
 
 	return restapi.UpdateSubscriptionResponseSet{Response200: res}
-}
-
-// validatePutSubscriptionParams performs the request validation that can be done ahead of the transaction
-func (a *Server) validatePutSubscriptionParams(subscriptionid restapi.SubscriptionID, params *restapi.PutSubscriptionParameters) error {
-	// Retrieve Subscription ID
-	if _, err := dssmodels.IDFromString(string(subscriptionid)); err != nil {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", subscriptionid)
-	}
-
-	if !a.AllowHTTPBaseUrls {
-		err := scdmodels.ValidateUSSBaseURL(string(params.UssBaseUrl))
-		if err != nil {
-			return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL")
-		}
-	}
-
-	// Parse extents
-	// If end time is not specified, the value will be chosen automatically by the DSS.
-	// If start time is not specified, it will default to the time the request is processed.
-	extents, err := scdmodels.Volume4DFromSCDRest(&params.Extents)
-	if err != nil {
-		return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Unable to parse extents")
-	}
-
-	// Construct requested Subscription model
-	_, err = extents.CalculateSpatialCovering()
-	switch err {
-	case nil, geo.ErrMissingSpatialVolume, geo.ErrMissingFootprint:
-		// We may be able to fill these values from a previous Subscription or via defaults.
-	default:
-		return stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid area")
-	}
-
-	notifyForOperationalIntents := params.NotifyForOperationalIntents != nil && *params.NotifyForOperationalIntents
-	notifyForConstraints := params.NotifyForConstraints != nil && *params.NotifyForConstraints
-
-	// Validate requested Subscription
-	if !notifyForOperationalIntents && !notifyForConstraints {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "No notification triggers requested for Subscription")
-	}
-
-	// TODO: Check scopes to verify requested information (op intents or constraints) may be requested
-
-	return nil
 }
 
 // GetSubscription returns a single subscription for the given ID.

@@ -10,13 +10,6 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-const (
-	minLat = -90.0
-	maxLat = 90.0
-	minLng = -180.0
-	maxLng = 180.0
-)
-
 func float32p(v float32) *float32 {
 	return &v
 }
@@ -310,8 +303,8 @@ type GeoCircle struct {
 
 // CalculateCovering returns the (sorted) spatial covering of gc.
 func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
-	if (gc.Center.Lat > maxLat) || (gc.Center.Lat < minLat) || (gc.Center.Lng > maxLng) || (gc.Center.Lng < minLng) {
-		return nil, geo.ErrBadCoordSet
+	if err := geo.ValidateLatLng(gc.Center.Lat, gc.Center.Lng); err != nil {
+		return nil, err
 	}
 
 	if !(gc.RadiusMeter > 0) {
@@ -343,9 +336,8 @@ func (gp *GeoPolygon) CalculateCovering() (s2.CellUnion, error) {
 		return nil, geo.ErrBadCoordSet
 	}
 	for _, v := range gp.Vertices {
-		// ensure that coordinates passed are actually on earth
-		if (v.Lat > maxLat) || (v.Lat < minLat) || (v.Lng > maxLng) || (v.Lng < minLng) {
-			return nil, geo.ErrBadCoordSet
+		if err := geo.ValidateLatLng(v.Lat, v.Lng); err != nil {
+			return nil, err
 		}
 		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(v.Lat, v.Lng)))
 	}

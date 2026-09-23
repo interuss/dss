@@ -87,3 +87,13 @@ func TestCoveringSucceedsForColinearLoop(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cells)
 }
+
+func TestValidateLatLng(t *testing.T) {
+	require.NoError(t, ValidateLatLng(0, 0))
+	require.NoError(t, ValidateLatLng(90, 180))
+	require.NoError(t, ValidateLatLng(-90, -180))
+	require.ErrorIs(t, ValidateLatLng(90.1, 0), ErrBadCoordSet)
+	require.ErrorIs(t, ValidateLatLng(-90.1, 0), ErrBadCoordSet)
+	require.ErrorIs(t, ValidateLatLng(0, 180.1), ErrBadCoordSet)
+	require.ErrorIs(t, ValidateLatLng(0, -180.1), ErrBadCoordSet)
+}

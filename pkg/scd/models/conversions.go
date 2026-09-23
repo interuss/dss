@@ -3,7 +3,9 @@ package models
 import (
 	"time"
 
+	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/stacktrace"
 )
@@ -52,10 +54,11 @@ func WithRequireAltitudeBounds() Volume4DValidator {
 
 // UnionVolumes4DFromSCDRest converts a slice of vol4 SCD v1 REST model to a single bounding Volume4D
 // Validation is applied on the resulting volume union
+// TODO: remove once callers (constraints, operational intents) use CellsVolume4DFromSCDRest
 func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DValidator) (*dssmodels.Volume4D, error) {
 	volumes := make([]*dssmodels.Volume4D, len(vol4s))
 	for idx, vol4 := range vol4s {
-		volume, err := Volume4DFromSCDRest(&vol4)
+		volume, err := volume4DFromSCDRest(&vol4)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
 		}
@@ -75,17 +78,123 @@ func UnionVolumes4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Volume4DV
 	return union, nil
 }
 
-// CellsVolume4DFromSCDRest converts vol4 SCD v1 REST model to a CellsVolume4D.
 func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
-	volume, err := Volume4DFromSCDRest(vol4)
+	filter := &dssmodels.CellsVolume4D{}
+
+	if vol4.TimeStart != nil {
+		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeStart.Value)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting start time")
+		}
+		filter.StartTime = &ts
+	}
+
+	if vol4.TimeEnd != nil {
+		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeEnd.Value)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting end time")
+		}
+		filter.EndTime = &ts
+	}
+
+	if filter.StartTime != nil && filter.EndTime != nil && filter.StartTime.After(*filter.EndTime) {
+		return nil, stacktrace.NewError("Start time cannot be after end time")
+	}
+
+	altLo, altHi, err := altitudeBoundsFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err
 	}
-	return volume.ToCellsVolume4D()
+	filter.AltitudeLo = altLo
+	filter.AltitudeHi = altHi
+
+	cells, err := cellsFromOutlineSCDRest(&vol4.Volume)
+	if err != nil {
+		return filter, err
+	}
+	filter.Cells = cells
+
+	return filter, nil
 }
 
-// Volume4DFromSCDRest converts vol4 SCD v1 REST model to a Volume4D
-func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
+func altitudeBoundsFromSCDRest(vol3 *restapi.Volume3D) (*float32, *float32, error) {
+	var altLo *float32
+	if vol3.AltitudeLower != nil {
+		if vol3.AltitudeLower.Units != UnitsM {
+			return nil, nil, stacktrace.NewError("Invalid lower altitude unit")
+		}
+		if vol3.AltitudeLower.Reference != ReferenceW84 {
+			return nil, nil, stacktrace.NewError("Invalid lower altitude reference")
+		}
+		altLo = new(float32(vol3.AltitudeLower.Value))
+	}
+
+	var altHi *float32
+	if vol3.AltitudeUpper != nil {
+		if vol3.AltitudeUpper.Units != UnitsM {
+			return nil, nil, stacktrace.NewError("Invalid upper altitude unit")
+		}
+		if vol3.AltitudeUpper.Reference != ReferenceW84 {
+			return nil, nil, stacktrace.NewError("Invalid upper altitude reference")
+		}
+		altHi = new(float32(vol3.AltitudeUpper.Value))
+	}
+
+	if altLo != nil && altHi != nil && *altLo > *altHi {
+		return nil, nil, stacktrace.NewError("Lower altitude cannot be greater than upper altitude")
+	}
+
+	return altLo, altHi, nil
+}
+
+func cellsFromOutlineSCDRest(vol3 *restapi.Volume3D) (s2.CellUnion, error) {
+	switch {
+	case vol3.OutlineCircle != nil && vol3.OutlinePolygon != nil:
+		return nil, stacktrace.NewError("Both circle and polygon specified in outline geometry")
+	case vol3.OutlinePolygon != nil:
+		return polygonCellsFromSCDRest(vol3.OutlinePolygon)
+	case vol3.OutlineCircle != nil:
+		return circleCellsFromSCDRest(vol3.OutlineCircle)
+	default:
+		return nil, geo.ErrMissingFootprint
+	}
+}
+
+func circleCellsFromSCDRest(c *restapi.Circle) (s2.CellUnion, error) {
+	lat := float64(c.Center.Lat)
+	lng := float64(c.Center.Lng)
+	if err := geo.ValidateLatLng(lat, lng); err != nil {
+		return nil, err
+	}
+	if !(c.Radius.Value > 0) {
+		return nil, geo.ErrRadiusMustBeLargerThan0
+	}
+
+	return geo.RegionCoverer.Covering(s2.RegularLoop(
+		s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)),
+		geo.DistanceMetersToAngle(float64(c.Radius.Value)),
+		20,
+	)), nil
+}
+
+func polygonCellsFromSCDRest(p *restapi.Polygon) (s2.CellUnion, error) {
+	var points []s2.Point
+	for _, v := range p.Vertices {
+		lat := float64(v.Lat)
+		lng := float64(v.Lng)
+		if err := geo.ValidateLatLng(lat, lng); err != nil {
+			return nil, err
+		}
+		points = append(points, s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)))
+	}
+	if len(points) < 3 {
+		return nil, geo.ErrNotEnoughPointsInPolygon
+	}
+	return geo.Covering(points)
+}
+
+// TODO: remove along with UnionVolumes4DFromSCDRest.
+func volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	vol3, err := Volume3DFromSCDRest(&vol4.Volume)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
@@ -123,6 +232,7 @@ func Volume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 }
 
 // Volume3DFromSCDRest converts a vol3 SCD v1 REST model to a Volume3D
+// TODO: remove along with UnionVolumes4DFromSCDRest.
 func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 	if vol3 == nil {
 		return nil, nil
@@ -178,6 +288,8 @@ func Volume3DFromSCDRest(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 }
 
 // GeoCircleFromSCDRest converts a circle SCD v1 REST model to a GeoCircle
+// TODO: remove along with UnionVolumes4DFromSCDRest; circleCellsFromSCDRest is its cells-native
+// replacement.
 func GeoCircleFromSCDRest(c *restapi.Circle) *dssmodels.GeoCircle {
 	return &dssmodels.GeoCircle{
 		Center:      *LatLngPointFromSCDRest(c.Center),
@@ -186,6 +298,8 @@ func GeoCircleFromSCDRest(c *restapi.Circle) *dssmodels.GeoCircle {
 }
 
 // GeoPolygonFromSCDRest converts a polygon SCD v1 REST model to a GeoPolygon
+// TODO: remove along with UnionVolumes4DFromSCDRest; polygonCellsFromSCDRest is its cells-native
+// replacement.
 func GeoPolygonFromSCDRest(p *restapi.Polygon) *dssmodels.GeoPolygon {
 	result := &dssmodels.GeoPolygon{}
 	for _, ltlng := range p.Vertices {
