@@ -185,6 +185,22 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case string(countOperationalIntents):
 		return r.Store.GetRepo().CountOperationalIntents(ctx)
 
+	// USS Availability
+
+	case string(getUssAvailability):
+		var manager dssmodels.Manager
+		if err := json.Unmarshal(proposal.Value, &manager); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getUssAvailability)
+		}
+		return r.Store.GetRepo().GetUssAvailability(ctx, manager)
+
+	case string(upsertUssAvailability):
+		var ussa scdmodels.UssAvailabilityStatus
+		if err := json.Unmarshal(proposal.Value, &ussa); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertUssAvailability)
+		}
+		return r.Store.GetRepo().UpsertUssAvailability(ctx, &ussa)
+
 	// Operations registry (transactions)
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
