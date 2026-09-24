@@ -272,6 +272,7 @@ local volumes = import 'volumes.libsonnet';
       annotations+: {
           'service.beta.kubernetes.io/aws-load-balancer-ssl-ports': '443',
           'service.beta.kubernetes.io/aws-load-balancer-ssl-cert': certARN,
+          'service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy': 'ELBSecurityPolicy-TLS13-1-2-Res-2021-06',
       },
     },
   },
