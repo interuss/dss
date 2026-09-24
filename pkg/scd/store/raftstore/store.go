@@ -2,10 +2,13 @@ package raftstore
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/interuss/dss/pkg/memstore"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
@@ -46,6 +49,36 @@ func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
+	case string(searchConstraints):
+		var cellsVolume dssmodels.CellsVolume4D
+		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchConstraints)
+		}
+		return r.Store.GetRepo().SearchConstraints(ctx, &cellsVolume)
+
+	case string(getConstraint):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getConstraint)
+		}
+		return r.Store.GetRepo().GetConstraint(ctx, id)
+
+	case string(upsertConstraint):
+		var constraint scdmodels.Constraint
+		if err := json.Unmarshal(proposal.Value, &constraint); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertConstraint)
+		}
+		return r.Store.GetRepo().UpsertConstraint(ctx, &constraint)
+
+	case string(deleteConstraint):
+		var id dssmodels.ID
+		if err := json.Unmarshal(proposal.Value, &id); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteConstraint)
+		}
+		return nil, r.Store.GetRepo().DeleteConstraint(ctx, id)
+
+	case string(countConstraints):
+		return r.Store.GetRepo().CountConstraints(ctx)
 
 	default:
 		handler, ok := operations.Registry[proposal.RequestType]
