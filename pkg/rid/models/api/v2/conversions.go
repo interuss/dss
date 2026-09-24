@@ -3,6 +3,7 @@ package apiv2
 import (
 	"time"
 
+	"github.com/golang/geo/s2"
 	restapi "github.com/interuss/dss/pkg/api/ridv2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -46,6 +47,7 @@ func FromAltitude(alt *restapi.Altitude) (*float32, error) {
 }
 
 // FromVolume4D converts RID v2 REST model to business object
+// TODO: remove once everything is parsed directly into CellsVolume4D
 func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	vol3, err := FromVolume3D(&vol4.Volume)
 	if err != nil {
@@ -69,6 +71,7 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 }
 
 // FromVolume3D converts RID v2 REST model to business object
+// TODO: remove along with FromVolume4D.
 func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 	altitudeLo, err := FromAltitude(vol3.AltitudeLower)
 	if err != nil {
@@ -107,6 +110,61 @@ func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 		}
 
 		return result, nil
+	}
+
+	return nil, stacktrace.NewError("Neither outline_polygon nor outline_circle were specified in volume")
+}
+
+// CellsVolume4DFromRest converts RID v2 REST model to CellsVolume4D
+func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
+	cells, err := cellsFromVolume3D(&vol4.Volume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing spatial volume of Volume4D")
+	}
+
+	altitudeLo, err := FromAltitude(vol4.Volume.AltitudeLower)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing lower altitude of Volume3D")
+	}
+	altitudeHi, err := FromAltitude(vol4.Volume.AltitudeUpper)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing upper altitude of Volume3D")
+	}
+
+	result := &dssmodels.CellsVolume4D{
+		Cells:      cells,
+		AltitudeLo: altitudeLo,
+		AltitudeHi: altitudeHi,
+	}
+
+	result.StartTime, err = FromTime(vol4.TimeStart)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing start time of Volume4D")
+	}
+	result.EndTime, err = FromTime(vol4.TimeEnd)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing end time of Volume4D")
+	}
+
+	return result, nil
+}
+
+// cellsFromVolume3D computes the spatial covering of vol3's outline directly, without
+// constructing an intermediate GeoCircle/GeoPolygon.
+func cellsFromVolume3D(vol3 *restapi.Volume3D) (s2.CellUnion, error) {
+	if vol3.OutlinePolygon != nil {
+		if vol3.OutlineCircle != nil {
+			return nil, stacktrace.NewError("Only one of outline_circle or outline_polygon may be specified")
+		}
+		return FromPolygon(vol3.OutlinePolygon).CalculateCovering()
+	}
+
+	if vol3.OutlineCircle != nil {
+		circle, err := FromCircle(vol3.OutlineCircle)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error parsing outline_circle for Volume3D")
+		}
+		return circle.CalculateCovering()
 	}
 
 	return nil, stacktrace.NewError("Neither outline_polygon nor outline_circle were specified in volume")
