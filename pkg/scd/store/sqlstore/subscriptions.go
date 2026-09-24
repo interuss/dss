@@ -148,14 +148,6 @@ func (c *repo) fetchSubscriptionByID(ctx context.Context, q dsssql.Queryable, id
 func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
 	var (
 		upsertQuery = fmt.Sprintf(`
-		WITH v AS (
-			SELECT
-				version
-			FROM
-				scd_subscriptions
-			WHERE
-				id = $1::uuid
-		)
 		INSERT INTO
 		  scd_subscriptions
 		  (%s)
@@ -181,12 +173,9 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 	)
 
 	cids := make([]int64, len(s.Cells))
-	// TODO get rid of clevels?
-	clevels := make([]int, len(s.Cells))
 
 	for i, cell := range s.Cells {
 		cids[i] = int64(cell)
-		clevels[i] = cell.Level()
 	}
 
 	id, err := s.ID.PgUUID()
