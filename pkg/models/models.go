@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -174,4 +175,28 @@ func (v *Version) ToTimestamp() *time.Time {
 		return &t
 	}
 	return &v.t
+}
+
+func (v *Version) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.String())
+}
+
+func (v *Version) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal version")
+	}
+
+	if s == "" {
+		*v = Version{}
+		return nil
+	}
+
+	parsed, err := VersionFromString(s)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to parse version")
+	}
+
+	*v = *parsed
+	return nil
 }
