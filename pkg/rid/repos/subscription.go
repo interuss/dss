@@ -39,8 +39,12 @@ type Subscription interface {
 	// belonging to the given owner, and returns that number.
 	MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error)
 
-	// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
-	ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error)
+	// ListExpiredSubscriptions lists up to `limit` expired Subscriptions based on writer, ordered by ID. A limit of 0 means unlimited.
+	ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.Subscription, error)
+
+	// DeleteExpiredSubscriptions deletes up to `limit` expired Subscriptions based on writer,
+	// ordered by ID, and returns the deleted Subscriptions. A limit of 0 means unlimited.
+	DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.Subscription, error)
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)

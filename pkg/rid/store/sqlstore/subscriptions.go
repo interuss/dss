@@ -294,10 +294,12 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now(), dssmodels.MaxResultLimit)
 }
 
-// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
+// ListExpiredSubscriptions lists up to `limit` expired Subscriptions based on writer, ordered by
+// ID. A limit of 0 means unlimited.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.Subscription, error) {
 	if len(writer) == 0 {
+		clause, limitArg := dssql.LimitClause(limit, 2)
 		query := fmt.Sprintf(`
             SELECT
                 %s
@@ -306,10 +308,17 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
             WHERE
                 ends_at <= $1
             AND
-                (writer = '' OR writer IS NULL)`, subscriptionFields)
-		return r.process(ctx, query, threshold)
+                (writer = '' OR writer IS NULL)
+            ORDER BY id
+            %s`, subscriptionFields, clause)
+		args := []interface{}{threshold}
+		if limitArg != nil {
+			args = append(args, limitArg)
+		}
+		return r.process(ctx, query, args...)
 	}
 
+	clause, limitArg := dssql.LimitClause(limit, 3)
 	query := fmt.Sprintf(`
         SELECT
             %s
@@ -318,8 +327,58 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
         WHERE
             ends_at <= $1
         AND
-            writer = $2`, subscriptionFields)
-	return r.process(ctx, query, threshold, writer)
+            writer = $2
+        ORDER BY id
+        %s`, subscriptionFields, clause)
+	args := []interface{}{threshold, writer}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	return r.process(ctx, query, args...)
+}
+
+// DeleteExpiredSubscriptions deletes up to `limit` expired Subscriptions based on writer, ordered
+// by ID, and returns the deleted Subscriptions. A limit of 0 means unlimited.
+func (r *repo) DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]*ridmodels.Subscription, error) {
+	if len(writer) == 0 {
+		clause, limitArg := dssql.LimitClause(limit, 2)
+		deleteExpiredQuery := fmt.Sprintf(`
+			WITH expired AS (
+				SELECT id
+				FROM subscriptions
+				WHERE ends_at <= $1
+				AND (writer = '' OR writer IS NULL)
+				ORDER BY id
+				%s
+			)
+			DELETE FROM subscriptions
+			WHERE id IN (SELECT id FROM expired)
+			RETURNING %s`, clause, subscriptionFields)
+		args := []interface{}{threshold}
+		if limitArg != nil {
+			args = append(args, limitArg)
+		}
+		return r.process(ctx, deleteExpiredQuery, args...)
+	}
+
+	clause, limitArg := dssql.LimitClause(limit, 3)
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (
+			SELECT id
+			FROM subscriptions
+			WHERE ends_at <= $1
+			AND writer = $2
+			ORDER BY id
+			%s
+		)
+		DELETE FROM subscriptions
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING %s`, clause, subscriptionFields)
+	args := []interface{}{threshold, writer}
+	if limitArg != nil {
+		args = append(args, limitArg)
+	}
+	return r.process(ctx, deleteExpiredQuery, args...)
 }
 
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {

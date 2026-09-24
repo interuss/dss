@@ -39,8 +39,12 @@ func (r *repo) LockSubscriptionsOnCells(_ context.Context, cells s2.CellUnion, s
 	return stacktrace.NewErrorWithCode(dsserr.NotImplemented, "LockSubscriptionsOnCells not implemented for raftstore")
 }
 
-func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredSubscriptions not implemented for raftstore")
+}
+
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for raftstore")
 }
 
 func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {

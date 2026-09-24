@@ -207,7 +207,7 @@ func TestListExpiredOperationalIntents(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			threshold := testCase.timeRef.Add(-testCase.ttl)
-			expired, err := r.ListExpiredOperationalIntents(ctx, threshold)
+			expired, err := r.ListExpiredOperationalIntents(ctx, threshold, 0)
 			require.NoError(t, err)
 
 			expiredIDs := make([]dssmodels.ID, 0, len(expired))

@@ -9,13 +9,9 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	ridrepos "github.com/interuss/dss/pkg/rid/repos"
 	rids "github.com/interuss/dss/pkg/rid/store"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
-	dssstore "github.com/interuss/dss/pkg/store"
-	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -36,6 +32,8 @@ var (
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
 	timeout       = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
+	scdLimit      = flags.Int("scd_limit", 0, "maximum number of SCD entities deleted, defaults to unlimited")
+	ridLimit      = flags.Int("rid_limit", 0, "maximum number of RID entities deleted, defaults to unlimited")
 )
 
 func init() {
@@ -47,7 +45,15 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ctx          = cmd.Context()
 		scdThreshold = time.Now().Add(-*scdTtl)
 		ridThreshold = time.Now().Add(-*ridTtl)
+		scdLimit     = *scdLimit
+		ridLimit     = *ridLimit
 	)
+	if scdLimit < 0 {
+		return fmt.Errorf("scd_limit must be equal to or greater than 0, got %d", scdLimit)
+	}
+	if ridLimit < 0 {
+		return fmt.Errorf("rid_limit must be equal to or greater than 0, got %d", ridLimit)
+	}
 	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
 
 	ctx, cancel := context.WithTimeout(ctx, *timeout)
@@ -71,83 +77,70 @@ func evict(cmd *cobra.Command, _ []string) error {
 		expiredISAs      []*ridmodels.IdentificationServiceArea
 		ridExpiredSub    []*ridmodels.Subscription
 	)
-	scdAction := func(ctx context.Context, r scdrepos.Repository) (err error) {
-		if *checkScdOirs {
-			expiredOpIntents, err = r.ListExpiredOperationalIntents(ctx, scdThreshold)
-			if err != nil {
-				return fmt.Errorf("listing expired operational intents: %w", err)
-			}
-			if *deleteExpired {
-				for _, opIntent := range expiredOpIntents {
-					if err = r.DeleteOperationalIntent(ctx, opIntent.ID); err != nil {
-						return fmt.Errorf("deleting expired operational intents: %w", err)
-					}
-				}
-			}
-		}
-
-		if *checkScdSubs {
-			scdExpiredSub, err = r.ListExpiredSubscriptions(ctx, scdThreshold)
-			if err != nil {
-				return fmt.Errorf("SCD listing expired subscriptions: %w", err)
-			}
-			if *deleteExpired {
-				for _, sub := range scdExpiredSub {
-					if err = r.DeleteSubscription(ctx, sub.ID); err != nil {
-						return fmt.Errorf("SCD deleting expired subscriptions: %w", err)
-					}
-				}
-			}
-		}
-		return nil
-	}
-	if _, err = scdStore.Transact(ctx, dssstore.NewFuncOperation(scdAction)); err != nil {
-		return fmt.Errorf("failed to execute SCD transaction: %w", err)
+	scdRepo, err := scdStore.Interact(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to interact with SCD store: %w", err)
 	}
 
-	ridAction := func(ctx context.Context, r ridrepos.Repository) (err error) {
-		if *checkRidISAs {
-
-			expiredISAs, err = r.ListExpiredISAs(ctx, *locality, ridThreshold)
+	if *checkScdOirs {
+		if *deleteExpired {
+			expiredOpIntents, err = scdRepo.DeleteExpiredOperationalIntents(ctx, scdThreshold, scdLimit)
 			if err != nil {
-				return stacktrace.Propagate(err, "Failed to list expired ISAs")
+				return fmt.Errorf("failed to delete expired operational intents: %w", err)
 			}
-
-			if *deleteExpired {
-				for _, isa := range expiredISAs {
-					_, err := r.DeleteISA(ctx, isa)
-					if err != nil {
-						return stacktrace.Propagate(err, "Failed to delete ISAs")
-					}
-				}
-			}
-
-		}
-
-		if *checkRidSubs {
-
-			ridExpiredSub, err = r.ListExpiredSubscriptions(ctx, *locality, ridThreshold)
+		} else {
+			expiredOpIntents, err = scdRepo.ListExpiredOperationalIntents(ctx, scdThreshold, scdLimit)
 			if err != nil {
-				return stacktrace.Propagate(err,
-					"Failed to list RID expired Subscriptions")
+				return fmt.Errorf("failed to list expired operational intents: %w", err)
 			}
-
-			if *deleteExpired {
-				for _, sub := range ridExpiredSub {
-					_, err := r.DeleteSubscription(ctx, sub)
-					if err != nil {
-						return stacktrace.Propagate(err,
-							"Failed to delete RID Subscription")
-					}
-				}
-			}
-
 		}
-
-		return nil
 	}
-	if _, err = ridStore.Transact(ctx, dssstore.NewFuncOperation(ridAction)); err != nil {
-		return fmt.Errorf("failed to execute RID transaction: %w", err)
+
+	if *checkScdSubs {
+		if *deleteExpired {
+			scdExpiredSub, err = scdRepo.DeleteExpiredSubscriptions(ctx, scdThreshold, scdLimit)
+			if err != nil {
+				return fmt.Errorf("failed to delete expired SCD subscriptions: %w", err)
+			}
+		} else {
+			scdExpiredSub, err = scdRepo.ListExpiredSubscriptions(ctx, scdThreshold, scdLimit)
+			if err != nil {
+				return fmt.Errorf("failed to list expired SCD subscriptions: %w", err)
+			}
+		}
+	}
+
+	ridRepo, err := ridStore.Interact(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to interact with RID store: %w", err)
+	}
+
+	if *checkRidISAs {
+		if *deleteExpired {
+			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, *locality, ridThreshold, ridLimit)
+			if err != nil {
+				return fmt.Errorf("failed to delete expired ISAs: %w", err)
+			}
+		} else {
+			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, *locality, ridThreshold, ridLimit)
+			if err != nil {
+				return fmt.Errorf("failed to list expired ISAs: %w", err)
+			}
+		}
+	}
+
+	if *checkRidSubs {
+		if *deleteExpired {
+			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, *locality, ridThreshold, ridLimit)
+			if err != nil {
+				return fmt.Errorf("failed to delete expired RID subscriptions: %w", err)
+			}
+		} else {
+			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, *locality, ridThreshold, ridLimit)
+			if err != nil {
+				return fmt.Errorf("failed to list RID expired subscriptions: %w", err)
+			}
+		}
 	}
 
 	for _, opIntent := range expiredOpIntents {

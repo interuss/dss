@@ -30,9 +30,14 @@ type OperationalIntent interface {
 	// subscription identified by "subscriptionID".
 	GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
 
-	// ListExpiredOperationalIntents lists all operational intents older than the threshold.
-	// Their age is determined by their end time, or by their update time if they do not have an end time.
-	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error)
+	// ListExpiredOperationalIntents lists up to `limit` operational intents older than the
+	// threshold, ordered by ID. A limit of 0 means unlimited. Age is determined by their end time,
+	// or by their update time if they do not have an end time.
+	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error)
+
+	// DeleteExpiredOperationalIntents deletes up to `limit` expired operational intents and returns the deleted operational intents. A limit of 0 means unlimited.
+	// Age is determined by their end time, or by their update time if they do not have an end time.
+	DeleteExpiredOperationalIntents(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.OperationalIntent, error)
 
 	// Count the number of existing operational intent
 	CountOperationalIntents(ctx context.Context) (int64, error)
@@ -69,9 +74,14 @@ type Subscription interface {
 	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells and, optionnaly, specific subscriptions via their IDs
 	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error
 
-	// ListExpiredSubscriptions lists all subscriptions older than the threshold.
-	// Their age is determined by their end time, or by their update time if they do not have an end time.
-	ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error)
+	// ListExpiredSubscriptions lists up to `limit` subscriptions older than the threshold, ordered
+	// by ID. A limit of 0 means unlimited. Age is determined by their end time, or by their update
+	// time if they do not have an end time.
+	ListExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error)
+
+	// DeleteExpiredSubscriptions deletes up to `limit` expired subscriptions and returns the deleted subscriptions. A limit of 0 means unlimited.
+	// Age is determined by their end time, or by their update time if they do not have an end time.
+	DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error)
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)

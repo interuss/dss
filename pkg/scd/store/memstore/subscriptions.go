@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -130,12 +131,17 @@ func (r *repo) LockSubscriptionsOnCells(_ context.Context, _ s2.CellUnion, _ []d
 	return nil
 }
 
-func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+// TODO: use `limit` once evict is implemented for the raftstore.
+func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time, _ int) ([]*scdmodels.Subscription, error) {
 	var out []*scdmodels.Subscription
 	for _, rec := range listExpired(r.state.Subscriptions, threshold, dssmodels.MaxResultLimit) {
 		out = append(out, rec.toModel())
 	}
 	return out, nil
+}
+
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]*scdmodels.Subscription, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for memstore")
 }
 
 func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {

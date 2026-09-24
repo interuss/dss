@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"slices"
 	"time"
 
@@ -40,4 +41,13 @@ func MillisSinceMidnight() int {
 	now := time.Now().UTC()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return int(now.Sub(midnight).Milliseconds())
+}
+
+// LimitClause returns a "LIMIT $paramIndex" SQL fragment and the corresponding query argument
+// when limit is positive, or an empty fragment and no argument when limit <= 0 (unlimited).
+func LimitClause(limit int, paramIndex int) (string, any) {
+	if limit <= 0 {
+		return "", nil
+	}
+	return fmt.Sprintf("LIMIT $%d", paramIndex), limit
 }
