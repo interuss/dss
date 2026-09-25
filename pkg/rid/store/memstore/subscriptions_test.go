@@ -28,13 +28,15 @@ var (
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             "myself",
 				URL:               "https://no/place/like/home",
-				StartTime:         &startTime,
-				EndTime:           &endTime,
 				NotificationIndex: 42,
 				Writer:            writer,
-				Cells: s2.CellUnion{
-					s2.CellID(overflow),
-					12494535935418957824,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					StartTime: &startTime,
+					EndTime:   &endTime,
+					Cells: s2.CellUnion{
+						s2.CellID(overflow),
+						12494535935418957824,
+					},
 				},
 			},
 		},
@@ -44,10 +46,12 @@ var (
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             "myself",
 				URL:               "https://no/place/like/home",
-				EndTime:           &endTime,
 				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					EndTime: &endTime,
+					Cells: s2.CellUnion{
+						12494535935418957824,
+					},
 				},
 			},
 		},
@@ -57,11 +61,13 @@ var (
 				ID:                dssmodels.ID(uuid.New().String()),
 				Owner:             "me",
 				URL:               "https://no/place/like/home",
-				StartTime:         &startTime,
-				EndTime:           &endTime,
 				NotificationIndex: 42,
-				Cells: s2.CellUnion{
-					12494535935418957824,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					StartTime: &startTime,
+					EndTime:   &endTime,
+					Cells: s2.CellUnion{
+						12494535935418957824,
+					},
 				},
 			},
 		},
@@ -212,10 +218,12 @@ func TestStoreExpiredSubscription(t *testing.T) {
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
-		ID:      dssmodels.ID(uuid.New().String()),
-		Owner:   dssmodels.Owner("original owner"),
-		Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
-		EndTime: &endTime,
+		ID:    dssmodels.ID(uuid.New().String()),
+		Owner: dssmodels.Owner("original owner"),
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			Cells:   s2.CellUnion{s2.CellID(12494535866699481088)},
+			EndTime: &endTime,
+		},
 	}
 	_, err := repo.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
@@ -251,9 +259,11 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
-		ID:      dssmodels.ID(uuid.New().String()),
-		Owner:   dssmodels.Owner("original owner"),
-		EndTime: &endTime,
+		ID:    dssmodels.ID(uuid.New().String()),
+		Owner: dssmodels.Owner("original owner"),
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			EndTime: &endTime,
+		},
 	}
 	_, err := repo.InsertSubscription(ctx, sub)
 	require.Error(t, err)

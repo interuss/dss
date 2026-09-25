@@ -43,13 +43,6 @@ type mockApp struct {
 	mock.Mock
 }
 
-func (ma *mockApp) InsertSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	args := ma.Called(ctx, s)
-	return args.Get(0).(*ridmodels.Subscription), args.Error(1)
-}
-
 func (ma *mockApp) UpdateSubscription(ctx context.Context, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -136,7 +129,7 @@ func TestDeleteSubscription(t *testing.T) {
 			name:         "subscription-is-returned-if-returned-from-store",
 			id:           dssmodels.ID(uuid.New().String()),
 			version:      testdata.Version,
-			subscription: &ridmodels.Subscription{},
+			subscription: &ridmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}},
 		},
 		{
 			name:     "error-is-returned-if-returned-from-store",
@@ -192,52 +185,17 @@ func TestCreateSubscription(t *testing.T) {
 			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
 			extents:   testdata.LoopVolume4D,
 			wantSubscription: &ridmodels.Subscription{
-				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				Owner:      "foo",
-				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-			},
-		},
-		{
-			name:      "missing-extents",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			appErr:    dsserr.BadRequest,
-			wantErr:   &respSet.Response400,
-		},
-		{
-			name:      "missing-extents-spatial-volume",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents:   restapi.Volume4D{},
-			appErr:    dsserr.BadRequest,
-			wantErr:   &respSet.Response400,
-		},
-		{
-			name:      "missing-spatial-volume-footprint",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{},
-			},
-			appErr:  dsserr.BadRequest,
-			wantErr: &respSet.Response400,
-		},
-		{
-			name:      "missing-spatial-volume-footprint",
-			id:        dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{
-					Footprint: restapi.GeoPolygon{},
+				ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				Owner: "foo",
+				URL:   "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
 				},
 			},
-			appErr:  dsserr.BadRequest,
-			wantErr: &respSet.Response400,
 		},
 		{
 			name:    "missing-callbacks",
@@ -249,14 +207,15 @@ func TestCreateSubscription(t *testing.T) {
 	} {
 		t.Run(r.name, func(t *testing.T) {
 			ma := &mockApp{}
+			ms := &mockStore{}
 			if r.appErr == stacktrace.ErrorCode(0) {
 				ma.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					[]*ridmodels.IdentificationServiceArea(nil), nil)
-				ma.On("InsertSubscription", mock.Anything, r.wantSubscription).Return(
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
 					r.wantSubscription, nil,
 				)
 			}
-			s := &Server{App: ma}
+			s := &Server{App: ma, Store: ms}
 
 			respSet = s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
 				Id: restapi.SubscriptionUUID(r.id.String()),
@@ -272,6 +231,7 @@ func TestCreateSubscription(t *testing.T) {
 				require.NotNil(t, respSet.Response200)
 			}
 			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }
@@ -287,22 +247,26 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 
 	cells := mustPolygonToCellIDs(&testdata.LoopPolygon)
 	sub := &ridmodels.Subscription{
-		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-		Owner:      "foo",
-		URL:        string(testdata.CallbackURL),
-		StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-		EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-		AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-		AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-		Cells:      cells,
+		ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+		Owner: "foo",
+		URL:   string(testdata.CallbackURL),
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+			EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+			AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+			AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+			Cells:      cells,
+		},
 	}
 
 	ma := &mockApp{}
+	ms := &mockStore{}
 
 	ma.On("SearchISAs", mock.Anything, cells, mock.Anything, mock.Anything).Return(isas, nil)
-	ma.On("InsertSubscription", mock.Anything, sub).Return(sub, nil)
+	ms.On("Transact", mock.Anything, mock.Anything).Return(sub, nil)
 	s := &Server{
-		App: ma,
+		App:   ma,
+		Store: ms,
 	}
 
 	respSet := s.CreateSubscription(context.Background(), &restapi.CreateSubscriptionRequest{
@@ -317,6 +281,7 @@ func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	})
 	require.NotNil(t, respSet.Response200)
 	require.True(t, ma.AssertExpectations(t))
+	require.True(t, ms.AssertExpectations(t))
 
 	require.Equal(t, []restapi.IdentificationServiceArea{
 		{
@@ -338,7 +303,7 @@ func TestGetSubscription(t *testing.T) {
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
 			id:           dssmodels.ID(uuid.New().String()),
-			subscription: &ridmodels.Subscription{},
+			subscription: &ridmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}},
 		},
 		{
 			name:    "error-is-returned-if-returned-from-app",
@@ -418,6 +383,7 @@ func TestSearchSubscriptions(t *testing.T) {
 				Owner:             dssmodels.Owner(testdata.Owner),
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
+				CellsVolume4D:     &dssmodels.CellsVolume4D{},
 			},
 		}, error(nil),
 	)
