@@ -25,8 +25,20 @@ func (s *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
+	id, err := dssmodels.IDFromString(string(req.Id))
+	if err != nil {
+		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
+	}
+	version, err := dssmodels.VersionFromString(req.Version)
+	if err != nil {
+		return restapi.DeleteSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid version"))}}
+	}
 
-	subscription, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, req)
+	payload := operations.NewDeleteSubscriptionPayload(id, dssmodels.Owner(*req.Auth.ClientID), version)
+
+	subscription, err := store.TransactWithResult[repos.Repository, *ridmodels.Subscription](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete Subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
