@@ -84,8 +84,10 @@ func TestDatabaseEnsuresBeginsBeforeExpires(t *testing.T) {
 		Owner:             "me-myself-and-i",
 		URL:               "https://no/place/like/home",
 		NotificationIndex: 42,
-		StartTime:         &begins,
-		EndTime:           &expires,
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			StartTime: &begins,
+			EndTime:   &expires,
+		},
 	})
 	require.Error(t, err)
 }
