@@ -32,16 +32,18 @@ func isaRecordFromModel(isa *ridmodels.IdentificationServiceArea, updatedAt time
 // toModel rebuilds the ISA model
 func (rec *isaRecord) toModel() *ridmodels.IdentificationServiceArea {
 	return &ridmodels.IdentificationServiceArea{
-		ID:         rec.ID,
-		URL:        rec.URL,
-		Owner:      rec.Owner,
-		Cells:      slices.Clone(rec.Cells),
-		StartTime:  utils.ClonePtr(rec.StartTime),
-		EndTime:    utils.ClonePtr(rec.EndTime),
-		Version:    dssmodels.VersionFromTime(rec.UpdatedAt),
-		AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
-		AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
-		Writer:     rec.Writer,
+		ID:      rec.ID,
+		URL:     rec.URL,
+		Owner:   rec.Owner,
+		Version: dssmodels.VersionFromTime(rec.UpdatedAt),
+		Writer:  rec.Writer,
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			Cells:      slices.Clone(rec.Cells),
+			StartTime:  utils.ClonePtr(rec.StartTime),
+			EndTime:    utils.ClonePtr(rec.EndTime),
+			AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
+			AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
+		},
 	}
 }
 

@@ -69,27 +69,14 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	if !s.AllowHTTPBaseUrls {
-		err = ridmodels.ValidateURL(string(req.Body.UssBaseUrl))
-		if err != nil {
-			return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-				Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate base URL"))}}
-		}
-	}
-
-	isa := &ridmodels.IdentificationServiceArea{
-		ID:     id,
-		URL:    string(req.Body.UssBaseUrl),
-		Owner:  dssmodels.Owner(*req.Auth.ClientID),
-		Writer: s.Locality,
-	}
-
-	if err := isa.SetExtents(extents); err != nil {
+	url := string(req.Body.UssBaseUrl)
+	payload, err := operations.NewInsertISAPayload(id, dssmodels.Owner(*req.Auth.ClientID), url, s.Locality, extents, s.AllowHTTPBaseUrls)
+	if err != nil {
 		return restapi.CreateIdentificationServiceAreaResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid extents"))}}
+			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	insertedISA, subscribers, err := s.App.InsertISA(ctx, isa)
+	result, err := store.TransactWithResult[repos.Repository, *operations.ISAResult](ctx, s.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not insert ISA")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -104,10 +91,10 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 		}
 	}
 
-	apiSubscribers := apiv2.MakeSubscribersToNotify(subscribers)
+	apiSubscribers := apiv2.MakeSubscribersToNotify(result.Subscriptions)
 
 	return restapi.CreateIdentificationServiceAreaResponseSet{Response200: &restapi.PutIdentificationServiceAreaResponse{
-		ServiceArea: *apiv2.ToIdentificationServiceArea(insertedISA),
+		ServiceArea: *apiv2.ToIdentificationServiceArea(result.ISA),
 		Subscribers: &apiSubscribers,
 	}}
 }

@@ -92,11 +92,6 @@ func (ma *mockApp) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Error(1)
 }
 
-func (ma *mockApp) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	args := ma.Called(ctx, isa)
-	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
-}
-
 func (ma *mockApp) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
 	args := ma.Called(ctx, isa)
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
@@ -233,9 +228,10 @@ func TestCreateSubscription(t *testing.T) {
 func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	isas := []*ridmodels.IdentificationServiceArea{
 		{
-			ID:    dssmodels.ID("8265221b-9528-4d45-900d-59a148e13850"),
-			Owner: dssmodels.Owner("me-myself-and-i"),
-			URL:   "https://no/place/like/home",
+			ID:            dssmodels.ID("8265221b-9528-4d45-900d-59a148e13850"),
+			Owner:         dssmodels.Owner("me-myself-and-i"),
+			URL:           "https://no/place/like/home",
+			CellsVolume4D: &dssmodels.CellsVolume4D{},
 		},
 	}
 
@@ -408,52 +404,17 @@ func TestCreateISA(t *testing.T) {
 			extents:    testdata.LoopVolume4D,
 			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
 			wantISA: &ridmodels.IdentificationServiceArea{
-				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				Owner:      "foo",
-				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-			},
-		},
-		{
-			name:       "missing-extents",
-			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name:       "missing-extents-spatial-volume",
-			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents:    restapi.Volume4D{},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{},
-			},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
-		},
-		{
-			name: "missing-spatial-volume-footprint",
-			id:   dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
-			extents: restapi.Volume4D{
-				SpatialVolume: restapi.Volume3D{
-					Footprint: restapi.GeoPolygon{},
+				ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				URL:   "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				Owner: "foo",
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 				},
 			},
-			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-			appErr:     dsserr.BadRequest,
-			wantErr:    &respSet.Response400,
 		},
 		{
 			name:    "missing-flights-url",
@@ -462,15 +423,22 @@ func TestCreateISA(t *testing.T) {
 			appErr:  dsserr.BadRequest,
 			wantErr: &respSet.Response400,
 		},
+		{
+			name:       "missing-extents",
+			id:         dssmodels.ID("4348c8e5-0b1c-43cf-9114-2e67a4532765"),
+			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+			appErr:     dsserr.BadRequest,
+			wantErr:    &respSet.Response400,
+		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
+			ms := &mockStore{}
 			if r.wantISA != nil {
-				ma.On("InsertISA", mock.Anything, r.wantISA).Return(
-					r.wantISA, []*ridmodels.Subscription(nil), nil)
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
+					&operations.ISAResult{ISA: r.wantISA}, nil)
 			}
 			s := &Server{
-				App: ma,
+				Store: ms,
 			}
 
 			respSet = s.CreateIdentificationServiceArea(context.Background(), &restapi.CreateIdentificationServiceAreaRequest{
@@ -486,7 +454,7 @@ func TestCreateISA(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }
@@ -510,16 +478,18 @@ func TestUpdateISA(t *testing.T) {
 			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
 			version:    testdata.Version,
 			wantISA: &ridmodels.IdentificationServiceArea{
-				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				Owner:      "foo",
-				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-				Writer:     "locality value",
-				Version:    testdata.Version,
+				ID:      "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				URL:     "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				Owner:   "foo",
+				Writer:  "locality value",
+				Version: testdata.Version,
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+				},
 			},
 		},
 		{
@@ -601,10 +571,11 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	ms.On("Transact", mock.Anything, mock.Anything).Return(
 		&operations.ISAResult{
 			ISA: &ridmodels.IdentificationServiceArea{
-				ID:      id,
-				Owner:   dssmodels.Owner("me-myself-and-i"),
-				URL:     "https://no/place/like/home",
-				Version: testdata.Version,
+				ID:            id,
+				Owner:         dssmodels.Owner("me-myself-and-i"),
+				URL:           "https://no/place/like/home",
+				Version:       testdata.Version,
+				CellsVolume4D: &dssmodels.CellsVolume4D{},
 			},
 			Subscriptions: []*ridmodels.Subscription{
 				{
@@ -638,9 +609,10 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 	ma.On("SearchISAs", mock.Anything, mock.Anything, (*time.Time)(nil), (*time.Time)(nil)).Return(
 		[]*ridmodels.IdentificationServiceArea{
 			{
-				ID:    dssmodels.ID(uuid.New().String()),
-				Owner: dssmodels.Owner("me-myself-and-i"),
-				URL:   "https://no/place/like/home",
+				ID:            dssmodels.ID(uuid.New().String()),
+				Owner:         dssmodels.Owner("me-myself-and-i"),
+				URL:           "https://no/place/like/home",
+				CellsVolume4D: &dssmodels.CellsVolume4D{},
 			},
 		}, error(nil),
 	)

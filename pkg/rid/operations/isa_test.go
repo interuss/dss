@@ -3,6 +3,7 @@ package operations
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
@@ -14,6 +15,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func insertISA(ctx context.Context, repo repos.Repository, isa *ridmodels.IdentificationServiceArea) (*ISAResult, error) {
+	req := &insertISAPayload{ISA: isa}
+	ret, err := executeInsertISA(ctx, repo, req)
+	if err != nil {
+		return nil, err
+	}
+	if ret == nil {
+		return nil, nil
+	}
+	return ret.(*ISAResult), nil
+}
+
 func deleteISA(ctx context.Context, repo repos.Repository, id dssmodels.ID, owner dssmodels.Owner, version *dssmodels.Version) (*ISAResult, error) {
 	req := NewDeleteISAPayload(id, owner, version)
 	ret, err := executeDeleteISA(ctx, repo, req)
@@ -24,6 +37,83 @@ func deleteISA(ctx context.Context, repo repos.Repository, id dssmodels.ID, owne
 		return nil, nil
 	}
 	return ret.(*ISAResult), nil
+}
+
+func TestInsertISA(t *testing.T) {
+	ctx := newTestContext()
+	repo := newFakeSubscriptionRepo()
+
+	for _, r := range []struct {
+		name          string
+		startTime     time.Time
+		endTime       time.Time
+		wantErr       stacktrace.ErrorCode
+		wantStartTime time.Time
+		wantEndTime   time.Time
+	}{
+		{
+			name:    "missing-end-time",
+			wantErr: dsserr.BadRequest,
+		},
+		{
+			name:          "start-time-defaults-to-now",
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now(),
+		},
+		{
+			name:      "start-time-in-the-past",
+			startTime: fakeClock.Now().Add(-6 * time.Minute),
+			endTime:   fakeClock.Now().Add(time.Hour),
+			wantErr:   dsserr.BadRequest,
+		},
+		{
+			name:          "start-time-slightly-in-the-past",
+			startTime:     fakeClock.Now().Add(-4 * time.Minute),
+			endTime:       fakeClock.Now().Add(time.Hour),
+			wantStartTime: fakeClock.Now().Add(-4 * time.Minute),
+		},
+		{
+			name:      "end-time-before-start-time",
+			startTime: fakeClock.Now().Add(20 * time.Minute),
+			endTime:   fakeClock.Now().Add(10 * time.Minute),
+			wantErr:   dsserr.BadRequest,
+		},
+	} {
+		t.Run(r.name, func(t *testing.T) {
+			sa := &ridmodels.IdentificationServiceArea{
+				ID:    dssmodels.ID(uuid.New().String()),
+				Owner: dssmodels.Owner(uuid.New().String()),
+				CellsVolume4D: &dssmodels.CellsVolume4D{
+					Cells: s2.CellUnion{12494535935418957824},
+				},
+			}
+			if !r.startTime.IsZero() {
+				sa.StartTime = &r.startTime
+			}
+			if !r.endTime.IsZero() {
+				sa.EndTime = &r.endTime
+			}
+			result, err := insertISA(ctx, repo, sa)
+
+			if r.wantErr == stacktrace.ErrorCode(0) {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, r.wantErr, stacktrace.GetCode(err))
+			}
+
+			if !r.wantStartTime.IsZero() {
+				require.NotNil(t, result.ISA.StartTime)
+				// time.Time times are represented with loc==nil. The nil location means UTC.
+				// for test equality, it has to be explicitly converted to UTC.
+				// similar issue: https://github.com/golang/go/issues/19486
+				require.Equal(t, r.wantStartTime.UTC().Truncate(time.Microsecond), (*result.ISA.StartTime).UTC().Truncate(time.Microsecond))
+			}
+			if !r.wantEndTime.IsZero() {
+				require.NotNil(t, result.ISA.EndTime)
+				require.Equal(t, r.wantEndTime.UTC().Truncate(time.Microsecond), (*result.ISA.EndTime).UTC().Truncate(time.Microsecond))
+			}
+		})
+	}
 }
 
 func TestDeleteISA(t *testing.T) {
@@ -50,23 +140,24 @@ func TestDeleteISA(t *testing.T) {
 	}
 
 	// Insert the ISA.
-	serviceArea := &ridmodels.IdentificationServiceArea{
-		ID:        dssmodels.ID(uuid.New().String()),
-		Owner:     dssmodels.Owner(uuid.New().String()),
-		URL:       "https://no/place/like/home/for/flights",
-		StartTime: &startTime,
-		EndTime:   &endTime,
-		Cells:     s2.CellUnion{12494535935418957824},
-	}
-	insertSubs, err := repo.UpdateNotificationIdxsInCells(ctx, serviceArea.Cells)
+	insertResult, err := insertISA(ctx, repo, &ridmodels.IdentificationServiceArea{
+		ID:    dssmodels.ID(uuid.New().String()),
+		Owner: dssmodels.Owner(uuid.New().String()),
+		URL:   "https://no/place/like/home/for/flights",
+		CellsVolume4D: &dssmodels.CellsVolume4D{
+			StartTime: &startTime,
+			EndTime:   &endTime,
+			Cells:     s2.CellUnion{12494535935418957824},
+		},
+	})
 	require.NoError(t, err)
-	require.Len(t, insertSubs, len(insertedSubscriptions))
-	for _, s := range insertSubs {
+	require.NotNil(t, insertResult)
+	require.Len(t, insertResult.Subscriptions, len(insertedSubscriptions))
+	for _, s := range insertResult.Subscriptions {
 		require.Equal(t, 1, s.NotificationIndex)
 	}
-	isa, err := repo.InsertISA(ctx, serviceArea)
-	require.NoError(t, err)
-	require.NotNil(t, isa)
+
+	isa := insertResult.ISA
 
 	// Can't delete with different owner.
 	_, err = deleteISA(ctx, repo, isa.ID, "bad-owner", isa.Version)
