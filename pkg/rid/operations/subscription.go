@@ -3,7 +3,6 @@ package operations
 import (
 	"context"
 
-	ridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -87,30 +86,15 @@ func NewDeleteSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, versio
 }
 
 func init() {
-	Registry[ridv1.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteSubscriptionPayload],
-		Execute: executeDeleteSubscription,
-	}
 	Registry[ridv2.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*deleteSubscriptionPayload],
 		Execute: executeDeleteSubscription,
 	}
-	Registry[ridv1.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*insertSubscriptionPayload],
-		Execute: executeCreateSubscription,
-	}
 	Registry[ridv2.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*insertSubscriptionPayload],
 		Execute: executeCreateSubscription,
-	}
-	Registry[ridv1.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateSubscriptionPayload],
-		Execute: executeUpdateSubscription,
 	}
 	Registry[ridv2.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,

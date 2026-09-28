@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/golang/geo/s2"
-	ridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
@@ -104,30 +103,15 @@ func newISA(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, v
 }
 
 func init() {
-	Registry[ridv1.DeleteIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteISAPayload],
-		Execute: executeDeleteISA,
-	}
 	Registry[ridv2.DeleteIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*deleteISAPayload],
 		Execute: executeDeleteISA,
 	}
-	Registry[ridv1.CreateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*insertISAPayload],
-		Execute: executeInsertISA,
-	}
 	Registry[ridv2.CreateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*insertISAPayload],
 		Execute: executeInsertISA,
-	}
-	Registry[ridv1.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateISAPayload],
-		Execute: executeUpdateISA,
 	}
 	Registry[ridv2.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,

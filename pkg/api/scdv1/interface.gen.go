@@ -175,7 +175,7 @@ type QueryOperationalIntentReferencesRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const QueryOperationalIntentReferencesOperationID = "QueryOperationalIntentReferences"
+const QueryOperationalIntentReferencesOperationID = "scdv1.QueryOperationalIntentReferences"
 
 func (request *QueryOperationalIntentReferencesRequest) OperationID() string {
 	return QueryOperationalIntentReferencesOperationID
@@ -212,7 +212,7 @@ type GetOperationalIntentReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetOperationalIntentReferenceOperationID = "GetOperationalIntentReference"
+const GetOperationalIntentReferenceOperationID = "scdv1.GetOperationalIntentReference"
 
 func (request *GetOperationalIntentReferenceRequest) OperationID() string {
 	return GetOperationalIntentReferenceOperationID
@@ -255,7 +255,7 @@ type CreateOperationalIntentReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateOperationalIntentReferenceOperationID = "CreateOperationalIntentReference"
+const CreateOperationalIntentReferenceOperationID = "scdv1.CreateOperationalIntentReference"
 
 func (request *CreateOperationalIntentReferenceRequest) OperationID() string {
 	return CreateOperationalIntentReferenceOperationID
@@ -309,7 +309,7 @@ type UpdateOperationalIntentReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateOperationalIntentReferenceOperationID = "UpdateOperationalIntentReference"
+const UpdateOperationalIntentReferenceOperationID = "scdv1.UpdateOperationalIntentReference"
 
 func (request *UpdateOperationalIntentReferenceRequest) OperationID() string {
 	return UpdateOperationalIntentReferenceOperationID
@@ -358,7 +358,7 @@ type DeleteOperationalIntentReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteOperationalIntentReferenceOperationID = "DeleteOperationalIntentReference"
+const DeleteOperationalIntentReferenceOperationID = "scdv1.DeleteOperationalIntentReference"
 
 func (request *DeleteOperationalIntentReferenceRequest) OperationID() string {
 	return DeleteOperationalIntentReferenceOperationID
@@ -406,7 +406,7 @@ type QueryConstraintReferencesRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const QueryConstraintReferencesOperationID = "QueryConstraintReferences"
+const QueryConstraintReferencesOperationID = "scdv1.QueryConstraintReferences"
 
 func (request *QueryConstraintReferencesRequest) OperationID() string {
 	return QueryConstraintReferencesOperationID
@@ -443,7 +443,7 @@ type GetConstraintReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetConstraintReferenceOperationID = "GetConstraintReference"
+const GetConstraintReferenceOperationID = "scdv1.GetConstraintReference"
 
 func (request *GetConstraintReferenceRequest) OperationID() string {
 	return GetConstraintReferenceOperationID
@@ -486,7 +486,7 @@ type CreateConstraintReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateConstraintReferenceOperationID = "CreateConstraintReference"
+const CreateConstraintReferenceOperationID = "scdv1.CreateConstraintReference"
 
 func (request *CreateConstraintReferenceRequest) OperationID() string {
 	return CreateConstraintReferenceOperationID
@@ -537,7 +537,7 @@ type UpdateConstraintReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateConstraintReferenceOperationID = "UpdateConstraintReference"
+const UpdateConstraintReferenceOperationID = "scdv1.UpdateConstraintReference"
 
 func (request *UpdateConstraintReferenceRequest) OperationID() string {
 	return UpdateConstraintReferenceOperationID
@@ -582,7 +582,7 @@ type DeleteConstraintReferenceRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteConstraintReferenceOperationID = "DeleteConstraintReference"
+const DeleteConstraintReferenceOperationID = "scdv1.DeleteConstraintReference"
 
 func (request *DeleteConstraintReferenceRequest) OperationID() string {
 	return DeleteConstraintReferenceOperationID
@@ -627,7 +627,7 @@ type QuerySubscriptionsRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const QuerySubscriptionsOperationID = "QuerySubscriptions"
+const QuerySubscriptionsOperationID = "scdv1.QuerySubscriptions"
 
 func (request *QuerySubscriptionsRequest) OperationID() string { return QuerySubscriptionsOperationID }
 
@@ -662,7 +662,7 @@ type GetSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetSubscriptionOperationID = "GetSubscription"
+const GetSubscriptionOperationID = "scdv1.GetSubscription"
 
 func (request *GetSubscriptionRequest) OperationID() string { return GetSubscriptionOperationID }
 
@@ -703,7 +703,7 @@ type CreateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const CreateSubscriptionOperationID = "CreateSubscription"
+const CreateSubscriptionOperationID = "scdv1.CreateSubscription"
 
 func (request *CreateSubscriptionRequest) OperationID() string { return CreateSubscriptionOperationID }
 
@@ -750,7 +750,7 @@ type UpdateSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const UpdateSubscriptionOperationID = "UpdateSubscription"
+const UpdateSubscriptionOperationID = "scdv1.UpdateSubscription"
 
 func (request *UpdateSubscriptionRequest) OperationID() string { return UpdateSubscriptionOperationID }
 
@@ -792,7 +792,7 @@ type DeleteSubscriptionRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const DeleteSubscriptionOperationID = "DeleteSubscription"
+const DeleteSubscriptionOperationID = "scdv1.DeleteSubscription"
 
 func (request *DeleteSubscriptionRequest) OperationID() string { return DeleteSubscriptionOperationID }
 
@@ -835,7 +835,7 @@ type MakeDssReportRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const MakeDssReportOperationID = "MakeDssReport"
+const MakeDssReportOperationID = "scdv1.MakeDssReport"
 
 func (request *MakeDssReportRequest) OperationID() string { return MakeDssReportOperationID }
 
@@ -868,7 +868,7 @@ type GetUssAvailabilityRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetUssAvailabilityOperationID = "GetUssAvailability"
+const GetUssAvailabilityOperationID = "scdv1.GetUssAvailability"
 
 func (request *GetUssAvailabilityRequest) OperationID() string { return GetUssAvailabilityOperationID }
 
@@ -906,7 +906,7 @@ type SetUssAvailabilityRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const SetUssAvailabilityOperationID = "SetUssAvailability"
+const SetUssAvailabilityOperationID = "scdv1.SetUssAvailability"
 
 func (request *SetUssAvailabilityRequest) OperationID() string { return SetUssAvailabilityOperationID }
 
