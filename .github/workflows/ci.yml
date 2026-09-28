@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db: [crdb, yugabyte]
+        db: [crdb, yugabyte, raft]
         flags:
           - ""
           - "-enable_time_based_notification_index"
@@ -106,8 +106,15 @@ jobs:
         exclude:
           - db: crdb
             flags: ""
+          # Raft does not support the following flags as it executes requests sequentially.
+          - db: raft
+            flags: "-enable_time_based_notification_index"
+          - db: raft
+            flags: "-enable_scd_global_lock"
+          - db: raft
+            flags: "-enable_scd_hash_lock"
     env:
-      COMPOSE_PROFILES: ${{ matrix.db == 'yugabyte' && 'with-yugabyte' || '' }}
+      COMPOSE_PROFILES: ${{ matrix.db == 'yugabyte' && 'with-yugabyte' || matrix.db == 'raft' && 'with-raft' || '' }}
       CORE_SERVICE_EXTRA_FLAGS: ${{ matrix.flags }}
     steps:
       - name: Job information
@@ -133,7 +140,9 @@ jobs:
         run: make probe-locally
       - name: Run Qualifier against local DSS instance
         run: make qualify-locally
+      # Todo: Re-enable evict tests for raft once evict is implemented there.
       - name: Run evict tests against local DSS instance
+        if: matrix.db != 'raft'
         run: make evict-locally
       - name: Run security tests against local DSS instance
         run: make security-locally
