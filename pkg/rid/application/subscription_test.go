@@ -5,50 +5,8 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/google/uuid"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
-)
-
-var (
-	// Ensure the struct conforms to the interface
-	_                 SubscriptionApp = &app{}
-	subscriptionsPool                 = []struct {
-		name  string
-		input *ridmodels.Subscription
-	}{
-		{
-			name: "a subscription with startTime and endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				NotificationIndex: 42,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime: &startTime,
-					EndTime:   &endTime,
-					Cells: s2.CellUnion{
-						12494535935418957824,
-					},
-				},
-			},
-		},
-		{
-			name: "a subscription without startTime and with endTime",
-			input: &ridmodels.Subscription{
-				ID:                dssmodels.ID(uuid.New().String()),
-				Owner:             dssmodels.Owner(uuid.New().String()),
-				URL:               "https://no/place/like/home",
-				NotificationIndex: 42,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					EndTime: &endTime,
-					Cells: s2.CellUnion{
-						12494535935418957824,
-					},
-				},
-			},
-		},
-	}
 )
 
 type subscriptionStore struct {
