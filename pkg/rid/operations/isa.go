@@ -3,9 +3,11 @@ package operations
 import (
 	"context"
 
+	"github.com/golang/geo/s2"
 	ridv1 "github.com/interuss/dss/pkg/api/ridv1"
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -54,6 +56,25 @@ func NewInsertISAPayload(id dssmodels.ID, owner dssmodels.Owner, url string, wri
 	return &insertISAPayload{ISA: isa}, nil
 }
 
+type updateISAPayload struct {
+	ISA *ridmodels.IdentificationServiceArea
+}
+
+func (p *updateISAPayload) OperationID() string {
+	return ridv2.UpdateIdentificationServiceAreaOperationID
+}
+
+// NewUpdateISAPayload performs the request validation that can be done ahead of the transaction
+// for an ISA update request.
+func NewUpdateISAPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents *dssmodels.Volume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
+	isa, err := newISA(id, owner, url, writer, version, extents, allowHTTPBaseUrls)
+	if err != nil {
+		return nil, err
+	}
+	return &updateISAPayload{ISA: isa}, nil
+}
+
+// newISA performs the request validation that can be done ahead of the transaction.
 func newISA(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents *dssmodels.Volume4D, allowHTTPBaseUrls bool) (*ridmodels.IdentificationServiceArea, error) {
 	if !allowHTTPBaseUrls {
 		if err := ridmodels.ValidateURL(url); err != nil {
@@ -102,6 +123,16 @@ func init() {
 		Encode:  dssstore.EncodeJSON,
 		Decode:  dssstore.DecodeJSON[*insertISAPayload],
 		Execute: executeInsertISA,
+	}
+	Registry[ridv1.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*updateISAPayload],
+		Execute: executeUpdateISA,
+	}
+	Registry[ridv2.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
+		Encode:  dssstore.EncodeJSON,
+		Decode:  dssstore.DecodeJSON[*updateISAPayload],
+		Execute: executeUpdateISA,
 	}
 }
 
@@ -172,5 +203,53 @@ func executeInsertISA(ctx context.Context, repo repos.Repository, request dsssto
 		return nil, stacktrace.Propagate(err, "Error inserting ISA")
 	}
 
+	return &ISAResult{ISA: ret, Subscriptions: subs}, nil
+}
+
+func executeUpdateISA(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(*updateISAPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateIdentificationServiceAreaOperationID)
+	}
+
+	isa := payload.ISA
+
+	old, err := repo.GetISA(ctx, isa.ID, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error getting ISA")
+	}
+
+	// Validate and perhaps correct StartTime and EndTime.
+	if err := isa.AdjustTimeRange(timestamp.MustFromContext(ctx), old); err != nil {
+		return nil, stacktrace.Propagate(err, "Error adjusting time range")
+	}
+
+	switch {
+	case old == nil:
+		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "ISA %s not found", isa.ID.String())
+	case !isa.Version.Matches(old.Version):
+		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
+			"ISA currently at version %s but client specified %s", old.Version, isa.Version)
+	case old.Owner != isa.Owner:
+		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
+			"ISA owned by %s, but %s attempted to modify", old.Owner, isa.Owner)
+	}
+
+	// TODO steeling, we should change this to a Custom type, to obfuscate
+	// some of these metrics and prevent us from doing the wrong thing.
+	cells := s2.CellUnionFromUnion(old.Cells, isa.Cells)
+	geo.Levelify(&cells)
+
+	// UpdateNotificationIdxsInCells is done in the same transaction as the update since they
+	// are both modifying the store.
+	subs, err := repo.UpdateNotificationIdxsInCells(ctx, cells)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating notification indices")
+	}
+
+	ret, err := repo.UpdateISA(ctx, isa)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating ISA in repo")
+	}
 	return &ISAResult{ISA: ret, Subscriptions: subs}, nil
 }

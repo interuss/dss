@@ -92,11 +92,6 @@ func (ma *mockApp) GetISA(ctx context.Context, id dssmodels.ID) (*ridmodels.Iden
 	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Error(1)
 }
 
-func (ma *mockApp) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, []*ridmodels.Subscription, error) {
-	args := ma.Called(ctx, isa)
-	return args.Get(0).(*ridmodels.IdentificationServiceArea), args.Get(1).([]*ridmodels.Subscription), args.Error(2)
-}
-
 func (ma *mockApp) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -510,13 +505,13 @@ func TestUpdateISA(t *testing.T) {
 		},
 	} {
 		t.Run(r.name, func(t *testing.T) {
-			ma := &mockApp{}
+			ms := &mockStore{}
 			if r.wantISA != nil {
-				ma.On("UpdateISA", mock.Anything, r.wantISA).Return(
-					r.wantISA, []*ridmodels.Subscription(nil), nil)
+				ms.On("Transact", mock.Anything, mock.Anything).Return(
+					&operations.ISAResult{ISA: r.wantISA}, nil)
 			}
 			s := &Server{
-				App:      ma,
+				Store:    ms,
 				Locality: "locality value",
 			}
 			respSet = s.UpdateIdentificationServiceArea(context.Background(), &restapi.UpdateIdentificationServiceAreaRequest{
@@ -533,7 +528,7 @@ func TestUpdateISA(t *testing.T) {
 			} else {
 				require.NotNil(t, respSet.Response200)
 			}
-			require.True(t, ma.AssertExpectations(t))
+			require.True(t, ms.AssertExpectations(t))
 		})
 	}
 }
