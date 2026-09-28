@@ -26,13 +26,9 @@ type Subscription struct {
 	URL               string
 	NotificationIndex int
 	Owner             dssmodels.Owner
-	Cells             s2.CellUnion
-	StartTime         *time.Time
-	EndTime           *time.Time
 	Version           *dssmodels.Version
-	AltitudeHi        *float32
-	AltitudeLo        *float32
 	Writer            string
+	*dssmodels.CellsVolume4D
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts
@@ -46,24 +42,6 @@ func (s *Subscription) SetCells(cids []int64) {
 		cells = append(cells, s2.CellID(id))
 	}
 	s.Cells = cells
-}
-
-// SetExtents performs some data validation and sets the 4D volume on the
-// Subscription.
-func (s *Subscription) SetExtents(extents *dssmodels.Volume4D) error {
-	var err error
-	if extents == nil {
-		return nil
-	}
-	s.StartTime = extents.StartTime
-	s.EndTime = extents.EndTime
-	s.AltitudeHi = extents.SpatialVolume.AltitudeHi
-	s.AltitudeLo = extents.SpatialVolume.AltitudeLo
-	s.Cells, err = extents.SpatialVolume.Footprint.CalculateCovering()
-	if err != nil {
-		return stacktrace.Propagate(err, "Error calculating covering for Subscription")
-	}
-	return nil
 }
 
 // AdjustTimeRange adjusts the time range to the max allowed ranges on a
