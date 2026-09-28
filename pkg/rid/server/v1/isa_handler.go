@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	"github.com/interuss/dss/pkg/store"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"github.com/pkg/errors"
 )
@@ -27,10 +28,15 @@ func (s *Server) GetIdentificationServiceArea(ctx context.Context, req *restapi.
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format"))}}
 	}
 
-	isa, err := s.App.GetISA(ctx, id)
+	repo, err := s.Store.Interact(ctx)
 	if err != nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get ISA from application layer"))}}
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	isa, err := repo.GetISA(ctx, id, false)
+	if err != nil {
+		return restapi.GetIdentificationServiceAreaResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get ISA"))}}
 	}
 	if isa == nil {
 		return restapi.GetIdentificationServiceAreaResponseSet{Response404: &restapi.ErrorResponse{
@@ -265,7 +271,13 @@ func (s *Server) SearchIdentificationServiceAreas(ctx context.Context, req *rest
 		latest = &ts
 	}
 
-	isas, err := s.App.SearchISAs(ctx, cu, earliest, latest)
+	repo, err := s.Store.Interact(ctx)
+	if err != nil {
+		return restapi.SearchIdentificationServiceAreasResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Unable to interact with store"))}}
+	}
+	earliestOrNow := timestamp.NotBeforeNow(timestamp.MustFromContext(ctx), earliest)
+	isas, err := repo.SearchISAs(ctx, cu, &earliestOrNow, latest)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Unable to search ISAs")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {
