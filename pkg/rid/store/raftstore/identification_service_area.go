@@ -30,7 +30,7 @@ func (r *repo) GetISA(ctx context.Context, id dssmodels.ID, _ bool) (*ridmodels.
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getISA, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getISA, buf)
 }
 
 func (r *repo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
@@ -39,7 +39,7 @@ func (r *repo) DeleteISA(ctx context.Context, isa *ridmodels.IdentificationServi
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, deleteISA, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, deleteISA, buf)
 }
 
 func (r *repo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
@@ -48,7 +48,7 @@ func (r *repo) InsertISA(ctx context.Context, isa *ridmodels.IdentificationServi
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, insertISA, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, insertISA, buf)
 }
 
 func (r *repo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServiceArea) (*ridmodels.IdentificationServiceArea, error) {
@@ -57,7 +57,7 @@ func (r *repo) UpdateISA(ctx context.Context, isa *ridmodels.IdentificationServi
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, updateISA, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, updateISA, buf)
 }
 
 func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
@@ -66,7 +66,7 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchISAs, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchISAs, buf)
 }
 
 func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
@@ -75,9 +75,9 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, listExpiredISAs, buf, true)
+	return r.consensus.HandleReadRequest(ctx, listExpiredISAs, buf)
 }
 
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {
-	return r.consensus.HandleClientRequest(ctx, countISAs, nil, true)
+	return r.consensus.HandleReadRequest(ctx, countISAs, nil)
 }

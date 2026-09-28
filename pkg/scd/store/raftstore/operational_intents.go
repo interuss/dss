@@ -27,7 +27,7 @@ func (r *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdm
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getOperationalIntent, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getOperationalIntent, buf)
 }
 
 func (r *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error {
@@ -36,7 +36,7 @@ func (r *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) err
 		return stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	_, err = r.consensus.HandleClientRequest(ctx, deleteOperationalIntent, buf, false)
+	_, err = r.consensus.HandleWriteRequest(ctx, deleteOperationalIntent, buf)
 	return err
 }
 
@@ -46,7 +46,7 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, upsertOperationalIntent, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, upsertOperationalIntent, buf)
 }
 
 func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
@@ -55,7 +55,7 @@ func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmod
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchOperationalIntents, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchOperationalIntents, buf)
 }
 
 func (r *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error) {
@@ -64,7 +64,7 @@ func (r *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getDependentOperationalIntents, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getDependentOperationalIntents, buf)
 }
 
 func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
@@ -73,9 +73,9 @@ func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, listExpiredOperationalIntents, buf, true)
+	return r.consensus.HandleReadRequest(ctx, listExpiredOperationalIntents, buf)
 }
 
 func (r *repo) CountOperationalIntents(ctx context.Context) (int64, error) {
-	return r.consensus.HandleClientRequest(ctx, countOperationalIntents, nil, true)
+	return r.consensus.HandleReadRequest(ctx, countOperationalIntents, nil)
 }

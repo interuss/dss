@@ -31,7 +31,7 @@ func (r *repo) GetSubscription(ctx context.Context, id dssmodels.ID) (*ridmodels
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getSubscription, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getSubscription, buf)
 }
 
 func (r *repo) DeleteSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
@@ -40,7 +40,7 @@ func (r *repo) DeleteSubscription(ctx context.Context, sub *ridmodels.Subscripti
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, deleteSubscription, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, deleteSubscription, buf)
 }
 
 func (r *repo) InsertSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
@@ -49,7 +49,7 @@ func (r *repo) InsertSubscription(ctx context.Context, sub *ridmodels.Subscripti
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, insertSubscription, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, insertSubscription, buf)
 }
 
 func (r *repo) UpdateSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
@@ -58,7 +58,7 @@ func (r *repo) UpdateSubscription(ctx context.Context, sub *ridmodels.Subscripti
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, updateSubscription, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, updateSubscription, buf)
 }
 
 func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
@@ -67,7 +67,7 @@ func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchSubscriptions, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchSubscriptions, buf)
 }
 
 func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) ([]*ridmodels.Subscription, error) {
@@ -76,7 +76,7 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchSubscriptionsByOwner, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchSubscriptionsByOwner, buf)
 }
 
 func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellUnion) ([]*ridmodels.Subscription, error) {
@@ -85,7 +85,7 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, updateNotificationIdxsInCells, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, updateNotificationIdxsInCells, buf)
 }
 
 func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.CellUnion, owner dssmodels.Owner) (int, error) {
@@ -94,7 +94,7 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
 		return 0, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, maxSubscriptionCountInCellsByOwner, buf, true)
+	return r.consensus.HandleReadRequest(ctx, maxSubscriptionCountInCellsByOwner, buf)
 }
 
 func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
@@ -103,9 +103,9 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, listExpiredSubscriptions, buf, true)
+	return r.consensus.HandleReadRequest(ctx, listExpiredSubscriptions, buf)
 }
 
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
-	return r.consensus.HandleClientRequest(ctx, countSubscriptions, nil, true)
+	return r.consensus.HandleReadRequest(ctx, countSubscriptions, nil)
 }

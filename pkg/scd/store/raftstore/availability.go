@@ -21,7 +21,7 @@ func (r *repo) GetUssAvailability(ctx context.Context, id dssmodels.Manager) (*s
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getUssAvailability, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getUssAvailability, buf)
 }
 
 func (r *repo) UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error) {
@@ -30,5 +30,5 @@ func (r *repo) UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAva
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, upsertUssAvailability, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, upsertUssAvailability, buf)
 }

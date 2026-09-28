@@ -24,7 +24,7 @@ func (r *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.Cel
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, searchConstraints, buf, true)
+	return r.consensus.HandleReadRequest(ctx, searchConstraints, buf)
 }
 
 func (r *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.Constraint, error) {
@@ -33,7 +33,7 @@ func (r *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.C
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, getConstraint, buf, true)
+	return r.consensus.HandleReadRequest(ctx, getConstraint, buf)
 }
 
 func (r *repo) UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error) {
@@ -42,7 +42,7 @@ func (r *repo) UpsertConstraint(ctx context.Context, constraint *scdmodels.Const
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	return r.consensus.HandleClientRequest(ctx, upsertConstraint, buf, false)
+	return r.consensus.HandleWriteRequest(ctx, upsertConstraint, buf)
 }
 
 func (r *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
@@ -51,10 +51,10 @@ func (r *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 		return stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
-	_, err = r.consensus.HandleClientRequest(ctx, deleteConstraint, buf, false)
+	_, err = r.consensus.HandleWriteRequest(ctx, deleteConstraint, buf)
 	return err
 }
 
 func (r *repo) CountConstraints(ctx context.Context) (int64, error) {
-	return r.consensus.HandleClientRequest(ctx, countConstraints, nil, true)
+	return r.consensus.HandleReadRequest(ctx, countConstraints, nil)
 }
