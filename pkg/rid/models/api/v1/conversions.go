@@ -13,6 +13,7 @@ import (
 // === RID -> Business ===
 
 // FromVolume4D converts RID v1 REST model to business object
+// TODO: remove once everything is parsed directly into CellsVolume4D
 func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	result := &dssmodels.Volume4D{
 		SpatialVolume: FromVolume3D(&vol4.SpatialVolume),
@@ -37,7 +38,40 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 	return result, nil
 }
 
+// CellsVolume4DFromRest converts RID v1 REST model to CellsVolume4D
+func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
+	cells, err := FromGeoPolygon(&vol4.SpatialVolume.Footprint).CalculateCovering()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error calculating footprint covering")
+	}
+
+	result := &dssmodels.CellsVolume4D{
+		Cells:      cells,
+		AltitudeLo: (*float32)(vol4.SpatialVolume.AltitudeLo),
+		AltitudeHi: (*float32)(vol4.SpatialVolume.AltitudeHi),
+	}
+
+	if vol4.TimeStart != nil {
+		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeStart)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting start time")
+		}
+		result.StartTime = &ts
+	}
+
+	if vol4.TimeEnd != nil {
+		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeEnd)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error converting end time")
+		}
+		result.EndTime = &ts
+	}
+
+	return result, nil
+}
+
 // FromVolume3D converts RID v1 REST model to business object
+// TODO: remove along with FromVolume4D.
 func FromVolume3D(vol3 *restapi.Volume3D) *dssmodels.Volume3D {
 	return &dssmodels.Volume3D{
 		Footprint:  FromGeoPolygon(&vol3.Footprint),
