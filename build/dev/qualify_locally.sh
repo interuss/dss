@@ -13,8 +13,8 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
+CORE_SERVICE_CONTAINER="${CORE_SERVICE_CONTAINER:-dss_sandbox-local-dss-core-service-1}"
+OAUTH_CONTAINER="${OAUTH_CONTAINER:-dss_sandbox-local-dss-dummy-oauth-1}"
 declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER")
 
 for container_name in "${localhost_containers[@]}"; do
@@ -52,7 +52,7 @@ done
 
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
-	--network dss_sandbox-default \
+	--network "${DSS_DOCKER_NETWORK:-dss_sandbox-default}" \
 	-v "$(pwd)/build/dev/dss_probing_qualifier_config.yaml:/app/monitoring/uss_qualifier/dss_probing_qualifier_config.yaml" \
 	-w /app/monitoring/uss_qualifier \
 	-e AUTH_SPEC='DummyOAuth(http://oauth:8085/token,uss_qualifier)' \

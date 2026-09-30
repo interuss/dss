@@ -1,0 +1,87 @@
+# Temporary copy of interuss/monitoring build/dev, used by CI to test a multi-node raft cluster
+# while we define the testing stack for the raftstore. Keep aligned with monitoring (see README.md).
+# This Docker Compose file is intended to be used through `./run_locally.sh` to supply all required environment variables.
+
+services:
+
+  dss:
+    image: ${DSS_IMAGE:?}
+    command: /startup/core_service.sh ${DEBUG_ON:-0}
+    restart: always
+    cap_add: [ NET_ADMIN ]
+    volumes:
+      - $PWD/../../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+    hostname: dss${USS_NODE_IDX:?}.uss${USS_IDX:?}.localutm
+    networks:
+      dss_internal_network:
+          ipv4_address: ${DSS_IP:?}
+      interop_ecosystem_network:
+    ports:
+      - "40${PADDED_NODE_IDX:?}:4000"
+      - "80${PADDED_NODE_IDX:?}:80"
+      - "95${PADDED_NODE_IDX:?}:95${PADDED_NODE_IDX:?}"
+      - "96${PADDED_NODE_IDX:?}:96${PADDED_NODE_IDX:?}"
+      - "97${PADDED_NODE_IDX:?}:97${PADDED_NODE_IDX:?}"
+    environment:
+      # core-service is the alias used by build/dev/*_locally.sh to reach the load balancer
+      JWT_AUDIENCES: core-service,dss${USS_NODE_IDX:?}.uss${USS_IDX:?}.localutm
+      INTRA_USS_SUBNET: 172.27.${USS_IDX:?}.0/24
+      INTER_USS_SUBNET: 172.27.0.0/16
+      INTRA_USS_NETEM_CONF: ${INTRA_USS_NETEM_CONF-}
+      INTER_USS_NETEM_CONF: ${INTER_USS_NETEM_CONF-}
+      CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
+      RAFT_ID: ${RAFT_ID:-1}
+      AUX_RAFT_NODES: ${AUX_RAFT_NODES-}
+      RID_RAFT_NODES: ${RID_RAFT_NODES-}
+      SCD_RAFT_NODES: ${SCD_RAFT_NODES-}
+    healthcheck:
+      test: wget -O - 'http://localhost/healthy' || exit 1
+      start_period: 120s
+      start_interval: 5s
+
+  oauth:
+    image: interuss/dummy-oauth
+    command: -private_key_file /var/test-certs/auth2.key
+    volumes:
+      - $PWD/../../test-certs:/var/test-certs:ro
+    profiles: [oauth]
+    hostname: oauth.authority.localutm
+    networks:
+      - interop_ecosystem_network
+    expose:
+      - 8085
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: wget -O - 'http://localhost:8085/token?intended_audience=-&scope=-' || exit 1
+      interval: 3m
+      start_period: 30s
+      start_interval: 5s
+
+  dss_loadbalancer:
+    image: haproxy:2.9-alpine
+    profiles: [lb]
+    entrypoint: /startup/lb-entrypoint.sh
+    hostname: dss.lb.localutm
+    volumes:
+      - $PWD/startup/lb-entrypoint.sh:/startup/lb-entrypoint.sh:ro
+    networks:
+      - interop_ecosystem_network
+    ports:
+      - "8090:80"
+      - "8082:8082"
+    environment:
+      NUM_USS: ${NUM_USS:-1}
+      NUM_NODES: ${NUM_NODES:-1}
+
+networks:
+  dss_internal_network:
+    name: dss_internal_network
+    external: true
+  interop_ecosystem_network:
+    name: interop_ecosystem_network
+    external: true
+
+volumes:
+  dss_component_coordination:

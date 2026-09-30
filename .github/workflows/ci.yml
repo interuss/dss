@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db: [crdb, yugabyte, raft]
+        db: [crdb, yugabyte]
         flags:
           - ""
           - "-enable_time_based_notification_index"
@@ -106,13 +106,12 @@ jobs:
         exclude:
           - db: crdb
             flags: ""
-          # Raft does not support the following flags as it executes requests sequentially.
+        # Raft does not support the flags above as it executes requests sequentially.
+        include:
           - db: raft
-            flags: "-enable_time_based_notification_index"
-          - db: raft
-            flags: "-enable_scd_global_lock"
-          - db: raft
-            flags: "-enable_scd_hash_lock"
+            flags: ""
+          - db: raft-cluster
+            flags: ""
     env:
       COMPOSE_PROFILES: ${{ matrix.db == 'yugabyte' && 'with-yugabyte' || matrix.db == 'raft' && 'with-raft' || '' }}
       CORE_SERVICE_EXTRA_FLAGS: ${{ matrix.flags }}
@@ -132,6 +131,14 @@ jobs:
           submodules: true
       - name: Build dss image
         run: make build-dss
+      - name: Deploy a 3-node raft cluster
+        if: matrix.db == 'raft-cluster'
+        run: |
+          echo "LOCAL_RUN_SCRIPT=build/dev/ci_infra/run_locally.sh" >> "$GITHUB_ENV"
+          echo "NUM_USS=3" >> "$GITHUB_ENV"
+          echo "CORE_SERVICE_CONTAINER=ci_infra_1-1-dss_loadbalancer-1" >> "$GITHUB_ENV"
+          echo "OAUTH_CONTAINER=ci_infra_1-1-oauth-1" >> "$GITHUB_ENV"
+          echo "DSS_DOCKER_NETWORK=interop_ecosystem_network" >> "$GITHUB_ENV"
       - name: Tear down any pre-existing local DSS instance
         run: make down-locally
       - name: Start local DSS instance
@@ -142,10 +149,23 @@ jobs:
         run: make qualify-locally
       # Todo: Re-enable evict tests for raft once evict is implemented there.
       - name: Run evict tests against local DSS instance
-        if: matrix.db != 'raft'
+        if: matrix.db != 'raft' && matrix.db != 'raft-cluster'
         run: make evict-locally
       - name: Run security tests against local DSS instance
         run: make security-locally
+      - name: Dump raft cluster logs
+        if: always() && matrix.db == 'raft-cluster'
+        run: |
+          mkdir -p raft-cluster-logs
+          for c in $(docker ps -a --format '{{.Names}}' | grep '^ci_infra_' || true); do
+            docker logs "$c" > "raft-cluster-logs/${c}.log" 2>&1 || true
+          done
+      - name: Upload raft cluster logs
+        if: always() && matrix.db == 'raft-cluster'
+        uses: actions/upload-artifact@v4
+        with:
+          name: raft-cluster-logs
+          path: raft-cluster-logs
       - name: Bring down local DSS instance
         run: make down-locally
 

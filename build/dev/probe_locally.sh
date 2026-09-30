@@ -13,8 +13,8 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
+CORE_SERVICE_CONTAINER="${CORE_SERVICE_CONTAINER:-dss_sandbox-local-dss-core-service-1}"
+OAUTH_CONTAINER="${OAUTH_CONTAINER:-dss_sandbox-local-dss-dummy-oauth-1}"
 declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER")
 
 for container_name in "${localhost_containers[@]}"; do
@@ -68,7 +68,7 @@ fi
 
 if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--link "$CORE_SERVICE_CONTAINER":core-service \
-	--network dss_sandbox-default \
+	--network "${DSS_DOCKER_NETWORK:-dss_sandbox-default}" \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
 	interuss/monitoring:v0.33.0 \

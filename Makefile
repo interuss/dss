@@ -167,6 +167,8 @@ cleanup-test-go-units-crdb:
 	@docker stop dss-crdb-for-testing > /dev/null 2>&1 || true
 	@docker rm dss-crdb-for-testing > /dev/null 2>&1 || true
 
+LOCAL_RUN_SCRIPT ?= build/dev/run_locally.sh
+
 .PHONY: build-dss
 build-dss:
 	build/dev/run_locally.sh build
@@ -182,7 +184,7 @@ restart-all: build-dss down-locally start-locally
 .PHONY: start-locally
 start-locally:
 	@test ${COMPOSE_PROFILES} || echo "\033[0;96mTo start Yugabyte datastore, set the docker compose profile to with-yugabyte. Example using env variable: export COMPOSE_PROFILES=with-yugabyte\033[0m"
-	build/dev/run_locally.sh up -d
+	$(LOCAL_RUN_SCRIPT) up -d
 
 .PHONY: probe-locally
 probe-locally:
@@ -234,11 +236,11 @@ collect-coverage:
 
 .PHONY: stop-locally
 stop-locally:
-	build/dev/run_locally.sh stop
+	$(LOCAL_RUN_SCRIPT) stop
 
 .PHONY: down-locally
 down-locally:
-	build/dev/run_locally.sh down
+	$(LOCAL_RUN_SCRIPT) down
 
 # This mirrors the dss-tests continuous integration workflow job (.github/workflows/ci.yml)
 .PHONY: dss-tests
