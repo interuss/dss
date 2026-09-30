@@ -134,7 +134,7 @@ jobs:
       - name: Deploy a 3-node raft cluster
         if: matrix.db == 'raft-cluster'
         run: |
-          echo "LOCAL_DSS_DEPLOYMENT=ci_infra" >> "$GITHUB_ENV"
+          echo "LOCAL_RUN_SCRIPT=build/dev/ci_infra/run_locally.sh" >> "$GITHUB_ENV"
           echo "NUM_USS=3" >> "$GITHUB_ENV"
           echo "CORE_SERVICE_CONTAINER=ci_infra_1-1-dss_loadbalancer-1" >> "$GITHUB_ENV"
           echo "OAUTH_CONTAINER=ci_infra_1-1-oauth-1" >> "$GITHUB_ENV"
@@ -154,8 +154,18 @@ jobs:
       - name: Run security tests against local DSS instance
         run: make security-locally
       - name: Dump raft cluster logs
-        if: failure() && matrix.db == 'raft-cluster'
-        run: for c in $(docker ps -a --format '{{.Names}}' | grep '^ci_infra_'); do echo "=== $c"; docker logs "$c"; done
+        if: always() && matrix.db == 'raft-cluster'
+        run: |
+          mkdir -p raft-cluster-logs
+          for c in $(docker ps -a --format '{{.Names}}' | grep '^ci_infra_' || true); do
+            docker logs "$c" > "raft-cluster-logs/${c}.log" 2>&1 || true
+          done
+      - name: Upload raft cluster logs
+        if: always() && matrix.db == 'raft-cluster'
+        uses: actions/upload-artifact@v4
+        with:
+          name: raft-cluster-logs
+          path: raft-cluster-logs
       - name: Bring down local DSS instance
         run: make down-locally
 

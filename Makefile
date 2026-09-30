@@ -167,8 +167,7 @@ cleanup-test-go-units-crdb:
 	@docker stop dss-crdb-for-testing > /dev/null 2>&1 || true
 	@docker rm dss-crdb-for-testing > /dev/null 2>&1 || true
 
-# Set LOCAL_DSS_DEPLOYMENT=ci_infra to use the DSS pool of build/dev/ci_infra instead of the standalone instance.
-LOCAL_RUN_SCRIPT := $(if $(filter ci_infra,$(LOCAL_DSS_DEPLOYMENT)),build/dev/ci_infra/run_locally.sh,build/dev/run_locally.sh)
+LOCAL_RUN_SCRIPT ?= build/dev/run_locally.sh
 
 .PHONY: build-dss
 build-dss:
