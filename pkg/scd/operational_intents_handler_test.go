@@ -3,13 +3,64 @@ package scd
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	"github.com/interuss/dss/pkg/memstore"
+	"github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
+	"github.com/interuss/dss/pkg/scd/repos"
+	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
+
+type oirTestStore struct {
+	*memstore.Store[repos.Repository]
+}
+
+func (s *oirTestStore) Transact(ctx context.Context, req dssstore.OperationRequest) (any, error) {
+	handler, ok := operations.Registry[req.OperationID()]
+	if !ok {
+		return nil, stacktrace.NewError("unknown operation %q", req.OperationID())
+	}
+	return handler.Execute(ctx, s.GetRepo(), req)
+}
+
+func newOIRTestServer(t *testing.T) (*Server, context.Context) {
+	t.Helper()
+	now := time.Date(2026, time.October, 1, 12, 0, 0, 0, time.UTC)
+	ctx := timestamp.NewContext(context.Background(), now)
+	ms, err := scdmemstore.Init(ctx, zap.NewNop())
+	require.NoError(t, err)
+	ms.Restore()
+	return &Server{
+		Store:             &oirTestStore{Store: ms},
+		AllowHTTPBaseUrls: true,
+	}, ctx
+}
+
+func oirTestVolume4D(now time.Time) restapi.Volume4D {
+	startStr := now.Format(time.RFC3339)
+	endStr := now.Add(25 * time.Minute).Format(time.RFC3339)
+	return restapi.Volume4D{
+		TimeStart: &restapi.Time{Value: startStr, Format: models.TimeFormatRFC3339},
+		TimeEnd:   &restapi.Time{Value: endStr, Format: models.TimeFormatRFC3339},
+		Volume: restapi.Volume3D{
+			OutlineCircle: &restapi.Circle{
+				Center: &restapi.LatLngPoint{Lat: 37.427636, Lng: -122.170502},
+				Radius: &restapi.Radius{Value: 900, Units: "M"},
+			},
+			AltitudeLower: &restapi.Altitude{Value: 0, Reference: models.ReferenceW84, Units: models.UnitsM},
+			AltitudeUpper: &restapi.Altitude{Value: 300, Reference: models.ReferenceW84, Units: models.UnitsM},
+		},
+	}
+}
 
 func setUSSAvailability(t *testing.T, srv *Server, ctx context.Context, ussID string, state restapi.UssAvailabilityState) {
 	t.Helper()
@@ -85,8 +136,8 @@ func TestOperationalIntentMutationsEnforceUSSAvailability(t *testing.T) {
 	}
 
 	t.Run("create_rejected_when_down_and_allowed_when_unknown_or_normal", func(t *testing.T) {
-		srv, ctx := newTestServer(t)
-		vol := testVolume4D(timestamp.MustFromContext(ctx))
+		srv, ctx := newOIRTestServer(t)
+		vol := oirTestVolume4D(timestamp.MustFromContext(ctx))
 		manager := "uss_a"
 		observer := "uss_b"
 
@@ -164,8 +215,8 @@ func TestOperationalIntentMutationsEnforceUSSAvailability(t *testing.T) {
 	})
 
 	t.Run("update_and_delete_restrictions_when_down", func(t *testing.T) {
-		srv, ctx := newTestServer(t)
-		vol := testVolume4D(timestamp.MustFromContext(ctx))
+		srv, ctx := newOIRTestServer(t)
+		vol := oirTestVolume4D(timestamp.MustFromContext(ctx))
 		manager := "uss_a"
 		observer := "uss_b"
 
