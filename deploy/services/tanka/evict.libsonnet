@@ -32,6 +32,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       locality: metadata.locality,
                       delete: true,
                   } + (if metadata.evict.scd.timeout != "" then { timeout: metadata.evict.scd.timeout } else {})
+                    + (if metadata.evict.scd.limit > 0 then { scd_limit: metadata.evict.scd.limit } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
@@ -69,6 +70,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       locality: metadata.locality,
                       delete: true,
                   } + (if metadata.evict.rid.timeout != "" then { timeout: metadata.evict.rid.timeout } else {})
+                    + (if metadata.evict.rid.limit > 0 then { rid_limit: metadata.evict.rid.limit } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],

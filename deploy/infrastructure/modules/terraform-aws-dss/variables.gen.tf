@@ -566,6 +566,24 @@ variable "evict_scd_timeout" {
 }
 
 
+variable "evict_scd_limit" {
+  type        = number
+  description = <<-EOT
+  Maximum number of entities deleted by each run of the SCD eviction command.
+  Set to 0 to delete all expired entities in a single run.
+
+  Example: `1000`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_scd_limit >= 0
+    error_message = "evict_scd_limit must be equal to or greater than 0."
+  }
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -631,6 +649,24 @@ variable "evict_rid_timeout" {
   EOT
 
   default = ""
+}
+
+
+variable "evict_rid_limit" {
+  type        = number
+  description = <<-EOT
+  Maximum number of entities deleted by each run of the RID eviction command.
+  Set to 0 to delete all expired entities in a single run.
+
+  Example: `1000`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_rid_limit >= 0
+    error_message = "evict_rid_limit must be equal to or greater than 0."
+  }
 }
 
 

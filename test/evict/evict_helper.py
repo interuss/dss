@@ -16,6 +16,8 @@ class EvictHelper:
         rid_sub: bool = False,
         scd_ttl: str | None = None,
         rid_ttl: str | None = None,
+        scd_limit: int | None = None,
+        rid_limit: int | None = None,
         locality: str = "local_dev",
         delete: bool = False,
     ):
@@ -58,6 +60,18 @@ class EvictHelper:
                 str(rid_ttl).lower(),
             ]
 
+        if scd_limit is not None:
+            command += [
+                "--scd_limit",
+                str(scd_limit),
+            ]
+
+        if rid_limit is not None:
+            command += [
+                "--rid_limit",
+                str(rid_limit),
+            ]
+
         process = subprocess.run(
             " ".join(command), shell=True, capture_output=True, timeout=5
         )
@@ -68,16 +82,32 @@ class EvictHelper:
             self.logger.error(process.stderr.decode("utf-8"))
             sys.exit(1)
 
-    def evict_scd_operational_intents(self, ttl: str, delete: bool):
-        self.run_evict(scd_oir=True, delete=delete, scd_ttl=ttl)
+    def evict_scd_operational_intents(
+        self, ttl: str, delete: bool, limit: int | None = None
+    ):
+        self.run_evict(scd_oir=True, delete=delete, scd_ttl=ttl, scd_limit=limit)
 
-    def evict_scd_subscriptions(self, ttl: str, delete: bool):
-        self.run_evict(scd_sub=True, delete=delete, scd_ttl=ttl)
+    def evict_scd_subscriptions(self, ttl: str, delete: bool, limit: int | None = None):
+        self.run_evict(scd_sub=True, delete=delete, scd_ttl=ttl, scd_limit=limit)
 
-    def evict_rid_ISAs(self, ttl: str, delete: bool, locality: str = "local_dev"):
-        self.run_evict(rid_isa=True, delete=delete, rid_ttl=ttl, locality=locality)
+    def evict_rid_ISAs(
+        self,
+        ttl: str,
+        delete: bool,
+        locality: str = "local_dev",
+        limit: int | None = None,
+    ):
+        self.run_evict(
+            rid_isa=True, delete=delete, rid_ttl=ttl, locality=locality, rid_limit=limit
+        )
 
     def evict_rid_subscriptions(
-        self, ttl: str, delete: bool, locality: str = "local_dev"
+        self,
+        ttl: str,
+        delete: bool,
+        locality: str = "local_dev",
+        limit: int | None = None,
     ):
-        self.run_evict(rid_sub=True, delete=delete, rid_ttl=ttl, locality=locality)
+        self.run_evict(
+            rid_sub=True, delete=delete, rid_ttl=ttl, locality=locality, rid_limit=limit
+        )

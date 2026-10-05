@@ -104,7 +104,9 @@ class QueryHelper:
 
         return json.loads(r.read())
 
-    def create_scd_op_intent(self, until: datetime) -> dict[str, Any] | None:
+    def create_scd_op_intent(
+        self, until: datetime, lat: float = 22.910168434185902, lng: float = 56
+    ) -> dict[str, Any] | None:
         r = self.do_dss_put_query(
             f"http://localhost:8082/dss/v1/operational_intent_references/{uuid.uuid4()}",
             {
@@ -125,7 +127,7 @@ class QueryHelper:
                             },
                             "outline_circle": {
                                 "radius": {"units": "M", "value": 100},
-                                "center": {"lat": 22.910168434185902, "lng": 56},
+                                "center": {"lat": lat, "lng": lng},
                             },
                         },
                         "time_start": {

@@ -218,6 +218,12 @@ Use <code>latest</code> to use the latest schema version.</p>
                 <td><p>Set this to true to enable cleanup of RID ISAs.</p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>evict_rid_limit (<code>number</code>)</td>
+                <td><p>Maximum number of entities deleted by each run of the RID eviction command.
+Set to 0 to delete all expired entities in a single run.</p>
+<p>Example: <code>1000</code></p>
+<br/>Default value: <code>0</code></td>
+            </tr><tr>
                 <td>evict_rid_schedule (<code>string</code>)</td>
                 <td><p>When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).</p>
 <br/>Default value: <code>"*/30 * * * *"</code></td>
@@ -235,6 +241,12 @@ Leave empty to use the default value of the command.</p>
                 <td>evict_rid_ttl (<code>string</code>)</td>
                 <td><p>How long expired RID items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"30m"</code></td>
+            </tr><tr>
+                <td>evict_scd_limit (<code>number</code>)</td>
+                <td><p>Maximum number of entities deleted by each run of the SCD eviction command.
+Set to 0 to delete all expired entities in a single run.</p>
+<p>Example: <code>1000</code></p>
+<br/>Default value: <code>0</code></td>
             </tr><tr>
                 <td>evict_scd_operational_intents (<code>bool</code>)</td>
                 <td><p>Set this to true to enable cleanup of SCD operational intents.</p>

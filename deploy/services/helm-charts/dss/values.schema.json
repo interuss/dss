@@ -316,6 +316,11 @@
                       "type": "string",
                       "description": "Go duration format (https://pkg.go.dev/time#ParseDuration). Empty to use the command default."
                     },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                    },
                     "operationalIntents": {
                       "type": "boolean"
                     },
@@ -324,7 +329,7 @@
                     }
                   }
                 },
-                "scd": {
+                "rid": {
                   "description": "RID Related configuration",
                   "type": "object",
                   "properties": {
@@ -342,6 +347,11 @@
                     "timeout": {
                       "type": "string",
                       "description": "Go duration format (https://pkg.go.dev/time#ParseDuration). Empty to use the command default."
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
                     },
                     "ISAs": {
                       "type": "boolean"

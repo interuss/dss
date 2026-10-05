@@ -81,6 +81,7 @@ resource "local_file" "helm_chart_values" {
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
+            limit : var.evict_scd_limit
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -89,6 +90,7 @@ resource "local_file" "helm_chart_values" {
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
+            limit : var.evict_rid_limit
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
@@ -294,6 +296,7 @@ resource "local_file" "helm_chart_values" {
             schedule   = var.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
+            limit : var.evict_scd_limit
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -302,6 +305,7 @@ resource "local_file" "helm_chart_values" {
             schedule   = var.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
+            limit : var.evict_rid_limit
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }

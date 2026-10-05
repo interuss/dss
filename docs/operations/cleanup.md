@@ -22,6 +22,8 @@ By default, the tool only lists expired entities. Deletion is opt-in via the `--
     - Ensure a backup of the data is available.
     - Double-check the TTL values passed to `--rid_ttl` and `--scd_ttl`.
 
+    A preview run (without `--delete`) and a later `--delete` run are two separate invocations, not one atomic operation. Entities can expire, be created or be removed between the preview and the delete, and the delete run re-evaluates the threshold at its own execution time. With `--rid_limit`/`--scd_limit`, the delete run removes only part of the entities listed by the preview. Keep the gap between the two runs short and re-review if in doubt.
+
 Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
 
 ## Why and when to run the cleanup
@@ -35,7 +37,6 @@ There is no single correct interval or TTL. Reasonable values depend on context 
 
 The defaults shipped with the deployment tooling (`30m` TTL on RID running every 30 min, `2688h` ≈ 56-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.
 
-
 ## Performance impact
 
 Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subscriptions) is evicted with a single statement. Entity types are deleted independently, so contention or failure on one does not affect the others. There is no risk of data inconsistency in this case - the cleanup may simply be retried.
@@ -44,7 +45,7 @@ To mitigate contention:
 
 - Run the cleanup during low-intensity periods (e.g. at night).
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
-If this becomes a recurring issue, batching removals could be considered as a future improvement.
+- Use `--rid_limit`/`--scd_limit` to bound the size of each deletion if a batch still causes performance issues.
 
 ## Changes in locality
 
@@ -67,8 +68,10 @@ Flags:
   -h, --help               help for evict
       --locality string    self-identification string of this DSS instance
       --rid_isa            set this flag to true to check for expired RID ISAs (default true)
+      --rid_limit int      maximum number of RID entities deleted, defaults to unlimited
       --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
       --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
+      --scd_limit int      maximum number of SCD entities deleted, defaults to unlimited
       --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
       --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
       --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
@@ -89,6 +92,7 @@ Global Flags:
 Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
+- `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
