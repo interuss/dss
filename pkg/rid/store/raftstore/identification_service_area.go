@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -18,7 +19,7 @@ const (
 	insertISA       consensus.RequestType[*ridmodels.IdentificationServiceArea]   = "insertISA"
 	updateISA       consensus.RequestType[*ridmodels.IdentificationServiceArea]   = "updateISA"
 	searchISAs      consensus.RequestType[[]*ridmodels.IdentificationServiceArea] = "searchISAs"
-	listExpiredISAs consensus.RequestType[[]*ridmodels.IdentificationServiceArea] = "listExpiredISAs"
+	listExpiredISAs consensus.RequestType[[]dssmodels.ID]                         = "listExpiredISAs"
 	countISAs       consensus.RequestType[int64]                                  = "countISAs"
 )
 
@@ -69,13 +70,17 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 	return r.consensus.HandleReadRequest(ctx, searchISAs, buf)
 }
 
-func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
 	buf, err := json.Marshal(expiredPayload{Writer: writer, Threshold: threshold})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
 	return r.consensus.HandleReadRequest(ctx, listExpiredISAs, buf)
+}
+
+func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for raftstore")
 }
 
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {

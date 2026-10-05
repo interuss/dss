@@ -294,32 +294,53 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now(), dssmodels.MaxResultLimit)
 }
 
-// ListExpiredSubscriptions lists all expired Subscriptions based on writer.
+// ListExpiredSubscriptions lists the IDs of all expired Subscriptions based on writer.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
 	if len(writer) == 0 {
-		query := fmt.Sprintf(`
+		query := `
             SELECT
-                %s
+                id
             FROM
                 subscriptions
             WHERE
                 ends_at <= $1
             AND
-                (writer = '' OR writer IS NULL)`, subscriptionFields)
-		return r.process(ctx, query, threshold)
+                (writer = '' OR writer IS NULL)`
+		return dssql.FetchIDs(ctx, r.Queryable, query, threshold)
 	}
 
-	query := fmt.Sprintf(`
+	query := `
         SELECT
-            %s
+            id
         FROM
             subscriptions
         WHERE
             ends_at <= $1
         AND
-            writer = $2`, subscriptionFields)
-	return r.process(ctx, query, threshold, writer)
+            writer = $2`
+	return dssql.FetchIDs(ctx, r.Queryable, query, threshold, writer)
+}
+
+// DeleteExpiredSubscriptions deletes all expired Subscriptions based on writer and returns the
+// IDs of the deleted Subscriptions.
+// The function deletes both empty writer and null writer when passing empty string as a writer.
+func (r *repo) DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+	if len(writer) == 0 {
+		deleteExpiredQuery := `
+			DELETE FROM subscriptions
+			WHERE ends_at <= $1
+			AND (writer = '' OR writer IS NULL)
+			RETURNING id`
+		return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold)
+	}
+
+	deleteExpiredQuery := `
+		DELETE FROM subscriptions
+		WHERE ends_at <= $1
+		AND writer = $2
+		RETURNING id`
+	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold, writer)
 }
 
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {

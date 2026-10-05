@@ -8,14 +8,8 @@ import (
 
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	ridmodels "github.com/interuss/dss/pkg/rid/models"
-	ridrepos "github.com/interuss/dss/pkg/rid/repos"
 	rids "github.com/interuss/dss/pkg/rid/store"
-	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
-	dssstore "github.com/interuss/dss/pkg/store"
-	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -66,101 +60,92 @@ func evict(cmd *cobra.Command, _ []string) error {
 	}
 
 	var (
-		expiredOpIntents []*scdmodels.OperationalIntent
-		scdExpiredSub    []*scdmodels.Subscription
-		expiredISAs      []*ridmodels.IdentificationServiceArea
-		ridExpiredSub    []*ridmodels.Subscription
+		expiredOpIntents []dssmodels.ID
+		scdExpiredSub    []dssmodels.ID
+		expiredISAs      []dssmodels.ID
+		ridExpiredSub    []dssmodels.ID
 	)
-	scdAction := func(ctx context.Context, r scdrepos.Repository) (err error) {
-		if *checkScdOirs {
-			expiredOpIntents, err = r.ListExpiredOperationalIntents(ctx, scdThreshold)
+	scdRepo, err := scdStore.Interact(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to interact with SCD store: %w", err)
+	}
+
+	if *checkScdOirs {
+		if *deleteExpired {
+			expiredOpIntents, err = scdRepo.DeleteExpiredOperationalIntents(ctx, scdThreshold)
 			if err != nil {
-				return fmt.Errorf("listing expired operational intents: %w", err)
+				return fmt.Errorf("failed to delete expired operational intents: %w", err)
 			}
-			if *deleteExpired {
-				for _, opIntent := range expiredOpIntents {
-					if err = r.DeleteOperationalIntent(ctx, opIntent.ID); err != nil {
-						return fmt.Errorf("deleting expired operational intents: %w", err)
-					}
-				}
+		} else {
+			expiredOpIntents, err = scdRepo.ListExpiredOperationalIntents(ctx, scdThreshold)
+			if err != nil {
+				return fmt.Errorf("failed to list expired operational intents: %w", err)
 			}
 		}
+	}
 
-		if *checkScdSubs {
-			scdExpiredSub, err = r.ListExpiredSubscriptions(ctx, scdThreshold)
+	if *checkScdSubs {
+		if *deleteExpired {
+			scdExpiredSub, err = scdRepo.DeleteExpiredSubscriptions(ctx, scdThreshold)
 			if err != nil {
-				return fmt.Errorf("SCD listing expired subscriptions: %w", err)
+				return fmt.Errorf("failed to delete expired SCD subscriptions: %w", err)
 			}
-			if *deleteExpired {
-				for _, sub := range scdExpiredSub {
-					if err = r.DeleteSubscription(ctx, sub.ID); err != nil {
-						return fmt.Errorf("SCD deleting expired subscriptions: %w", err)
-					}
-				}
+		} else {
+			scdExpiredSub, err = scdRepo.ListExpiredSubscriptions(ctx, scdThreshold)
+			if err != nil {
+				return fmt.Errorf("failed to list expired SCD subscriptions: %w", err)
 			}
 		}
-		return nil
-	}
-	if _, err = scdStore.Transact(ctx, dssstore.NewFuncOperation(scdAction)); err != nil {
-		return fmt.Errorf("failed to execute SCD transaction: %w", err)
 	}
 
-	ridAction := func(ctx context.Context, r ridrepos.Repository) (err error) {
-		if *checkRidISAs {
+	ridRepo, err := ridStore.Interact(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to interact with RID store: %w", err)
+	}
 
-			expiredISAs, err = r.ListExpiredISAs(ctx, *locality, ridThreshold)
+	if *checkRidISAs {
+		if *deleteExpired {
+			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, *locality, ridThreshold)
 			if err != nil {
-				return stacktrace.Propagate(err, "Failed to list expired ISAs")
+				return fmt.Errorf("failed to delete expired ISAs: %w", err)
 			}
-
-			if *deleteExpired {
-				for _, isa := range expiredISAs {
-					_, err := r.DeleteISA(ctx, isa)
-					if err != nil {
-						return stacktrace.Propagate(err, "Failed to delete ISAs")
-					}
-				}
-			}
-
-		}
-
-		if *checkRidSubs {
-
-			ridExpiredSub, err = r.ListExpiredSubscriptions(ctx, *locality, ridThreshold)
+		} else {
+			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, *locality, ridThreshold)
 			if err != nil {
-				return stacktrace.Propagate(err,
-					"Failed to list RID expired Subscriptions")
+				return fmt.Errorf("failed to list expired ISAs: %w", err)
 			}
-
-			if *deleteExpired {
-				for _, sub := range ridExpiredSub {
-					_, err := r.DeleteSubscription(ctx, sub)
-					if err != nil {
-						return stacktrace.Propagate(err,
-							"Failed to delete RID Subscription")
-					}
-				}
-			}
-
 		}
-
-		return nil
-	}
-	if _, err = ridStore.Transact(ctx, dssstore.NewFuncOperation(ridAction)); err != nil {
-		return fmt.Errorf("failed to execute RID transaction: %w", err)
 	}
 
-	for _, opIntent := range expiredOpIntents {
-		logExpiredEntity("operational intent", opIntent.ID, scdThreshold, *deleteExpired, opIntent.EndTime != nil)
+	if *checkRidSubs {
+		if *deleteExpired {
+			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, *locality, ridThreshold)
+			if err != nil {
+				return fmt.Errorf("failed to delete expired RID subscriptions: %w", err)
+			}
+		} else {
+			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, *locality, ridThreshold)
+			if err != nil {
+				return fmt.Errorf("failed to list RID expired subscriptions: %w", err)
+			}
+		}
 	}
-	for _, sub := range scdExpiredSub {
-		logExpiredEntity("SCD subscription", sub.ID, scdThreshold, *deleteExpired, sub.EndTime != nil)
+
+	action := "found"
+	if *deleteExpired {
+		action = "deleted"
 	}
-	for _, isa := range expiredISAs {
-		logExpiredEntity("ISA", isa.ID, ridThreshold, *deleteExpired, isa.EndTime != nil)
+	for _, id := range expiredOpIntents {
+		log.Printf("%s expired operational intent %s", action, id)
 	}
-	for _, sub := range ridExpiredSub {
-		logExpiredEntity("RID subscription", sub.ID, ridThreshold, *deleteExpired, sub.EndTime != nil)
+	for _, id := range scdExpiredSub {
+		log.Printf("%s expired SCD subscription %s", action, id)
+	}
+	for _, id := range expiredISAs {
+		log.Printf("%s expired ISA %s", action, id)
+	}
+	for _, id := range ridExpiredSub {
+		log.Printf("%s expired RID subscription %s", action, id)
 	}
 	if len(expiredOpIntents) == 0 && len(scdExpiredSub) == 0 && len(expiredISAs) == 0 && len(ridExpiredSub) == 0 {
 		log.Printf("no SCD entity older than %s and no RID entity older than %s found", scdThreshold.String(), ridThreshold.String())
@@ -168,17 +153,4 @@ func evict(cmd *cobra.Command, _ []string) error {
 		log.Printf("no entity was deleted, run the command again with the `--delete` flag to do so")
 	}
 	return nil
-}
-
-func logExpiredEntity(entity string, entityID dssmodels.ID, threshold time.Time, deleted, hasEndTime bool) {
-	logMsg := "found"
-	if deleted {
-		logMsg = "deleted"
-	}
-
-	expMsg := "last update before %s (missing end time)"
-	if hasEndTime {
-		expMsg = "end time before %s"
-	}
-	log.Printf("%s %s %s; expired due to %s", logMsg, entity, entityID.String(), fmt.Sprintf(expMsg, threshold.String()))
 }

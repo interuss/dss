@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -17,7 +18,7 @@ const (
 	upsertOperationalIntent        consensus.RequestType[*scdmodels.OperationalIntent]   = "upsertOperationalIntent"
 	searchOperationalIntents       consensus.RequestType[[]*scdmodels.OperationalIntent] = "searchOperationalIntents"
 	getDependentOperationalIntents consensus.RequestType[[]dssmodels.ID]                 = "getDependentOperationalIntents"
-	listExpiredOperationalIntents  consensus.RequestType[[]*scdmodels.OperationalIntent] = "listExpiredOperationalIntents"
+	listExpiredOperationalIntents  consensus.RequestType[[]dssmodels.ID]                 = "listExpiredOperationalIntents"
 	countOperationalIntents        consensus.RequestType[int64]                          = "countOperationalIntents"
 )
 
@@ -67,13 +68,17 @@ func (r *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 	return r.consensus.HandleReadRequest(ctx, getDependentOperationalIntents, buf)
 }
 
-func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
+func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
 	buf, err := json.Marshal(threshold)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
 	return r.consensus.HandleReadRequest(ctx, listExpiredOperationalIntents, buf)
+}
+
+func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for raftstore")
 }
 
 func (r *repo) CountOperationalIntents(ctx context.Context) (int64, error) {

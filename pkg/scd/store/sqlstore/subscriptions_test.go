@@ -114,12 +114,7 @@ func TestListExpiredSubscriptions(t *testing.T) {
 			threshold := testCase.timeRef.Add(-testCase.ttl)
 			expired, err := r.ListExpiredSubscriptions(ctx, threshold)
 			require.NoError(t, err)
-
-			expiredIDs := make([]models.ID, 0, len(expired))
-			for _, expiredSub := range expired {
-				expiredIDs = append(expiredIDs, expiredSub.ID)
-			}
-			require.ElementsMatch(t, expiredIDs, testCase.expired)
+			require.ElementsMatch(t, expired, testCase.expired)
 		})
 	}
 }
