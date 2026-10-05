@@ -42,8 +42,9 @@ type Subscription interface {
 	// ListExpiredSubscriptions lists the IDs of all expired Subscriptions based on writer.
 	ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error)
 
-	// DeleteExpiredSubscriptions deletes all expired Subscriptions based on writer and returns the IDs of the deleted Subscriptions.
-	DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error)
+	// DeleteExpiredSubscriptions deletes up to `limit` expired Subscriptions based on writer and
+	// returns the IDs of the deleted Subscriptions. A limit of 0 means unlimited.
+	DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error)
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)

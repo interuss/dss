@@ -107,7 +107,7 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
 	return r.consensus.HandleReadRequest(ctx, listExpiredSubscriptions, buf)
 }
 
-func (r *repo) DeleteExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for raftstore")
 }
 

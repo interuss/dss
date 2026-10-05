@@ -135,7 +135,7 @@ func (r *repo) ListExpiredISAs(_ context.Context, writer string, threshold time.
 }
 
 // TODO: Implement when raftstore evict is implemented (#1718)
-func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for memstore")
 }
 

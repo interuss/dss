@@ -141,7 +141,7 @@ func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) 
 }
 
 // TODO: Implement when raftstore evict is implemented (#1718)
-func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for memstore")
 }
 
