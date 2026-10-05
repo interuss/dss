@@ -30,9 +30,13 @@ type OperationalIntent interface {
 	// subscription identified by "subscriptionID".
 	GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error)
 
-	// ListExpiredOperationalIntents lists all operational intents older than the threshold.
+	// ListExpiredOperationalIntents lists the IDs of all operational intents older than the threshold.
 	// Their age is determined by their end time, or by their update time if they do not have an end time.
-	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error)
+	ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error)
+
+	// DeleteExpiredOperationalIntents deletes all expired operational intents and returns the IDs of the deleted operational intents.
+	// Age is determined by their end time, or by their update time if they do not have an end time.
+	DeleteExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error)
 
 	// Count the number of existing operational intent
 	CountOperationalIntents(ctx context.Context) (int64, error)
@@ -69,9 +73,13 @@ type Subscription interface {
 	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells and, optionnaly, specific subscriptions via their IDs
 	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error
 
-	// ListExpiredSubscriptions lists all subscriptions older than the threshold.
+	// ListExpiredSubscriptions lists the IDs of all subscriptions older than the threshold.
 	// Their age is determined by their end time, or by their update time if they do not have an end time.
-	ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error)
+	ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error)
+
+	// DeleteExpiredSubscriptions deletes all expired subscriptions and returns the IDs of the deleted subscriptions.
+	// Age is determined by their end time, or by their update time if they do not have an end time.
+	DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error)
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)

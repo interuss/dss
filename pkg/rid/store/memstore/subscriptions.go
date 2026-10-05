@@ -185,9 +185,15 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
 	return slices.Max(slices.Collect(maps.Values(counts))), nil
 }
 
-func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]*ridmodels.Subscription, error) {
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) ListExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
 	// TODO: This mimics sqlstore inconsistency of not limiting results there, compared to ISAs. Should it be normalized?
-	return listExpired[ridmodels.Subscription](r.state.Subscriptions, writer, threshold, 0), nil
+	return listExpired(r.state.Subscriptions, writer, threshold, 0), nil
+}
+
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for memstore")
 }
 
 func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {

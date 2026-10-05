@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -19,7 +20,7 @@ const (
 	deleteSubscription                                consensus.RequestType[any]                       = "deleteSubscription"
 	incrementNotificationIndicesForOperationalIntents consensus.RequestType[[]*scdmodels.Subscription] = "incrementNotificationIndicesForOperationalIntents"
 	incrementNotificationIndicesForConstraints        consensus.RequestType[[]*scdmodels.Subscription] = "incrementNotificationIndicesForConstraints"
-	listExpiredSubscriptions                          consensus.RequestType[[]*scdmodels.Subscription] = "listExpiredSubscriptions"
+	listExpiredSubscriptions                          consensus.RequestType[[]dssmodels.ID]            = "listExpiredSubscriptions"
 	countSubscriptions                                consensus.RequestType[int64]                     = "countSubscriptions"
 )
 
@@ -83,13 +84,17 @@ func (r *repo) LockSubscriptionsOnCells(_ context.Context, _ s2.CellUnion, _ []d
 	return nil
 }
 
-func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]*scdmodels.Subscription, error) {
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
 	buf, err := json.Marshal(threshold)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
 
 	return r.consensus.HandleReadRequest(ctx, listExpiredSubscriptions, buf)
+}
+
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for raftstore")
 }
 
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {

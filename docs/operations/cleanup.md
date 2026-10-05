@@ -38,9 +38,9 @@ The defaults shipped with the deployment tooling (`30m` TTL on RID running every
 
 ## Performance impact
 
-All expired entities are identified and removed within a single transaction. When the system is under heavy load, lock contention with concurrent transactions may cause the cleanup to fail. There is no risk of data inconsistency in this case - the cleanup may simply be retried.
+Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subscriptions) is evicted with a single statement. Entity types are deleted independently, so contention or failure on one does not affect the others. There is no risk of data inconsistency in this case - the cleanup may simply be retried.
 
-To mitigate this:
+To mitigate contention:
 
 - Run the cleanup during low-intensity periods (e.g. at night).
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.

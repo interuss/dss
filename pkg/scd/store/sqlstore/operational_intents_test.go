@@ -136,12 +136,7 @@ func TestListExpiredOperationalIntents(t *testing.T) {
 			threshold := testCase.timeRef.Add(-testCase.ttl)
 			expired, err := r.ListExpiredOperationalIntents(ctx, threshold)
 			require.NoError(t, err)
-
-			expiredIDs := make([]models.ID, 0, len(expired))
-			for _, expiredOi := range expired {
-				expiredIDs = append(expiredIDs, expiredOi.ID)
-			}
-			require.ElementsMatch(t, expiredIDs, testCase.expired)
+			require.ElementsMatch(t, expired, testCase.expired)
 		})
 	}
 }

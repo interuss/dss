@@ -350,32 +350,44 @@ func (s *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 	return dependentOps, nil
 }
 
-// ListExpiredOperationalIntents lists all operational intents older than the threshold.
+// ListExpiredOperationalIntents lists the IDs of all operational intents older than the threshold.
 // Their age is determined by their end time, or by their last update time if they do not have an end time.
-func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]*scdmodels.OperationalIntent, error) {
-	expiredOpIntentsQuery := fmt.Sprintf(`
+func (s *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	expiredOpIntentsQuery := `
         SELECT
-            %s, scd_uss_availability.availability
+            id
         FROM
             scd_operations
-        LEFT JOIN scd_uss_availability
-            ON scd_operations.owner = scd_uss_availability.id
         WHERE
-            scd_operations.ends_at IS NOT NULL AND scd_operations.ends_at <= $1
+            ends_at IS NOT NULL AND ends_at <= $1
             OR
-            scd_operations.ends_at IS NULL AND scd_operations.updated_at <= $1 -- use last update time as reference if there is no end time
-        LIMIT $2`, operationFieldsWithPrefix)
+            ends_at IS NULL AND updated_at <= $1 -- use last update time as reference if there is no end time`
 
-	result, err := s.fetchOperationalIntents(
-		ctx, s.q, expiredOpIntentsQuery,
-		threshold,
-		dssmodels.MaxResultLimit,
-	)
+	ids, err := dsssql.FetchIDs(ctx, s.q, expiredOpIntentsQuery, threshold)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operations")
 	}
 
-	return result, nil
+	return ids, nil
+}
+
+// DeleteExpiredOperationalIntents deletes all expired operational intents and returns the IDs of the deleted operational intents.
+// Age is determined by their end time, or by their update time if they do not have an end time.
+func (s *repo) DeleteExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	deleteExpiredQuery := `
+		DELETE FROM scd_operations
+		WHERE
+			(ends_at IS NOT NULL AND ends_at <= $1)
+			OR
+			(ends_at IS NULL AND updated_at <= $1)
+		RETURNING id`
+
+	ids, err := dsssql.FetchIDs(ctx, s.q, deleteExpiredQuery, threshold)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error deleting expired Operations")
+	}
+
+	return ids, nil
 }
 
 func (s *repo) CountOperationalIntents(ctx context.Context) (int64, error) {

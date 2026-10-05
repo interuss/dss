@@ -210,34 +210,52 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 	return r.fetchISAs(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit)
 }
 
-// ListExpiredISAs lists all expired ISAs based on writer.
+// ListExpiredISAs lists the IDs of all expired ISAs based on writer.
 // The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
 	if len(writer) == 0 {
-		isasInCellsQuery := fmt.Sprintf(`
+		isasInCellsQuery := `
             SELECT
-                %s
+                id
             FROM
                 identification_service_areas
             WHERE
                 ends_at <= $1
             AND
-                (writer = '' OR writer IS NULL)
-            LIMIT $2`, isaFields)
-		return r.fetchISAs(ctx, isasInCellsQuery, threshold, dssmodels.MaxResultLimit)
+                (writer = '' OR writer IS NULL)`
+		return dssql.FetchIDs(ctx, r.Queryable, isasInCellsQuery, threshold)
 	}
 
-	isasInCellsQuery := fmt.Sprintf(`
+	isasInCellsQuery := `
         SELECT
-            %s
+            id
         FROM
             identification_service_areas
         WHERE
             ends_at <= $1
         AND
-            writer = $2
-        LIMIT $3`, isaFields)
-	return r.fetchISAs(ctx, isasInCellsQuery, threshold, writer, dssmodels.MaxResultLimit)
+            writer = $2`
+	return dssql.FetchIDs(ctx, r.Queryable, isasInCellsQuery, threshold, writer)
+}
+
+// DeleteExpiredISAs deletes all expired ISAs based on writer and returns the IDs of the deleted ISAs.
+// The function deletes both empty writer and null writer when passing empty string as a writer.
+func (r *repo) DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+	if len(writer) == 0 {
+		deleteExpiredQuery := `
+			DELETE FROM identification_service_areas
+			WHERE ends_at <= $1
+			AND (writer = '' OR writer IS NULL)
+			RETURNING id`
+		return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold)
+	}
+
+	deleteExpiredQuery := `
+		DELETE FROM identification_service_areas
+		WHERE ends_at <= $1
+		AND writer = $2
+		RETURNING id`
+	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold, writer)
 }
 
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {
