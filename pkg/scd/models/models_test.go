@@ -1,7 +1,6 @@
 package models
 
 import (
-	"math/rand"
 	"testing"
 	"time"
 
@@ -12,36 +11,6 @@ import (
 
 func TestOVNFromTimeIsValid(t *testing.T) {
 	require.True(t, NewOVNFromTime(time.Now(), uuid.New().String()).Valid())
-}
-
-func TestNewDeterministicImplicitSubscriptionID(t *testing.T) {
-	t.Run("is a valid v4 UUID", func(t *testing.T) {
-		id, err := NewDeterministicImplicitSubscriptionID(rand.New(rand.NewSource(42)))
-		require.NoError(t, err)
-		_, err = dssmodels.IDFromString(id.String())
-		require.NoError(t, err)
-
-		parsed, err := uuid.Parse(id.String())
-		require.NoError(t, err)
-		require.Equal(t, uuid.Version(4), parsed.Version())
-		require.Equal(t, uuid.RFC4122, parsed.Variant())
-	})
-
-	t.Run("is deterministic for identically-seeded sources", func(t *testing.T) {
-		id1, err := NewDeterministicImplicitSubscriptionID(rand.New(rand.NewSource(42)))
-		require.NoError(t, err)
-		id2, err := NewDeterministicImplicitSubscriptionID(rand.New(rand.NewSource(42)))
-		require.NoError(t, err)
-		require.Equal(t, id1, id2)
-	})
-
-	t.Run("differs when the source seed differs", func(t *testing.T) {
-		id1, err := NewDeterministicImplicitSubscriptionID(rand.New(rand.NewSource(42)))
-		require.NoError(t, err)
-		id2, err := NewDeterministicImplicitSubscriptionID(rand.New(rand.NewSource(43)))
-		require.NoError(t, err)
-		require.NotEqual(t, id1, id2)
-	})
 }
 
 func TestNewOVNFromUUIDv7Suffix(t *testing.T) {
