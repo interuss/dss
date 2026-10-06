@@ -172,6 +172,11 @@ func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for memstore")
 }
 
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) DeleteOperationalIntentsByIDs(_ context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteOperationalIntentsByIDs not implemented for memstore")
+}
+
 func (r *repo) CountOperationalIntents(_ context.Context) (int64, error) {
 	return int64(len(r.state.OperationalIntents)), nil
 }

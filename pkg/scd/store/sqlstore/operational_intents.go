@@ -397,6 +397,19 @@ func (s *repo) DeleteExpiredOperationalIntents(ctx context.Context, threshold ti
 	return ids, nil
 }
 
+// DeleteOperationalIntentsByIDs deletes the operational intents with the given IDs and returns the IDs of the deleted operational intents.
+func (s *repo) DeleteOperationalIntentsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	deleted, err := dsssql.FetchIDs(ctx, s.q, `
+		DELETE FROM scd_operations
+		WHERE id = ANY($1)
+		RETURNING id`, dsssql.IDStrings(ids))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error deleting Operations by IDs")
+	}
+
+	return deleted, nil
+}
+
 func (s *repo) CountOperationalIntents(ctx context.Context) (int64, error) {
 	var count int64
 	err := s.q.QueryRow(ctx, "SELECT COUNT(*) FROM scd_operations").Scan(&count)

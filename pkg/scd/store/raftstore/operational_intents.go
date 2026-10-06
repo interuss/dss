@@ -81,6 +81,11 @@ func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for raftstore")
 }
 
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) DeleteOperationalIntentsByIDs(_ context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteOperationalIntentsByIDs not implemented for raftstore")
+}
+
 func (r *repo) CountOperationalIntents(ctx context.Context) (int64, error) {
 	return r.consensus.HandleReadRequest(ctx, countOperationalIntents, nil)
 }

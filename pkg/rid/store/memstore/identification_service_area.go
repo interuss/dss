@@ -139,6 +139,11 @@ func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold tim
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for memstore")
 }
 
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) DeleteISAsByIDs(_ context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteISAsByIDs not implemented for memstore")
+}
+
 func (r *repo) CountISAs(_ context.Context) (int64, error) {
 	return int64(len(r.state.ISAs)), nil
 }

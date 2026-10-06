@@ -355,6 +355,14 @@ func (r *repo) DeleteExpiredSubscriptions(ctx context.Context, writer string, th
 	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, args...)
 }
 
+// DeleteSubscriptionsByIDs deletes the Subscriptions with the given IDs and returns the IDs of the deleted Subscriptions.
+func (r *repo) DeleteSubscriptionsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return dssql.FetchIDs(ctx, r.Queryable, `
+		DELETE FROM subscriptions
+		WHERE id = ANY($1)
+		RETURNING id`, dssql.IDStrings(ids))
+}
+
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.QueryRow(ctx, "SELECT COUNT(*) FROM subscriptions").Scan(&count)

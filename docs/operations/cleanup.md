@@ -24,6 +24,8 @@ By default, the tool only lists expired entities. Deletion is opt-in via the `--
 
     A preview run (without `--delete`) and a later `--delete` run are two separate invocations, not one atomic operation. Entities can expire, be created or be removed between the preview and the delete, and the delete run re-evaluates the threshold at its own execution time. With `--rid_limit`/`--scd_limit`, the delete run removes only part of the entities listed by the preview. Keep the gap between the two runs short and re-review if in doubt.
 
+    To delete exactly the entities that were reviewed, save the preview with `--output <file>` and pass that file to the delete run with `--delete --input <file>`.
+
 Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
 
 ## Why and when to run the cleanup
@@ -66,7 +68,9 @@ Usage:
 Flags:
       --delete             set this flag to true to delete the expired entities
   -h, --help               help for evict
+      --input string       file with the IDs of the entities to delete. All the listed entities are deleted, whether they are expired or not, can only be set together with --delete
       --locality string    self-identification string of this DSS instance
+      --output string      file to write the IDs of the expired entities to, as JSON, can only be set without --delete
       --rid_isa            set this flag to true to check for expired RID ISAs (default true)
       --rid_limit int      maximum number of RID entities deleted, defaults to unlimited
       --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
@@ -93,6 +97,18 @@ Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
 - `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
+- `--output <file>` (only without `--delete`) writes the IDs of the expired entities to a JSON file, with one list of IDs per entity type:
+
+    ```json
+    {
+      "operational_intents": ["<id>", ...],
+      "scd_subscriptions": ["<id>", ...],
+      "rid_isas": ["<id>", ...],
+      "rid_subscriptions": ["<id>", ...]
+    }
+    ```
+
+- `--input <file>` (only with `--delete`) deletes the entities listed in such a file instead of all expired entities. The listed entities are deleted whether they are expired or not, so `--rid_ttl`/`--scd_ttl` and `--rid_limit`/`--scd_limit` cannot be used together with `--input`. Entity types missing from the file are not deleted, and the entity type flags (`--scd_oir`, `--rid_isa`, ...) still apply.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.

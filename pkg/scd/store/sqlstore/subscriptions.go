@@ -602,6 +602,19 @@ func (c *repo) DeleteExpiredSubscriptions(ctx context.Context, threshold time.Ti
 	return ids, nil
 }
 
+// DeleteSubscriptionsByIDs deletes the subscriptions with the given IDs and returns the IDs of the deleted subscriptions.
+func (c *repo) DeleteSubscriptionsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	deleted, err := dsssql.FetchIDs(ctx, c.q, `
+		DELETE FROM scd_subscriptions
+		WHERE id = ANY($1)
+		RETURNING id`, dsssql.IDStrings(ids))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to delete Subscriptions by IDs")
+	}
+
+	return deleted, nil
+}
+
 func (c *repo) CountSubscriptions(ctx context.Context) (int64, error) {
 	var count int64
 	err := c.q.QueryRow(ctx, "SELECT COUNT(*) FROM scd_subscriptions").Scan(&count)

@@ -38,6 +38,9 @@ type OperationalIntent interface {
 	// Age is determined by their end time, or by their update time if they do not have an end time.
 	DeleteExpiredOperationalIntents(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error)
 
+	// DeleteOperationalIntentsByIDs deletes the operational intents with the given IDs and returns the IDs of the deleted operational intents.
+	DeleteOperationalIntentsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error)
+
 	// Count the number of existing operational intent
 	CountOperationalIntents(ctx context.Context) (int64, error)
 }
@@ -80,6 +83,9 @@ type Subscription interface {
 	// DeleteExpiredSubscriptions deletes up to `limit` expired subscriptions and returns the IDs of the deleted subscriptions. A limit of 0 means unlimited.
 	// Age is determined by their end time, or by their update time if they do not have an end time.
 	DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error)
+
+	// DeleteSubscriptionsByIDs deletes the subscriptions with the given IDs and returns the IDs of the deleted subscriptions.
+	DeleteSubscriptionsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error)
 
 	// Count the number of existing subscriptions
 	CountSubscriptions(ctx context.Context) (int64, error)

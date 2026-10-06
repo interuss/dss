@@ -271,6 +271,14 @@ func (r *repo) DeleteExpiredISAs(ctx context.Context, writer string, threshold t
 	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, args...)
 }
 
+// DeleteISAsByIDs deletes the ISAs with the given IDs and returns the IDs of the deleted ISAs.
+func (r *repo) DeleteISAsByIDs(ctx context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return dssql.FetchIDs(ctx, r.Queryable, `
+		DELETE FROM identification_service_areas
+		WHERE id = ANY($1)
+		RETURNING id`, dssql.IDStrings(ids))
+}
+
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.QueryRow(ctx, "SELECT COUNT(*) FROM identification_service_areas").Scan(&count)

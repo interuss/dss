@@ -2,6 +2,9 @@ import sys
 import subprocess
 import logging
 import os
+import tempfile
+
+CORE_SERVICE_CONTAINER = "dss_sandbox-local-dss-core-service-1"
 
 
 class EvictHelper:
@@ -20,6 +23,8 @@ class EvictHelper:
         rid_limit: int | None = None,
         locality: str = "local_dev",
         delete: bool = False,
+        output_file: str | None = None,
+        input_file: str | None = None,
     ):
         db_hostname = os.environ.get("DB_HOSTNAME", "local-dss-crdb")
         db_port = os.environ.get("DB_PORT", "26257")
@@ -28,7 +33,7 @@ class EvictHelper:
         command = [
             "docker",
             "exec",
-            "dss_sandbox-local-dss-core-service-1",
+            CORE_SERVICE_CONTAINER,
             "db-manager",
             "evict",
             f"--scd_oir={str(scd_oir).lower()}",
@@ -72,6 +77,12 @@ class EvictHelper:
                 str(rid_limit),
             ]
 
+        if output_file:
+            command += ["--output", output_file]
+
+        if input_file:
+            command += ["--input", input_file]
+
         process = subprocess.run(
             " ".join(command), shell=True, capture_output=True, timeout=5
         )
@@ -111,3 +122,33 @@ class EvictHelper:
         self.run_evict(
             rid_sub=True, delete=delete, rid_ttl=ttl, locality=locality, rid_limit=limit
         )
+
+    def read_file(self, path: str) -> str:
+        """Returns the content of a file of the core service container."""
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = os.path.join(tmp, "file")
+            self._docker_cp(f"{CORE_SERVICE_CONTAINER}:{path}", local_path)
+            with open(local_path) as f:
+                return f.read()
+
+    def write_file(self, path: str, content: str):
+        """Writes content to a file of the core service container."""
+        process = subprocess.run(
+            ["docker", "exec", "-i", CORE_SERVICE_CONTAINER, "sh", "-c", f"cat > {path}"],
+            input=content.encode("utf-8"),
+            capture_output=True,
+            timeout=5,
+        )
+        if process.returncode != 0:
+            self.logger.error(f"❌ Unable to write {path}")
+            self.logger.error(process.stderr.decode("utf-8"))
+            sys.exit(1)
+
+    def _docker_cp(self, source: str, destination: str):
+        process = subprocess.run(
+            ["docker", "cp", source, destination], capture_output=True, timeout=5
+        )
+        if process.returncode != 0:
+            self.logger.error(f"❌ Unable to copy {source} to {destination}")
+            self.logger.error(process.stderr.decode("utf-8"))
+            sys.exit(1)

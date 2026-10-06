@@ -97,6 +97,11 @@ func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for raftstore")
 }
 
+// TODO: Implement when raftstore evict is implemented (#1718)
+func (r *repo) DeleteSubscriptionsByIDs(_ context.Context, ids []dssmodels.ID) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteSubscriptionsByIDs not implemented for raftstore")
+}
+
 func (r *repo) CountSubscriptions(ctx context.Context) (int64, error) {
 	return r.consensus.HandleReadRequest(ctx, countSubscriptions, nil)
 }

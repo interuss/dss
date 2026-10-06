@@ -28,3 +28,12 @@ func FetchIDs(ctx context.Context, q Queryable, query string, args ...interface{
 	}
 	return ids, nil
 }
+
+// IDStrings converts IDs to strings.
+func IDStrings(ids []dssmodels.ID) []string {
+	out := make([]string, len(ids))
+	for i, id := range ids {
+		out[i] = id.String()
+	}
+	return out
+}
