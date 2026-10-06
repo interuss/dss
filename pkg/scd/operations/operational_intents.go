@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/interuss/dss/pkg/random"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -289,7 +289,7 @@ type validOIRParams struct {
 	SubscriptionID       dssmodels.ID
 	USSBaseURL           string
 	ImplicitSubscription struct {
-		Requested      bool
+		ID             dssmodels.ID
 		BaseURL        string
 		ForConstraints bool
 	}
@@ -357,7 +357,7 @@ func validateAndReturnOIRUpsertParams(
 		if params.SubscriptionId != nil {
 			return nil, stacktrace.NewError("Cannot provide both a Subscription ID and request an implicit subscription")
 		}
-		valid.ImplicitSubscription.Requested = true
+		valid.ImplicitSubscription.ID = dssmodels.ID(uuid.New().String())
 		valid.ImplicitSubscription.BaseURL = string(params.NewSubscription.UssBaseUrl)
 		// notify for constraints defaults to false if not specified
 		if params.NewSubscription.NotifyForConstraints != nil {
@@ -497,17 +497,8 @@ func newOIRUpsert(entityid restapi.EntityID, ovn restapi.EntityOVN, params *rest
 // createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
 // store it and return it.
 func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
-	generator, err := random.Generator(random.MustFromContext(ctx), "implicit-subscription:"+validParams.ID.String())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to derive implicit subscription ID generator")
-	}
-	id, err := scdmodels.NewDeterministicImplicitSubscriptionID(generator)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create implicit subscription ID")
-	}
-
 	subToUpsert := scdmodels.Subscription{
-		ID:                          id,
+		ID:                          validParams.ImplicitSubscription.ID,
 		Manager:                     manager,
 		CellsVolume4D:               validParams.Volume,
 		USSBaseURL:                  validParams.ImplicitSubscription.BaseURL,
@@ -721,7 +712,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 	if validParams.SubscriptionID.Empty() {
 		// No subscription ID was provided:
 		// check if an implicit subscription should be created, otherwise do nothing
-		if validParams.ImplicitSubscription.Requested {
+		if !validParams.ImplicitSubscription.ID.Empty() {
 			// Parameters for a new implicit subscription have been passed: we will create
 			// a new implicit subscription even if another subscription was attached to this OIR before,
 			// regardless of whether it was an implicit subscription or not.

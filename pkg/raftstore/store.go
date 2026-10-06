@@ -3,12 +3,10 @@ package raftstore
 import (
 	"context"
 
-	"github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
-	"github.com/interuss/dss/pkg/random"
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
@@ -114,8 +112,6 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			}
 
 			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
-			proposalCtx = locality.NewContext(proposalCtx, commit.Prop.Locality)
-			proposalCtx = random.NewContext(proposalCtx, commit.Prop.Seed)
 			// Read-only proposals don't mutate state so checkpoint and restore are unnecessary.
 			if !commit.Prop.ReadOnly {
 				s.raftRepo.Checkpoint()

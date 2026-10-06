@@ -8,7 +8,6 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/locality"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
@@ -25,8 +24,7 @@ var (
 )
 
 func newTestContext() context.Context {
-	ctx := timestamp.NewContext(context.Background(), fakeClock.Now())
-	return locality.NewContext(ctx, "test-locality")
+	return timestamp.NewContext(context.Background(), fakeClock.Now())
 }
 
 func insertSubscription(ctx context.Context, repo repos.Repository, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {

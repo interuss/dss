@@ -24,9 +24,7 @@ import (
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	requestlocality "github.com/interuss/dss/pkg/locality"
 	"github.com/interuss/dss/pkg/logging"
-	"github.com/interuss/dss/pkg/random"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	rids "github.com/interuss/dss/pkg/rid/store"
@@ -112,13 +110,6 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 	}
 
 	ctx = timestamp.NewContext(ctx, time.Now())
-
-	seed, err := random.NewSeed()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to generate seed")
-	}
-
-	ctx = random.NewContext(ctx, seed)
 
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
@@ -374,8 +365,6 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
 	handler = timestamp.Middleware(handler)
-	handler = random.Middleware(handler)
-	handler = requestlocality.Middleware(locality)(handler)
 
 	if *enableMetrics || *enableTracing {
 		// We use the default settings; the APIRouter handler will override the span value accordingly, as it has more information.
