@@ -27,7 +27,7 @@ type repo struct {
 	*memstore.Store[repos.Repository]
 }
 
-func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
 	params, err := auxraftparams.GetConnectParameters()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get aux raft parameters")
@@ -39,7 +39,7 @@ func Init(ctx context.Context, logger *zap.Logger, locality string) (*raftstore.
 	}
 
 	r := &repo{Store: memStore}
-	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "aux_")), locality, params, r, nil)
+	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "aux_")), params, r, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize aux raftstore")
 	}

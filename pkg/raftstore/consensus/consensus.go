@@ -24,9 +24,8 @@ import (
 type Consensus struct {
 	logger *zap.Logger
 
-	locality string
-	nodeID   uint64
-	node     raft.Node
+	nodeID uint64
+	node   raft.Node
 
 	transport *rafthttp.Transport
 	server    *http.Server
@@ -47,7 +46,7 @@ type Consensus struct {
 	appliedIndex  uint64
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, locality string, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
+func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
 	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, provider, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
@@ -76,11 +75,10 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, locality string, conn
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger),
 
-		nodeID:   connectParams.NodeID,
-		node:     node,
-		locality: locality,
-		storage:  storage,
-		commitC:  commitC,
+		nodeID:  connectParams.NodeID,
+		node:    node,
+		storage: storage,
+		commitC: commitC,
 
 		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 		serverErrC:      make(chan error, 1),

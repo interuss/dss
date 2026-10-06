@@ -99,7 +99,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.NewError("Public endpoint not set")
 	}
 
-	auxStore, err := auxs.Init(ctx, logger, true, locality)
+	auxStore, err := auxs.Init(ctx, logger, true)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 
 func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true, locality)
+	ridStore, err := rids.Init(ctx, logger, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -151,9 +151,9 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}, nil
 }
 
-func createSCDServer(ctx context.Context, logger *zap.Logger, locality string) (*scd.Server, error) {
+func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
 
-	scdStore, err := scds.Init(ctx, logger, true, locality)
+	scdStore, err := scds.Init(ctx, logger, true)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger, locality)
+		scdV1Server, err = createSCDServer(ctx, logger)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
