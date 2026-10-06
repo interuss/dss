@@ -77,7 +77,7 @@ func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time
 	return r.consensus.HandleReadRequest(ctx, listExpiredOperationalIntents, buf)
 }
 
-func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for raftstore")
 }
 

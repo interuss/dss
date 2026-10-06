@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"slices"
 	"time"
 
@@ -40,4 +41,14 @@ func MillisSinceMidnight() int {
 	now := time.Now().UTC()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return int(now.Sub(midnight).Milliseconds())
+}
+
+// AppendLimitClause appends a "LIMIT $n" clause to query and the limit to args when limit is
+// positive, n being the next parameter index after args. query and args are returned unchanged
+// when limit <= 0 (unlimited).
+func AppendLimitClause(query string, args []any, limit int) (string, []any) {
+	if limit <= 0 {
+		return query, args
+	}
+	return fmt.Sprintf("%s\nLIMIT $%d", query, len(args)+1), append(args, limit)
 }

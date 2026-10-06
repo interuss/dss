@@ -30,6 +30,8 @@ var (
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
 	timeout       = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
+	scdLimit      = flags.Int("scd_limit", 0, "maximum number of SCD entities deleted, defaults to unlimited")
+	ridLimit      = flags.Int("rid_limit", 0, "maximum number of RID entities deleted, defaults to unlimited")
 )
 
 func init() {
@@ -41,7 +43,20 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ctx          = cmd.Context()
 		scdThreshold = time.Now().Add(-*scdTtl)
 		ridThreshold = time.Now().Add(-*ridTtl)
+		scdLimit     = *scdLimit
+		ridLimit     = *ridLimit
 	)
+	if scdLimit < 0 {
+		return fmt.Errorf("scd_limit must be equal to or greater than 0, got %d", scdLimit)
+	}
+	if ridLimit < 0 {
+		return fmt.Errorf("rid_limit must be equal to or greater than 0, got %d", ridLimit)
+	}
+	for _, limitFlag := range []string{"scd_limit", "rid_limit"} {
+		if cmd.Flags().Changed(limitFlag) && !*deleteExpired {
+			return fmt.Errorf("%s can only be set together with --delete", limitFlag)
+		}
+	}
 	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
 
 	ctx, cancel := context.WithTimeout(ctx, *timeout)
@@ -72,7 +87,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkScdOirs {
 		if *deleteExpired {
-			expiredOpIntents, err = scdRepo.DeleteExpiredOperationalIntents(ctx, scdThreshold)
+			expiredOpIntents, err = scdRepo.DeleteExpiredOperationalIntents(ctx, scdThreshold, scdLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired operational intents: %w", err)
 			}
@@ -86,7 +101,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkScdSubs {
 		if *deleteExpired {
-			scdExpiredSub, err = scdRepo.DeleteExpiredSubscriptions(ctx, scdThreshold)
+			scdExpiredSub, err = scdRepo.DeleteExpiredSubscriptions(ctx, scdThreshold, scdLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired SCD subscriptions: %w", err)
 			}
@@ -105,7 +120,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidISAs {
 		if *deleteExpired {
-			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, *locality, ridThreshold)
+			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, *locality, ridThreshold, ridLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired ISAs: %w", err)
 			}
@@ -119,7 +134,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidSubs {
 		if *deleteExpired {
-			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, *locality, ridThreshold)
+			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, *locality, ridThreshold, ridLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired RID subscriptions: %w", err)
 			}

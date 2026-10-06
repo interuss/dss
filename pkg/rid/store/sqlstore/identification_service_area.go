@@ -238,24 +238,37 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
 	return dssql.FetchIDs(ctx, r.Queryable, isasInCellsQuery, threshold, writer)
 }
 
-// DeleteExpiredISAs deletes all expired ISAs based on writer and returns the IDs of the deleted ISAs.
+// DeleteExpiredISAs deletes up to `limit` expired ISAs based on writer and returns the
+// IDs of the deleted ISAs. A limit of 0 means unlimited.
 // The function deletes both empty writer and null writer when passing empty string as a writer.
-func (r *repo) DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	if len(writer) == 0 {
-		deleteExpiredQuery := `
+		expiredQuery, args := dssql.AppendLimitClause(`
+				SELECT id
+				FROM identification_service_areas
+				WHERE ends_at <= $1
+				AND (writer = '' OR writer IS NULL)`, []any{threshold}, limit)
+		deleteExpiredQuery := fmt.Sprintf(`
+			WITH expired AS (%s
+			)
 			DELETE FROM identification_service_areas
-			WHERE ends_at <= $1
-			AND (writer = '' OR writer IS NULL)
-			RETURNING id`
-		return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold)
+			WHERE id IN (SELECT id FROM expired)
+			RETURNING id`, expiredQuery)
+		return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, args...)
 	}
 
-	deleteExpiredQuery := `
+	expiredQuery, args := dssql.AppendLimitClause(`
+			SELECT id
+			FROM identification_service_areas
+			WHERE ends_at <= $1
+			AND writer = $2`, []any{threshold, writer}, limit)
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (%s
+		)
 		DELETE FROM identification_service_areas
-		WHERE ends_at <= $1
-		AND writer = $2
-		RETURNING id`
-	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, threshold, writer)
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING id`, expiredQuery)
+	return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, args...)
 }
 
 func (r *repo) CountISAs(ctx context.Context) (int64, error) {

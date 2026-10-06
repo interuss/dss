@@ -32,8 +32,8 @@ type ISA interface {
 	// ListExpiredISAs lists the IDs of all expired ISAs based on writer
 	ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error)
 
-	// DeleteExpiredISAs deletes all expired ISAs based on writer and returns the IDs of the deleted ISAs.
-	DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error)
+	// DeleteExpiredISAs deletes up to `limit` expired ISAs based on writer and returns the IDs of the deleted ISAs. A limit of 0 means unlimited.
+	DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error)
 
 	// Count the number of existing ISA
 	CountISAs(ctx context.Context) (int64, error)

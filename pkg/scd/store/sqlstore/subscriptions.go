@@ -576,18 +576,25 @@ func (c *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time
 	return ids, nil
 }
 
-// DeleteExpiredSubscriptions deletes all expired subscriptions and returns the IDs of the deleted subscriptions.
+// DeleteExpiredSubscriptions deletes up to `limit` expired subscriptions and returns the IDs of the deleted subscriptions. A limit of 0 means unlimited.
 // Age is determined by their end time, or by their update time if they do not have an end time.
-func (c *repo) DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
-	deleteExpiredQuery := `
-		DELETE FROM scd_subscriptions
-		WHERE
-			(ends_at IS NOT NULL AND ends_at <= $1)
-			OR
-			(ends_at IS NULL AND updated_at <= $1)
-		RETURNING id`
+func (c *repo) DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
+	expiredQuery, args := dsssql.AppendLimitClause(`
+			SELECT id
+			FROM scd_subscriptions
+			WHERE
+				(ends_at IS NOT NULL AND ends_at <= $1)
+				OR
+				(ends_at IS NULL AND updated_at <= $1)`, []any{threshold}, limit)
 
-	ids, err := dsssql.FetchIDs(ctx, c.q, deleteExpiredQuery, threshold)
+	deleteExpiredQuery := fmt.Sprintf(`
+		WITH expired AS (%s
+		)
+		DELETE FROM scd_subscriptions
+		WHERE id IN (SELECT id FROM expired)
+		RETURNING id`, expiredQuery)
+
+	ids, err := dsssql.FetchIDs(ctx, c.q, deleteExpiredQuery, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to delete expired Subscriptions")
 	}

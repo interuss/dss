@@ -79,7 +79,7 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
 	return r.consensus.HandleReadRequest(ctx, listExpiredISAs, buf)
 }
 
-func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for raftstore")
 }
 
