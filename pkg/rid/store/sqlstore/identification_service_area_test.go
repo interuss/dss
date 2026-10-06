@@ -283,7 +283,7 @@ func TestListExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, writer, fakeClock.Now().Add(-30*time.Minute))
+	serviceAreas, err := repo.ListExpiredISAs(ctx, fakeClock.Now().Add(-30*time.Minute))
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }
@@ -321,9 +321,52 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, "", fakeClock.Now().Add(-30*time.Minute))
+	serviceAreas, err := repo.ListExpiredISAs(ctx, fakeClock.Now().Add(-30*time.Minute))
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
+}
+
+func TestListExpiredISAsWithAllWriters(t *testing.T) {
+	ctx := context.Background()
+	store, tearDownStore := setUpStore(ctx, t)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	fakeClock := clockwork.NewFakeClockAt(time.Now())
+
+	// Insert ISA with endtime 1 day from now
+	isa1 := *serviceArea
+	startTime := fakeClock.Now()
+	isa1.StartTime = &startTime
+	endTime := fakeClock.Now().Add(24 * time.Hour)
+	isa1.EndTime = &endTime
+	saOut1, err := repo.InsertISA(ctx, &isa1)
+	require.NoError(t, err)
+	require.NotNil(t, saOut1)
+
+	// Insert ISAs with endtime to 30 minutes ago, one with a writer and one without
+	isa2 := *serviceArea
+	startTime = fakeClock.Now().Add(-1 * time.Hour)
+	isa2.StartTime = &startTime
+	endTime = fakeClock.Now().Add(-30 * time.Minute)
+	isa2.EndTime = &endTime
+	isa2.ID = dssmodels.ID(uuid.New().String())
+	saOut2, err := repo.InsertISA(ctx, &isa2)
+	require.NoError(t, err)
+	require.NotNil(t, saOut2)
+
+	isa3 := isa2
+	isa3.ID = dssmodels.ID(uuid.New().String())
+	isa3.Writer = ""
+	saOut3, err := repo.InsertISA(ctx, &isa3)
+	require.NoError(t, err)
+	require.NotNil(t, saOut3)
+
+	serviceAreas, err := repo.ListExpiredISAs(ctx, fakeClock.Now().Add(-30*time.Minute))
+	require.NoError(t, err)
+	require.ElementsMatch(t, serviceAreas, []dssmodels.ID{isa2.ID, isa3.ID})
 }
 
 func TestStoreCountISAs(t *testing.T) {

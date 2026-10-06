@@ -29,11 +29,11 @@ type ISA interface {
 	// SearchISAs returns all subscriptions ownded by "owner" in "cells".
 	SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *time.Time, latest *time.Time) ([]*ridmodels.IdentificationServiceArea, error)
 
-	// ListExpiredISAs lists the IDs of all expired ISAs based on writer
-	ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error)
+	// ListExpiredISAs lists the IDs of all expired ISAs.
+	ListExpiredISAs(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error)
 
-	// DeleteExpiredISAs deletes up to `limit` expired ISAs based on writer and returns the IDs of the deleted ISAs. A limit of 0 means unlimited.
-	DeleteExpiredISAs(ctx context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error)
+	// DeleteExpiredISAs deletes up to `limit` expired ISAs and returns the IDs of the deleted ISAs. A limit of 0 means unlimited.
+	DeleteExpiredISAs(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error)
 
 	// Count the number of existing ISA
 	CountISAs(ctx context.Context) (int64, error)

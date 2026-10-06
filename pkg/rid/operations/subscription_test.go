@@ -178,11 +178,11 @@ func (r *fakeSubscriptionRepo) MaxSubscriptionCountInCellsByOwner(ctx context.Co
 	return maxValue, nil
 }
 
-func (r *fakeSubscriptionRepo) ListExpiredSubscriptions(_ context.Context, _ string, _ time.Time) ([]dssmodels.ID, error) {
+func (r *fakeSubscriptionRepo) ListExpiredSubscriptions(_ context.Context, _ time.Time) ([]dssmodels.ID, error) {
 	return nil, nil
 }
 
-func (r *fakeSubscriptionRepo) DeleteExpiredSubscriptions(_ context.Context, _ string, _ time.Time, _ int) ([]dssmodels.ID, error) {
+func (r *fakeSubscriptionRepo) DeleteExpiredSubscriptions(_ context.Context, _ time.Time, _ int) ([]dssmodels.ID, error) {
 	return nil, nil
 }
 
@@ -231,11 +231,11 @@ func (r *fakeSubscriptionRepo) SearchISAs(_ context.Context, cells s2.CellUnion,
 	return isas, nil
 }
 
-func (r *fakeSubscriptionRepo) ListExpiredISAs(_ context.Context, _ string, _ time.Time) ([]dssmodels.ID, error) {
+func (r *fakeSubscriptionRepo) ListExpiredISAs(_ context.Context, _ time.Time) ([]dssmodels.ID, error) {
 	panic("not implemented")
 }
 
-func (r *fakeSubscriptionRepo) DeleteExpiredISAs(_ context.Context, _ string, _ time.Time, _ int) ([]dssmodels.ID, error) {
+func (r *fakeSubscriptionRepo) DeleteExpiredISAs(_ context.Context, _ time.Time, _ int) ([]dssmodels.ID, error) {
 	panic("not implemented")
 }
 

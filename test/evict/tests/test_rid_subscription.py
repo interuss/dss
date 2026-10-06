@@ -58,14 +58,6 @@ def test_rid_subscription(qh: QueryHelper, eh: EvictHelper):
         logger.error("❌ Test subscription shall still be present since we evicted ISA")
         sys.exit(1)
 
-    logger.debug("Evicting subscriptions older than 1s on another locality")
-    eh.evict_rid_subscriptions("1s", delete=True, locality="somethingelse")
-    if not qh.get_rid_subscription(sub_id):
-        logger.error(
-            "❌ Test subscription shall still be present since we used another locality"
-        )
-        sys.exit(1)
-
     logger.debug("Evicting subscriptions older than 1s")
     eh.evict_rid_subscriptions("1s", delete=True)
 

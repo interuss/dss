@@ -141,26 +141,18 @@ func findForWrite[R versionedRecord](store map[dssmodels.ID]R, id dssmodels.ID, 
 
 type expiringRecord interface {
 	endTime() *time.Time
-	writerName() string
 }
 
 func (rec *isaRecord) endTime() *time.Time { return rec.EndTime }
 
-func (rec *isaRecord) writerName() string { return rec.Writer }
-
 func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime }
 
-func (rec *subscriptionRecord) writerName() string { return rec.Writer }
-
-// listExpired returns the IDs of the records whose end time is at or before threshold and
-// whose writer matches. A limit of 0 means unlimited.
-func listExpired[R expiringRecord](store map[dssmodels.ID]R, writer string, threshold time.Time, limit int) []dssmodels.ID {
+// listExpired returns the IDs of the records whose end time is at or before threshold.
+// A limit of 0 means unlimited.
+func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time, limit int) []dssmodels.ID {
 	var out []dssmodels.ID
 	for id, rec := range store {
 		if t := rec.endTime(); t == nil || t.After(threshold) { // TODO: Don't allow endtime to be null, see #1492
-			continue
-		}
-		if rec.writerName() != writer {
 			continue
 		}
 		out = append(out, id)

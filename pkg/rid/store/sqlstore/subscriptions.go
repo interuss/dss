@@ -294,58 +294,24 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now(), dssmodels.MaxResultLimit)
 }
 
-// ListExpiredSubscriptions lists the IDs of all expired Subscriptions based on writer.
-// The function queries both empty writer and null writer when passing empty string as a writer.
-func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
-	if len(writer) == 0 {
-		query := `
-            SELECT
-                id
-            FROM
-                subscriptions
-            WHERE
-                ends_at <= $1
-            AND
-                (writer = '' OR writer IS NULL)`
-		return dssql.FetchIDs(ctx, r.Queryable, query, threshold)
-	}
-
-	query := `
+// ListExpiredSubscriptions lists the IDs of all expired Subscriptions.
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	return dssql.FetchIDs(ctx, r.Queryable, `
         SELECT
             id
         FROM
             subscriptions
         WHERE
-            ends_at <= $1
-        AND
-            writer = $2`
-	return dssql.FetchIDs(ctx, r.Queryable, query, threshold, writer)
+            ends_at <= $1`, threshold)
 }
 
-// DeleteExpiredSubscriptions deletes up to `limit` expired Subscriptions based on writer and returns
-// the IDs of the deleted Subscriptions. A limit of 0 means unlimited.
-// The function deletes both empty writer and null writer when passing empty string as a writer.
-func (r *repo) DeleteExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
-	if len(writer) == 0 {
-		expiredQuery, args := dssql.AppendLimitClause(`
-				SELECT id
-				FROM subscriptions
-				WHERE ends_at <= $1
-				AND (writer = '' OR writer IS NULL)`, []any{threshold}, limit)
-		deleteExpiredQuery := fmt.Sprintf(`
-			WITH expired AS (%s
-			)
-			DELETE FROM subscriptions
-			WHERE id IN (SELECT id FROM expired)
-			RETURNING id`, expiredQuery)
-		return dssql.FetchIDs(ctx, r.Queryable, deleteExpiredQuery, args...)
-	}
-
+// DeleteExpiredSubscriptions deletes up to `limit` expired Subscriptions and returns the
+// IDs of the deleted Subscriptions. A limit of 0 means unlimited.
+func (r *repo) DeleteExpiredSubscriptions(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	expiredQuery, args := dssql.AppendLimitClause(`
 			SELECT id
 			FROM subscriptions
-			WHERE ends_at <= $1
-			AND writer = $2`, []any{threshold, writer}, limit)
+			WHERE ends_at <= $1`, []any{threshold}, limit)
 	deleteExpiredQuery := fmt.Sprintf(`
 		WITH expired AS (%s
 		)

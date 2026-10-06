@@ -45,7 +45,6 @@ spec:
   {{- if $.Values.dss.conf.evict.scd.limit }}
                 - --scd_limit={{ $.Values.dss.conf.evict.scd.limit }}
   {{- end }}
-                - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
@@ -107,7 +106,6 @@ spec:
   {{- if $.Values.dss.conf.evict.rid.limit }}
                 - --rid_limit={{ $.Values.dss.conf.evict.rid.limit }}
   {{- end }}
-                - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}

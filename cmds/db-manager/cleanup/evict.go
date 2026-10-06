@@ -28,7 +28,6 @@ var (
 	scdTtl        = flags.Duration("scd_ttl", time.Hour*24*112, "time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days")
 	ridTtl        = flags.Duration("rid_ttl", time.Minute*30, "time-to-live duration used for determining RID entries expiration, defaults to 30 minutes")
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
-	locality      = flags.String("locality", "", "self-identification string of this DSS instance")
 	timeout       = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
 	scdLimit      = flags.Int("scd_limit", 0, "maximum number of SCD entities deleted, defaults to unlimited")
 	ridLimit      = flags.Int("rid_limit", 0, "maximum number of RID entities deleted, defaults to unlimited")
@@ -120,12 +119,12 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidISAs {
 		if *deleteExpired {
-			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, *locality, ridThreshold, ridLimit)
+			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, ridThreshold, ridLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired ISAs: %w", err)
 			}
 		} else {
-			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, *locality, ridThreshold)
+			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, ridThreshold)
 			if err != nil {
 				return fmt.Errorf("failed to list expired ISAs: %w", err)
 			}
@@ -134,12 +133,12 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidSubs {
 		if *deleteExpired {
-			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, *locality, ridThreshold, ridLimit)
+			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, ridThreshold, ridLimit)
 			if err != nil {
 				return fmt.Errorf("failed to delete expired RID subscriptions: %w", err)
 			}
 		} else {
-			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, *locality, ridThreshold)
+			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, ridThreshold)
 			if err != nil {
 				return fmt.Errorf("failed to list RID expired subscriptions: %w", err)
 			}

@@ -18,7 +18,6 @@ class EvictHelper:
         rid_ttl: str | None = None,
         scd_limit: int | None = None,
         rid_limit: int | None = None,
-        locality: str = "local_dev",
         delete: bool = False,
     ):
         db_hostname = os.environ.get("DB_HOSTNAME", "local-dss-crdb")
@@ -35,8 +34,6 @@ class EvictHelper:
             f"--scd_sub={str(scd_sub).lower()}",
             f"--rid_isa={str(rid_isa).lower()}",
             f"--rid_sub={str(rid_sub).lower()}",
-            "--locality",
-            locality,
             "--datastore_host",
             db_hostname,
             "--datastore_port",
@@ -94,20 +91,14 @@ class EvictHelper:
         self,
         ttl: str,
         delete: bool,
-        locality: str = "local_dev",
         limit: int | None = None,
     ):
-        self.run_evict(
-            rid_isa=True, delete=delete, rid_ttl=ttl, locality=locality, rid_limit=limit
-        )
+        self.run_evict(rid_isa=True, delete=delete, rid_ttl=ttl, rid_limit=limit)
 
     def evict_rid_subscriptions(
         self,
         ttl: str,
         delete: bool,
-        locality: str = "local_dev",
         limit: int | None = None,
     ):
-        self.run_evict(
-            rid_sub=True, delete=delete, rid_ttl=ttl, locality=locality, rid_limit=limit
-        )
+        self.run_evict(rid_sub=True, delete=delete, rid_ttl=ttl, rid_limit=limit)

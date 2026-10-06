@@ -15,7 +15,6 @@ type cellsByOwnerPayload struct {
 
 // expiredPayload carries the arguments common to ListExpiredISAs/ListExpiredSubscriptions.
 type expiredPayload struct {
-	Writer    string    `json:"writer"`
 	Threshold time.Time `json:"threshold"`
 }
 
