@@ -42,6 +42,9 @@ spec:
   {{- if $.Values.dss.conf.evict.scd.timeout }}
                 - --timeout={{ $.Values.dss.conf.evict.scd.timeout }}
   {{- end }}
+  {{- if $.Values.dss.conf.evict.scd.limit }}
+                - --scd_limit={{ $.Values.dss.conf.evict.scd.limit }}
+  {{- end }}
                 - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
@@ -100,6 +103,9 @@ spec:
                 - --rid_ttl={{ $.Values.dss.conf.evict.rid.ttl }}
   {{- if $.Values.dss.conf.evict.rid.timeout }}
                 - --timeout={{ $.Values.dss.conf.evict.rid.timeout }}
+  {{- end }}
+  {{- if $.Values.dss.conf.evict.rid.limit }}
+                - --rid_limit={{ $.Values.dss.conf.evict.rid.limit }}
   {{- end }}
                 - --locality={{ $.Values.dss.conf.locality }}
                 - --delete=true
