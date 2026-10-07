@@ -120,6 +120,12 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>core_service_resources (<code>map(map(string))</code>)</td>
+                <td><p>Kubernetes CPU and memory requests and limits of the core-service containers.
+Leave empty to not set any.</p>
+<p>Example: <code>{ requests = { cpu = &quot;1&quot;, memory = &quot;2Gi&quot; }, limits = { memory = &quot;2Gi&quot; } }</code></p>
+<br/>Default value: <code>{}</code></td>
+            </tr><tr>
                 <td>crdb_cache (<code>string</code>)</td>
                 <td><p>Size of the CockroachDB storage engine cache, passed to the <code>--cache</code> flag of <code>cockroach start</code>.
 Either a percentage of the memory available to the container or an absolute size.</p>
@@ -160,6 +166,12 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
 Either a percentage of the memory available to the container or an absolute size.</p>
 <p>Example: <code>25%</code> or <code>2GiB</code></p>
 <br/>Default value: <code>"25%"</code></td>
+            </tr><tr>
+                <td>crdb_resources (<code>map(map(string))</code>)</td>
+                <td><p>Kubernetes CPU and memory requests and limits of the CockroachDB containers.
+Leave empty to not set any.</p>
+<p>Example: <code>{ requests = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; }, limits = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; } }</code></p>
+<br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>datastore_max_open_conns (<code>number</code>)</td>
                 <td><p>Maximum number of open connections to the datastore.</p>

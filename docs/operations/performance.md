@@ -8,8 +8,12 @@ See the detailed [section about cleanup](cleanup.md).
 
 ## CPU and memory allocation
 
+By default, the deployment tooling does not set any Kubernetes CPU or memory requests or limits on the CockroachDB and core-service containers.
+Kubernetes may then place them on nodes without enough free memory and kill them when the node runs out of memory (see issue [#1731](https://github.com/interuss/dss/issues/1731)).
+
 The following settings are available:
 
+* CPU and memory requests and limits of the CockroachDB and core-service containers.
 * CockroachDB `--cache` and `--max-sql-memory` flags (both `25%` by default). See [CockroachDB recommendations](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size) before changing them.
 
 To set them:
@@ -19,7 +23,9 @@ To set them:
     === "Terraform"
         Set the following variables (see `TFVARS.gen.md` for details):
 
+        * `crdb_resources`, e.g. `{ requests = { cpu = "2", memory = "10Gi" }, limits = { cpu = "2", memory = "10Gi" } }`
         * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
+        * `core_service_resources`, e.g. `{ requests = { cpu = "1", memory = "2Gi" }, limits = { memory = "2Gi" } }`
 
         Then run `terraform apply` to regenerate the Tanka and Helm configuration.
 
@@ -28,8 +34,12 @@ To set them:
 
         ```jsonnet
         cockroach+: {
+          resources: { requests: { cpu: '2', memory: '10Gi' }, limits: { cpu: '2', memory: '10Gi' } },
           cache: '25%',
           maxSqlMemory: '25%',
+        },
+        backend+: {
+          resources: { requests: { cpu: '1', memory: '2Gi' }, limits: { memory: '2Gi' } },
         },
         ```
 
@@ -41,6 +51,10 @@ To set them:
           conf:
             cache: 25%
             max-sql-memory: 25%
+          statefulset:
+            resources: {requests: {cpu: "2", memory: 10Gi}, limits: {cpu: "2", memory: 10Gi}}
+        dss:
+          resources: {requests: {cpu: "1", memory: 2Gi}, limits: {memory: 2Gi}}
         ```
 
 ## The SCD global lock option

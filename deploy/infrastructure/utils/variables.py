@@ -50,6 +50,8 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_cluster_name",
     "crdb_cache",
     "crdb_max_sql_memory",
+    "crdb_resources",
+    "core_service_resources",
     "locality",
     "datastore_max_open_conns",
     "crdb_external_nodes",

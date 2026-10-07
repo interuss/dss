@@ -118,6 +118,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 },
               ] else [],
               volumeMounts: volumes.all(metadata).backendMounts,
+              resources: metadata.backend.resources,
               command: ['core-service'],
               args_:: {
                 addr: ':' + metadata.backend.port,
