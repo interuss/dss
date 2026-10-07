@@ -459,6 +459,110 @@ variable "crdb_max_sql_memory" {
 }
 
 
+variable "crdb_cpu_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU request of the CockroachDB containers.
+  Not set by default.
+
+  Example: `3.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_memory_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory request of the CockroachDB containers.
+  Not set by default.
+
+  Example: `14Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_cpu_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU limit of the CockroachDB containers.
+  Not set by default.
+
+  Example: `3.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_memory_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory limit of the CockroachDB containers.
+  Not set by default.
+
+  Example: `14Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_cpu_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU request of the core-service containers.
+  Not set by default.
+
+  Example: `0.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_memory_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory request of the core-service containers.
+  Not set by default.
+
+  Example: `2Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_cpu_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU limit of the core-service containers.
+  Not set by default.
+
+  Example: `1`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_memory_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory limit of the core-service containers.
+  Not set by default.
+
+  Example: `2Gi`
+  EOT
+
+  default = ""
+}
+
+
 variable "locality" {
   type        = string
   description = <<-EOT

@@ -27,6 +27,11 @@
     clusterName: '',
     cache: '25%', // Value of the --cache flag of `cockroach start`
     maxSqlMemory: '25%', // Value of the --max-sql-memory flag of `cockroach start`
+    // Kubernetes container resources, e.g. '3.5' CPU and '14Gi' memory. Not set if empty.
+    cpuRequest: '',
+    memoryRequest: '',
+    cpuLimit: '',
+    memoryLimit: '',
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
@@ -69,6 +74,11 @@
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
     sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
+    // Kubernetes container resources, e.g. '0.5' CPU and '2Gi' memory. Not set if empty.
+    cpuRequest: '',
+    memoryRequest: '',
+    cpuLimit: '',
+    memoryLimit: '',
   },
   alert: {
     enable: false,

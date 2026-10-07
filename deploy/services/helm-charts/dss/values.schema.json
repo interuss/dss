@@ -242,6 +242,22 @@
           "type": "string",
           "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
         },
+        "cpuRequest": {
+          "type": "string",
+          "description": "Kubernetes CPU request of the core-service containers. Not set if empty. Example: `0.5`"
+        },
+        "memoryRequest": {
+          "type": "string",
+          "description": "Kubernetes memory request of the core-service containers. Not set if empty. Example: `2Gi`"
+        },
+        "cpuLimit": {
+          "type": "string",
+          "description": "Kubernetes CPU limit of the core-service containers. Not set if empty. Example: `1`"
+        },
+        "memoryLimit": {
+          "type": "string",
+          "description": "Kubernetes memory limit of the core-service containers. Not set if empty. Example: `2Gi`"
+        },
         "conf": {
           "type": "object",
           "properties": {
