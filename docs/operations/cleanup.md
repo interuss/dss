@@ -86,6 +86,7 @@ Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
 - `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
+- `--locality` is deprecated and has no effect: RID cleanup considers the expired ISAs and subscriptions of all the DSS instances of the pool.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
