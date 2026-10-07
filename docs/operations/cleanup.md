@@ -47,12 +47,6 @@ To mitigate contention:
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
 - Use `--rid_limit`/`--scd_limit` to bound the size of each deletion if a batch still causes performance issues.
 
-## Changes in locality
-
-There may be cases where a DSS instance changes its locality. This commonly occurs if locality wasn't previously required, though routine updates can also trigger a change.
-
-In such cases, ensure that a cleanup is performed on the older locality (if it was not set before, set an empty one), especially since the automatically deployed cron job (see below) will automatically follow the locality settings of the main service.
-
 ## Usage
 
 Extracted from `db-manager evict --help`:
@@ -66,7 +60,6 @@ Usage:
 Flags:
       --delete             set this flag to true to delete the expired entities
   -h, --help               help for evict
-      --locality string    self-identification string of this DSS instance
       --rid_isa            set this flag to true to check for expired RID ISAs (default true)
       --rid_limit int      maximum number of RID entities deleted, defaults to unlimited
       --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
@@ -93,6 +86,7 @@ Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
 - `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
+- `--locality` is deprecated and has no effect: RID cleanup considers the expired ISAs and subscriptions of all the DSS instances of the pool.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
@@ -103,7 +97,7 @@ Beyond running `db-manager evict` manually, the DSS deployment tooling can sched
 
 Shared default: RID cleanup is enabled by default (`*/30 * * * *`, `ttl = 30m`); SCD cleanup is disabled by default (suggested schedule `0 2 * * *`, `ttl = 2688h` - i.e. 2 x 56 days).
 
-The current defaults are structured this way because each DSS instance is intended to manage the cleanup of its own RID objects (with deletion restricted to entities created by that specific instance, based on locality). Conversely, SCD cleanup is a global operation; therefore, DSS operators should coordinate to avoid redundant tasks, or potentially designate a single USS to handle the cleanup process.
+RID and SCD cleanups are both global operations: they consider the expired entities of all the DSS instances of the pool, regardless of the instance that created them. DSS operators should therefore coordinate to avoid redundant tasks, or potentially designate a single USS to handle the cleanup process.
 
 ### Helm
 
@@ -158,8 +152,8 @@ evict+: {
 
 When deploying via terrafrom modules, the parameters are configurable with module variables:
 
-| Terraform variable              |  Default          |
-|---------------------------------|------------------|
+| Terraform variable                | Default            |
+| --------------------------------- | ------------------ |
 | `evict_enable_scd_cron`         | `false`          |
 | `evict_scd_schedule`            | `"0 2 * * *"`    |
 | `evict_scd_ttl`                 | `"2688h"`        |

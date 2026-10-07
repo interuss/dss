@@ -70,8 +70,8 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 	return r.consensus.HandleReadRequest(ctx, searchISAs, buf)
 }
 
-func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
-	buf, err := json.Marshal(expiredPayload{Writer: writer, Threshold: threshold})
+func (r *repo) ListExpiredISAs(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	buf, err := json.Marshal(expiredPayload{Threshold: threshold})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
@@ -79,7 +79,7 @@ func (r *repo) ListExpiredISAs(ctx context.Context, writer string, threshold tim
 	return r.consensus.HandleReadRequest(ctx, listExpiredISAs, buf)
 }
 
-func (r *repo) DeleteExpiredISAs(_ context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredISAs(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for raftstore")
 }
 

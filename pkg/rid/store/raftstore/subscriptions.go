@@ -98,8 +98,8 @@ func (r *repo) MaxSubscriptionCountInCellsByOwner(ctx context.Context, cells s2.
 	return r.consensus.HandleReadRequest(ctx, maxSubscriptionCountInCellsByOwner, buf)
 }
 
-func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, threshold time.Time) ([]dssmodels.ID, error) {
-	buf, err := json.Marshal(expiredPayload{Writer: writer, Threshold: threshold})
+func (r *repo) ListExpiredSubscriptions(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	buf, err := json.Marshal(expiredPayload{Threshold: threshold})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal payload")
 	}
@@ -107,7 +107,7 @@ func (r *repo) ListExpiredSubscriptions(ctx context.Context, writer string, thre
 	return r.consensus.HandleReadRequest(ctx, listExpiredSubscriptions, buf)
 }
 
-func (r *repo) DeleteExpiredSubscriptions(_ context.Context, writer string, threshold time.Time, limit int) ([]dssmodels.ID, error) {
+func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for raftstore")
 }
 

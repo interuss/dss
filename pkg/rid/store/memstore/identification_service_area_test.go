@@ -258,7 +258,7 @@ func TestListExpiredISAs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, writer, fakeClock.Now().Add(-30*time.Minute))
+	serviceAreas, err := repo.ListExpiredISAs(ctx, fakeClock.Now().Add(-30*time.Minute))
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }
@@ -291,7 +291,7 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, saOut2)
 
-	serviceAreas, err := repo.ListExpiredISAs(ctx, "", fakeClock.Now().Add(-30*time.Minute))
+	serviceAreas, err := repo.ListExpiredISAs(ctx, fakeClock.Now().Add(-30*time.Minute))
 	require.NoError(t, err)
 	require.Len(t, serviceAreas, 1)
 }

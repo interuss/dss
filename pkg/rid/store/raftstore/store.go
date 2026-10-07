@@ -91,7 +91,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredISAs)
 		}
-		return r.Store.GetRepo().ListExpiredISAs(ctx, payload.Writer, payload.Threshold)
+		return r.Store.GetRepo().ListExpiredISAs(ctx, payload.Threshold)
 
 	case string(countISAs):
 		return r.Store.GetRepo().CountISAs(ctx)
@@ -159,7 +159,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
 		}
-		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, payload.Writer, payload.Threshold)
+		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, payload.Threshold)
 
 	case string(countSubscriptions):
 		return r.Store.GetRepo().CountSubscriptions(ctx)

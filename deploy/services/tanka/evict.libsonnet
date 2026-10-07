@@ -29,7 +29,6 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       rid_isa: false,
                       rid_sub: false,
                       scd_ttl: metadata.evict.scd.ttl,
-                      locality: metadata.locality,
                       delete: true,
                   } + (if metadata.evict.scd.timeout != "" then { timeout: metadata.evict.scd.timeout } else {})
                     + (if metadata.evict.scd.limit > 0 then { scd_limit: metadata.evict.scd.limit } else {})
@@ -67,7 +66,6 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       rid_isa: metadata.evict.rid.ISAs,
                       rid_sub: metadata.evict.rid.subscriptions,
                       rid_ttl: metadata.evict.rid.ttl,
-                      locality: metadata.locality,
                       delete: true,
                   } + (if metadata.evict.rid.timeout != "" then { timeout: metadata.evict.rid.timeout } else {})
                     + (if metadata.evict.rid.limit > 0 then { rid_limit: metadata.evict.rid.limit } else {})
