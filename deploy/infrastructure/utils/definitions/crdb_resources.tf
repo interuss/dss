@@ -4,7 +4,7 @@ variable "crdb_resources" {
   Kubernetes CPU and memory requests and limits of the CockroachDB containers.
   Leave empty to not set any.
 
-  Example: `{ requests = { cpu = "2", memory = "10Gi" }, limits = { cpu = "2", memory = "10Gi" } }`
+  Example: `{ requests = { cpu = "3.5", memory = "14Gi" }, limits = { cpu = "3.5", memory = "14Gi" } }`
   EOT
 
   default = {}

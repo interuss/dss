@@ -123,7 +123,7 @@ Leave empty to disable record creation.</p>
                 <td>core_service_resources (<code>map(map(string))</code>)</td>
                 <td><p>Kubernetes CPU and memory requests and limits of the core-service containers.
 Leave empty to not set any.</p>
-<p>Example: <code>{ requests = { cpu = &quot;1&quot;, memory = &quot;2Gi&quot; }, limits = { memory = &quot;2Gi&quot; } }</code></p>
+<p>Example: <code>{ requests = { cpu = &quot;0.5&quot;, memory = &quot;2Gi&quot; }, limits = { memory = &quot;2Gi&quot; } }</code></p>
 <br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>crdb_cache (<code>string</code>)</td>
@@ -170,7 +170,7 @@ Either a percentage of the memory available to the container or an absolute size
                 <td>crdb_resources (<code>map(map(string))</code>)</td>
                 <td><p>Kubernetes CPU and memory requests and limits of the CockroachDB containers.
 Leave empty to not set any.</p>
-<p>Example: <code>{ requests = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; }, limits = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; } }</code></p>
+<p>Example: <code>{ requests = { cpu = &quot;3.5&quot;, memory = &quot;14Gi&quot; }, limits = { cpu = &quot;3.5&quot;, memory = &quot;14Gi&quot; } }</code></p>
 <br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>datastore_max_open_conns (<code>number</code>)</td>

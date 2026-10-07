@@ -23,9 +23,9 @@ To set them:
     === "Terraform"
         Set the following variables (see `TFVARS.gen.md` for details):
 
-        * `crdb_resources`, e.g. `{ requests = { cpu = "2", memory = "10Gi" }, limits = { cpu = "2", memory = "10Gi" } }`
+        * `crdb_resources`, e.g. `{ requests = { cpu = "3.5", memory = "14Gi" }, limits = { cpu = "3.5", memory = "14Gi" } }`
         * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
-        * `core_service_resources`, e.g. `{ requests = { cpu = "1", memory = "2Gi" }, limits = { memory = "2Gi" } }`
+        * `core_service_resources`, e.g. `{ requests = { cpu = "0.5", memory = "2Gi" }, limits = { memory = "2Gi" } }`
 
         Then run `terraform apply` to regenerate the Tanka and Helm configuration.
 
@@ -34,12 +34,12 @@ To set them:
 
         ```jsonnet
         cockroach+: {
-          resources: { requests: { cpu: '2', memory: '10Gi' }, limits: { cpu: '2', memory: '10Gi' } },
+          resources: { requests: { cpu: '3.5', memory: '14Gi' }, limits: { cpu: '3.5', memory: '14Gi' } },
           cache: '25%',
           maxSqlMemory: '25%',
         },
         backend+: {
-          resources: { requests: { cpu: '1', memory: '2Gi' }, limits: { memory: '2Gi' } },
+          resources: { requests: { cpu: '0.5', memory: '2Gi' }, limits: { memory: '2Gi' } },
         },
         ```
 
@@ -52,9 +52,9 @@ To set them:
             cache: 25%
             max-sql-memory: 25%
           statefulset:
-            resources: {requests: {cpu: "2", memory: 10Gi}, limits: {cpu: "2", memory: 10Gi}}
+            resources: {requests: {cpu: "3.5", memory: 14Gi}, limits: {cpu: "3.5", memory: 14Gi}}
         dss:
-          resources: {requests: {cpu: "1", memory: 2Gi}, limits: {memory: 2Gi}}
+          resources: {requests: {cpu: "0.5", memory: 2Gi}, limits: {memory: 2Gi}}
         ```
 
 ## The SCD global lock option

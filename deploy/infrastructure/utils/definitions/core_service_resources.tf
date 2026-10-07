@@ -4,7 +4,7 @@ variable "core_service_resources" {
   Kubernetes CPU and memory requests and limits of the core-service containers.
   Leave empty to not set any.
 
-  Example: `{ requests = { cpu = "1", memory = "2Gi" }, limits = { memory = "2Gi" } }`
+  Example: `{ requests = { cpu = "0.5", memory = "2Gi" }, limits = { memory = "2Gi" } }`
   EOT
 
   default = {}
