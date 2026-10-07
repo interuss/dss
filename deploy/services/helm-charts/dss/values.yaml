@@ -1,6 +1,7 @@
 # Default configuration
 
 dss:
+  resources: {}
   conf:
     enableScd: true
     evict:
