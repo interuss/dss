@@ -1,0 +1,91 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture.png pool_architecture.gv
+digraph G {
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    DSSClient [label="DSS client"]
+
+    LoadBalancer1 [label="TLS termination +\nload balancer",color=1]
+    CoreService1a [label="Core Service",color=2];
+    CoreService1b [label="Core Service",color=2];
+    CRDB1a [label="CRDB 1A",color=3];
+    CRDB1b [label="CRDB 1B",color=3];
+
+    LoadBalancer2 [label="TLS termination +\nload balancer",color=1]
+    CoreService2a [label="Core Service",color=2];
+    CoreService2b [label="Core Service",color=2];
+    CRDB2a [label="CRDB 2A",color=3];
+    CRDB2b [label="CRDB 2B",color=3];
+
+    LoadBalancer3 [label="TLS termination +\nload balancer",color=1]
+    CoreService3a [label="Core Service",color=2];
+    CoreService3b [label="Core Service",color=2];
+    CRDB3a [label="CRDB 3A",color=3];
+    CRDB3b [label="CRDB 3B",color=3];
+
+    { rank=sink; PublicInternet [label="Public Internet"]; }
+
+    subgraph cluster_0 {
+        label="USS1's DSS instance"
+        subgraph cluster_1 {
+            label="Replica A";
+            CoreService1a -> CRDB1a;
+        }
+        subgraph cluster_2 {
+            label="Replica B";
+            CoreService1b -> CRDB1b;
+        }
+        CoreService1b -> CRDB1a;
+        CoreService1a -> CRDB1b;
+        LoadBalancer1 -> CoreService1a
+        LoadBalancer1 -> CoreService1b
+        CRDB1a -> CRDB1b [dir=both];
+    }
+
+    subgraph cluster_4 {
+        label="USS2's DSS instance"
+        subgraph cluster_5 {
+            label="Replica A";
+            CoreService2a -> CRDB2a;
+        }
+        subgraph cluster_6 {
+            label="Replica B";
+            CoreService2b -> CRDB2b;
+        }
+        CoreService2b -> CRDB2a;
+        CoreService2a -> CRDB2b;
+        LoadBalancer2 -> CoreService2a
+        LoadBalancer2 -> CoreService2b
+        CRDB2a -> CRDB2b [dir=both];
+    }
+
+    subgraph cluster_8 {
+        label="USS3's DSS instance"
+        subgraph cluster_9 {
+            label="Replica A";
+            CoreService3a -> CRDB3a;
+        }
+        subgraph cluster_10 {
+            label="Replica B";
+            CoreService3b -> CRDB3b;
+        }
+        CoreService3b -> CRDB3a;
+        CoreService3a -> CRDB3b;
+        LoadBalancer3 -> CoreService3a
+        LoadBalancer3 -> CoreService3b
+        CRDB3a -> CRDB3b [dir=both];
+    }
+
+    DSSClient -> LoadBalancer1;
+    DSSClient -> LoadBalancer2;
+    DSSClient -> LoadBalancer3;
+
+    CRDB1a -> PublicInternet [dir=both];
+    CRDB1b -> PublicInternet [dir=both];
+    CRDB2a -> PublicInternet [dir=both];
+    CRDB2b -> PublicInternet [dir=both];
+    CRDB3a -> PublicInternet [dir=both];
+    CRDB3b -> PublicInternet [dir=both];
+
+}
