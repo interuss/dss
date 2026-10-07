@@ -77,6 +77,23 @@ Example:</li>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>core_service_env (<code>map(string)</code>)</td>
+                <td><p>Additional environment variables of the core-service containers, for instance to tune the Go runtime.</p>
+<p>Example: <code>{ GOGC = &quot;80&quot;, GOMEMLIMIT = &quot;1800MiB&quot; }</code></p>
+<br/>Default value: <code>{}</code></td>
+            </tr><tr>
+                <td>core_service_resources (<code>map(map(string))</code>)</td>
+                <td><p>Kubernetes CPU and memory requests and limits of the core-service containers.
+Leave empty to not set any.</p>
+<p>Example: <code>{ requests = { cpu = &quot;1&quot;, memory = &quot;2Gi&quot; }, limits = { memory = &quot;2Gi&quot; } }</code></p>
+<br/>Default value: <code>{}</code></td>
+            </tr><tr>
+                <td>crdb_cache (<code>string</code>)</td>
+                <td><p>Size of the CockroachDB storage engine cache, passed to the <code>--cache</code> flag of <code>cockroach start</code>.
+Either a percentage of the memory available to the container or an absolute size.</p>
+<p>Example: <code>25%</code> or <code>2GiB</code></p>
+<br/>Default value: <code>"25%"</code></td>
+            </tr><tr>
                 <td>crdb_cluster_name (<code>string</code>)</td>
                 <td><p>A string that specifies a CRDB cluster name. This is used together to ensure that all newly created
 nodes join the intended cluster when you are running multiple clusters.
@@ -85,6 +102,11 @@ The CRDB cluster name must be 6-20 characters in length, and can include lowerca
 and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.</p>
 <p>Example: interuss-us-production</p>
 </td>
+            </tr><tr>
+                <td>crdb_env (<code>map(string)</code>)</td>
+                <td><p>Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.</p>
+<p>Example: <code>{ GOGC = &quot;80&quot;, GOMAXPROCS = &quot;2&quot; }</code></p>
+<br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>crdb_external_nodes (<code>list(string)</code>)</td>
                 <td><p>Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.
@@ -105,6 +127,18 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
                 <td>crdb_locality (<code>string</code>)</td>
                 <td><p>This variable has been renamed to locality and is left to warn users about migration.</p>
 <br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>crdb_max_sql_memory (<code>string</code>)</td>
+                <td><p>Maximum memory CockroachDB can use for SQL queries, passed to the <code>--max-sql-memory</code> flag of <code>cockroach start</code>.
+Either a percentage of the memory available to the container or an absolute size.</p>
+<p>Example: <code>25%</code> or <code>2GiB</code></p>
+<br/>Default value: <code>"25%"</code></td>
+            </tr><tr>
+                <td>crdb_resources (<code>map(map(string))</code>)</td>
+                <td><p>Kubernetes CPU and memory requests and limits of the CockroachDB containers.
+Leave empty to not set any.</p>
+<p>Example: <code>{ requests = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; }, limits = { cpu = &quot;2&quot;, memory = &quot;10Gi&quot; } }</code></p>
+<br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>datastore_max_open_conns (<code>number</code>)</td>
                 <td><p>Maximum number of open connections to the datastore.</p>
