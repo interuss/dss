@@ -92,6 +92,10 @@ spec:
             {{- end }}
           command:
             - core-service
+          {{- with $dss.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if or $dss.cpuRequest $dss.memoryRequest $dss.cpuLimit $dss.memoryLimit }}
           resources:
             {{- if or $dss.cpuRequest $dss.memoryRequest }}

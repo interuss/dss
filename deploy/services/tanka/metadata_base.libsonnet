@@ -32,6 +32,7 @@
     memoryRequest: '',
     cpuLimit: '',
     memoryLimit: '',
+    env: {}, // Additional environment variables, e.g. { GOGC: '80', GOMAXPROCS: '2' }
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
@@ -79,6 +80,7 @@
     memoryRequest: '',
     cpuLimit: '',
     memoryLimit: '',
+    env: {}, // Additional environment variables, e.g. { GOGC: '80', GOMEMLIMIT: '1800MiB' }
   },
   alert: {
     enable: false,

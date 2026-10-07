@@ -362,6 +362,18 @@ variable "crdb_memory_limit" {
 }
 
 
+variable "crdb_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMAXPROCS = "2" }`
+  EOT
+
+  default = {}
+}
+
+
 variable "core_service_cpu_request" {
   type        = string
   description = <<-EOT
@@ -411,6 +423,18 @@ variable "core_service_memory_limit" {
   EOT
 
   default = ""
+}
+
+
+variable "core_service_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the core-service containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMEMLIMIT = "1800MiB" }`
+  EOT
+
+  default = {}
 }
 
 
