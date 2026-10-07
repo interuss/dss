@@ -6,6 +6,42 @@ Overtime, old entries should be removed to ensure the system is not overloaded p
 
 See the detailed [section about cleanup](cleanup.md).
 
+## CPU and memory allocation
+
+By default, the deployment tooling does not set any Kubernetes CPU or memory requests or limits on the CockroachDB and core-service containers.
+Kubernetes may then place them on nodes without enough free memory and kill them when the node runs out of memory (see issue [#1731](https://github.com/interuss/dss/issues/1731)).
+
+The following settings are available:
+
+* CPU and memory requests and limits of the CockroachDB and core-service containers.
+* CockroachDB `--cache` and `--max-sql-memory` flags (both `25%` by default). See [CockroachDB recommendations](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size) before changing them.
+* Additional environment variables of both containers, for instance to tune the Go runtime with `GOGC`, `GOMAXPROCS` or `GOMEMLIMIT`.
+
+To set them:
+
+1. Set the values according to the deployment tool:
+
+   === "Terraform"
+   Set the following variables (see `TFVARS.gen.md` for details):
+
+   * `crdb_resources`, e.g. `{ requests = { cpu = "2", memory = "10Gi" }, limits = { cpu = "2", memory = "10Gi" } }`
+   * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
+   * `crdb_env`, e.g. `{ GOGC = "80", GOMAXPROCS = "2" }`
+   * `core_service_resources`, e.g. `{ requests = { cpu = "1", memory = "2Gi" }, limits = { memory = "2Gi" } }`
+   * `core_service_env`, e.g. `{ GOMEMLIMIT = "1800MiB" }`
+
+   Then run `terraform apply` to regenerate the Tanka and Helm configuration.
+
+   === "Tanka"
+   Set the following fields of the metadata in your `main.jsonnet`:
+
+   ``jsonnet cockroach+: { resources: { requests: { cpu: '2', memory: '10Gi' }, limits: { cpu: '2', memory: '10Gi' } }, cache: '25%', maxSqlMemory: '25%', env: { GOGC: '80', GOMAXPROCS: '2' }, }, backend+: { resources: { requests: { cpu: '1', memory: '2Gi' }, limits: { memory: '2Gi' } }, env: { GOMEMLIMIT: '1800MiB' }, }, ``
+
+   === "Helm"
+   Set the following values:
+
+   ``yaml cockroachdb: conf: cache: 25% max-sql-memory: 25% statefulset: resources: {requests: {cpu: "2", memory: 10Gi}, limits: {cpu: "2", memory: 10Gi}} env: [{name: GOGC, value: "80"}, {name: GOMAXPROCS, value: "2"}] dss: resources: {requests: {cpu: "1", memory: 2Gi}, limits: {memory: 2Gi}} env: [{name: GOMEMLIMIT, value: 1800MiB}] ``
+
 ## The SCD global lock option
 
 !!! danger
@@ -22,6 +58,7 @@ A solution to that is to switch to a global lock, that is just globally locking 
 This will result in lower general throughput for operational intents that don't overlap, as only one of them can be processed at a time, but better performance in the issue's case as lock acquisition is simpler.
 
 You should enable this option depending on your DSS usage/use case and what you want to maximize:
+
 * If you have non-overlapping traffic and maximum global throughput, don't enable this flag
 * If you have overlapping traffic and don't need high global throughput, enable this flag
 
@@ -68,7 +105,6 @@ Please check the details in the linked issue above and ensure you understand the
 !!! danger
     The SCD global lock, SCD hash lock and time-based notification index options are mutually exclusive: at most one of them may be enabled.
 
-
 ## SCD lock diagnostics logs
 
 To help diagnose latency spikes (for example as discussed in [#1311](https://github.com/interuss/dss/issues/1311)), the SCD subscription lock path emits targeted warning logs when a lock query looks expensive.
@@ -76,12 +112,14 @@ To help diagnose latency spikes (for example as discussed in [#1311](https://git
 The warning is emitted when lock query duration is greater than or equal to `4s`.
 
 The log message is `Expensive SCD lock detected` and includes:
+
 * `global_lock`: Whether global lock mode is enabled for this query
 * `duration`: Time spent executing the lock query
 * `cell_count`: Number of S2 cells in the request
 * `explicit_subscription_id_count`: Number of explicitly provided subscription IDs
 
 Failed lock queries also emit warnings with timing and context:
+
 * `SCD global lock query failed`
 * `SCD subscription lock query failed`
 

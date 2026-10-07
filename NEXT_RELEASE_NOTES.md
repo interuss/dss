@@ -33,13 +33,13 @@ The release notes should contain at least the following sections:
 
 #### Minimal database schema version
 
-| Schema  | CockroachDB  | Yugabyte |
-|---------|--------------|----------|
-| RID     | vX.Y.Z       | vX.Y.Z   |
-| SCD     | vX.Y.Z       | vX.Y.Z   |
-| AUX     | vX.Y.Z       | vX.Y.Z   |
+| Schema | CockroachDB | Yugabyte |
+| ------ | ----------- | -------- |
+| RID    | vX.Y.Z      | vX.Y.Z   |
+| SCD    | vX.Y.Z      | vX.Y.Z   |
+| AUX    | vX.Y.Z      | vX.Y.Z   |
 
---------------------------------------------------------------------------------------------------------------------
+---
 
 # Release Notes for vX.Y.Z
 
@@ -50,11 +50,12 @@ The release notes should contain at least the following sections:
 ## Important information
 
 * [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-Res-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 (aligning with the Google deployment) and restricts TLS 1.2 to AEAD (GCM/ChaCha20) cipher suites. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1, or to CBC cipher suites, will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
+* [deploy] CPU and memory requests and limits, additional environment variables (e.g. `GOGC`, `GOMAXPROCS`) and the CockroachDB `--cache` and `--max-sql-memory` flags of the CockroachDB and core-service containers can now be configured with Terraform, Tanka and Helm. See [CPU and memory allocation](docs/operations/performance.md#cpu-and-memory-allocation).
 
 ## Minimal database schema version
 
-| Schema  | CockroachDB | Yugabyte |
-|---------|-------------|----------|
-| AUX     |             |          |
-| RID     |             |          |
-| SCD     |             |          |
+| Schema | CockroachDB | Yugabyte |
+| ------ | ----------- | -------- |
+| AUX    |             |          |
+| RID    |             |          |
+| SCD    |             |          |
