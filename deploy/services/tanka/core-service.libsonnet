@@ -1,4 +1,5 @@
 local base = import 'base.libsonnet';
+local util = import 'util.libsonnet';
 local volumes = import 'volumes.libsonnet';
 local datastoreparameters = import 'datastoreparameters.libsonnet';
 
@@ -118,6 +119,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 },
               ] else [],
               volumeMounts: volumes.all(metadata).backendMounts,
+              env: util.makeEnv(metadata.backend.env),
               resources: metadata.backend.resources,
               command: ['core-service'],
               args_:: {

@@ -246,6 +246,22 @@
           "type": "object",
           "description": "Kubernetes CPU and memory requests and limits of the core-service containers. Example: `{requests: {cpu: '1', memory: 2Gi}, limits: {memory: 2Gi}}`"
         },
+        "env": {
+          "type": "array",
+          "description": "Additional environment variables of the core-service containers. Example: `[{name: GOGC, value: '80'}]`",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "value"]
+          }
+        },
         "conf": {
           "type": "object",
           "properties": {

@@ -77,6 +77,11 @@ Example:</li>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>core_service_env (<code>map(string)</code>)</td>
+                <td><p>Additional environment variables of the core-service containers, for instance to tune the Go runtime.</p>
+<p>Example: <code>{ GOGC = &quot;80&quot;, GOMEMLIMIT = &quot;1800MiB&quot; }</code></p>
+<br/>Default value: <code>{}</code></td>
+            </tr><tr>
                 <td>core_service_resources (<code>map(map(string))</code>)</td>
                 <td><p>Kubernetes CPU and memory requests and limits of the core-service containers.
 Leave empty to not set any.</p>
@@ -97,6 +102,11 @@ The CRDB cluster name must be 6-20 characters in length, and can include lowerca
 and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.</p>
 <p>Example: interuss-us-production</p>
 </td>
+            </tr><tr>
+                <td>crdb_env (<code>map(string)</code>)</td>
+                <td><p>Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.</p>
+<p>Example: <code>{ GOGC = &quot;80&quot;, GOMAXPROCS = &quot;2&quot; }</code></p>
+<br/>Default value: <code>{}</code></td>
             </tr><tr>
                 <td>crdb_external_nodes (<code>list(string)</code>)</td>
                 <td><p>Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.

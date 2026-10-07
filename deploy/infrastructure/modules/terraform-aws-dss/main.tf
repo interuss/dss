@@ -28,7 +28,9 @@ module "terraform-commons-dss" {
   crdb_cache                           = var.crdb_cache
   crdb_max_sql_memory                  = var.crdb_max_sql_memory
   crdb_resources                       = var.crdb_resources
+  crdb_env                             = var.crdb_env
   core_service_resources               = var.core_service_resources
+  core_service_env                     = var.core_service_env
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns

@@ -328,6 +328,18 @@ variable "crdb_resources" {
 }
 
 
+variable "crdb_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMAXPROCS = "2" }`
+  EOT
+
+  default = {}
+}
+
+
 variable "core_service_resources" {
   type        = map(map(string))
   description = <<-EOT
@@ -343,6 +355,18 @@ variable "core_service_resources" {
     condition     = alltrue([for k in keys(var.core_service_resources) : contains(["requests", "limits"], k)])
     error_message = "core_service_resources keys must be `requests` or `limits`."
   }
+}
+
+
+variable "core_service_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the core-service containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMEMLIMIT = "1800MiB" }`
+  EOT
+
+  default = {}
 }
 
 

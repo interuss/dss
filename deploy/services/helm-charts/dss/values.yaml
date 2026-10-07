@@ -2,6 +2,7 @@
 
 dss:
   resources: {}
+  env: []
   conf:
     enableScd: true
     evict:

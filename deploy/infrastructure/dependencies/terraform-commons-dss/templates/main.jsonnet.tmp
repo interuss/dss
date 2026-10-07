@@ -28,6 +28,7 @@ local metadata = metadataBase {
     cache: '${VAR_CRDB_CACHE}',
     maxSqlMemory: '${VAR_CRDB_MAX_SQL_MEMORY}',
     resources: ${VAR_CRDB_RESOURCES},
+    env: ${VAR_CRDB_ENV},
   },
   yugabyte+: {
     image: '${VAR_YUGABYTE_DOCKER_IMAGE_NAME}',
@@ -67,6 +68,7 @@ local metadata = metadataBase {
     dumpRequests: false,
     sslPolicy: '${VAR_SSL_POLICY}',
     resources: ${VAR_CORE_SERVICE_RESOURCES},
+    env: ${VAR_CORE_SERVICE_ENV},
   },
   schema_manager+: {
     enable: true,
