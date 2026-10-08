@@ -118,7 +118,7 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 			}
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			if err != nil {
-				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", commit.Prop.RequestType), zap.Error(err))
+				s.logger.Warn("failed to apply proposal, rolling back", zap.Stringer("proposal_id", commit.Prop.ID), zap.String("proposal_type", commit.Prop.RequestType), zap.Error(err))
 				if !commit.Prop.ReadOnly {
 					s.raftRepo.Restore()
 				}

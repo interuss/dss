@@ -3,6 +3,8 @@ package consensus
 import (
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const defaultReleaseTimeout = 100 * time.Millisecond
@@ -27,18 +29,20 @@ func assertNotReleased(t *testing.T, done <-chan struct{}) {
 
 func TestReadIndexTracker_AppliedIndexAlreadyCaughtUp(t *testing.T) {
 	r := newReadIndexTracker()
-	done := r.track("read-1")
+	id := uuid.New()
+	done := r.track(id)
 
-	r.setIndex("read-1", 5, 10)
+	r.setIndex(id, 5, 10)
 
 	assertReleased(t, done)
 }
 
 func TestReadIndexTracker_AppliedIndexCatchesUpLater(t *testing.T) {
 	r := newReadIndexTracker()
-	done := r.track("read-1")
+	id := uuid.New()
+	done := r.track(id)
 
-	r.setIndex("read-1", 10, 5)
+	r.setIndex(id, 10, 5)
 	assertNotReleased(t, done)
 
 	r.releaseUpTo(9)
@@ -50,11 +54,12 @@ func TestReadIndexTracker_AppliedIndexCatchesUpLater(t *testing.T) {
 
 func TestReadIndexTracker_MultiplePendingReadsReleaseIndependently(t *testing.T) {
 	r := newReadIndexTracker()
-	doneA := r.track("read-a")
-	doneB := r.track("read-b")
+	idA, idB := uuid.New(), uuid.New()
+	doneA := r.track(idA)
+	doneB := r.track(idB)
 
-	r.setIndex("read-a", 3, 0)
-	r.setIndex("read-b", 8, 0)
+	r.setIndex(idA, 3, 0)
+	r.setIndex(idB, 8, 0)
 
 	r.releaseUpTo(3)
 	assertReleased(t, doneA)
