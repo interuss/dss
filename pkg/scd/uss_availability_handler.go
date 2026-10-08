@@ -8,7 +8,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
-	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
@@ -53,14 +53,13 @@ func (a *Server) SetUssAvailability(ctx context.Context, req *restapi.SetUssAvai
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 
-	// Retrieve USS availability status from request params
-	_, err := scdmodels.UssAvailabilityStateFromRest(req.Body.Availability)
+	payload, err := operations.NewSetUssAvailabilityPayload(req.UssId, req.Body)
 	if err != nil {
 		return restapi.SetUssAvailabilityResponseSet{Response400: &restapi.ErrorResponse{
-			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state"))}}
+			Message: dsserr.Handle(ctx, stacktrace.Propagate(err, "Failed to validate USS availability parameters"))}}
 	}
 
-	result, err := dssstore.TransactWithResult[repos.Repository, *restapi.UssAvailabilityStatusResponse](ctx, a.Store, req)
+	result, err := dssstore.TransactWithResult[repos.Repository, *restapi.UssAvailabilityStatusResponse](ctx, a.Store, payload)
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
