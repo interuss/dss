@@ -3,11 +3,23 @@ resource "aws_eks_cluster" "kubernetes_cluster" {
   role_arn = aws_iam_role.dss-cluster.arn
 
   vpc_config {
-    subnet_ids             = local.vpc_id == "" ? aws_subnet.dss[*].id : var.private_subnet_ids
-    endpoint_private_access = var.use_public_subnets ? false : true
-    endpoint_public_access = var.use_public_subnets ? true : false
-    public_access_cidrs = local.public_access_cidrs
-    security_group_ids = [aws_security_group.eks-controlplane.id]
+    subnet_ids              = local.vpc_id == "" ? aws_subnet.dss[*].id : var.private_subnet_ids
+    endpoint_private_access = true
+    endpoint_public_access  = var.use_public_subnets
+    public_access_cidrs     = var.use_public_subnets ? local.public_access_cidrs : null
+    security_group_ids      = [aws_security_group.eks-controlplane.id]
+  }
+
+  lifecycle {
+    precondition {
+      condition     = var.vpc_id != "" || var.use_public_subnets
+      error_message = "A private-only API endpoint on a newly created VPC is unreachable from the Terraform runner. Supply vpc_id with VPN or in-VPC access, or set use_public_subnets = true."
+    }
+
+    precondition {
+      condition     = var.vpc_id == "" || (length(var.private_subnet_ids) >= 2 && length(var.public_subnet_ids) >= 1)
+      error_message = "When vpc_id is set, provide at least two private subnets (EKS requires two AZs) and at least one public subnet."
+    }
   }
 
   # Ensure that IAM Role permissions are created before and deleted after EKS Cluster handling.

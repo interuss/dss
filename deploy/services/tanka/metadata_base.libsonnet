@@ -118,4 +118,5 @@
   },
   image_pull_secret: '',
   subnet: if $.cloud_provider == "aws" then error 'must specify subnet for AWS cloud provider', // For AWS, subnet of the elastic ips
+  public_subnet: $.subnet, // For AWS, subnet of the public traffic
 }

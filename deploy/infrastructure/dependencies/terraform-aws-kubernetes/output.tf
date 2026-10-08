@@ -104,7 +104,6 @@ output "public_subnet" {
   value = local.public_subnet_id
 }
 
-
 output "iam_role_node_group_arn" {
   value = aws_iam_role.dss-cluster-node-group.arn
 }

@@ -318,11 +318,23 @@ Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>3</code></p>
 </td>
             </tr><tr>
+                <td>private_subnet_ids (<code>list(string)</code>)</td>
+                <td><p>IDs of the private subnets to use for the Kubernetes cluster, instead of creating new ones.
+For backward compatibility, the default is an empty list.</p>
+<p>Example: <code>[&quot;subnet-01234567890123456&quot;, &quot;subnet-01234567890123456&quot;]</code></p>
+<br/>Default value: <code>[]</code></td>
+            </tr><tr>
                 <td>prometheus_hostname (<code>string</code>)</td>
                 <td><p>Domain used to expose prometheus on an external endpoint.</p>
 <p>Leave empty to disable exposition of prometheus publicly.</p>
 <p>Example: <code>prometheus.dss.example.com</code></p>
 <br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>public_subnet_ids (<code>list(string)</code>)</td>
+                <td><p>IDs of the public subnets to use for the Kubernetes cluster, instead of creating new ones.
+For backward compatibility, the default is an empty list.</p>
+<p>Example: <code>[&quot;subnet-01234567890123456&quot;, &quot;subnet-01234567890123456&quot;]</code></p>
+<br/>Default value: <code>[]</code></td>
             </tr><tr>
                 <td>should_init (<code>bool</code>)</td>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
@@ -331,6 +343,18 @@ and prevent you from joining an existing pool.</p>
 <p>Only used for CockroachDB with Tanka</p>
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>none</code></td>
+            </tr><tr>
+                <td>use_public_subnets (<code>bool</code>)</td>
+                <td><p>Set to true to use public subnets for the Kubernetes cluster. It is recommended to use private subnets for production environments for security reasons.
+For backward compatibility, the default is true.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
+                <td>vpc_id (<code>string</code>)</td>
+                <td><p>ID of the VPC to use for the Kubernetes cluster, instead of creating a new one.
+For backward compatibility, the default is blank.</p>
+<p>Example: <code>vpc-01234567890123456</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>yugabyte_cloud (<code>string</code>)</td>
                 <td><p>Cloud of yugabyte instances, used for partionning.</p>

@@ -101,9 +101,9 @@ local metadata = metadataBase {
   %{if VAR_CLOUD_PROVIDER == "aws"}
   subnet: '${VAR_SUBNET}',
   %{if VAR_PUBLIC_SUBNET != ""}
-  public_subnet: '${VAR_PUBLIC_SUBNET}'
+  public_subnet: '${VAR_PUBLIC_SUBNET}',
   %{else}
-  public_subnet: '${VAR_SUBNET}'
+  public_subnet: '${VAR_SUBNET}',
   %{endif}
   %{endif}
 };

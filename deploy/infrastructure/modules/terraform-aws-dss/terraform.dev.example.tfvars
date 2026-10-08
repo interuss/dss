@@ -7,12 +7,12 @@ aws_region = "eu-west-1"
 # DNS Management
 aws_route53_zone_id = "Z01551234567890123456"
 
-# VPC configuration. For securirty, it is recommended to use private subnets for production environments.
+# VPC configuration. For security, it is recommended to use private subnets for production environments.
 # For backward compatibility, set use_public_subnets true, vpc_id to a blank string and subnets to empty lists
 use_public_subnets = false
-vpc_id = "vpc-01234567890123456"
+vpc_id             = "vpc-01234567890123456"
 private_subnet_ids = ["subnet-01234567890123456", "subnet-01234567890123456"]
-public_subnet_ids = ["subnet-01234567890123456", "subnet-01234567890123456"]
+public_subnet_ids  = ["subnet-01234567890123456", "subnet-01234567890123456"]
 
 # Hostnames
 app_hostname       = "dss.interuss.example.com"
