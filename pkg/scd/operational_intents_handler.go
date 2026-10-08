@@ -21,7 +21,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 ) restapi.DeleteOperationalIntentReferenceResponseSet {
 
 	// Retrieve OperationalIntent ID
-	_, err := dssmodels.IDFromString(string(req.Entityid))
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.DeleteOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -40,7 +40,9 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for operational intent to modify"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeOperationalIntentReferenceResponse](ctx, a.Store, req)
+	payload := operations.NewDeleteOIRPayload(id, dssmodels.Manager(*req.Auth.ClientID), ovn)
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeOperationalIntentReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete operational intent")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
