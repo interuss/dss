@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
@@ -148,7 +148,7 @@ func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestTy
 
 	ready := c.readTracker.track(proposal.ID)
 
-	err := c.node.ReadIndex(ctx, []byte(proposal.ID))
+	err := c.node.ReadIndex(ctx, proposal.ID[:])
 	if err != nil {
 		c.readTracker.untrack(proposal.ID)
 		return zero, stacktrace.Propagate(err, "failed to request read index from Raft")
@@ -193,9 +193,9 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 
 	proposal := c.newProposal(ctx, string(requestType), value, false)
 
-	buf, err := json.Marshal(proposal)
+	buf, err := proposal.encode()
 	if err != nil {
-		return zero, stacktrace.Propagate(err, "failed to marshal proposal")
+		return zero, stacktrace.Propagate(err, "failed to encode proposal")
 	}
 
 	applied := c.tracker.track(proposal.ID)
@@ -344,7 +344,12 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 				}
 
 				for _, rs := range raftUpdate.ReadStates {
-					c.readTracker.setIndex(string(rs.RequestCtx), rs.Index, c.appliedIndex)
+					id, err := uuid.FromBytes(rs.RequestCtx)
+					if err != nil {
+						c.logger.Warn("ignoring read state with invalid request context", zap.Error(err))
+						continue
+					}
+					c.readTracker.setIndex(id, rs.Index, c.appliedIndex)
 				}
 				// A read's ReadState may have arrived in an earlier Ready() batch than the
 				// entries it depends on, so re-check pending reads on every apply too.
@@ -414,10 +419,9 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 		return nil
 	}
 
-	var proposal Proposal
-	err := json.Unmarshal(data, &proposal)
+	proposal, err := decodeProposal(data)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
+		return stacktrace.Propagate(err, "failed to decode committed proposal")
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)

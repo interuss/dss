@@ -1,6 +1,10 @@
 package consensus
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/google/uuid"
+)
 
 // pendingRead tracks a ReadIndex request
 // once the matching raft.ReadState arrives, index holds the commit index the caller must wait
@@ -14,17 +18,17 @@ type pendingRead struct {
 // readIndexTracker keeps track of pending ReadIndex requests
 type readIndexTracker struct {
 	sync.Mutex
-	pending map[string]*pendingRead
+	pending map[uuid.UUID]*pendingRead
 }
 
 func newReadIndexTracker() *readIndexTracker {
 	return &readIndexTracker{
-		pending: make(map[string]*pendingRead),
+		pending: make(map[uuid.UUID]*pendingRead),
 	}
 }
 
 // track registers a pending read and returns a channel that closes once it is safe to read local state
-func (r *readIndexTracker) track(id string) <-chan struct{} {
+func (r *readIndexTracker) track(id uuid.UUID) <-chan struct{} {
 	r.Lock()
 	defer r.Unlock()
 
@@ -35,7 +39,7 @@ func (r *readIndexTracker) track(id string) <-chan struct{} {
 
 // setIndex records the commit index a ReadState reported for id, and
 // immediately releases the waiter if appliedIndex already satisfies it.
-func (r *readIndexTracker) setIndex(id string, index uint64, appliedIndex uint64) {
+func (r *readIndexTracker) setIndex(id uuid.UUID, index uint64, appliedIndex uint64) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -69,7 +73,7 @@ func (r *readIndexTracker) releaseUpTo(appliedIndex uint64) {
 
 // untrack removes a pending read without signaling it
 // e.g. when the caller's context is done before a matching ReadState ever arrived.
-func (r *readIndexTracker) untrack(id string) {
+func (r *readIndexTracker) untrack(id uuid.UUID) {
 	r.Lock()
 	defer r.Unlock()
 
