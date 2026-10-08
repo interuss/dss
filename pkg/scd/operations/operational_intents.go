@@ -32,7 +32,7 @@ func init() {
 	}
 	Registry[restapi.DeleteOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.DeleteOperationalIntentReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*deleteOIRPayload],
 		Execute: executeDeleteOperationalIntentReference,
 	}
 	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
@@ -78,19 +78,29 @@ func SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx context.Context, r repos.Rep
 	return false, nil
 }
 
+type deleteOIRPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+	OVN     scdmodels.OVN
+}
+
+func (p *deleteOIRPayload) OperationID() string {
+	return restapi.DeleteOperationalIntentReferenceOperationID
+}
+
+// NewDeleteOIRPayload builds the payload for an Operational Intent Reference deletion request.
+func NewDeleteOIRPayload(id dssmodels.ID, manager dssmodels.Manager, ovn scdmodels.OVN) dssstore.OperationRequest {
+	return &deleteOIRPayload{ID: id, Manager: manager, OVN: ovn}
+}
+
 // executeDeleteOperationalIntentReference deletes a single operational intent ref for a given ID
 // at the specified version.
 func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.DeleteOperationalIntentReferenceRequest)
+	payload, ok := request.(*deleteOIRPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteOperationalIntentReferenceOperationID)
 	}
-
-	// Retrieve OperationalIntent ID
-	id, err := dssmodels.IDFromString(string(req.Entityid))
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
-	}
+	id := payload.ID
 
 	// Get OperationalIntent to delete
 	old, err := repo.GetOperationalIntent(ctx, id)
@@ -102,14 +112,14 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	}
 
 	// Validate deletion request
-	if old.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+	if old.Manager != payload.Manager {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-			"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
+			"OperationalIntent owned by %s, but %s attempted to delete", old.Manager, payload.Manager)
 	}
 
-	if old.OVN != scdmodels.OVN(req.Ovn) {
+	if old.OVN != payload.OVN {
 		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-			"Current version is %s but client specified version %s", old.OVN, scdmodels.OVN(req.Ovn))
+			"Current version is %s but client specified version %s", old.OVN, payload.OVN)
 	}
 
 	// Lock subscriptions based on the cell and subscriptions we're going to use

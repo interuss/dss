@@ -17,7 +17,7 @@ import (
 func init() {
 	Registry[restapi.DeleteConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.DeleteConstraintReferenceRequest],
+		Decode:  dssstore.DecodeJSON[*deleteConstraintPayload],
 		Execute: executeDeleteConstraint,
 	}
 	Registry[restapi.GetConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
@@ -254,17 +254,27 @@ func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository
 	return response, nil
 }
 
+type deleteConstraintPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+	OVN     scdmodels.OVN
+}
+
+func (p *deleteConstraintPayload) OperationID() string {
+	return restapi.DeleteConstraintReferenceOperationID
+}
+
+// NewDeleteConstraintPayload builds the payload for a Constraint deletion request.
+func NewDeleteConstraintPayload(id dssmodels.ID, manager dssmodels.Manager, ovn scdmodels.OVN) dssstore.OperationRequest {
+	return &deleteConstraintPayload{ID: id, Manager: manager, OVN: ovn}
+}
+
 func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.DeleteConstraintReferenceRequest)
+	payload, ok := request.(*deleteConstraintPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteConstraintReferenceOperationID)
 	}
-
-	// Retrieve Constraint ID
-	id, err := dssmodels.IDFromString(string(req.Entityid))
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
-	}
+	id := payload.ID
 
 	// Make sure deletion request is valid
 	old, err := repo.GetConstraint(ctx, id)
@@ -273,12 +283,12 @@ func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 	case err != nil:
 		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
-	case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
+	case old.Manager != payload.Manager:
 		return nil, stacktrace.NewErrorWithCode(dsserr.PermissionDenied,
-			"Constraint owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
-	case old.OVN != scdmodels.OVN(req.Ovn):
+			"Constraint owned by %s, but %s attempted to delete", old.Manager, payload.Manager)
+	case old.OVN != payload.OVN:
 		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
-			"Current version is %s but client specified version %s", old.OVN, scdmodels.OVN(req.Ovn))
+			"Current version is %s but client specified version %s", old.OVN, payload.OVN)
 	}
 
 	// Delete Constraint in repo
