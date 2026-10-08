@@ -11,6 +11,10 @@ module "terraform-aws-kubernetes" {
   node_count                   = var.node_count
   kubernetes_version           = var.kubernetes_version
   prometheus_hostname          = var.prometheus_hostname
+  use_public_subnets           = var.use_public_subnets
+  vpc_id                       = var.vpc_id
+  public_subnet_ids            = var.public_subnet_ids
+  private_subnet_ids           = var.private_subnet_ids
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
@@ -47,6 +51,7 @@ module "terraform-commons-dss" {
   kubernetes_context_name              = module.terraform-aws-kubernetes.kubernetes_context_name
   kubernetes_get_credentials_cmd       = module.terraform-aws-kubernetes.kubernetes_get_credentials_cmd
   workload_subnet                      = module.terraform-aws-kubernetes.workload_subnet
+  public_subnet                        = module.terraform-aws-kubernetes.public_subnet
   gateway_cert_name                    = module.terraform-aws-kubernetes.app_hostname_cert_arn
   evict_enable_scd_cron                = var.evict_enable_scd_cron
   evict_scd_schedule                   = var.evict_scd_schedule

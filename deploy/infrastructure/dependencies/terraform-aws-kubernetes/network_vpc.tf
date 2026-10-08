@@ -1,5 +1,8 @@
 resource "aws_vpc" "dss" {
   # Requirements from https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html
+
+  count = var.vpc_id == "" ? 1 : 0
+
   cidr_block = "10.0.0.0/16"
 
   enable_dns_hostnames = true
@@ -10,15 +13,33 @@ resource "aws_vpc" "dss" {
   }
 }
 
+moved {
+  from = aws_vpc.dss
+  to = aws_vpc.dss[0]
+}
+
+# Create the single internet gateway for the VPC
 resource "aws_internet_gateway" "dss" {
-  vpc_id = aws_vpc.dss.id
+  count = var.vpc_id == "" ? 1 : 0
+
+  vpc_id = aws_vpc.dss[0].id
   tags = {
     Name = "${var.cluster_name}"
   }
 }
 
+moved {
+  from = aws_internet_gateway.dss
+  to = aws_internet_gateway.dss[0]
+}
+
+
+# Pull in the main route table and make it the route table for the kubernetes cluster
+# NOTE: For backward compatibility, this always points to the main route table via the association.main filter
 data "aws_route_table" "vpc_main" {
-  vpc_id = aws_vpc.dss.id
+  count = var.vpc_id == "" ? 1 : 0
+
+  vpc_id = aws_vpc.dss[0].id
 
   filter {
     name   = "association.main"
@@ -31,13 +52,15 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# Create the two kubernetes subnets
+# NOTE: For backward compatibility, this always points to the main route table via the association.main filter
 # Uses the two first availability zones of the region
 resource "aws_subnet" "dss" {
-  count = 2
+  count = var.vpc_id == "" ? 2 : 0
 
   availability_zone       = data.aws_availability_zones.available.names[count.index]
-  cidr_block              = cidrsubnet(aws_vpc.dss.cidr_block, 8, count.index)
-  vpc_id                  = aws_vpc.dss.id
+  cidr_block              = cidrsubnet(aws_vpc.dss[0].cidr_block, 8, count.index)
+  vpc_id                  = aws_vpc.dss[0].id
   map_public_ip_on_launch = true
 
   tags = {
@@ -47,24 +70,66 @@ resource "aws_subnet" "dss" {
   }
 }
 
-# This is the subnet where Kubernetes workload will be running.
-data "aws_subnet" "main_subnet" {
-  id = aws_subnet.dss[0].id
+# If a VPC ID is provided, we need to retrieve the subnets from the existing VPC, and add the tags to the existing subnets
+resource "aws_ec2_tag" "kubernetes_cluster_tags" {
+  count = var.vpc_id == "" ? 0 : 2
+  
+  resource_id = var.private_subnet_ids[count.index]
+  key         = "kubernetes.io/cluster/${var.cluster_name}"
+  value       = "shared"
+}
+resource "aws_ec2_tag" "kubernetes_role_tags_1" {
+  count = var.vpc_id == "" ? 0 : 2
+  
+  resource_id = var.private_subnet_ids[count.index]
+  key         = "kubernetes.io/role/internal-elb"
+  value       = 1
 }
 
+resource "aws_ec2_tag" "kubernetes_role_tags_2" {
+  count = var.vpc_id == "" ? 0 : 2
+  
+  resource_id = var.public_subnet_ids[count.index]
+  key         = "kubernetes.io/role/internal-elb"
+  value       = var.use_public_subnets ? 0 : 1
+}
+
+
+
+# Add a route for the internet gateway into the public route table
 resource "aws_route" "internet_gateway" {
-  route_table_id         = data.aws_route_table.vpc_main.id
-  gateway_id             = aws_internet_gateway.dss.id
+  count = var.vpc_id == "" ? 1 : 0
+
+  route_table_id         = data.aws_route_table.vpc_main[0].id
+  gateway_id             = aws_internet_gateway.dss[0].id
   destination_cidr_block = "0.0.0.0/0"
 }
 
+# Add route table associations for the kubernetes subnets
+# NOTE: For backward compatibility, this always points to the main route table via the association.main filter
+# NOTE2: This will be either public or private subnets depending on the use_public_subnets variable
 resource "aws_route_table_association" "subnet" {
-  count          = 2
-  route_table_id = data.aws_route_table.vpc_main.id
+  count          = var.vpc_id == "" ? 2 : 0
+  route_table_id = data.aws_route_table.vpc_main[0].id
   subnet_id      = aws_subnet.dss[count.index].id
 }
 
 resource "aws_security_group" "eks-controlplane" {
   description = "Cluster communication with worker nodes"
-  vpc_id      = aws_vpc.dss.id
+  vpc_id      = var.vpc_id == "" ? aws_vpc.dss[0].id : var.vpc_id
+}
+
+data "aws_vpc" "existing" {
+  count = var.vpc_id == "" ? 0 : 1
+  id = var.vpc_id
+}
+
+resource "aws_security_group_rule" "eks-controlplane-ingress" {
+  description = var.vpc_id == "" || var.vpc_id == null ? var.use_public_subnets ? "Allow traffic from the internet" : "Allow traffic from the cluster" : "Allow traffic from the cluster"
+  type        = "ingress"
+  from_port   = 0
+  to_port     = 65535
+  protocol    = "tcp"
+  cidr_blocks = var.vpc_id == "" || var.vpc_id == null ? var.use_public_subnets ? ["0.0.0.0/0"] : [aws_vpc.dss[0].cidr_block] : [data.aws_vpc.existing[0].cidr_block]
+  security_group_id = aws_security_group.eks-controlplane.id
 }

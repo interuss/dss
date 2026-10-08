@@ -157,4 +157,42 @@ variable "kubernetes_version" {
   }
 }
 
+variable "use_public_subnets" {
+  type        = bool
+  default     = true
+  description = <<-EOT
+  Set to true to use public subnets for the Kubernetes cluster. It is recommended to use private subnets for production environments for security reasons.
 
+  Example: `true`
+  EOT
+}
+
+variable "vpc_id" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  ID of the VPC to use for the Kubernetes cluster, instead of creating a new one.
+
+  Example: `vpc-01234567890123456`
+  EOT
+}
+
+variable "public_subnet_ids" {
+  type        = list(string)
+  default     = []
+  description = <<-EOT
+  IDs of the public subnets to use for the Kubernetes cluster, instead of creating a new one.
+
+  Example: `["subnet-01234567890123456", "subnet-01234567890123456"]`
+  EOT
+}
+
+variable "private_subnet_ids" {
+  type        = list(string)
+  default     = []
+  description = <<-EOT
+  IDs of the private subnets to use for the Kubernetes cluster, instead of creating a new one.
+
+  Example: `["subnet-01234567890123456", "subnet-01234567890123456"]`
+  EOT
+}
