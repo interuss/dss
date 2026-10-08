@@ -142,6 +142,26 @@ dummy_oauth_api: openapi-to-go-server
 			--api_folder /resources/output/api
 # ---
 
+# --- Targets to autogenerate Go code for Protocol Buffers definitions ---
+PROTO_FILES := $(shell find pkg -name '*.proto')
+
+.PHONY: protos
+protos: protoc-go
+	docker container run -u "$(USER_GROUP)" --rm \
+		-v "$(CURDIR):/dss" -w /dss \
+		interuss/dss-protoc-go \
+			--go_out=. --go_opt=paths=source_relative \
+			$(PROTO_FILES)
+
+# The Go version and protoc-gen-go must match the go and google.golang.org/protobuf versions in go.mod.
+# TODO: pass the Go version the same way to the other Docker images building Go code to keep them in sync with go.mod.
+protoc-go:
+	docker image build \
+		--build-arg GO_VERSION=$$(go list -m -f '{{.GoVersion}}') \
+		--build-arg PROTOC_GEN_GO_VERSION=$$(go list -m -f '{{.Version}}' google.golang.org/protobuf) \
+		-t interuss/dss-protoc-go ./build/protoc-go
+# ---
+
 .PHONY: check-dss
 check-dss: evaluate-tanka test-go-units test-go-units-crdb test-e2e
 
