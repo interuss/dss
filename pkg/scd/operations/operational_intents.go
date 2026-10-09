@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -15,6 +16,7 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
+	"github.com/jackc/pgx/v5"
 )
 
 func init() {
@@ -110,6 +112,11 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	if old.OVN != scdmodels.OVN(req.Ovn) {
 		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch,
 			"Current version is %s but client specified version %s", old.OVN, scdmodels.OVN(req.Ovn))
+	}
+
+	if old.UssAvailability == scdmodels.UssAvailabilityStateDown {
+		return nil, stacktrace.NewErrorWithCode(dsserr.PreconditionFailed,
+			"USS %s may not delete OperationalIntent %s while marked as Down in the DSS", *req.Auth.ClientID, id)
 	}
 
 	// Lock subscriptions based on the cell and subscriptions we're going to use
@@ -679,11 +686,13 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 	}
 
 	var (
-		version     = scdmodels.VersionNumber(1)
-		pastOVNs    = make([]scdmodels.OVN, 0)
-		previousSub *scdmodels.Subscription
+		version         = scdmodels.VersionNumber(1)
+		pastOVNs        = make([]scdmodels.OVN, 0)
+		previousSub     *scdmodels.Subscription
+		ussAvailability = scdmodels.UssAvailabilityStateUnknown
 	)
 	if old != nil {
+		ussAvailability = old.UssAvailability
 		version = old.Version + 1
 		pastOVNs = append(old.PastOVNs, validParams.OVN)
 
@@ -694,6 +703,21 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 				return nil, stacktrace.Propagate(err, "Unable to get OperationalIntent's Subscription from repo")
 			}
 		}
+	} else {
+		ussa, err := repo.GetUssAvailability(ctx, manager)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return nil, stacktrace.Propagate(err, "Could not get USS availability from repo")
+		}
+		if ussa != nil {
+			ussAvailability = ussa.Availability
+		}
+	}
+
+	if ussAvailability == scdmodels.UssAvailabilityStateDown &&
+		(validParams.State == scdmodels.OperationalIntentStateAccepted ||
+			validParams.State == scdmodels.OperationalIntentStateActivated) {
+		return nil, stacktrace.NewErrorWithCode(dsserr.PreconditionFailed,
+			"USS %s may not transition OperationalIntent %s to %s while marked as Down in the DSS", manager, validParams.ID, validParams.State)
 	}
 
 	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
