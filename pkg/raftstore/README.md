@@ -9,6 +9,24 @@
 - **In-memory data projection:** The application state machine derived from the committed log (i.e. ISAs, subscriptions, operational intents, etc.) lives in-memory. It is not persisted but rather reconstructed by replaying the log / snapshot on startup.
 - **Data model:** Each service (`rid`, `scd`, `aux_`) defines its own request/response structs. During replication, they are wrapped in a [`Proposal`](consensus/proposal.go), which carries metadata (an ID, the originating node, and a timestamp for determinism) with a `RequestType` string and a request payload as a serialized `Value`. [`pkg/raftstore/store.go`](store.go) replicates the `Proposal` through Raft and, once committed, the service specific raftstore implementation interprets `RequestType`/`Value` and applies the resulting change to its own in-memory store.
 
+## Proposal encoding
+
+Proposals appended to the Raft log are serialized with [Protocol Buffers](https://protobuf.dev/). The schema is defined in [`consensus/proposalpb/proposal.proto`](consensus/proposalpb/proposal.proto).
+
+Read-only proposals are served through ReadIndex and are never encoded.
+
+### Regenerating the Go code
+
+After editing a `.proto` file under `pkg/`, regenerate the Go code from the repository root:
+
+```bash
+make protos
+```
+
+This builds a Docker image ([`build/protoc-go/Dockerfile`](../../build/protoc-go/Dockerfile)) and regenerates the `.pb.go` file next to every `.proto` file under `pkg/`.
+
+When upgrading `google.golang.org/protobuf` in `go.mod`, update `PROTOC_GEN_GO_VERSION` in the Dockerfile to the same version and run `make protos` again.
+
 ## Terminology
 
 Most of the concepts defined below come from the Raft consensus algorithm itself, described in ["In Search of an Understandable Consensus Algorithm" by D. Ongaro and J. Ousterhout](https://raft.github.io/raft.pdf). Please refer to the original paper for more details on how the Raft protocol works although the definitions in this documentation aim to be self-contained.
