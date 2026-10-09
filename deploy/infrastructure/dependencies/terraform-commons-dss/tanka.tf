@@ -47,6 +47,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CLOUD_PROVIDER                       = var.kubernetes_cloud_provider_name
     VAR_CERT_NAME                            = var.gateway_cert_name
     VAR_SUBNET                               = var.workload_subnet
+    VAR_PUBLIC_SUBNET                        = var.public_subnet
     VAR_SSL_POLICY                           = var.ssl_policy
     VAR_EVICT_ENABLE_SCD_CRON                = var.evict_enable_scd_cron
     VAR_EVICT_SCD_SCHEDULE                   = var.evict_scd_schedule
