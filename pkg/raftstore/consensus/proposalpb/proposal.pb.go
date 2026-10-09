@@ -29,6 +29,7 @@ type Proposal struct {
 	RequestType        string                 `protobuf:"bytes,4,opt,name=request_type,json=requestType,proto3" json:"request_type,omitempty"`
 	Value              []byte                 `protobuf:"bytes,5,opt,name=value,proto3" json:"value,omitempty"`
 	ReadOnly           bool                   `protobuf:"varint,6,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
+	Compressed         bool                   `protobuf:"varint,7,opt,name=compressed,proto3" json:"compressed,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -105,18 +106,28 @@ func (x *Proposal) GetReadOnly() bool {
 	return false
 }
 
+func (x *Proposal) GetCompressed() bool {
+	if x != nil {
+		return x.Compressed
+	}
+	return false
+}
+
 var File_pkg_raftstore_consensus_proposalpb_proposal_proto protoreflect.FileDescriptor
 
 const file_pkg_raftstore_consensus_proposalpb_proposal_proto_rawDesc = "" +
 	"\n" +
-	"1pkg/raftstore/consensus/proposalpb/proposal.proto\x12\x17dss.raftstore.consensus\"\xbb\x01\n" +
+	"1pkg/raftstore/consensus/proposalpb/proposal.proto\x12\x17dss.raftstore.consensus\"\xdb\x01\n" +
 	"\bProposal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\fR\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x04R\x06nodeId\x120\n" +
 	"\x14timestamp_unix_nanos\x18\x03 \x01(\x10R\x12timestampUnixNanos\x12!\n" +
 	"\frequest_type\x18\x04 \x01(\tR\vrequestType\x12\x14\n" +
 	"\x05value\x18\x05 \x01(\fR\x05value\x12\x1b\n" +
-	"\tread_only\x18\x06 \x01(\bR\breadOnlyB<Z:github.com/interuss/dss/pkg/raftstore/consensus/proposalpbb\x06proto3"
+	"\tread_only\x18\x06 \x01(\bR\breadOnly\x12\x1e\n" +
+	"\n" +
+	"compressed\x18\a \x01(\bR\n" +
+	"compressedB<Z:github.com/interuss/dss/pkg/raftstore/consensus/proposalpbb\x06proto3"
 
 var (
 	file_pkg_raftstore_consensus_proposalpb_proposal_proto_rawDescOnce sync.Once

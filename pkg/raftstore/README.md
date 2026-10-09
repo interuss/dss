@@ -15,6 +15,8 @@ Proposals appended to the Raft log are serialized with [Protocol Buffers](https:
 
 Read-only proposals are served through ReadIndex and are never encoded.
 
+Request payloads of at least `--raft_proposal_compression_threshold` bytes (1024 by default, 0 disables compression) are gzip-compressed before being encoded, and the `compressed` field is set. A payload is stored uncompressed when compression would not make it smaller.
+
 ### Regenerating the Go code
 
 After editing a `.proto` file under `pkg/`, regenerate the Go code from the repository root:

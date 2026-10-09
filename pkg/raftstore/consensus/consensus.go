@@ -26,6 +26,8 @@ type Consensus struct {
 	nodeID uint64
 	node   raft.Node
 
+	proposalCompressionThreshold uint64
+
 	transport *rafthttp.Transport
 	server    *http.Server
 
@@ -78,6 +80,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		node:    node,
 		storage: storage,
 		commitC: commitC,
+
+		proposalCompressionThreshold: connectParams.ProposalCompressionThreshold,
 
 		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 		serverErrC:      make(chan error, 1),
@@ -192,7 +196,7 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 
 	proposal := c.newProposal(ctx, string(requestType), value, false)
 
-	buf, err := proposal.encode()
+	buf, err := proposal.encode(c.proposalCompressionThreshold)
 	if err != nil {
 		return zero, stacktrace.Propagate(err, "failed to encode proposal")
 	}

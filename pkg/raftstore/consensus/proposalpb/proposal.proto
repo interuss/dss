@@ -11,4 +11,5 @@ message Proposal {
   string request_type = 4;
   bytes value = 5;
   bool read_only = 6;
+  bool compressed = 7;
 }
