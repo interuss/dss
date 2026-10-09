@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,6 +25,8 @@ type Consensus struct {
 
 	nodeID uint64
 	node   raft.Node
+
+	proposalCompressionThreshold uint64
 
 	transport *rafthttp.Transport
 	server    *http.Server
@@ -79,6 +80,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		node:    node,
 		storage: storage,
 		commitC: commitC,
+
+		proposalCompressionThreshold: connectParams.ProposalCompressionThreshold,
 
 		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 		serverErrC:      make(chan error, 1),
@@ -193,9 +196,9 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 
 	proposal := c.newProposal(ctx, string(requestType), value, false)
 
-	buf, err := json.Marshal(proposal)
+	buf, err := proposal.encode(c.proposalCompressionThreshold)
 	if err != nil {
-		return zero, stacktrace.Propagate(err, "failed to marshal proposal")
+		return zero, stacktrace.Propagate(err, "failed to encode proposal")
 	}
 
 	applied := c.tracker.track(proposal.ID)
@@ -414,10 +417,9 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 		return nil
 	}
 
-	var proposal Proposal
-	err := json.Unmarshal(data, &proposal)
+	proposal, err := decodeProposal(data)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
+		return stacktrace.Propagate(err, "failed to decode committed proposal")
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)

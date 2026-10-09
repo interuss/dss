@@ -29,6 +29,8 @@ const (
 
 	defaultMaxSizePerMsg   = 1024 * 1024
 	defaultMaxInflightMsgs = 4096 / 8
+
+	defaultProposalCompressionThreshold = 1024
 )
 
 type (
@@ -65,6 +67,9 @@ type (
 		MaxSizePerMsg uint64
 		// max number of in-flight messages during optimistic replication phase
 		MaxInflightMsgs int
+
+		// min byte size of a proposal payload for it to be compressed, 0 disables compression
+		ProposalCompressionThreshold uint64
 	}
 )
 
@@ -139,6 +144,9 @@ func init() {
 		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
+
+	flag.Uint64Var(&connectParameters.ProposalCompressionThreshold, "raft_proposal_compression_threshold", defaultProposalCompressionThreshold,
+		"Minimum size in bytes of a proposal payload for it to be compressed before being appended to the Raft log. 0 disables compression. Lower values reduce disk and network usage for smaller proposals but increase CPU usage on every node.")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
