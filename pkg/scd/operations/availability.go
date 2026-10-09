@@ -22,9 +22,33 @@ func init() {
 	}
 	Registry[restapi.SetUssAvailabilityOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.SetUssAvailabilityRequest],
+		Decode:  dssstore.DecodeJSON[*setUssAvailabilityPayload],
 		Execute: executeSetUssAvailability,
 	}
+}
+
+type setUssAvailabilityPayload struct {
+	Uss          dssmodels.Manager
+	Availability scdmodels.UssAvailabilityState
+	OldVersion   scdmodels.OVN
+}
+
+func (p *setUssAvailabilityPayload) OperationID() string {
+	return restapi.SetUssAvailabilityOperationID
+}
+
+// NewSetUssAvailabilityPayload performs the request validation that can be done ahead of the
+// transaction for a USS availability update request.
+func NewSetUssAvailabilityPayload(ussID string, params *restapi.SetUssAvailabilityStatusParameters) (dssstore.OperationRequest, error) {
+	availability, err := scdmodels.UssAvailabilityStateFromRest(params.Availability)
+	if err != nil {
+		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state")
+	}
+	return &setUssAvailabilityPayload{
+		Uss:          dssmodels.ManagerFromString(ussID),
+		Availability: availability,
+		OldVersion:   scdmodels.OVN(params.OldVersion),
+	}, nil
 }
 
 func executeGetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
@@ -56,21 +80,16 @@ func executeGetUssAvailability(ctx context.Context, repo repos.Repository, reque
 }
 
 func executeSetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.SetUssAvailabilityRequest)
+	payload, ok := request.(*setUssAvailabilityPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.SetUssAvailabilityOperationID)
 	}
 
-	// Retrieve USS availability status from request params
-	availability, err := scdmodels.UssAvailabilityStateFromRest(req.Body.Availability)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid availability state")
-	}
-	id := dssmodels.ManagerFromString(req.UssId)
-	version := scdmodels.OVN(req.Body.OldVersion)
+	id := payload.Uss
+	version := payload.OldVersion
 	ussareq := &scdmodels.UssAvailabilityStatus{
 		Uss:          id,
-		Availability: availability,
+		Availability: payload.Availability,
 	}
 
 	old, err := repo.GetUssAvailability(ctx, id)
