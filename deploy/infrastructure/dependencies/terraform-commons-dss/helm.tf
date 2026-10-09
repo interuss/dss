@@ -18,9 +18,11 @@ resource "local_file" "helm_chart_values" {
       fullnameOverride = local.helm_crdb_statefulset_name
 
       conf = {
-        join         = var.crdb_external_nodes
-        cluster-name = var.crdb_cluster_name
-        single-node  = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
+        join           = var.crdb_external_nodes
+        cluster-name   = var.crdb_cluster_name
+        cache          = var.crdb_cache
+        max-sql-memory = var.crdb_max_sql_memory
+        single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
       }
 
       statefulset = {
