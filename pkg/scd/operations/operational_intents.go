@@ -418,8 +418,9 @@ func validateAndReturnOIRUpsertParams(
 	}
 
 	// Construct a hash set of OVNs as the key
+	// The key is only checked for states that require it so there is no need to include it in the payload otherwise.
 	valid.Key = map[scdmodels.OVN]bool{}
-	if params.Key != nil {
+	if params.Key != nil && valid.State.RequiresKey() {
 		for _, ovn := range *params.Key {
 			valid.Key[scdmodels.OVN(ovn)] = true
 		}
