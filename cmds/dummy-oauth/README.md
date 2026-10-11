@@ -29,6 +29,12 @@ curl "http://localhost:8085/token?sub=uss1&intended_audience=uss2&scope=dss.read
 
 Token contents can be verified at https://dinochiesa.github.io/jwt/, and the signature can be validated with the [auth2.pem public key](../../build/test-certs/auth2.pem) by default.
 
+The same public key is published as a JSON Web Key Set:
+
+```bash
+curl "http://localhost:8085/.well-known/jwks.json"
+```
+
 Take down the Dummy OAuth instance like this:
 
 ```bash

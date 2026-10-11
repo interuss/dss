@@ -35,5 +35,7 @@ For local development, the repository includes a pre-configured key pair in [`bu
 * `auth2.pem`: Passed to `public_key_files`
 * `auth2.key`: Used by [dummy-oauth](https://github.com/interuss/dss/blob/master/cmds/dummy-oauth) to sign test tokens
 
+dummy-oauth also publishes the public key of `auth2.key` as a [JWKS](#jwks-endpoint) at `/.well-known/jwks.json`.
+
 !!! danger
     These keys are public. Never use them in production or on environments handling real traffic. Check the directory's README for instructions on generating new key pairs.
