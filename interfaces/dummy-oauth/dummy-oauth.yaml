@@ -4,7 +4,8 @@ info:
   version: 1.0.0
   description: >-
     This interface exposes the ability to generate OAuth tokens usable by the
-    DSS according to parameters specified by the client.
+    DSS according to parameters specified by the client, and publishes the
+    public key that verifies them.
 
 components:
   schemas:
@@ -14,8 +15,54 @@ components:
       - access_token
       properties:
         access_token:
-          description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance
+          description: JWT that may be used as a Bearer token to authorize operations on an appropriately-configured DSS instance.  Its `kid` header identifies the key in the JSON Web Key Set at `/.well-known/jwks.json` that verifies it.
           type: string
+    JWKSResponse:
+      type: object
+      required:
+      - keys
+      properties:
+        keys:
+          description: Public keys that verify access tokens issued by this provider.
+          type: array
+          items:
+            $ref: '#/components/schemas/JSONWebKey'
+    JSONWebKey:
+      type: object
+      required:
+      - kty
+      - use
+      - alg
+      - kid
+      - n
+      - e
+      properties:
+        kty:
+          description: Key type.
+          type: string
+          enum:
+          - RSA
+        use:
+          description: Intended use of the key.
+          type: string
+          enum:
+          - sig
+        alg:
+          description: Signing algorithm used with this key.
+          type: string
+          enum:
+          - RS256
+        kid:
+          description: SHA-256 JWK thumbprint of this key.
+          type: string
+          example: XwoLsYbouz5HdpahBXr1PP7Zd0fzO_l2Up7eiNgB8W8
+        n:
+          description: RSA modulus.
+          type: string
+        e:
+          description: RSA public exponent.
+          type: string
+          example: AQAB
     BadRequestResponse:
       type: object
       properties:
@@ -26,6 +73,7 @@ components:
 paths:
   /token:
     get:
+      operationId: getToken
       parameters:
       - name: intended_audience
         in: query
@@ -79,3 +127,15 @@ paths:
           description: >-
             The request was not properly formed
       summary: Generate an access token
+
+  /.well-known/jwks.json:
+    get:
+      operationId: getJWKS
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWKSResponse'
+          description: The public keys were retrieved successfully
+      summary: Retrieve the public keys that verify issued access tokens

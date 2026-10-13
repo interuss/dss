@@ -8,6 +8,7 @@ import (
 
 var (
 	GetTokenSecurity = []api.AuthorizationOption{}
+	GetJWKSSecurity  = []api.AuthorizationOption{}
 )
 
 type GetTokenRequest struct {
@@ -45,7 +46,27 @@ type GetTokenResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetJWKSRequest struct {
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+
+const GetJWKSOperationID = "dummyoauth.GetJWKS"
+
+func (request *GetJWKSRequest) OperationID() string { return GetJWKSOperationID }
+
+type GetJWKSResponseSet struct {
+	// The public keys were retrieved successfully
+	Response200 *JWKSResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Generate an access token
 	GetToken(ctx context.Context, req *GetTokenRequest) GetTokenResponseSet
+
+	// Retrieve the public keys that verify issued access tokens
+	GetJWKS(ctx context.Context, req *GetJWKSRequest) GetJWKSResponseSet
 }

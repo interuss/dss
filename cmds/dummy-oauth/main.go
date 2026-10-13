@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"crypto"
 	"crypto/rsa"
+	"encoding/base64"
 	"flag"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
 	"github.com/interuss/dss/cmds/dummy-oauth/api/dummyoauth"
@@ -21,6 +25,7 @@ var (
 
 type DummyOAuthImplementation struct {
 	PrivateKey *rsa.PrivateKey
+	KeyID      string
 }
 
 func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth.GetTokenRequest) dummyoauth.GetTokenResponseSet {
@@ -72,6 +77,7 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 		"exp":   expireTime,
 		"sub":   sub,
 	})
+	token.Header["kid"] = s.KeyID
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(s.PrivateKey)
@@ -82,6 +88,31 @@ func (s *DummyOAuthImplementation) GetToken(ctx context.Context, req *dummyoauth
 
 	resp.Response200 = &dummyoauth.TokenResponse{AccessToken: tokenString}
 	return resp
+}
+
+func (s *DummyOAuthImplementation) GetJWKS(context.Context, *dummyoauth.GetJWKSRequest) dummyoauth.GetJWKSResponseSet {
+	publicKey := s.PrivateKey.PublicKey
+	return dummyoauth.GetJWKSResponseSet{
+		Response200: &dummyoauth.JWKSResponse{
+			Keys: []dummyoauth.JSONWebKey{{
+				Kty: "RSA",
+				Use: "sig",
+				Alg: jwt.SigningMethodRS256.Alg(),
+				Kid: s.KeyID,
+				N:   base64.RawURLEncoding.EncodeToString(publicKey.N.Bytes()),
+				E:   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(publicKey.E)).Bytes()),
+			}},
+		},
+	}
+}
+
+func thumbprint(key *rsa.PublicKey) (string, error) {
+	jwk := jose.JSONWebKey{Key: key}
+	hash, err := jwk.Thumbprint(crypto.SHA256)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(hash), nil
 }
 
 type PermissiveAuthorizer struct{}
@@ -102,9 +133,13 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	keyID, err := thumbprint(&privateKey.PublicKey)
+	if err != nil {
+		log.Panic(err)
+	}
 
 	// Define and start HTTP server
-	impl := DummyOAuthImplementation{PrivateKey: privateKey}
+	impl := DummyOAuthImplementation{PrivateKey: privateKey, KeyID: keyID}
 	router := dummyoauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{})
 	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&router}}
 	s := &http.Server{
