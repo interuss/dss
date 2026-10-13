@@ -45,6 +45,10 @@ const (
 	// Unavailable is used when an operation failed for a transient reason and
 	// may succeed if it is attempted again later.
 	Unavailable
+
+	// PreconditionFailed is used when a precondition for an operation is not met
+	// (e.g., a USS marked as Down attempting a disallowed operational intent mutation).
+	PreconditionFailed
 )
 
 func init() {

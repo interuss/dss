@@ -51,6 +51,8 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response404: errResp}
 		case dsserr.VersionMismatch:
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response409: errResp}
+		case dsserr.PreconditionFailed:
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response412: errResp}
 		default:
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
@@ -159,6 +161,8 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		case dsserr.VersionMismatch:
 			return restapi.CreateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
 				Message: dsserr.Handle(ctx, err)}}
+		case dsserr.PreconditionFailed:
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response412: errResp}
 		default:
 			return restapi.CreateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
@@ -200,6 +204,8 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		case dsserr.VersionMismatch:
 			return restapi.UpdateOperationalIntentReferenceResponseSet{Response409: &restapi.AirspaceConflictResponse{
 				Message: dsserr.Handle(ctx, err)}}
+		case dsserr.PreconditionFailed:
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response412: errResp}
 		default:
 			return restapi.UpdateOperationalIntentReferenceResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}
