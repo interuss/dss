@@ -8,6 +8,7 @@ module "terraform-aws-kubernetes" {
   aws_instance_type            = var.aws_instance_type
   aws_route53_zone_id          = var.aws_route53_zone_id
   aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
+  aws_enable_node_auto_repair  = var.aws_enable_node_auto_repair
   node_count                   = var.node_count
   kubernetes_version           = var.kubernetes_version
   prometheus_hostname          = var.prometheus_hostname
