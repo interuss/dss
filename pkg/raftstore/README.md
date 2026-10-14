@@ -43,6 +43,91 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 - **Snapshot:** A serialized copy of the application state at a given point in time.
 - **WAL (write-ahead log):** The on-disk files a node uses to persist its Raft log entries before they're considered durable.
 
+## Architecture
+
+<p align="center">
+  <img src="docs/architecture.png" alt="raftstore architecture: repo, Store, registry, and consensus layers" />
+  <br>
+  <em>Overall architecture and request path through the Store and Consensus layers.</em>
+</p>
+
+### The repo layer
+
+Each service (`rid`, `scd`, `aux_`) defines its own `repos.Repository` interface (e.g.
+`pkg/rid/repos`) describing the basic operations needed from storage (`GetSubscription`,
+`InsertSubscription`, `DeleteSubscription`...). Every storage backend (`sqlstore`, `raftstore`, `memstore`) implements it.
+
+The `memstore` holds the data and `raftstore` is the replication layer that wraps it:
+
+- The `memstore` `repos.Repository` ([pkg/memstore/store.go](../memstore/store.go)) is the most basic implementation. It holds data in-memory and every interface method call directly reads from or mutates it.
+- The `raftstore` `repos.Repository` does not hold application data itself. It embeds a
+`memstore.Store[R]` instance, which is where the data lives:
+  ```go
+  type repo struct {
+      consensus *consensus.Consensus
+      memStore  *memstore.Store[R]
+  }
+  ```
+  Since individual `repos.Repository` method calls still need strong consistency guarantees, the `raftstore` `repos.Repository` implementations issue a request to be replicated by Raft.
+  Once the proposal for that call has been committed, `raftstore`'s `Apply`
+  (`raftstore.RaftRepo[R].Apply`) calls `r.memStore` for the data reads and writes.
+
+### The Store layer: `Interact` and `Transact`
+
+Above the repo layer, every backend implements the [`store.Store[R]`](../store/store.go) interface:
+
+```go
+type Store[R any] interface {
+    io.Closer
+    Interact(context.Context) (R, error)
+    Transact(ctx context.Context, request OperationRequest) (any, error)
+}
+```
+
+In the `raftstore`, both `Interact` and `Transact` end up proposing to Raft.
+The difference is what gets replicated as an atomically-applied unit:
+
+- `Interact` returns a repo (`R`) on which its methods are called one at a time. Each such method
+  proposes to consensus and applies its own change atomically.
+
+  Because each call is its own independent proposal, there is no atomicity *across* multiple
+  `Interact` calls.
+
+- `Transact` takes a single `OperationRequest`; a whole operation consisting of a set of `repos.Repository`
+  calls. This `OperationRequest` is replicated as one `Proposal` and is then applied atomically.
+
+  `Transact` requests for each service are defined and looked up in a `registry map[string]store.OperationHandler[R]`. An `OperationHandler[R]` bundles everything needed for each operation:
+
+  ```go
+  type OperationHandler[R any] struct {
+      Encode     func(req OperationRequest) ([]byte, error)
+      Decode     func(buf []byte) (OperationRequest, error)
+      Execute    func(ctx context.Context, repo R, request OperationRequest) (any, error)
+      IsReadOnly bool
+  }
+  ```
+
+  On every node, once the Raft entry is committed, `Apply` looks the handler up using the proposal's
+    `RequestType` (the `OperationID`), and uses `Execute`
+    to run the operation's business logic which is a set of calls against the `memstore` repo.
+
+### The consensus layer
+
+The link between the consensus layer and the storage layer for both `Transact` and `repo` methods is `Consensus.HandleClientRequest`
+([consensus/consensus.go](consensus/consensus.go)). From there, a proposal is generated:
+
+1. The proposal is serialized, tracked in an in-memory `proposalsTracker`, and passed down to the
+   embedded etcd Raft node via `node.Propose(ctx, buf)`.
+2. Once a quorum has durably appended the entry, it surfaces in the `startRaftUpdatesConsumer` goroutine as a committed entry.
+3. It is then passed as an `EntryCommit{Prop, Done}`
+   into a channel read by the store.
+4. `Store.processCommits` ([store.go](store.go)) calls, on each entry, `raftRepo.Apply(ctx,
+   proposal)` which maps the `Proposal` to the appropriate type and business logic and mutates the `memstore`. This runs identically on every node.
+5. `Apply`'s result is sent back on the `EntryCommit`'s `Done` channel. Only the proposing node is
+   actually waiting on it: it gets untracked from the `proposalsTracker`, which unblocks the waiting
+   `select` in `HandleClientRequest` and returns the result. On every other node, the result is
+   computed and then discarded to have consistent states across nodes.
+
 ## Future Work
 
 - **Reads go through Raft:** There's no `ReadIndex`-based read path yet. Read-only requests are still proposed and committed like writes. See the `TODO` in [consensus/proposal.go](consensus/proposal.go).
