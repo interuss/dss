@@ -34,7 +34,6 @@ unset GOOGLE_CLOUD_PROJECT
 * `export ZONE_NAME=(google zone name)`
 * `export AWS_PROFILE=...` (if needed)
 
-
 #### Deploy clusters
 * `./release/scripts/spawn-clusters.sh`
 
@@ -81,3 +80,29 @@ Cleanup resources by:
 * Applying terraform destroy to release clusters
 
 No manual cleaning operations are needed after this step.
+
+#### Compatibility matrix
+* `./release/scripts/run-compat-matrix.sh`
+
+Test which upgrade paths are possible between released DSS versions, so that the compatibility matrix of the documentation can be updated.
+
+The list of versions to test is the `VERSIONS` array at the top of the script, ordered from oldest to newest. The version being released must be added to it.
+
+Any local DSS instance must be stopped first with `make stop-locally`, otherwise it interferes with the stack started by the script.
+
+For each pair of versions A (older) to B (newer), the script starts a local stack with a single datastore shared by two `core-service` instances, one running version A and the other version B. The datastore is migrated to the latest schema of version B. Pairs where B is older than A are not tested and reported as not evaluated.
+
+Each pair is then validated by running the prober against both instances and the USS qualifier against the pool. A pair passes only if the three runs pass.
+
+The prober and the qualifier run from `MONITORING_IMAGE`, except for pairs involving v0.20.2 which use `V0_20_2_MONITORING_IMAGE`: those results are flagged with a footnote in the generated table.
+
+A local `dummy-oauth` image is built if it is not already present.
+
+The docker compose stack and the qualifier configuration are in `release/compat`.
+
+After this step, the script prints:
+
+* A summary matrix in the terminal
+* A Markdown compatibility matrix to copy into the documentation / GitHub release notes
+
+Container logs are available in `release/logs` and qualifier reports in `release/uss_qualifier_output/compat`.
