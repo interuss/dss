@@ -43,8 +43,19 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 - **Snapshot:** A serialized copy of the application state at a given point in time.
 - **WAL (write-ahead log):** The on-disk files a node uses to persist its Raft log entries before they're considered durable.
 
+## Membership
+
+The members of a Raft group are bootstrapped from the `--{aux,rid,scd}_raft_peers` flags on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
+
+- **Joining:** A node joining a running group is started with `--raft_join`, and its peers flags only need its own entry. Once it was added, it learns the configuration and the application state from the leader.
+- **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
+  - adding a node that is already a member or with an invalid peer URL.
+  - removing a node that is not a member, or a voter if the group would be left with fewer than 3 voters.
+  - adding or removing a node ID that was previously removed from the group.
+- **Removal:** A node stops when it applies its own removal.
+- **Persistence:** The peer URLs of the members and the removed node IDs are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
+
 ## Future Work
 
 - **Reads go through Raft:** There's no `ReadIndex`-based read path yet. Read-only requests are still proposed and committed like writes. See the `TODO` in [consensus/proposal.go](consensus/proposal.go).
-- **Client-initiated config changes are not supported yet:** See the `TODO` in [consensus/consensus.go](consensus/consensus.go).
 - **No background WAL cleanup:** Old, WAL segment files that are no longer needed are unlocked (`ReleaseLockTo`) but not actively deleted by a cleanup goroutine yet. See the `TODO` in [consensus/storage.go](consensus/storage.go).
