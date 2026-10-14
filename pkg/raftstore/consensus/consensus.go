@@ -21,6 +21,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// snapshotProvider is a function that returns the snapshot data to be included in the Raft snapshot.
+type snapshotProvider func() ([]byte, error)
+
 type Consensus struct {
 	logger *zap.Logger
 
@@ -30,8 +33,9 @@ type Consensus struct {
 	transport *rafthttp.Transport
 	server    *http.Server
 
-	storage *storage
-	commitC chan<- EntryCommit
+	storage        *storage
+	getAppSnapshot snapshotProvider
+	commitC        chan<- EntryCommit
 
 	once            sync.Once
 	shutdownTimeout time.Duration
@@ -41,13 +45,15 @@ type Consensus struct {
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
 
-	confState     raftpb.ConfState
+	membership membership
+	confState  raftpb.ConfState
+
 	snapshotIndex uint64
 	appliedIndex  uint64
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, provider, connectParams.SnapshotCatchupEntries)
+	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
@@ -75,10 +81,11 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger),
 
-		nodeID:  connectParams.NodeID,
-		node:    node,
-		storage: storage,
-		commitC: commitC,
+		nodeID:         connectParams.NodeID,
+		node:           node,
+		storage:        storage,
+		getAppSnapshot: provider,
+		commitC:        commitC,
 
 		shutdownTimeout: 2 * connectParams.ElectionInterval(),
 		serverErrC:      make(chan error, 1),
@@ -86,6 +93,10 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
+
+		membership: membership{
+			members: map[uint64]string{},
+		},
 	}
 
 	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
@@ -103,7 +114,12 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	consensus.appliedIndex = snap.Metadata.Index
 
 	if len(snap.Data) > 0 {
-		consensus.commitC <- EntryCommit{SnapshotData: snap.Data}
+		initSnapshot, err := decodeSnapshot(snap.Data)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to decode snapshot")
+		}
+		consensus.restoreMembership(initSnapshot.Members, initSnapshot.RemovedIDs)
+		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
 	}
 
 	consensus.startRaftUpdatesConsumer(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
@@ -228,8 +244,8 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 
 func peersList(peers map[uint64]*url.URL) []raft.Peer {
 	result := make([]raft.Peer, 0, len(peers))
-	for id := range peers {
-		result = append(result, raft.Peer{ID: id})
+	for id, peerURL := range peers {
+		result = append(result, raft.Peer{ID: id, Context: []byte(peerURL.String())})
 	}
 	return result
 }
@@ -321,7 +337,14 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						return
 					}
 
-					c.commitC <- EntryCommit{SnapshotData: raftUpdate.Snapshot.Data}
+					env, err := decodeSnapshot(raftUpdate.Snapshot.Data)
+					if err != nil {
+						c.logger.Error("failed to decode received snapshot", zap.Error(err))
+						return
+					}
+
+					c.restoreMembership(env.Members, env.RemovedIDs)
+					c.commitC <- EntryCommit{SnapshotData: env.AppData}
 
 					c.confState = raftUpdate.Snapshot.Metadata.ConfState
 					c.snapshotIndex = raftUpdate.Snapshot.Metadata.Index
@@ -397,7 +420,12 @@ func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint
 	c.appliedIndex = entries[len(entries)-1].Index
 
 	if triggerSnapshot || c.appliedIndex-c.snapshotIndex >= snapshotInterval {
-		err := c.storage.triggerSnapshot(c.appliedIndex, &c.confState)
+		data, err := c.encodeSnapshot()
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to encode snapshot")
+		}
+
+		err = c.storage.triggerSnapshot(c.appliedIndex, &c.confState, data)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to trigger snapshot")
 		}
@@ -430,8 +458,8 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 	return nil
 }
 
-// raftpb.ConfChange is still used internally by Raft, we just need to apply the change to the node.
-// Changes requested by clients are processed by processConfigChangeV2Entry.
+// raftpb.ConfChange is still used internally by Raft to bootstrap the group, we just need to apply the change to the node
+// and record the URL of the bootstrap members. Changes requested by clients are processed by applyConfigChangeV2.
 func (c *Consensus) applyConfigChange(data []byte) error {
 	var cc raftpb.ConfChange
 	err := cc.Unmarshal(data)
@@ -440,6 +468,10 @@ func (c *Consensus) applyConfigChange(data []byte) error {
 	}
 
 	c.confState = *c.node.ApplyConfChange(cc)
+
+	if cc.Type == raftpb.ConfChangeAddNode {
+		c.membership.addNode(cc.NodeID, string(cc.Context))
+	}
 	return nil
 }
 
@@ -493,7 +525,7 @@ func (c *Consensus) Process(ctx context.Context, m raftpb.Message) error {
 
 // IsIDRemoved implements the rafthttp.Raft interface.
 func (c *Consensus) IsIDRemoved(id uint64) bool {
-	return false
+	return c.membership.isIDRemoved(id)
 }
 
 // ReportUnreachable implements the rafthttp.Raft interface.
