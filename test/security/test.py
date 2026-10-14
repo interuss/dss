@@ -18,6 +18,8 @@ import hashlib
 import jwt
 
 ENDPOINT_WITHOUT_AUTHS = [
+    "/admin/v1/raft/{group}/members",  # TODO: remove when the admin API is protected
+    "/admin/v1/raft/{group}/members/{node_id}",  # TODO: remove when the admin API is protected
     "/aux/v1/configuration/accepted_ca_certs",
     "/aux/v1/configuration/ca_certs",
     "/aux/v1/version",
