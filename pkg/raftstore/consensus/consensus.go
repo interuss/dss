@@ -13,6 +13,7 @@ import (
 	"time"
 	"uuid"
 
+	"github.com/interuss/dss/pkg/admin"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
@@ -550,24 +551,35 @@ type confChangeContext struct {
 }
 
 // AddNode proposes adding nodeID, reachable by its peers at peerURL, as a voter of the Raft group.
-// It blocks until the change is applied or ctx is cancelled.
-func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) error {
+// It blocks until the change is applied or ctx is cancelled, and returns the membership resulting from the change.
+func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) (admin.Membership, error) {
 	return c.proposeConfChange(ctx, raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode, NodeID: nodeID}, peerURL)
 }
 
 // RemoveNode proposes removing nodeID from the Raft group. Its ID is retired and can never be reused.
-// It blocks until the change is applied or ctx is cancelled.
-func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
+// It blocks until the change is applied or ctx is cancelled, and returns the membership resulting from the change.
+func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) (admin.Membership, error) {
 	return c.proposeConfChange(ctx, raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode, NodeID: nodeID}, "")
+}
+
+// Members returns the membership of the Raft group as currently known by this node.
+func (c *Consensus) Members() admin.Membership {
+	membership := c.membership.clone()
+	return admin.Membership{
+		NodeID:     c.nodeID,
+		LeaderID:   c.node.Status().Lead,
+		Members:    membership.members,
+		RemovedIDs: membership.removedIDs,
+	}
 }
 
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
 // Note that Raft only allows one config change in flight: a change proposed while another one is pending
 // is silently dropped by the leader, in which case this blocks until ctx is cancelled.
-func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfChangeSingle, peerURL string) error {
+func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfChangeSingle, peerURL string) (admin.Membership, error) {
 	err := c.membership.validateConfChange(change, peerURL)
 	if err != nil {
-		return err
+		return admin.Membership{}, err
 	}
 
 	cctx := confChangeContext{
@@ -577,7 +589,7 @@ func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfCha
 
 	ctxBuf, err := json.Marshal(cctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to marshal config change context")
+		return admin.Membership{}, stacktrace.Propagate(err, "failed to marshal config change context")
 	}
 
 	cc := raftpb.ConfChangeV2{
@@ -590,16 +602,23 @@ func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfCha
 	err = c.node.ProposeConfChange(ctx, cc)
 	if err != nil {
 		c.tracker.untrack(cctx.ID, ProposalResult{Error: err})
-		return stacktrace.Propagate(err, "failed to propose config change to Raft")
+		return admin.Membership{}, stacktrace.Propagate(err, "failed to propose config change to Raft")
 	}
 
 	select {
 	case res := <-applied:
-		return res.Error
+		if res.Error != nil {
+			return admin.Membership{}, res.Error
+		}
+		membership, ok := res.Result.(admin.Membership)
+		if !ok {
+			return admin.Membership{}, stacktrace.NewError("unexpected result type for config change: got %T", res.Result)
+		}
+		return membership, nil
 
 	case <-ctx.Done():
 		c.tracker.untrack(cctx.ID, ProposalResult{Error: ctx.Err()})
-		return ctx.Err()
+		return admin.Membership{}, ctx.Err()
 	}
 }
 
@@ -655,7 +674,7 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 	}
 
 	c.logger.Info("applied config change", zap.String("id", cctx.ID), zap.Stringer("type", change.Type), zap.Uint64("nodeID", change.NodeID))
-	c.tracker.untrack(cctx.ID, ProposalResult{})
+	c.tracker.untrack(cctx.ID, ProposalResult{Result: c.Members()})
 
 	if selfRemoved {
 		return errSelfRemoved

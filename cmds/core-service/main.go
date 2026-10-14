@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	adminserver "github.com/interuss/dss/pkg/admin/server"
 	"github.com/interuss/dss/pkg/api"
 	apiauxv1 "github.com/interuss/dss/pkg/api/auxv1"
 	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
@@ -59,6 +60,7 @@ var (
 	enableMetrics           = flag.Bool("enable_metrics", false, "Enable metric endpoint")
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
+	adminAddress            = flag.String("admin_addr", ":8078", "Address and port that the admin API (used by dssctl) binds to and listens on for incoming connections. TODO: The API is not authenticated yet.")
 
 	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -358,6 +360,17 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
+
+	stores := map[string]any{"aux": auxV1Server.Store, "rid": ridV1Server.Store}
+	if scdV1Server != nil {
+		stores["scd"] = scdV1Server.Store
+	}
+	adminServer := adminserver.Start(logger.With(zap.String("component", "admin"), zap.String("address", *adminAddress)), *adminAddress, stores)
+	defer func() {
+		if err := adminServer.Shutdown(context.Background()); err != nil {
+			logger.Warn("failed to shut down admin server", zap.Error(err))
+		}
+	}()
 
 	// the middlewares are wrapped and, therefore, executed in the opposite order
 	handler := healthyEndpointMiddleware(logger, &multiRouter)
