@@ -142,6 +142,21 @@ dummy_oauth_api: openapi-to-go-server
 			--api_folder /resources/output/api
 # ---
 
+# --- Targets to autogenerate Go code for Protocol Buffers definitions ---
+PROTO_FILES := $(shell find pkg -name '*.proto')
+
+.PHONY: protos
+protos: protoc-go
+	docker container run -u "$(USER_GROUP)" --rm \
+		-v "$(CURDIR):/dss" -w /dss \
+		interuss/dss-protoc-go \
+			--go_out=. --go_opt=paths=source_relative \
+			$(PROTO_FILES)
+
+protoc-go:
+	docker image build -t interuss/dss-protoc-go ./build/protoc-go
+# ---
+
 .PHONY: check-dss
 check-dss: evaluate-tanka test-go-units test-go-units-crdb test-e2e
 

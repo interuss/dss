@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package dss.raftstore.consensus;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/interuss/dss/pkg/raftstore/consensus/proposalpb";
+
+message Proposal {
+  bytes id = 1;
+  uint64 node_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string request_type = 4;
+  bytes value = 5;
+  bool read_only = 6;
+}
