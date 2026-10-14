@@ -18,9 +18,11 @@ resource "local_file" "helm_chart_values" {
       fullnameOverride = local.helm_crdb_statefulset_name
 
       conf = {
-        join         = var.crdb_external_nodes
-        cluster-name = var.crdb_cluster_name
-        single-node  = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
+        join           = var.crdb_external_nodes
+        cluster-name   = var.crdb_cluster_name
+        cache          = var.crdb_cache
+        max-sql-memory = var.crdb_max_sql_memory
+        single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
       }
 
       statefulset = {
@@ -29,6 +31,8 @@ resource "local_file" "helm_chart_values" {
           "--locality-advertise-addr=zone=${var.locality}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
+        resources = var.crdb_resources
+        env       = [for k, v in var.crdb_env : { name = k, value = v }]
       }
 
       storage = {
@@ -56,7 +60,9 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image     = var.image
+      resources = var.core_service_resources
+      env       = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [
@@ -271,7 +277,9 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image     = var.image
+      resources = var.core_service_resources
+      env       = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [

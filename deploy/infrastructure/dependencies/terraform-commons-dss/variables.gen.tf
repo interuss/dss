@@ -284,6 +284,92 @@ variable "crdb_cluster_name" {
 }
 
 
+variable "crdb_cache" {
+  type        = string
+  description = <<-EOT
+  Size of the CockroachDB storage engine cache, passed to the `--cache` flag of `cockroach start`.
+  Either a percentage of the memory available to the container or an absolute size.
+
+  Example: `25%` or `2GiB`
+  EOT
+
+  default = "25%"
+}
+
+
+variable "crdb_max_sql_memory" {
+  type        = string
+  description = <<-EOT
+  Maximum memory CockroachDB can use for SQL queries, passed to the `--max-sql-memory` flag of `cockroach start`.
+  Either a percentage of the memory available to the container or an absolute size.
+
+  Example: `25%` or `2GiB`
+  EOT
+
+  default = "25%"
+}
+
+
+variable "crdb_resources" {
+  type        = map(map(string))
+  description = <<-EOT
+  Kubernetes CPU and memory requests and limits of the CockroachDB containers.
+  Leave empty to not set any.
+
+  Example: `{ requests = { cpu = "2", memory = "10Gi" }, limits = { cpu = "2", memory = "10Gi" } }`
+  EOT
+
+  default = {}
+
+  validation {
+    condition     = alltrue([for k in keys(var.crdb_resources) : contains(["requests", "limits"], k)])
+    error_message = "crdb_resources keys must be `requests` or `limits`."
+  }
+}
+
+
+variable "crdb_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMAXPROCS = "2" }`
+  EOT
+
+  default = {}
+}
+
+
+variable "core_service_resources" {
+  type        = map(map(string))
+  description = <<-EOT
+  Kubernetes CPU and memory requests and limits of the core-service containers.
+  Leave empty to not set any.
+
+  Example: `{ requests = { cpu = "1", memory = "2Gi" }, limits = { memory = "2Gi" } }`
+  EOT
+
+  default = {}
+
+  validation {
+    condition     = alltrue([for k in keys(var.core_service_resources) : contains(["requests", "limits"], k)])
+    error_message = "core_service_resources keys must be `requests` or `limits`."
+  }
+}
+
+
+variable "core_service_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the core-service containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMEMLIMIT = "1800MiB" }`
+  EOT
+
+  default = {}
+}
+
+
 variable "locality" {
   type        = string
   description = <<-EOT
