@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -28,8 +30,9 @@ type Consensus struct {
 	transport *rafthttp.Transport
 	listener  *listener
 
-	storage *storage
-	commitC chan<- EntryCommit
+	storage        *storage
+	getAppSnapshot func() ([]byte, error)
+	commitC        chan<- EntryCommit
 
 	once  sync.Once
 	stopC chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
@@ -37,13 +40,15 @@ type Consensus struct {
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
 
-	confState     raftpb.ConfState
+	membership membership
+	confState  raftpb.ConfState
+
 	snapshotIndex uint64
 	appliedIndex  uint64
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider snapshotProvider, commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, provider, connectParams.SnapshotCatchupEntries)
+func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
+	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
@@ -65,21 +70,31 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		node = raft.RestartNode(config)
 	} else {
 		logger.Info("starting new raft node", zap.String("address", nodeUrl.String()))
-		node = raft.StartNode(config, peersList(peers))
+		raftPeers, err := peersList(peers)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to build the list of bootstrap peers")
+		}
+		node = raft.StartNode(config, raftPeers)
 	}
 
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger),
 
-		nodeID:  connectParams.NodeID,
-		node:    node,
-		storage: storage,
-		commitC: commitC,
+		nodeID:         connectParams.NodeID,
+		node:           node,
+		storage:        storage,
+		getAppSnapshot: provider,
+		commitC:        commitC,
 
 		stopC: make(chan struct{}),
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
+
+		membership: membership{
+			nodeID:  connectParams.NodeID,
+			members: map[uint64]member{},
+		},
 	}
 
 	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers)
@@ -97,7 +112,15 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	consensus.appliedIndex = snap.Metadata.Index
 
 	if len(snap.Data) > 0 {
-		consensus.commitC <- EntryCommit{SnapshotData: snap.Data}
+		initSnapshot, err := decodeSnapshot(snap.Data)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to decode snapshot")
+		}
+		err = consensus.membership.restore(initSnapshot.Members, initSnapshot.RemovedIDs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to restore membership")
+		}
+		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
 	}
 
 	consensus.startRaftUpdatesConsumer(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
@@ -215,12 +238,24 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 	}
 }
 
-func peersList(peers map[uint64]*url.URL) []raft.Peer {
+// member describes a member of the group.
+// It is passed as the context of the config changes adding a node.
+type member struct {
+	URL string `json:"url"`
+}
+
+func peersList(peers map[uint64]*url.URL) ([]raft.Peer, error) {
 	result := make([]raft.Peer, 0, len(peers))
-	for id := range peers {
-		result = append(result, raft.Peer{ID: id})
+	for id, peerURL := range peers {
+		peerCtx, err := json.Marshal(member{URL: peerURL.String()})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to marshal context of peer %d", id)
+		}
+
+		// We pass member as the Context so that we can recover the peer URL when applying a config change.
+		result = append(result, raft.Peer{ID: id, Context: peerCtx})
 	}
-	return result
+	return result, nil
 }
 
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
@@ -252,6 +287,7 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 	}
 
 	c.transport = transport
+	c.membership.transport = transport
 
 	l, err := getListener()
 	if err != nil {
@@ -301,7 +337,18 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						return
 					}
 
-					c.commitC <- EntryCommit{SnapshotData: raftUpdate.Snapshot.Data}
+					env, err := decodeSnapshot(raftUpdate.Snapshot.Data)
+					if err != nil {
+						c.logger.Error("failed to decode received snapshot", zap.Error(err))
+						return
+					}
+
+					err = c.membership.restore(env.Members, env.RemovedIDs)
+					if err != nil {
+						c.logger.Error("failed to restore membership", zap.Error(err))
+						return
+					}
+					c.commitC <- EntryCommit{SnapshotData: env.AppData}
 
 					c.confState = raftUpdate.Snapshot.Metadata.ConfState
 					c.snapshotIndex = raftUpdate.Snapshot.Metadata.Index
@@ -374,7 +421,12 @@ func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint
 	c.appliedIndex = entries[len(entries)-1].Index
 
 	if triggerSnapshot || c.appliedIndex-c.snapshotIndex >= snapshotInterval {
-		err := c.storage.triggerSnapshot(c.appliedIndex, &c.confState)
+		data, err := c.encodeSnapshot()
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to encode snapshot")
+		}
+
+		err = c.storage.triggerSnapshot(c.appliedIndex, &c.confState, data)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to trigger snapshot")
 		}
@@ -407,8 +459,8 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 	return nil
 }
 
-// raftpb.ConfChange is still used internally by Raft, we just need to apply the change to the node.
-// Changes requested by clients are processed by processConfigChangeV2Entry.
+// raftpb.ConfChange is still used internally by Raft to bootstrap the group, we just need to apply the change to the node
+// and record the URL of the bootstrap members. Changes requested by clients are processed by applyConfigChangeV2.
 func (c *Consensus) applyConfigChange(data []byte) error {
 	var cc raftpb.ConfChange
 	err := cc.Unmarshal(data)
@@ -417,6 +469,15 @@ func (c *Consensus) applyConfigChange(data []byte) error {
 	}
 
 	c.confState = *c.node.ApplyConfChange(cc)
+
+	if cc.Type == raftpb.ConfChangeAddNode {
+		var m member
+		err = json.Unmarshal(cc.Context, &m)
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to unmarshal context of config change adding node %d", cc.NodeID)
+		}
+		c.membership.addNode(cc.NodeID, m)
+	}
 	return nil
 }
 
@@ -463,6 +524,50 @@ func (c *Consensus) updateSnapshotConfState(msgs []raftpb.Message) {
 	}
 }
 
+// snapshot wraps the application snapshot with the membership state that the raft library does not track itself,
+// so that a node catching up via a snapshot fully recovers it, including which IDs must never be reused.
+// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
+type snapshot struct {
+	// Members maps the ID of every member of the group to its description.
+	Members map[uint64]member
+	// RemovedIDs are the IDs of the nodes permanently removed from the group.
+	RemovedIDs []uint64
+	// AppData is the application snapshot data.
+	AppData []byte
+}
+
+// encodeSnapshot encodes the application snapshot with the current membership state into the snapshot data.
+// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
+func (c *Consensus) encodeSnapshot() ([]byte, error) {
+	appData, err := c.getAppSnapshot()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to get application snapshot data")
+	}
+
+	env := snapshot{
+		Members:    c.membership.members,
+		RemovedIDs: c.membership.removedIDs,
+		// TODO: Avoid encoding the data twice (to be addressed as part of https://github.com/interuss/dss/pull/1765)
+		AppData: appData,
+	}
+
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(env); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to encode snapshot")
+	}
+	return buf.Bytes(), nil
+}
+
+// decodeSnapshot decodes the snapshot data produced by encodeSnapshot.
+// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
+func decodeSnapshot(data []byte) (snapshot, error) {
+	var env snapshot
+	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&env); err != nil {
+		return snapshot{}, stacktrace.Propagate(err, "failed to decode snapshot")
+	}
+	return env, nil
+}
+
 // Process implements the rafthttp.Raft interface.
 func (c *Consensus) Process(ctx context.Context, m raftpb.Message) error {
 	return c.node.Step(ctx, m)
@@ -470,7 +575,7 @@ func (c *Consensus) Process(ctx context.Context, m raftpb.Message) error {
 
 // IsIDRemoved implements the rafthttp.Raft interface.
 func (c *Consensus) IsIDRemoved(id uint64) bool {
-	return false
+	return c.membership.isIDRemoved(id)
 }
 
 // ReportUnreachable implements the rafthttp.Raft interface.
