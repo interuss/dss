@@ -27,7 +27,7 @@ func init() {
 	}
 	Registry[restapi.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*restapi.DeleteSubscriptionRequest],
+		Decode:  dssstore.DecodeJSON[*deleteSubscriptionPayload],
 		Execute: executeDeleteSubscription,
 	}
 	Registry[restapi.GetSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
@@ -286,16 +286,27 @@ func getOperations(ctx context.Context, r repos.Repository, opIDs []dssmodels.ID
 	return res, nil
 }
 
+type deleteSubscriptionPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+	Version scdmodels.OVN
+}
+
+func (p *deleteSubscriptionPayload) OperationID() string {
+	return restapi.DeleteSubscriptionOperationID
+}
+
+// NewDeleteSubscriptionPayload builds the payload for a Subscription deletion request.
+func NewDeleteSubscriptionPayload(id dssmodels.ID, manager dssmodels.Manager, version scdmodels.OVN) dssstore.OperationRequest {
+	return &deleteSubscriptionPayload{ID: id, Manager: manager, Version: version}
+}
+
 func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.DeleteSubscriptionRequest)
+	payload, ok := request.(*deleteSubscriptionPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteSubscriptionOperationID)
 	}
-
-	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid subscription ID: %s", req.Subscriptionid)
-	}
+	id := payload.ID
 
 	// Check to make sure it's ok to delete this Subscription
 	old, err := repo.GetSubscription(ctx, id)
@@ -304,12 +315,12 @@ func executeDeleteSubscription(ctx context.Context, repo repos.Repository, reque
 		return nil, stacktrace.Propagate(err, "Could not get Subscription from repo")
 	case old == nil: // Return a 404 here.
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Subscription %s not found", id.String())
-	case old.Manager != dssmodels.Manager(*req.Auth.ClientID):
+	case old.Manager != payload.Manager:
 		return nil, stacktrace.Propagate(
 			stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-			"Subscription owned by %s, but %s attempted to delete", old.Manager, *req.Auth.ClientID)
-	case old.Version != scdmodels.OVN(req.Version):
-		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", scdmodels.OVN(req.Version))
+			"Subscription owned by %s, but %s attempted to delete", old.Manager, payload.Manager)
+	case old.Version != payload.Version:
+		return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Subscription version %s is not current", payload.Version)
 	}
 
 	// Get dependent Operations
