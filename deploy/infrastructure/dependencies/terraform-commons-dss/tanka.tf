@@ -20,8 +20,12 @@ resource "local_file" "tanka_config_main" {
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
     VAR_STORAGE_CLASS                        = var.kubernetes_storage_class
     VAR_DOCKER_IMAGE_NAME                    = var.image
+    VAR_CORE_SERVICE_RESOURCES               = jsonencode(var.core_service_resources)
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
     VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
+    VAR_CRDB_CACHE                           = var.crdb_cache
+    VAR_CRDB_MAX_SQL_MEMORY                  = var.crdb_max_sql_memory
+    VAR_CRDB_RESOURCES                       = jsonencode(var.crdb_resources)
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone

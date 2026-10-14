@@ -55,6 +55,7 @@ local volumes = import 'volumes.libsonnet';
                 value: 'kubernetes-multiregion',
               },
             ],
+            resources: metadata.cockroach.resources,
             livenessProbe: {
               httpGet: {
                 path: '/health',
@@ -90,8 +91,8 @@ local volumes = import 'volumes.libsonnet';
               locality: 'zone=' + metadata.locality,
               'locality-advertise-addr': 'zone=' + metadata.locality + '@$(hostname -f)',
               'http-addr': '0.0.0.0',
-              cache: '25%',
-              'max-sql-memory': '25%',
+              cache: metadata.cockroach.cache,
+              'max-sql-memory': metadata.cockroach.maxSqlMemory,
             } + if metadata.cockroach.clusterName != "" then {
                 'cluster-name': metadata.cockroach.clusterName,
             } else {},

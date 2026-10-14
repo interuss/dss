@@ -25,6 +25,9 @@
     JoinExisting: [],
     storageClass: 'standard',
     clusterName: '',
+    cache: '25%', // Value of the --cache flag of `cockroach start`
+    maxSqlMemory: '25%', // Value of the --max-sql-memory flag of `cockroach start`
+    resources: {}, // Kubernetes container resources, e.g. { requests: { cpu: '3.5', memory: '14Gi' }, limits: { cpu: '3.5', memory: '14Gi' } }
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
@@ -67,6 +70,7 @@
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
     sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
+    resources: {}, // Kubernetes container resources, e.g. { requests: { cpu: '0.5', memory: '2Gi' }, limits: { memory: '2Gi' } }
   },
   alert: {
     enable: false,
