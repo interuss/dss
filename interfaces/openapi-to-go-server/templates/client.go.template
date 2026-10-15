@@ -1,0 +1,40 @@
+import (
+<IMPORTS>
+)
+
+// Client calls the operations of the API.
+type Client struct {
+    // BaseURL is the URL the paths of the API are relative to, e.g. http://localhost:8080.
+    BaseURL string
+
+    // HTTPClient sends the requests, http.DefaultClient if nil.
+    HTTPClient *http.Client
+}
+
+// do sends a request to the API, with body encoded in JSON if not nil.
+func (c *Client) do(ctx context.Context, method string, path string, body any) (*http.Response, error) {
+    var reader io.Reader
+    if body != nil {
+        buf, err := json.Marshal(body)
+        if err != nil {
+            return nil, fmt.Errorf("failed to encode request body: %w", err)
+        }
+        reader = bytes.NewReader(buf)
+    }
+
+    req, err := http.NewRequestWithContext(ctx, method, strings.TrimSuffix(c.BaseURL, "/")+path, reader)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create request: %w", err)
+    }
+    if body != nil {
+        req.Header.Set("Content-Type", "application/json")
+    }
+
+    httpClient := c.HTTPClient
+    if httpClient == nil {
+        httpClient = http.DefaultClient
+    }
+    return httpClient.Do(req)
+}
+
+<METHODS>
