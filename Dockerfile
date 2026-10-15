@@ -1,5 +1,5 @@
 # This Dockerfile builds the InterUSS `dss` image which contains the binary
-# executables for the core-service and the db-manager. It also
+# executables for the core-service, the db-manager and dssctl. It also
 # contains a light weight tool that provides debugging capability. To run a
 # container for this image, the desired binary must be specified (either
 # /usr/bin/core-service or /usr/bin/db-manager).
@@ -31,6 +31,7 @@ FROM alpine:latest
 RUN apk update && apk add ca-certificates
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin
+COPY --from=build /go/bin/dssctl /usr/bin
 COPY --from=build /go/bin/dlv /usr/bin
 COPY build/jwt-public-certs /jwt-public-certs
 COPY build/test-certs /test-certs

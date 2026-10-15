@@ -561,6 +561,165 @@ def routing(api: apis.API, api_package: str) -> List[str]:
     return lines
 
 
+def _client_argument_name(parameter: operations.StringParameter) -> str:
+    """Name of the argument of a client method holding the value of the provided parameter."""
+    return parameter.go_field_name[0].lower() + parameter.go_field_name[1:]
+
+
+def client_methods(
+    api: apis.API, api_import: str, ensure_500: bool
+) -> Tuple[List[str], Set[str]]:
+    """Generate Go code calling each operation of the API from a client.
+
+    Each method returns the response set of the operation, with the response matching the status code returned by the
+    server populated, or an error if the request could not be performed or the status code is not defined by the API.
+
+    :param api: API to have its client methods rendered
+    :param api_import: Full Go import path for the root/common API package
+    :param ensure_500: If True, handle a 500 response for all operations that don't already define a 500 response
+    :return:
+        * Lines of Go code defining the client methods
+        * Go packages that need to be imported in addition to those of the client template
+    """
+    api_package = api_import.split("/")[-1]
+    lines: List[str] = []
+    imports: Set[str] = set()
+
+    for operation in api.operations:
+        # Declare the method, with the parameters and body of the operation as arguments
+        arguments = ["ctx context.Context"]
+        for p in operation.path_parameters:
+            arguments.append("{} {}".format(_client_argument_name(p), p.go_type))
+        for q in operation.query_parameters:
+            arguments.append("{} *{}".format(_client_argument_name(q), q.go_type))
+        if operation.json_request_body_type:
+            arguments.append("body *{}".format(operation.json_request_body_type))
+
+        if operation.summary:
+            lines.extend(comment(operation.summary.split("\n")))
+        lines.append(
+            "func (c *Client) {}({}) ({}, error) {{".format(
+                operation.interface_name,
+                ", ".join(arguments),
+                operation.response_type_name,
+            )
+        )
+
+        body: List[str] = []
+        body.append("var response {}".format(operation.response_type_name))
+        body.append("")
+
+        # Build the path, with the path parameters escaped
+        path_parameters = {p.name: p for p in operation.path_parameters}
+        prefix = ("/" + api.path_prefix) if api.path_prefix else ""
+        path_parts: List[str] = []
+        for segment in re.split(r"({[^}]*})", prefix + operation.path):
+            if not segment:
+                continue
+            match = re.fullmatch(r"{([^}]*)}", segment)
+            if match:
+                p = path_parameters[match.group(1)]
+                value = _client_argument_name(p)
+                if p.go_type != "string":
+                    value = "fmt.Sprint({})".format(value)
+                path_parts.append("url.PathEscape({})".format(value))
+                imports.add("net/url")
+            else:
+                path_parts.append('"{}"'.format(segment))
+        body.append("path := " + " + ".join(path_parts))
+
+        # Add the query parameters that are set
+        if operation.query_parameters:
+            imports.add("net/url")
+            body.append("query := url.Values{}")
+            for q in operation.query_parameters:
+                argument = _client_argument_name(q)
+                body.append("if {} != nil {{".format(argument))
+                body.extend(
+                    indent(
+                        ['query.Set("{}", fmt.Sprint(*{}))'.format(q.name, argument)],
+                        1,
+                    )
+                )
+                body.append("}")
+            body.append("if len(query) > 0 {")
+            body.extend(indent(['path += "?" + query.Encode()'], 1))
+            body.append("}")
+        body.append("")
+
+        # Send the request
+        body.append(
+            "resp, err := c.do(ctx, {}, path, {})".format(
+                operation.verb_const_name,
+                "body" if operation.json_request_body_type else "nil",
+            )
+        )
+        body.append("if err != nil {")
+        body.extend(indent(["return response, err"], 1))
+        body.append("}")
+        body.append("defer func() { _ = resp.Body.Close() }()")
+        body.append("")
+
+        # Populate the response matching the status code
+        responses = [r for r in operation.responses]
+        if ensure_500 and 500 not in {r.code for r in responses}:
+            responses.append(
+                operations.Response(
+                    code=500,
+                    description="",
+                    json_body_type="{}.InternalServerErrorBody".format(api_package),
+                )
+            )
+        body.append("switch resp.StatusCode {")
+        for response in responses:
+            body.append("case {}:".format(response.code))
+            if response.json_body_type:
+                if response.json_body_type.startswith(api_package + "."):
+                    imports.add(api_import)
+                body.extend(
+                    indent(
+                        [
+                            "response.{} = new({})".format(
+                                response.response_set_field, response.json_body_type
+                            ),
+                            "err = json.NewDecoder(resp.Body).Decode(response.{})".format(
+                                response.response_set_field
+                            ),
+                        ],
+                        1,
+                    )
+                )
+            else:
+                imports.add(api_import)
+                body.extend(
+                    indent(
+                        [
+                            "response.{} = &{}.EmptyResponseBody{{}}".format(
+                                response.response_set_field, api_package
+                            )
+                        ],
+                        1,
+                    )
+                )
+        body.append("default:")
+        body.extend(
+            indent(
+                ['err = fmt.Errorf("unexpected response status %s", resp.Status)'], 1
+            )
+        )
+        body.append("}")
+        body.append("return response, err")
+
+        lines.extend(indent(body, 1))
+        lines.append("}")
+        lines.append("")
+
+    if lines:
+        lines.pop()
+
+    return lines, imports
+
+
 def example_implementation(api: apis.API, implementation_name: str) -> List[str]:
     """Generate Go code for a dummy API Implementation and a main routine to run it.
 
