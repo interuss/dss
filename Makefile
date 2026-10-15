@@ -129,7 +129,8 @@ dss_apis: openapi-to-go-server
     	      	--api /resources/scdv1.yaml#dss \
 				--api /resources/ridv1.yaml#dss \
               	--api /resources/ridv2.yaml#dss@ridv2/rid/v2 \
-    	      	--api_folder /resources/src/pkg/api
+    	      	--client adminv1 \
+	      	--api_folder /resources/src/pkg/api
 
 example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh
