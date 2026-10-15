@@ -1,0 +1,161 @@
+openapi: 3.0.2
+info:
+  title: DSS Admin API
+  version: 1.0.0
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          description: Human-readable message indicating what error occurred and/or why.
+          type: string
+
+    RaftMember:
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          description: ID of the node in the Raft group, its `--raft_node_id`.
+          type: integer
+          format: int64
+          minimum: 1
+        url:
+          description: URL at which the other members of the Raft group reach the node.
+          type: string
+
+    RaftGroupMembers:
+      type: object
+      required:
+        - node_id
+        - leader_id
+        - members
+        - removed_ids
+      properties:
+        node_id:
+          description: ID of this DSS node in the Raft group.
+          type: integer
+          format: int64
+        leader_id:
+          description: ID of the current leader of the Raft group, 0 if unknown.
+          type: integer
+          format: int64
+        members:
+          description: Members of the Raft group, all of which are voters.
+          type: array
+          items:
+            $ref: '#/components/schemas/RaftMember'
+        removed_ids:
+          description: IDs of the nodes removed from the Raft group, which can never be added again to it.
+          type: array
+          items:
+            type: integer
+            format: int64
+
+paths:
+  /admin/v1/raft/{group}/members:
+    parameters:
+      - name: group
+        in: path
+        required: true
+        description: Name of the Raft group (aux, rid or scd).
+        schema:
+          type: string
+    get:
+      summary: Lists the members of a Raft group, as known by this DSS node.
+      operationId: getRaftMembers
+      tags: [ dss ]
+      responses:
+        '200':
+          description: The members of the Raft group are successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RaftGroupMembers'
+        '404':
+          description: This DSS node has no Raft group with this name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Adds a node to a Raft group, as a voter.
+      description: >-
+        The node must be running, started with `--raft_join`, before being added: as soon as it is added, it counts in
+        the quorum of the group. The request returns once the change is applied by this DSS node.
+      operationId: addRaftMember
+      tags: [ dss ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RaftMember'
+      responses:
+        '200':
+          description: The node was added. The resulting members of the Raft group are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RaftGroupMembers'
+        '400':
+          description: The request was not properly formed, or adding the node would lead to an invalid membership.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: This DSS node has no Raft group with this name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/v1/raft/{group}/members/{node_id}:
+    parameters:
+      - name: group
+        in: path
+        required: true
+        description: Name of the Raft group (aux, rid or scd).
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        description: ID of the node to remove.
+        schema:
+          type: string
+    delete:
+      summary: Removes a node from a Raft group.
+      description: >-
+        The ID of the removed node is retired permanently: it can never be added again to the group.
+        A voter cannot be removed if the group would be left with fewer than 3 voters.
+        The request returns once the change is applied by this DSS node.
+      operationId: removeRaftMember
+      tags: [ dss ]
+      responses:
+        '200':
+          description: The node was removed. The resulting members of the Raft group are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RaftGroupMembers'
+        '400':
+          description: The node ID is invalid, or removing the node would lead to an invalid membership.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: This DSS node has no Raft group with this name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: dss
+    description: Endpoints exposed by the DSS server.

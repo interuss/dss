@@ -38,6 +38,10 @@ type (
 		NodeID uint64
 		// comma-separated "nodeID=peerURL" pairs defining all cluster members including this node
 		Peers string
+		// Join indicates that this node joins an already running cluster instead of bootstrapping it with Peers.
+		// The node must be added to the cluster with a config change, and learns its membership from the leader.
+		// It is only relevant on the node's first start: afterwards, the node restarts from its persisted state.
+		Join bool
 
 		// DataDir is the directory where the node persists its Raft state (WAL segments and snapshots).
 		// This data is required for the node to restart and rejoin the cluster without having to receive
@@ -114,6 +118,8 @@ func (c ConnectParameters) RaftConfig(storage raft.Storage) *raft.Config {
 		MaxSizePerMsg:   c.MaxSizePerMsg,
 		MaxInflightMsgs: c.MaxInflightMsgs,
 		Storage:         storage,
+		// a removed leader steps down so that the remaining nodes elect a new leader
+		StepDownOnRemoval: true,
 	}
 }
 
@@ -124,6 +130,7 @@ var (
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
+	flag.BoolVar(&connectParameters.Join, "raft_join", false, "Set on the first start of a node joining an already running cluster. The node must then be added to the cluster, and only needs its own entry in the peers flags: it learns the members of the cluster from the leader.")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
