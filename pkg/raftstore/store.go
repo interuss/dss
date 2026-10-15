@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 
+	"github.com/interuss/dss/pkg/admin"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
@@ -79,6 +80,21 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
 func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.raftRepo.GetRepo(), nil
+}
+
+// AddNode adds nodeID, reachable at peerURL, to the Raft group backing the store.
+func (s *Store[R]) AddNode(ctx context.Context, nodeID uint64, peerURL string) (admin.Membership, error) {
+	return s.Consensus.AddNode(ctx, nodeID, peerURL)
+}
+
+// RemoveNode removes nodeID from the Raft group backing the store.
+func (s *Store[R]) RemoveNode(ctx context.Context, nodeID uint64) (admin.Membership, error) {
+	return s.Consensus.RemoveNode(ctx, nodeID)
+}
+
+// Members returns the membership of the Raft group backing the store.
+func (s *Store[R]) Members(_ context.Context) (admin.Membership, error) {
+	return s.Consensus.Members(), nil
 }
 
 // Close shuts down the consensus instance and processCommits loop.

@@ -116,6 +116,7 @@ openapi-to-go-server:
 
 dss_apis: openapi-to-go-server
 	docker container run -u "$(USER_GROUP)" --rm \
+	    -v "$(CURDIR)/interfaces/admin/admin.yaml:/resources/adminv1.yaml" \
       	-v "$(CURDIR)/interfaces/aux_/aux_.yaml:/resources/auxv1.yaml" \
       	-v "$(CURDIR)/interfaces/astm-utm/Protocol/utm.yaml:/resources/scdv1.yaml" \
       	-v "$(CURDIR)/interfaces/rid/v1/remoteid/augmented.yaml:/resources/ridv1.yaml" \
@@ -123,11 +124,13 @@ dss_apis: openapi-to-go-server
 	    -v "$(CURDIR)/:/resources/src" \
 			interuss/openapi-to-go-server \
 		  		--api_import github.com/interuss/dss/pkg/api \
+    	      	--api /resources/adminv1.yaml#dss \
     	      	--api /resources/auxv1.yaml#dss \
     	      	--api /resources/scdv1.yaml#dss \
 				--api /resources/ridv1.yaml#dss \
               	--api /resources/ridv2.yaml#dss@ridv2/rid/v2 \
-    	      	--api_folder /resources/src/pkg/api
+    	      	--client adminv1 \
+	      	--api_folder /resources/src/pkg/api
 
 example_apis: openapi-to-go-server
 	$(CURDIR)/interfaces/openapi-to-go-server/generate_example.sh

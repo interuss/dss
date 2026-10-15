@@ -39,6 +39,15 @@ def _parse_args():
         help="Folder that will hold the generated output for an example entrypoint and implementations",
     )
 
+    parser.add_argument(
+        "--client",
+        dest="clients",
+        type=str,
+        action="append",
+        default=[],
+        help="Name of an API (its package) for which a Go client is also generated.  May be specified multiple times.",
+    )
+
     # General generation options
     parser.add_argument(
         "--api_import",
@@ -51,7 +60,11 @@ def _parse_args():
 
 
 def _generate_apis(
-    api_list: List[apis.API], apis_folder: str, api_import: str, ensure_500: bool
+    api_list: List[apis.API],
+    apis_folder: str,
+    api_import: str,
+    ensure_500: bool,
+    clients: List[str],
 ):
     """Generate Go libraries for APIs.
 
@@ -59,7 +72,9 @@ def _generate_apis(
     :param apis_folder: Root location where generated Go API packages should be written
     :param api_import: Go import path for the root api package
     :param ensure_500: True to auto-generate a 500 response for each operation when one is not already declared in the API
+    :param clients: Packages of the APIs for which a client is also generated
     """
+
     api_package = formatting.package_of_import(api_import)
 
     # Generate Go utilities common to any API generated with this tool
@@ -121,6 +136,29 @@ def _generate_apis(
         with open(os.path.join(api_folder, "server.gen.go"), "w") as f:
             f.write(rendering.template_content("header", server_template_vars))
             f.write(rendering.template_content("server", server_template_vars))
+
+        # Generate Go client, if requested
+        if api.package in clients:
+            methods, new_imports = rendering.client_methods(api, api_import, ensure_500)
+            client_template_vars = {
+                "<PACKAGE>": api.package,
+                "<IMPORTS>": rendering.imports(
+                    sorted(new_imports)
+                    + [
+                        "bytes",
+                        "context",
+                        "encoding/json",
+                        "fmt",
+                        "io",
+                        "net/http",
+                        "strings",
+                    ]
+                ),
+                "<METHODS>": "\n".join(methods),
+            }
+            with open(os.path.join(api_folder, "client.gen.go"), "w") as f:
+                f.write(rendering.template_content("header", client_template_vars))
+                f.write(rendering.template_content("client", client_template_vars))
 
 
 def _generate_example(api_list: List[apis.API], output_folder: str, api_import: str):
@@ -195,7 +233,7 @@ def main():
 
     # Render Go code
     if args.api_folder:
-        _generate_apis(api_list, args.api_folder, args.api_import, True)
+        _generate_apis(api_list, args.api_folder, args.api_import, True, args.clients)
         os.system("cd {} && gofmt -s -w .".format(args.api_folder))
     if args.example_folder:
         _generate_example(api_list, args.example_folder, args.api_import)
