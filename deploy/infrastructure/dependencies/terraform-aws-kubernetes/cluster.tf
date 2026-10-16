@@ -40,6 +40,10 @@ resource "aws_eks_node_group" "eks_node_group" {
     min_size     = var.node_count
   }
 
+  node_repair_config {
+    enabled = var.aws_enable_node_auto_repair
+  }
+
   lifecycle {
     create_before_destroy = true
   }
