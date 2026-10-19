@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -138,7 +139,8 @@ func (c *cachedObservation) Observe(ctx context.Context, o ometric.Int64Observer
 		o.Observe(c.last)
 		return nil
 	}
-	v, err := c.fetch(ctx)
+	// Metric collection does not go through timestamp.Middleware so we need to stamp the context.
+	v, err := c.fetch(timestamp.NewContext(ctx, time.Now()))
 	if err != nil {
 		return err
 	}
