@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -40,6 +41,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 )
+
+// readyFileName is checked by the container health check to know whether the service is ready.
+const readyFileName = "service.ready"
 
 var (
 	address           = flag.String("addr", ":8080", "Address and port that the service binds to and listens on for incoming connections")
@@ -303,6 +307,12 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
+	// Remove the ready file left by a previous run
+	err = os.Remove(readyFileName)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return stacktrace.Propagate(err, "Error removing stale service.ready file")
+	}
+
 	// Initialize aux
 	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, storeOptions, logger)
 	if err != nil {
@@ -407,7 +417,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}()
 
 	// Indicate ready for container health checks
-	readyFile, err := os.Create("service.ready")
+	readyFile, err := os.Create(readyFileName)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
 	}
