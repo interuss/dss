@@ -78,6 +78,18 @@ Example:</li>
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>aws_enable_node_monitoring_agent (<code>bool</code>)</td>
+                <td><p>Install the EKS node monitoring agent add-on (<code>eks-node-monitoring-agent</code>).</p>
+<p>The agent runs on every worker node and reports additional node health conditions
+(container runtime, kernel, networking, storage). When EKS node auto repair is enabled
+on the node group, it uses them to detect and replace unhealthy nodes beyond the standard
+<code>Ready</code> condition.</p>
+<p>The agent runs as a privileged DaemonSet with the <code>NET_ADMIN</code> capability, so it is
+disabled by default. Review it against your security requirements before enabling it.</p>
+<p>See https://docs.aws.amazon.com/eks/latest/userguide/node-health.html for more details.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>aws_iam_permissions_boundary (<code>string</code>)</td>
                 <td><p>AWS IAM Policy ARN to be used for permissions boundaries on created roles.</p>
 <p>Example: <code>arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries</code></p>
