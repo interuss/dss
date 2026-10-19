@@ -2078,9 +2078,9 @@
 * If you have overlapping traffic and don't need high global throughput, enable this flag</p>
 <p>The following graphs show example throughput without (on the left) and with the flag (on the right). This has been run on a local machine; on a real deployment you can expect lower performance (due to various latency), but similar relative numbers.</p>
 <p>All graphs have been generated with the <a href="https://github.com/interuss/monitoring/blob/main/monitoring/loadtest/README.md">loadtest present in the monitoring repository</a> using <code>SCD.py</code>.</p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_overlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_overlapping.png"></a>
+<p>
 <em>Overlapping requests. Notice the huge spikes on the left, as the datastore struggles to acquire locks.</em></p>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_notoverlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_notoverlapping.png"></a>
+<p>
 <em>Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.</em></p>
 <h2 id="the-scd-hash-lock-option">The SCD hash lock option<a class="headerlink" href="#the-scd-hash-lock-option" title="Permanent link">¶</a></h2>
 <div class="admonition danger">
