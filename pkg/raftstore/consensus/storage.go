@@ -39,8 +39,16 @@ type storage struct {
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
 // and applies them to the Raft memory storage.
 // It returns the initialized storage, a boolean indicating whether the storage was pre-existent or an error.
-func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, provider snapshotProvider, snapshotCatchUpEntries uint64) (*storage, bool, error) {
+// If no storage exists and bootstrap is false, it returns an error.
+func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, bootstrap bool, provider snapshotProvider, snapshotCatchUpEntries uint64) (*storage, bool, error) {
 	logger = logging.WithValuesFromContext(ctx, logger)
+
+	walPath := path.Join(dataDir, fmt.Sprintf("wal_%d", nodeID))
+	if !wal.Exist(walPath) && !bootstrap {
+		return nil, false, stacktrace.NewError("no raft data found at %s and --raft_bootstrap is not set: "+
+			"if this is a new cluster, start all nodes with --raft_bootstrap, or "+
+			"if this node lost its data, it cannot rejoin the cluster by restarting with the same node ID", walPath)
+	}
 
 	// load the latest snapshot
 	snapshotPath := path.Join(dataDir, fmt.Sprintf("snapshot_%d", nodeID))
@@ -50,8 +58,6 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 			return nil, false, stacktrace.Propagate(err, "failed to create directory for snapshot storage at: %s", snapshotPath)
 		}
 	}
-
-	walPath := path.Join(dataDir, fmt.Sprintf("wal_%d", nodeID))
 
 	snapper := snap.New(logger, snapshotPath)
 

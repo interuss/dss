@@ -12,7 +12,7 @@ if [ "${COMPOSE_PROFILES#*"with-yugabyte"}" != "${COMPOSE_PROFILES}" ]; then
 else
     if [ "${COMPOSE_PROFILES#*"with-raft"}" != "${COMPOSE_PROFILES}" ]; then
       echo "Using raft"
-      DATASTORE_CONNECTION="-store_type raft -raft_node_id=1 -rid_raft_peers=1=http://127.0.0.1:9011 -scd_raft_peers=1=http://127.0.0.1:9021 -aux_raft_peers=1=http://127.0.0.1:9031 -raft_datadir /raftdata"
+      DATASTORE_CONNECTION="-store_type raft -raft_node_id=1 -rid_raft_peers=1=http://127.0.0.1:9011 -scd_raft_peers=1=http://127.0.0.1:9021 -aux_raft_peers=1=http://127.0.0.1:9031 -raft_datadir /raftdata -raft_bootstrap"
     else
       echo "Using CockroachDB"
       DATASTORE_CONNECTION="-datastore_host local-dss-crdb"

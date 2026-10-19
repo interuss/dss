@@ -47,6 +47,8 @@ type (
 		DataDir string
 		// discriminates this cluster from others sharing the same network, must be identical on all nodes
 		ClusterID uint64
+		// set to true only when creating a new cluster. If false, a node with an empty DataDir refuses to start.
+		Bootstrap bool
 
 		// number of entries for a slow follower to catch-up after compacting.
 		// This gives the follower a buffer of entries while avoiding the need to send a full snapshot.
@@ -125,6 +127,7 @@ func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
+	flag.BoolVar(&connectParameters.Bootstrap, "raft_bootstrap", false, "Set only when creating a new cluster: allows a node without existing raft data to bootstrap with the configured peers. Ignored when raft data already exists. If not set, a node without existing raft data refuses to start.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
 		"Log entries retained after compaction so a slow follower can catch up via replication rather than a full snapshot. Higher values tolerate slower followers but increase disk usage.")
