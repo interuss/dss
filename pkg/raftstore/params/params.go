@@ -34,36 +34,20 @@ const (
 type (
 	// ConnectParameters bundles up parameters used for connecting nodes in a raftstore cluster.
 	ConnectParameters struct {
-		// unique node identifier within the cluster, 0 is invalid
 		NodeID uint64
-		// comma-separated "nodeID=peerURL" pairs defining all cluster members including this node
-		Peers string
+		Peers  string
 
-		// DataDir is the directory where the node persists its Raft state (WAL segments and snapshots).
-		// This data is required for the node to restart and rejoin the cluster without having to receive
-		// a full snapshot from the leader. It must not be deleted while the node is running or
-		// across restarts unless the node is being permanently shut down.
-		// If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.
-		DataDir string
-		// discriminates this cluster from others sharing the same network, must be identical on all nodes
+		DataDir   string
 		ClusterID uint64
 
-		// number of entries for a slow follower to catch-up after compacting.
-		// This gives the follower a buffer of entries while avoiding the need to send a full snapshot.
-		SnapshotCatchupEntries uint64
-		// number of entries applied before triggering a snapshot
+		SnapshotCatchupEntries  uint64
 		SnapshotIntervalEntries uint64
-		// base time unit for Raft's logical clock, scales both election and heartbeat timers
-		TickInterval time.Duration
+		TickInterval            time.Duration
 
-		// ticks without a heartbeat before a follower promotes to candidate, effective timeout = ElectionTick × TickInterval
-		ElectionTick int
-		// ticks between leader heartbeats, must be < ElectionTick
+		ElectionTick  int
 		HeartbeatTick int
 
-		// max byte size of a message sent to a peer
-		MaxSizePerMsg uint64
-		// max number of in-flight messages during optimistic replication phase
+		MaxSizePerMsg   uint64
 		MaxInflightMsgs int
 	}
 )
@@ -124,7 +108,7 @@ var (
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
-	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down.")
+	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
 		"Log entries retained after compaction so a slow follower can catch up via replication rather than a full snapshot. Higher values tolerate slower followers but increase disk usage.")
