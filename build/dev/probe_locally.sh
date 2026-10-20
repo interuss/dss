@@ -71,7 +71,7 @@ if ! docker run --rm --link "$OAUTH_CONTAINER":oauth \
 	--network "${DSS_DOCKER_NETWORK:-dss_sandbox-default}" \
 	-v "${RESULTFILE}:/app/test_result" \
 	-w /app/monitoring/prober \
-	interuss/monitoring:v0.33.0 \
+	interuss/monitoring:v0.37.0 \
 	pytest \
 	"${1:-.}" \
 	-rsx \
