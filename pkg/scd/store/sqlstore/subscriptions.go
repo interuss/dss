@@ -195,15 +195,15 @@ func (c *repo) pushSubscription(ctx context.Context, q dsssql.Queryable, s *scdm
 		s.EndTime,
 		cids)
 
-	if c.timeBasedNotificationIndex {
-		s.NotificationIndex = dsssql.MillisSinceMidnight()
-	}
-
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Subscription from upsert query")
 	}
 	if s == nil {
 		return nil, stacktrace.NewError("Upsert query did not return a Subscription")
+	}
+
+	if c.timeBasedNotificationIndex {
+		s.NotificationIndex = dsssql.MillisSinceMidnight()
 	}
 
 	return s, nil
