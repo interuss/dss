@@ -78,6 +78,18 @@ Example:</li>
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>aws_enable_node_monitoring_agent (<code>bool</code>)</td>
+                <td><p>Install the EKS node monitoring agent add-on (<code>eks-node-monitoring-agent</code>).</p>
+<p>The agent runs on every worker node and reports additional node health conditions
+(container runtime, kernel, networking, storage). When EKS node auto repair is enabled
+on the node group, it uses them to detect and replace unhealthy nodes beyond the standard
+<code>Ready</code> condition.</p>
+<p>The agent runs as a privileged DaemonSet with the <code>NET_ADMIN</code> capability, so it is
+disabled by default. Review it against your security requirements before enabling it.</p>
+<p>See https://docs.aws.amazon.com/eks/latest/userguide/node-health.html for more details.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>aws_iam_permissions_boundary (<code>string</code>)</td>
                 <td><p>AWS IAM Policy ARN to be used for permissions boundaries on created roles.</p>
 <p>Example: <code>arn:aws:iam::123456789012:policy/GithubCIPermissionBoundaries</code></p>
@@ -120,6 +132,12 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>crdb_cache (<code>string</code>)</td>
+                <td><p>Size of the CockroachDB storage engine cache, passed to the <code>--cache</code> flag of <code>cockroach start</code>.
+Either a percentage of the memory available to the container or an absolute size.</p>
+<p>Example: <code>25%</code> or <code>2GiB</code></p>
+<br/>Default value: <code>"25%"</code></td>
+            </tr><tr>
                 <td>crdb_cluster_name (<code>string</code>)</td>
                 <td><p>A string that specifies a CRDB cluster name. This is used together to ensure that all newly created
 nodes join the intended cluster when you are running multiple clusters.
@@ -148,6 +166,12 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
                 <td>crdb_locality (<code>string</code>)</td>
                 <td><p>This variable has been renamed to locality and is left to warn users about migration.</p>
 <br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>crdb_max_sql_memory (<code>string</code>)</td>
+                <td><p>Maximum memory CockroachDB can use for SQL queries, passed to the <code>--max-sql-memory</code> flag of <code>cockroach start</code>.
+Either a percentage of the memory available to the container or an absolute size.</p>
+<p>Example: <code>25%</code> or <code>2GiB</code></p>
+<br/>Default value: <code>"25%"</code></td>
             </tr><tr>
                 <td>datastore_max_open_conns (<code>number</code>)</td>
                 <td><p>Maximum number of open connections to the datastore.</p>

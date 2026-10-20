@@ -99,11 +99,35 @@ func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) GetJWKS(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetJWKSRequest
+	var response GetJWKSResponseSet
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response = s.Implementation.GetJWKS(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 1)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 2)}
 
 	pattern := regexp.MustCompile("^/token$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetToken, Name: "dummyoauth.GetToken", Path: "/token"}
+
+	pattern = regexp.MustCompile("^/.well-known/jwks.json$")
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetJWKS, Name: "dummyoauth.GetJWKS", Path: "/.well-known/jwks.json"}
 
 	return router
 }

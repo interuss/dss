@@ -5,6 +5,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	dssauth "github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -13,6 +14,26 @@ import (
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 )
+
+func validateRequestedSubscriptionScopes(authResult api.AuthorizationResult, params *restapi.PutSubscriptionParameters) error {
+	if params.NotifyForOperationalIntents != nil && *params.NotifyForOperationalIntents &&
+		!dssauth.HasScope(authResult.Scopes, restapi.UtmStrategicCoordinationScope) {
+		return stacktrace.NewErrorWithCode(
+			dsserr.PermissionDenied,
+			"Scope %s is required to request operational intent notifications",
+			restapi.UtmStrategicCoordinationScope,
+		)
+	}
+	if params.NotifyForConstraints != nil && *params.NotifyForConstraints &&
+		!dssauth.HasScope(authResult.Scopes, restapi.UtmConstraintProcessingScope) {
+		return stacktrace.NewErrorWithCode(
+			dsserr.PermissionDenied,
+			"Scope %s is required to request constraint notifications",
+			restapi.UtmConstraintProcessingScope,
+		)
+	}
+	return nil
+}
 
 func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubscriptionRequest,
 ) restapi.CreateSubscriptionResponseSet {
@@ -24,6 +45,10 @@ func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 	if req.Auth.ClientID == nil {
 		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
+	}
+	if err := validateRequestedSubscriptionScopes(req.Auth, req.Body); err != nil {
+		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, err)}}
 	}
 	payload, err := operations.NewCreateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {
@@ -60,6 +85,10 @@ func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 	if req.Auth.ClientID == nil {
 		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
+	}
+	if err := validateRequestedSubscriptionScopes(req.Auth, req.Body); err != nil {
+		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, err)}}
 	}
 	payload, err := operations.NewUpdateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Version, req.Body, a.AllowHTTPBaseUrls)
 	if err != nil {

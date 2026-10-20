@@ -6,6 +6,43 @@ Overtime, old entries should be removed to ensure the system is not overloaded p
 
 See the detailed [section about cleanup](cleanup.md).
 
+## CPU and memory allocation
+
+The following settings are available:
+
+* CockroachDB `--cache` and `--max-sql-memory` flags (both `25%` by default). See [CockroachDB recommendations](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size) before changing them.
+
+To set them:
+
+1. Set the values according to the deployment tool:
+
+    === "Terraform"
+        Set the following variables (see `TFVARS.gen.md` for details):
+
+        * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
+
+        Then run `terraform apply` to regenerate the Tanka and Helm configuration.
+
+    === "Tanka"
+        Set the following fields of the metadata in your `main.jsonnet`:
+
+        ```jsonnet
+        cockroach+: {
+          cache: '25%',
+          maxSqlMemory: '25%',
+        },
+        ```
+
+    === "Helm"
+        Set the following values:
+
+        ```yaml
+        cockroachdb:
+          conf:
+            cache: 25%
+            max-sql-memory: 25%
+        ```
+
 ## The SCD global lock option
 
 !!! danger

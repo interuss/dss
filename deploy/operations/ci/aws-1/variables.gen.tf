@@ -67,6 +67,28 @@ variable "aws_create_storage_class" {
 }
 
 
+variable "aws_enable_node_monitoring_agent" {
+  type        = bool
+  description = <<-EOT
+  Install the EKS node monitoring agent add-on (`eks-node-monitoring-agent`).
+
+  The agent runs on every worker node and reports additional node health conditions
+  (container runtime, kernel, networking, storage). When EKS node auto repair is enabled
+  on the node group, it uses them to detect and replace unhealthy nodes beyond the standard
+  `Ready` condition.
+
+  The agent runs as a privileged DaemonSet with the `NET_ADMIN` capability, so it is
+  disabled by default. Review it against your security requirements before enabling it.
+
+  See https://docs.aws.amazon.com/eks/latest/userguide/node-health.html for more details.
+
+  Example: `true`
+  EOT
+
+  default = false
+}
+
+
 variable "app_hostname" {
   type        = string
   description = <<-EOT
@@ -408,6 +430,32 @@ variable "crdb_cluster_name" {
 
   Example: interuss-us-production
   EOT
+}
+
+
+variable "crdb_cache" {
+  type        = string
+  description = <<-EOT
+  Size of the CockroachDB storage engine cache, passed to the `--cache` flag of `cockroach start`.
+  Either a percentage of the memory available to the container or an absolute size.
+
+  Example: `25%` or `2GiB`
+  EOT
+
+  default = "25%"
+}
+
+
+variable "crdb_max_sql_memory" {
+  type        = string
+  description = <<-EOT
+  Maximum memory CockroachDB can use for SQL queries, passed to the `--max-sql-memory` flag of `cockroach start`.
+  Either a percentage of the memory available to the container or an absolute size.
+
+  Example: `25%` or `2GiB`
+  EOT
+
+  default = "25%"
 }
 
 

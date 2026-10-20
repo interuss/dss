@@ -43,7 +43,7 @@ type (
 		// This data is required for the node to restart and rejoin the cluster without having to receive
 		// a full snapshot from the leader. It must not be deleted while the node is running or
 		// across restarts unless the node is being permanently shut down.
-		// If the directory is lost, the node will recover by receiving a snapshot from the leader.
+		// If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.
 		DataDir string
 		// discriminates this cluster from others sharing the same network, must be identical on all nodes
 		ClusterID uint64

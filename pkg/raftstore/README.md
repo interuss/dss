@@ -45,6 +45,5 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 
 ## Future Work
 
-- **Reads go through Raft:** There's no `ReadIndex`-based read path yet. Read-only requests are still proposed and committed like writes. See the `TODO` in [consensus/proposal.go](consensus/proposal.go).
 - **Client-initiated config changes are not supported yet:** See the `TODO` in [consensus/consensus.go](consensus/consensus.go).
 - **No background WAL cleanup:** Old, WAL segment files that are no longer needed are unlocked (`ReleaseLockTo`) but not actively deleted by a cleanup goroutine yet. See the `TODO` in [consensus/storage.go](consensus/storage.go).

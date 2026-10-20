@@ -1,20 +1,21 @@
 module "terraform-aws-kubernetes" {
   # See variables.tf for variables description.
-  cluster_name                 = var.cluster_name
-  aws_region                   = var.aws_region
-  app_hostname                 = var.app_hostname
-  db_hostname_suffix           = var.db_hostname_suffix
-  datastore_type               = var.datastore_type
-  aws_instance_type            = var.aws_instance_type
-  aws_route53_zone_id          = var.aws_route53_zone_id
-  aws_iam_permissions_boundary = var.aws_iam_permissions_boundary
-  node_count                   = var.node_count
-  kubernetes_version           = var.kubernetes_version
-  prometheus_hostname          = var.prometheus_hostname
-  use_public_subnets           = var.use_public_subnets
-  vpc_id                       = var.vpc_id
-  public_subnet_ids            = var.public_subnet_ids
-  private_subnet_ids           = var.private_subnet_ids
+  cluster_name                     = var.cluster_name
+  aws_region                       = var.aws_region
+  app_hostname                     = var.app_hostname
+  db_hostname_suffix               = var.db_hostname_suffix
+  datastore_type                   = var.datastore_type
+  aws_instance_type                = var.aws_instance_type
+  aws_route53_zone_id              = var.aws_route53_zone_id
+  aws_iam_permissions_boundary     = var.aws_iam_permissions_boundary
+  aws_enable_node_monitoring_agent = var.aws_enable_node_monitoring_agent
+  node_count                       = var.node_count
+  kubernetes_version               = var.kubernetes_version
+  prometheus_hostname              = var.prometheus_hostname
+  use_public_subnets               = var.use_public_subnets
+  vpc_id                           = var.vpc_id
+  public_subnet_ids                = var.public_subnet_ids
+  private_subnet_ids               = var.private_subnet_ids
 
   source = "../../dependencies/terraform-aws-kubernetes"
 }
@@ -29,6 +30,8 @@ module "terraform-commons-dss" {
   app_hostname                         = var.app_hostname
   crdb_image_tag                       = var.crdb_image_tag
   crdb_cluster_name                    = var.crdb_cluster_name
+  crdb_cache                           = var.crdb_cache
+  crdb_max_sql_memory                  = var.crdb_max_sql_memory
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns

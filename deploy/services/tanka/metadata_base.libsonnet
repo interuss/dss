@@ -25,6 +25,8 @@
     JoinExisting: [],
     storageClass: 'standard',
     clusterName: '',
+    cache: '25%', // Value of the --cache flag of `cockroach start`
+    maxSqlMemory: '25%', // Value of the --max-sql-memory flag of `cockroach start`
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
