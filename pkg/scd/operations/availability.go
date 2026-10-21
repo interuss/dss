@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	"errors"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -10,7 +11,6 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 func init() {
@@ -37,7 +37,7 @@ func executeGetUssAvailability(ctx context.Context, repo repos.Repository, reque
 
 	// Get USS availability from Store
 	ussa, err := repo.GetUssAvailability(ctx, id)
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil && !errors.Is(err, repos.ErrNotFound) {
 		return nil, stacktrace.Propagate(err, "Could not get USS availability from repo")
 	}
 	if ussa == nil {
@@ -74,7 +74,7 @@ func executeSetUssAvailability(ctx context.Context, repo repos.Repository, reque
 	}
 
 	old, err := repo.GetUssAvailability(ctx, id)
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil && !errors.Is(err, repos.ErrNotFound) {
 		return nil, stacktrace.Propagate(err, "Could not get USS availability from repo")
 	}
 	switch {

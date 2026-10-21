@@ -5,8 +5,8 @@ import (
 
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/dss/pkg/timestamp"
-	"github.com/jackc/pgx/v5"
 )
 
 func (rec *availabilityRecord) toModel() *scdmodels.UssAvailabilityStatus {
@@ -20,7 +20,7 @@ func (rec *availabilityRecord) toModel() *scdmodels.UssAvailabilityStatus {
 func (r *repo) GetUssAvailability(_ context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error) {
 	rec, ok := r.state.Availabilities[id]
 	if !ok {
-		return nil, pgx.ErrNoRows // TODO: #1608
+		return nil, repos.ErrNotFound
 	}
 	return rec.toModel(), nil
 }

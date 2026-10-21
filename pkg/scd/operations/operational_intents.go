@@ -16,7 +16,6 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 func init() {
@@ -696,7 +695,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 	} else {
 		ussa, err := repo.GetUssAvailability(ctx, manager)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		if err != nil && !errors.Is(err, repos.ErrNotFound) {
 			return nil, stacktrace.Propagate(err, "Could not get USS availability from repo")
 		}
 		if ussa != nil {

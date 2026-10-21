@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
@@ -11,7 +12,6 @@ import (
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 func init() {
@@ -57,7 +57,7 @@ func executeGetConstraint(ctx context.Context, repo repos.Repository, request ds
 
 	constraint, err := repo.GetConstraint(ctx, id)
 	switch {
-	case err == pgx.ErrNoRows:
+	case errors.Is(err, repos.ErrNotFound):
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 	case err != nil:
 		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
@@ -167,7 +167,7 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 	// Get existing Constraint, if any, and validate request
 	old, err := repo.GetConstraint(ctx, constraint.ID)
 	switch {
-	case err == pgx.ErrNoRows:
+	case errors.Is(err, repos.ErrNotFound):
 		// No existing Constraint; verify that creation was requested
 		if ovn != "" {
 			return nil, stacktrace.NewErrorWithCode(dsserr.VersionMismatch, "Old version %s does not exist", ovn)
@@ -269,7 +269,7 @@ func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request
 	// Make sure deletion request is valid
 	old, err := repo.GetConstraint(ctx, id)
 	switch {
-	case err == pgx.ErrNoRows:
+	case errors.Is(err, repos.ErrNotFound):
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "Constraint %s not found", id.String())
 	case err != nil:
 		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")

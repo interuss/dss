@@ -12,7 +12,7 @@ import (
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/interuss/dss/pkg/scd/repos"
 )
 
 const (
@@ -102,7 +102,7 @@ func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query st
 		return nil, stacktrace.NewError("Query returned %d Constraints when only 0 or 1 was expected", len(constraints))
 	}
 	if len(constraints) == 0 {
-		return nil, pgx.ErrNoRows
+		return nil, repos.ErrNotFound
 	}
 	return constraints[0], nil
 }
@@ -198,7 +198,7 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 	}
 
 	if res.RowsAffected() == 0 {
-		return pgx.ErrNoRows
+		return repos.ErrNotFound
 	}
 
 	return nil
