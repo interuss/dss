@@ -42,6 +42,9 @@ resource "aws_eks_node_group" "eks_node_group" {
 
   node_repair_config {
     enabled = var.aws_enable_node_auto_repair
+
+    # Repair one node at a time so that a majority of the datastore nodes stays available.
+    max_parallel_nodes_repaired_count = var.aws_enable_node_auto_repair ? 1 : null
   }
 
   lifecycle {
