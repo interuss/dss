@@ -51,14 +51,14 @@ resource "local_file" "tanka_config_main" {
     VAR_SUBNET                               = var.workload_subnet
     VAR_SSL_POLICY                           = var.ssl_policy
     VAR_EVICT_ENABLE_SCD_CRON                = var.evict_enable_scd_cron
-    VAR_EVICT_SCD_SCHEDULE                   = var.evict_scd_schedule
+    VAR_EVICT_SCD_SCHEDULE                   = local.evict_scd_schedule
     VAR_EVICT_SCD_TTL                        = var.evict_scd_ttl
     VAR_EVICT_SCD_TIMEOUT                    = var.evict_scd_timeout
     VAR_EVICT_SCD_LIMIT                      = var.evict_scd_limit
     VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS = var.evict_scd_operational_intents
     VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS       = var.evict_scd_subscriptions
     VAR_EVICT_ENABLE_RID_CRON                = var.evict_enable_rid_cron
-    VAR_EVICT_RID_SCHEDULE                   = var.evict_rid_schedule
+    VAR_EVICT_RID_SCHEDULE                   = local.evict_rid_schedule
     VAR_EVICT_RID_TTL                        = var.evict_rid_ttl
     VAR_EVICT_RID_TIMEOUT                    = var.evict_rid_timeout
     VAR_EVICT_RID_LIMIT                      = var.evict_rid_limit
