@@ -640,7 +640,7 @@ func resolveSubscription(
 	previousSub *scdmodels.Subscription,
 	manager dssmodels.Manager,
 	validParams *validOIRParams,
-) (*scdmodels.Subscription, bool, error) {
+) (attachedSub *scdmodels.Subscription, upsertAttachedSub bool, err error) {
 	var err error
 	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
 
