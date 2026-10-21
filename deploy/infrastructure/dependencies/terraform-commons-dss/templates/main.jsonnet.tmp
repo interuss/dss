@@ -25,6 +25,8 @@ local metadata = metadataBase {
     JoinExisting: [${VAR_CRDB_EXTERNAL_NODES}],
     storageClass: '${VAR_STORAGE_CLASS}',
     clusterName: '${VAR_CRDB_CLUSTER_NAME}',
+    cache: '${VAR_CRDB_CACHE}',
+    maxSqlMemory: '${VAR_CRDB_MAX_SQL_MEMORY}',
   },
   yugabyte+: {
     image: '${VAR_YUGABYTE_DOCKER_IMAGE_NAME}',

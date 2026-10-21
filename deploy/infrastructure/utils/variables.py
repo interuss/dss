@@ -48,6 +48,8 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "desired_aux_db_version",
     "crdb_image_tag",
     "crdb_cluster_name",
+    "crdb_cache",
+    "crdb_max_sql_memory",
     "locality",
     "datastore_max_open_conns",
     "crdb_external_nodes",
@@ -108,6 +110,7 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_iam_permissions_boundary",
     "aws_create_storage_class",
     "aws_enable_node_auto_repair",
+    "aws_enable_node_monitoring_agent",
 ] + COMMON_KUBERNETES_VARIABLES
 
 # modules/terraform-aws-dss

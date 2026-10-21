@@ -406,17 +406,6 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		}
 	}()
 
-	// Indicate ready for container health checks
-	readyFile, err := os.Create("service.ready")
-	if err != nil {
-		return stacktrace.Propagate(err, "Error touching file to indicate service ready")
-	}
-
-	err = readyFile.Close()
-	if err != nil {
-		return stacktrace.Propagate(err, "Error closing touched file to indicate service ready")
-	}
-
 	logger.Info("Starting DSS HTTP server")
 	return httpServer.ListenAndServe()
 }

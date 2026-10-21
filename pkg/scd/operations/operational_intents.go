@@ -326,6 +326,19 @@ func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodel
 	}
 }
 
+// newImplicitSubscription builds a brand new implicit subscription based on the provided parameters.
+func (v *validOIRParams) newImplicitSubscription(manager dssmodels.Manager) *scdmodels.Subscription {
+	return &scdmodels.Subscription{
+		ID:                          v.ImplicitSubscription.ID,
+		Manager:                     manager,
+		CellsVolume4D:               v.Volume,
+		USSBaseURL:                  v.ImplicitSubscription.BaseURL,
+		NotifyForOperationalIntents: true,
+		NotifyForConstraints:        v.ImplicitSubscription.ForConstraints,
+		ImplicitSubscription:        true,
+	}
+}
+
 // validateAndReturnOIRUpsertParams checks that the parameters for an Operational Intent Reference upsert are valid.
 // Note that this does NOT check for anything related to access controls: any error returned should be labeled
 // as a dsserr.BadRequest.
@@ -501,22 +514,6 @@ func newOIRUpsert(entityid restapi.EntityID, ovn restapi.EntityOVN, params *rest
 	return manager, validParams, nil
 }
 
-// createAndStoreNewImplicitSubscription will create a brand new implicit subscription based on the provided parameters,
-// store it and return it.
-func createAndStoreNewImplicitSubscription(ctx context.Context, r repos.Repository, manager dssmodels.Manager, validParams *validOIRParams) (*scdmodels.Subscription, error) {
-	subToUpsert := scdmodels.Subscription{
-		ID:                          validParams.ImplicitSubscription.ID,
-		Manager:                     manager,
-		CellsVolume4D:               validParams.Volume,
-		USSBaseURL:                  validParams.ImplicitSubscription.BaseURL,
-		NotifyForOperationalIntents: true,
-		NotifyForConstraints:        validParams.ImplicitSubscription.ForConstraints,
-		ImplicitSubscription:        true,
-	}
-
-	return r.UpsertSubscription(ctx, &subToUpsert)
-}
-
 // validateKeyAndProvideConflictResponse ensures that the provided key contains all the necessary OVNs relevant for the area covered by the OperationalIntent.
 // - If all required keys are provided, (nil, nil) will be returned.
 // - If keys are missing, the conflict response will be returned (conflict, nil).
@@ -600,15 +597,16 @@ func validateKeyAndProvideConflictResponse(
 // ensureSubscriptionCoversOIR ensures that the subscription covers the requested geo-temporal extent, extending it if both possible and required,
 // or failing otherwise.
 // After this method returns successfully, the subscription will cover the requested geo-temporal extent.
-func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *scdmodels.Subscription, params *validOIRParams) (*scdmodels.Subscription, error) {
-
+// If the subscription was modified, true will be returned, otherwise false will be returned.
+// A call to UpdateSubscription is required to persist the changes to the subscription.
+func ensureSubscriptionCoversOIR(sub *scdmodels.Subscription, params *validOIRParams) (bool, error) {
 	updateSub := false
 	if sub.StartTime != nil && sub.StartTime.After(*params.Volume.StartTime) {
 		if sub.ImplicitSubscription {
 			sub.StartTime = params.Volume.StartTime
 			updateSub = true
 		} else {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
+			return false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not begin until after the OperationalIntent starts")
 		}
 	}
 	if sub.EndTime != nil && sub.EndTime.Before(*params.Volume.EndTime) {
@@ -616,7 +614,7 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 			sub.EndTime = params.Volume.EndTime
 			updateSub = true
 		} else {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
+			return false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription ends before the OperationalIntent ends")
 		}
 	}
 	if !sub.Cells.Contains(params.Volume.Cells) {
@@ -624,18 +622,90 @@ func ensureSubscriptionCoversOIR(ctx context.Context, r repos.Repository, sub *s
 			sub.Cells = s2.CellUnionFromUnion(sub.Cells, params.Volume.Cells)
 			updateSub = true
 		} else {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
+			return false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Subscription does not cover entire spatial area of the OperationalIntent")
 		}
-	}
-	if updateSub {
-		upsertedSub, err := r.UpsertSubscription(ctx, sub)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to update existing Subscription")
-		}
-		return upsertedSub, nil
 	}
 
-	return sub, nil
+	return updateSub, nil
+}
+
+// resolveSubscription determines the subscription that will end up being attached to the OIR.
+// it does not persist any changes to the store.
+// It returns:
+// - the subscription to attach (can be nil)
+// - whether that subscription was created or modified
+// - whether the previous subscription is implicit, being replaced, and should be removed
+func resolveSubscription(
+	ctx context.Context,
+	repo repos.Repository,
+	previousSub *scdmodels.Subscription,
+	manager dssmodels.Manager,
+	validParams *validOIRParams,
+) (attachedSub *scdmodels.Subscription, upsertAttachedSub bool, removePreviousImplicitSubscription bool, err error) {
+	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
+	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
+	if previousSubIsBeingReplaced {
+		removePreviousImplicitSubscription, err = SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, repo, validParams.ID, previousSub)
+		if err != nil {
+			return nil, false, false, stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
+		}
+	}
+
+	// attachedSub is the subscription that will end up being attached to the OIR
+	// it defaults to the previous subscription (which may be nil), and may be updated if required by the parameters
+	attachedSub = previousSub
+	if validParams.SubscriptionID.Empty() {
+		// No subscription ID was provided:
+		// check if an implicit subscription should be created, otherwise do nothing
+		if !validParams.ImplicitSubscription.ID.Empty() {
+			// Parameters for a new implicit subscription have been passed: we will create
+			// a new implicit subscription even if another subscription was attached to this OIR before,
+			// regardless of whether it was an implicit subscription or not.
+			attachedSub = validParams.newImplicitSubscription(manager)
+			upsertAttachedSub = true
+		} else {
+			// If no subscription ID is provided and no implicit subscription is requested,
+			// the OIR should have no attached subscription
+			attachedSub = nil
+		}
+	} else {
+		// Attempt to rely on the specified subscription
+		// If it is different from the previous subscription, we need to fetch it from the store
+		// in order to ensure it correctly covers the OIR.
+		// We do the check below in order to avoid re-fetching the subscription if it has not changed
+		if attachedSub == nil || previousSubIsBeingReplaced {
+			attachedSub, err = repo.GetSubscription(ctx, validParams.SubscriptionID)
+			if err != nil {
+				return nil, false, false, stacktrace.Propagate(err, "Unable to get requested Subscription from store")
+			}
+			if attachedSub == nil {
+				return nil, false, false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.SubscriptionID)
+			}
+		}
+
+		// We need to confirm that it is owned by the calling manager
+		if attachedSub.Manager != manager {
+			return nil, false, false, stacktrace.Propagate(
+				// We do a bit of wrapping gymnastics because the root error message will be sent in the response,
+				// and we don't want to include the effective manager in there.
+				stacktrace.NewErrorWithCode(
+					dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
+				// The propagation message will end in the logs and help with debugging.
+				"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent",
+				validParams.SubscriptionID,
+				attachedSub.Manager,
+				manager,
+			)
+		}
+
+		// We need to ensure the subscription covers the OIR's geo-temporal extent
+		upsertAttachedSub, err = ensureSubscriptionCoversOIR(attachedSub, validParams)
+		if err != nil {
+			return nil, false, false, stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
+		}
+	}
+
+	return attachedSub, upsertAttachedSub, removePreviousImplicitSubscription, nil
 }
 
 // PutOperationalIntentReferenceResult is the result of an Operational Intent Reference put operation.
@@ -720,69 +790,9 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 			"USS %s may not transition OperationalIntent %s to %s while marked as Down in the DSS", manager, validParams.ID, validParams.State)
 	}
 
-	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
-	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
-	removePreviousImplicitSubscription := false
-	if previousSubIsBeingReplaced {
-		removePreviousImplicitSubscription, err = SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, repo, validParams.ID, previousSub)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
-		}
-	}
-
-	// attachedSub is the subscription that will end up being attached to the OIR
-	// it defaults to the previous subscription (which may be nil), and may be updated if required by the parameters
-	attachedSub := previousSub
-	if validParams.SubscriptionID.Empty() {
-		// No subscription ID was provided:
-		// check if an implicit subscription should be created, otherwise do nothing
-		if !validParams.ImplicitSubscription.ID.Empty() {
-			// Parameters for a new implicit subscription have been passed: we will create
-			// a new implicit subscription even if another subscription was attached to this OIR before,
-			// regardless of whether it was an implicit subscription or not.
-			if attachedSub, err = createAndStoreNewImplicitSubscription(ctx, repo, manager, validParams); err != nil {
-				return nil, stacktrace.Propagate(err, "Failed to create implicit subscription")
-			}
-		} else {
-			// If no subscription ID is provided and no implicit subscription is requested,
-			// the OIR should have no attached subscription
-			attachedSub = nil
-		}
-	} else {
-		// Attempt to rely on the specified subscription
-		// If it is different from the previous subscription, we need to fetch it from the store
-		// in order to ensure it correctly covers the OIR.
-		// We do the check below in order to avoid re-fetching the subscription if it has not changed
-		if attachedSub == nil || previousSubIsBeingReplaced {
-			attachedSub, err = repo.GetSubscription(ctx, validParams.SubscriptionID)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Unable to get requested Subscription from store")
-			}
-			if attachedSub == nil {
-				return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.SubscriptionID)
-			}
-		}
-
-		// We need to confirm that it is owned by the calling manager
-		if attachedSub.Manager != manager {
-			return nil, stacktrace.Propagate(
-				// We do a bit of wrapping gymnastics because the root error message will be sent in the response,
-				// and we don't want to include the effective manager in there.
-				stacktrace.NewErrorWithCode(
-					dsserr.PermissionDenied, "Specificed Subscription is owned by different client"),
-				// The propagation message will end in the logs and help with debugging.
-				"Subscription %s owned by %s, but %s attempted to use it for an OperationalIntent",
-				validParams.SubscriptionID,
-				attachedSub.Manager,
-				manager,
-			)
-		}
-
-		// We need to ensure the subscription covers the OIR's geo-temporal extent
-		attachedSub, err = ensureSubscriptionCoversOIR(ctx, repo, attachedSub, validParams)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
-		}
+	attachedSub, upsertAttachedSub, removePreviousImplicitSubscription, err := resolveSubscription(ctx, repo, previousSub, manager, validParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to resolve Subscription")
 	}
 
 	if validParams.State.RequiresKey() {
@@ -792,6 +802,14 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 		if responseConflict != nil {
 			return &PutOperationalIntentReferenceResult{Conflict: responseConflict}, nil
+		}
+	}
+
+	// Upsert the attached subscription after making sure that no conflicts exist
+	if upsertAttachedSub {
+		attachedSub, err = repo.UpsertSubscription(ctx, attachedSub)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to upsert Subscription attached to OperationalIntent")
 		}
 	}
 
