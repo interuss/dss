@@ -12,6 +12,7 @@
 {{- $schemas = dict "rid" "1.0.1" "scd" "1.1.1" "aux_" "1.1.0" }}
 {{- end -}}
 
+{{- if not .Values.raft.enabled }}
 {{- range $service, $schemaVersion := $schemas }}
 {{- $serviceClean := $service | replace "_" "" }}
 ---
@@ -66,4 +67,5 @@ spec:
       volumes:
         {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
         {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
-{{- end -}}
+{{- end }}
+{{- end }}

@@ -61,6 +61,32 @@ yugabyte:
   # If you join a yugabyte cluster, set the masterAddresses there
   # masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
 
+# To deploy with the Raft-based datastore instead of CockroachDB/Yugabyte, set
+# raft.enabled to true and disable both cockroachdb.enabled and yugabyte.enabled.
+# Exactly one datastore backend must be enabled. The DSS nodes are then deployed
+# as a StatefulSet with one PVC per node (Raft WAL and snapshots).
+raft:
+  enabled: false
+  replicas: 3  # Number of DSS nodes (Raft voters). Must be odd for a useful quorum (2n+1).
+  # nodeIDBase: 1  # Raft node ID of pod 0 (pod N is nodeIDBase + N). Never change after bootstrap.
+  # clusterID: 1   # Same value on every node of the pool; different from other reachable pools.
+  # datadir: /raft_data
+  # ports:
+  #   aux: 9031
+  #   rid: 9011
+  #   scd: 9021
+  # storage:
+  #   size: 100Gi
+  #   storageClass: standard  # Low fsync latency recommended (commit path writes the WAL).
+  # resources:
+  #   requests:
+  #     cpu: 1
+  #     memory: 4Gi
+  #   limits:
+  #     cpu: 4
+  #     memory: 16Gi
+  # tuning: {}  # e.g. { "raft_tick_interval": "200ms" }
+
 loadBalancers:
   cockroachdbNodes:
     - ip: 192.168.0.21
