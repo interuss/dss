@@ -634,20 +634,26 @@ func ensureSubscriptionCoversOIR(sub *scdmodels.Subscription, params *validOIRPa
 // It returns:
 // - the subscription to attach (can be nil)
 // - whether that subscription was created or modified
+// - whether the previous subscription is implicit, being replaced, and should be removed
 func resolveSubscription(
 	ctx context.Context,
 	repo repos.Repository,
 	previousSub *scdmodels.Subscription,
 	manager dssmodels.Manager,
 	validParams *validOIRParams,
-) (attachedSub *scdmodels.Subscription, upsertAttachedSub bool, err error) {
-	var err error
+) (attachedSub *scdmodels.Subscription, upsertAttachedSub bool, removePreviousImplicitSubscription bool, err error) {
+	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
 	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
+	if previousSubIsBeingReplaced {
+		removePreviousImplicitSubscription, err = SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, repo, validParams.ID, previousSub)
+		if err != nil {
+			return nil, false, false, stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
+		}
+	}
 
 	// attachedSub is the subscription that will end up being attached to the OIR
 	// it defaults to the previous subscription (which may be nil), and may be updated if required by the parameters
-	attachedSub := previousSub
-	upsertAttachedSub := false
+	attachedSub = previousSub
 	if validParams.SubscriptionID.Empty() {
 		// No subscription ID was provided:
 		// check if an implicit subscription should be created, otherwise do nothing
@@ -670,16 +676,16 @@ func resolveSubscription(
 		if attachedSub == nil || previousSubIsBeingReplaced {
 			attachedSub, err = repo.GetSubscription(ctx, validParams.SubscriptionID)
 			if err != nil {
-				return nil, false, stacktrace.Propagate(err, "Unable to get requested Subscription from store")
+				return nil, false, false, stacktrace.Propagate(err, "Unable to get requested Subscription from store")
 			}
 			if attachedSub == nil {
-				return nil, false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.SubscriptionID)
+				return nil, false, false, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Specified Subscription %s does not exist", validParams.SubscriptionID)
 			}
 		}
 
 		// We need to confirm that it is owned by the calling manager
 		if attachedSub.Manager != manager {
-			return nil, false, stacktrace.Propagate(
+			return nil, false, false, stacktrace.Propagate(
 				// We do a bit of wrapping gymnastics because the root error message will be sent in the response,
 				// and we don't want to include the effective manager in there.
 				stacktrace.NewErrorWithCode(
@@ -695,11 +701,11 @@ func resolveSubscription(
 		// We need to ensure the subscription covers the OIR's geo-temporal extent
 		upsertAttachedSub, err = ensureSubscriptionCoversOIR(attachedSub, validParams)
 		if err != nil {
-			return nil, false, stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
+			return nil, false, false, stacktrace.Propagate(err, "Failed to ensure subscription covers OIR")
 		}
 	}
 
-	return attachedSub, upsertAttachedSub, nil
+	return attachedSub, upsertAttachedSub, removePreviousImplicitSubscription, nil
 }
 
 // PutOperationalIntentReferenceResult is the result of an Operational Intent Reference put operation.
@@ -784,17 +790,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 			"USS %s may not transition OperationalIntent %s to %s while marked as Down in the DSS", manager, validParams.ID, validParams.State)
 	}
 
-	// Determine if the previous subscription is being replaced and if it will need to be cleaned up
-	previousSubIsBeingReplaced := previousSub != nil && validParams.SubscriptionID != previousSub.ID
-	removePreviousImplicitSubscription := false
-	if previousSubIsBeingReplaced {
-		removePreviousImplicitSubscription, err = SubscriptionIsImplicitAndOnlyAttachedToOIR(ctx, repo, validParams.ID, previousSub)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not determine if previous Subscription can be removed")
-		}
-	}
-
-	attachedSub, upsertAttachedSub, err := resolveSubscription(ctx, repo, previousSub, manager, validParams)
+	attachedSub, upsertAttachedSub, removePreviousImplicitSubscription, err := resolveSubscription(ctx, repo, previousSub, manager, validParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to resolve Subscription")
 	}
