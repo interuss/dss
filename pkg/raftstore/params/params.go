@@ -37,6 +37,7 @@ type (
 		NodeID uint64
 		Peers  string
 
+		// DataDir is the join between the base data directory provided by the user and a subfolder for the specific group (aux, rid, scd).
 		DataDir   string
 		ClusterID uint64
 
