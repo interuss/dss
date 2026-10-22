@@ -1,12 +1,14 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 local datastoreparameters = import 'datastoreparameters.libsonnet';
+local util = import 'util.libsonnet';
 
 {
   all(metadata): {
+    local defaultMinute = util.stringToInt(metadata.locality, 60),
     SCDEvict: base.CronJob(metadata, 'dss-scd-evict') {
       spec+: {
-        schedule: metadata.evict.scd.schedule,
+        schedule: if metadata.evict.scd.schedule != "" then metadata.evict.scd.schedule else "%d 2 * * *" % defaultMinute,
         suspend: !metadata.evict.scd.enable_cron,
         concurrencyPolicy: "Forbid",
         jobTemplate: {
@@ -43,7 +45,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
     },
     RIDEvict: base.CronJob(metadata, 'dss-rid-evict') {
       spec+: {
-        schedule: metadata.evict.rid.schedule,
+        schedule: if metadata.evict.rid.schedule != "" then metadata.evict.rid.schedule else "%d * * * *" % defaultMinute,
         suspend: !metadata.evict.rid.enable_cron,
         concurrencyPolicy: "Forbid",
         jobTemplate: {

@@ -48,7 +48,7 @@ local metadata = metadataBase {
   evict+: {
     scd+: {
       enable_cron: false,
-      schedule: "0 2 * * *",
+      schedule: "",
       ttl: "2688h",
       timeout: "",
       limit: 0,
@@ -57,7 +57,7 @@ local metadata = metadataBase {
     },
     rid+: {
       enable_cron: true,
-      schedule: "*/30 * * * *",
+      schedule: "",
       ttl: "30m",
       timeout: "",
       limit: 0,

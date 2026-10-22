@@ -249,8 +249,9 @@ Set to 0 to delete all expired entities in a single run.</p>
 <br/>Default value: <code>0</code></td>
             </tr><tr>
                 <td>evict_rid_schedule (<code>string</code>)</td>
-                <td><p>When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).</p>
-<br/>Default value: <code>"*/30 * * * *"</code></td>
+                <td><p>When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+Leave empty to run hourly at a minute deterministically derived from the locality.</p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>evict_rid_subscriptions (<code>bool</code>)</td>
                 <td><p>Set this to true to enable cleanup of RID subscriptions.</p>
@@ -277,8 +278,9 @@ Set to 0 to delete all expired entities in a single run.</p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
                 <td>evict_scd_schedule (<code>string</code>)</td>
-                <td><p>When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).</p>
-<br/>Default value: <code>"0 2 * * *"</code></td>
+                <td><p>When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+Leave empty to run daily at 2 AM at a minute deterministically derived from the locality.</p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>evict_scd_subscriptions (<code>bool</code>)</td>
                 <td><p>Set this to true to enable cleanup of SCD subscriptions.</p>
