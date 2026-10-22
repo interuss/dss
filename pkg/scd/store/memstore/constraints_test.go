@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/interuss/dss/pkg/scd/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,19 +32,19 @@ func TestConstraintUpsertGetDelete(t *testing.T) {
 	require.NoError(t, r.DeleteConstraint(ctx, constraintId))
 
 	_, err = r.GetConstraint(ctx, constraintId)
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	require.ErrorIs(t, err, repos.ErrNotFound)
 }
 
-func TestConstraintGetMissingReturnsErrNoRows(t *testing.T) {
+func TestConstraintGetMissingReturnsErrNotFound(t *testing.T) {
 	r := setUpStore(t)
 	_, err := r.GetConstraint(writeCtx(), constraintId)
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	require.ErrorIs(t, err, repos.ErrNotFound)
 }
 
-func TestConstraintDeleteMissingReturnsErrNoRows(t *testing.T) {
+func TestConstraintDeleteMissingReturnsErrNotFound(t *testing.T) {
 	r := setUpStore(t)
 	err := r.DeleteConstraint(writeCtx(), constraintId)
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	require.ErrorIs(t, err, repos.ErrNotFound)
 }
 
 func TestSearchConstraints(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,8 +24,8 @@ func TestUssAvailabilityUpsertGet(t *testing.T) {
 	require.Equal(t, scdmodels.UssAvailabilityStateNormal, fetched.Availability)
 }
 
-func TestGetUssAvailabilityMissingReturnsErrNoRows(t *testing.T) {
+func TestGetUssAvailabilityMissingReturnsErrNotFound(t *testing.T) {
 	r := setUpStore(t)
 	_, err := r.GetUssAvailability(writeCtx(), manager)
-	require.ErrorIs(t, err, pgx.ErrNoRows)
+	require.ErrorIs(t, err, repos.ErrNotFound)
 }

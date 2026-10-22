@@ -5,10 +5,10 @@ import (
 
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 func (rec *constraintRecord) toModel() *scdmodels.Constraint {
@@ -48,7 +48,7 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 func (r *repo) GetConstraint(_ context.Context, id dssmodels.ID) (*scdmodels.Constraint, error) {
 	rec, ok := r.state.Constraints[id]
 	if !ok {
-		return nil, pgx.ErrNoRows // TODO: #1608
+		return nil, repos.ErrNotFound
 	}
 	return rec.toModel(), nil
 }
@@ -74,7 +74,7 @@ func (r *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*
 
 func (r *repo) DeleteConstraint(_ context.Context, id dssmodels.ID) error {
 	if _, ok := r.state.Constraints[id]; !ok {
-		return pgx.ErrNoRows // TODO: #1608
+		return repos.ErrNotFound
 	}
 	delete(r.state.Constraints, id)
 	return nil

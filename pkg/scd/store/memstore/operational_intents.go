@@ -10,9 +10,9 @@ import (
 	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 // toModel rebuilds the OperationalIntent model without its UssAvailability,
@@ -52,7 +52,7 @@ func (r *repo) buildOperationalIntents(ctx context.Context, recs []*operationalI
 
 	for manager := range ussAvailabilities {
 		ussAvailability, err := r.GetUssAvailability(ctx, manager)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		if err != nil && !errors.Is(err, repos.ErrNotFound) {
 			return nil, stacktrace.Propagate(err, "Error getting USS availability of %s", manager)
 		}
 		if ussAvailability != nil {

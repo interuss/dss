@@ -8,9 +8,9 @@ import (
 
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/repos"
 	dsssql "github.com/interuss/dss/pkg/sql"
 	"github.com/interuss/stacktrace"
-	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -102,7 +102,7 @@ func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query 
 		return nil, stacktrace.NewError("Query returned %d availabilities when only 0 or 1 was expected", len(availabilities))
 	}
 	if len(availabilities) == 0 {
-		return nil, pgx.ErrNoRows
+		return nil, repos.ErrNotFound
 	}
 	return availabilities[0], nil
 }
