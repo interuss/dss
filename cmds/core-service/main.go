@@ -30,6 +30,7 @@ import (
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
 	scds "github.com/interuss/dss/pkg/scd/store"
+	"github.com/interuss/dss/pkg/store/lifecycle"
 	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/dss/pkg/version"
@@ -492,6 +493,15 @@ func main() {
 		// Handle shutdown properly so nothing leaks.
 		defer func() { _ = otelShutdown(context.Background()) }()
 	}
+
+	if err := lifecycle.Start(ctx, logger, func(error) { cancel() }); err != nil {
+		logger.Panic("Failed to start the store backend", zap.Error(err))
+	}
+	defer func() {
+		if err := lifecycle.Stop(context.Background()); err != nil {
+			logger.Warn("Failed to stop the store backend", zap.Error(err))
+		}
+	}()
 
 	backoffs := []time.Duration{
 		5 * time.Second, 15 * time.Second, 1 * time.Minute, 1 * time.Minute,
