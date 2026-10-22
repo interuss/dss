@@ -13,6 +13,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
+	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
@@ -88,7 +89,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		readTracker: newReadIndexTracker(),
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
+	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers, newTLSInfo(connectParams, logger))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -234,8 +235,11 @@ func peersList(peers map[uint64]*url.URL) []raft.Peer {
 	return result
 }
 
-func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL, tlsInfo etcdtransport.TLSInfo) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
+	if tlsInfo.Empty() {
+		c.logger.Warn("Raft nodes do not authenticate each other: set --raft_cert_file, --raft_key_file and --raft_trusted_ca_file to enable mutual TLS")
+	}
 
 	transport := &rafthttp.Transport{
 		Logger:      logging.WithValuesFromContext(ctx, c.logger.With(zap.String("component", "transport"))),
@@ -246,7 +250,8 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		LeaderStats: v2stats.NewLeaderStats(c.logger, nodeIDStr),
 		// ErrorC is buffered to make sure rafthttp can send errors even if the raft updates consumer is not listening yet.
 		// The buffer size of 1 is sufficient because the transport will only send one error before stopping.
-		ErrorC: make(chan error, 1),
+		ErrorC:  make(chan error, 1),
+		TLSInfo: tlsInfo,
 	}
 
 	err := transport.Start()
@@ -270,13 +275,19 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 
 	c.transport = transport
 
+	listener, err := newListener(ctx, listeningAddr, tlsInfo)
+	if err != nil {
+		transport.Stop()
+		return stacktrace.Propagate(err, "failed to listen on %s", listeningAddr)
+	}
+
 	c.server = &http.Server{
 		Addr:    listeningAddr,
 		Handler: transport.Handler(),
 	}
 
 	go func() {
-		err := c.server.ListenAndServe()
+		err := c.server.Serve(listener)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			c.logger.Error("http server error", zap.Error(err))
 			c.serverErrC <- err

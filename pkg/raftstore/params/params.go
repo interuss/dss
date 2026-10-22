@@ -50,12 +50,26 @@ type (
 
 		MaxSizePerMsg   uint64
 		MaxInflightMsgs int
+
+		// CertFile, KeyFile and TrustedCAFile enable mutual TLS between Raft nodes when set. They are either all set or all empty.
+		CertFile      string
+		KeyFile       string
+		TrustedCAFile string
 	}
 )
+
+// TLSEnabled reports whether Raft nodes authenticate each other with mutual TLS.
+func (c ConnectParameters) TLSEnabled() bool {
+	return c.CertFile != ""
+}
 
 // PeerMap parses the Peers string into a map of node ID to peer URL.
 func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 	peers := make(map[uint64]*url.URL)
+	scheme := "http"
+	if c.TLSEnabled() {
+		scheme = "https"
+	}
 
 	for entry := range strings.SplitSeq(c.Peers, ",") {
 		parts := strings.SplitN(entry, "=", 2)
@@ -79,6 +93,10 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 		peerURL, err := url.Parse(parts[1])
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "invalid peer URL %s", parts[1])
+		}
+
+		if peerURL.Scheme != scheme {
+			return nil, stacktrace.NewError("invalid peer URL %s: scheme must be %s (https when mutual TLS is enabled, http otherwise)", parts[1], scheme)
 		}
 
 		peers[id] = peerURL
@@ -124,12 +142,19 @@ func init() {
 		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
+
+	flag.StringVar(&connectParameters.CertFile, "raft_cert_file", "", "PEM certificate of this node, presented to the other Raft nodes. Setting it alongside --raft_key_file and --raft_trusted_ca_file enables mutual TLS between Raft nodes. Peer URLs must then use https.")
+	flag.StringVar(&connectParameters.KeyFile, "raft_key_file", "", "PEM private key of --raft_cert_file.")
+	flag.StringVar(&connectParameters.TrustedCAFile, "raft_trusted_ca_file", "", "PEM bundle of the CA certificates trusted to sign the certificates of the other Raft nodes, usually one CA per participant.")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
 func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	if connectParameters.NodeID == 0 {
 		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
+	}
+	if (connectParameters.CertFile == "") != (connectParameters.KeyFile == "") || (connectParameters.CertFile == "") != (connectParameters.TrustedCAFile == "") {
+		return ConnectParameters{}, stacktrace.NewError("--raft_cert_file, --raft_key_file and --raft_trusted_ca_file must be set together")
 	}
 	p := connectParameters
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)

@@ -9,6 +9,23 @@
 - **In-memory data projection:** The application state machine derived from the committed log (i.e. ISAs, subscriptions, operational intents, etc.) lives in-memory. It is not persisted but rather reconstructed by replaying the log / snapshot on startup.
 - **Data model:** Each service (`rid`, `scd`, `aux_`) defines its own request/response structs. During replication, they are wrapped in a [`Proposal`](consensus/proposal.go), which carries metadata (an ID, the originating node, and a timestamp for determinism) with a `RequestType` string and a request payload as a serialized `Value`. [`pkg/raftstore/store.go`](store.go) replicates the `Proposal` through Raft and, once committed, the service specific raftstore implementation interprets `RequestType`/`Value` and applies the resulting change to its own in-memory store.
 
+## Node authentication
+
+Raft nodes authenticate each other with mutual TLS when these three flags are set. They are shared by the aux, rid and scd Raft groups.
+
+| Flag | Content |
+|---|---|
+| `--raft_cert_file` | PEM certificate of this node |
+| `--raft_key_file` | PEM private key of that certificate |
+| `--raft_trusted_ca_file` | PEM bundle of the CA certificates whose node certificates are accepted |
+
+- Each participant operates its own CA and issues one certificate per node. The bundle holds the CA of every participant of the pool, including the node's own.
+- The same certificate is presented to peers and to nodes connecting to this one.
+- A connecting peer is accepted when its certificate is signed by a trusted CA. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
+- With mutual TLS enabled every peer URL must use `https`, otherwise `http`. A node with a peer URL of the other scheme, or with only some of the three flags set, does not start.
+- Restart the node after replacing its certificate or the trusted CA bundle.
+- Without the flags, Raft traffic is unauthenticated plain HTTP and a warning is logged. Mutual TLS will become mandatory (see [#1734](https://github.com/interuss/dss/issues/1734)).
+
 ## Terminology
 
 Most of the concepts defined below come from the Raft consensus algorithm itself, described in ["In Search of an Understandable Consensus Algorithm" by D. Ongaro and J. Ousterhout](https://raft.github.io/raft.pdf). Please refer to the original paper for more details on how the Raft protocol works although the definitions in this documentation aim to be self-contained.
