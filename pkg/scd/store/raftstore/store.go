@@ -9,11 +9,11 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
-	scdraftparams "github.com/interuss/dss/pkg/scd/store/raftstore/params"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -25,7 +25,7 @@ type repo struct {
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
-	params, err := scdraftparams.GetConnectParameters()
+	params, err := raftparams.GetConnectParameters("scd")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get scd raft parameters")
 	}

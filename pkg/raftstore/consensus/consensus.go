@@ -3,9 +3,7 @@ package consensus
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -28,14 +26,13 @@ type Consensus struct {
 	node   raft.Node
 
 	transport *rafthttp.Transport
-	server    *http.Server
 
 	storage *storage
 	commitC chan<- EntryCommit
 
 	once            sync.Once
 	shutdownTimeout time.Duration
-	serverErrC      chan error    // http server errors
+	serverErrC      chan error    // errors of the shared http server
 	stopC           chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
 
 	tracker     *proposalsTracker
@@ -88,7 +85,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		readTracker: newReadIndexTracker(),
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
+	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -120,10 +117,10 @@ func (c *Consensus) Stop(ctx context.Context) {
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), c.shutdownTimeout)
 		defer cancel()
-		if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
+		if shutdownErr := unregisterGroup(shutdownCtx, c.transport.ClusterID); shutdownErr != nil {
 			c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
 		} else {
-			c.logger.Info("http server shutdown complete")
+			c.logger.Info("unregistered from http server")
 		}
 
 		c.transport.Stop()
@@ -270,18 +267,10 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 
 	c.transport = transport
 
-	c.server = &http.Server{
-		Addr:    listeningAddr,
-		Handler: transport.Handler(),
+	err = registerGroup(ctx, c.logger.With(zap.String("component", "listener")), listeningAddr, transport.ClusterID, transport.Handler(), c.serverErrC)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to register the transport to the http server")
 	}
-
-	go func() {
-		err := c.server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			c.logger.Error("http server error", zap.Error(err))
-			c.serverErrC <- err
-		}
-	}()
 
 	return nil
 }

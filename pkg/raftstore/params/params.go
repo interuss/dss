@@ -2,6 +2,8 @@ package params
 
 import (
 	"flag"
+	"fmt"
+	"hash/fnv"
 	"net/url"
 	"path/filepath"
 	"strconv"
@@ -40,6 +42,9 @@ type (
 		// DataDir is the join between the base data directory provided by the user and a subfolder for the specific group (aux, rid, scd).
 		DataDir   string
 		ClusterID uint64
+		// GroupClusterID identifies the group (aux, rid, scd) within the cluster.
+		// It is derived from ClusterID and is used by the transport since the groups share a listener (see consensus/listener.go).
+		GroupClusterID uint64
 
 		SnapshotCatchupEntries  uint64
 		SnapshotIntervalEntries uint64
@@ -108,6 +113,7 @@ var (
 
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
+	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `Comma-separated "nodeID=peerURL" pairs defining all cluster members including this node, e.g. "1=http://node1:9011,2=http://node2:9011,3=http://node3:9011". The Raft groups (aux, rid, scd) of a node share a single listener at its URL.`)
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.")
 
@@ -131,7 +137,25 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	if connectParameters.NodeID == 0 {
 		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
 	}
+	if connectParameters.Peers == "" {
+		return ConnectParameters{}, stacktrace.NewError("--raft_peers is required")
+	}
 	p := connectParameters
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)
+	groupID, err := groupClusterID(connectParameters.ClusterID, subfolder)
+	if err != nil {
+		return ConnectParameters{}, stacktrace.Propagate(err, "failed to derive the cluster ID of the %s group", subfolder)
+	}
+	p.GroupClusterID = groupID
 	return p, nil
+}
+
+// groupClusterID derives an ID for the group from the cluster ID.
+func groupClusterID(clusterID uint64, group string) (uint64, error) {
+	h := fnv.New64a()
+	_, err := fmt.Fprintf(h, "%d/%s", clusterID, group)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "failed to hash the cluster ID and the group")
+	}
+	return h.Sum64(), nil
 }

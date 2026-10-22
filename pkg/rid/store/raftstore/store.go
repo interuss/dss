@@ -9,11 +9,11 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridmemstore "github.com/interuss/dss/pkg/rid/store/memstore"
-	ridraftparams "github.com/interuss/dss/pkg/rid/store/raftstore/params"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -25,7 +25,7 @@ type repo struct {
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
-	params, err := ridraftparams.GetConnectParameters()
+	params, err := raftparams.GetConnectParameters("rid")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get rid raft parameters")
 	}
