@@ -4,7 +4,7 @@ This section describes how to deploy the infrastructure for a DSS instance.
 
 ## Prerequisites
 
-Before beginning infrastructure deployment, download & install the following tools to your workstation:
+Before beginning infrastructure deployment, follow the following steps:
 
 - [Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) to
   interact with kubernetes
@@ -12,6 +12,8 @@ Before beginning infrastructure deployment, download & install the following too
       succeed from any working directory).
     - Note that kubectl can alternatively be installed via the Google Cloud SDK
      `gcloud` shell if using Google Cloud.
+
+- Review the [database cleanup documentation](../../operations/cleanup.md) and decide on the eviction parameters to use.
 
 ## Deployment Options
 
