@@ -185,21 +185,4 @@ evict+: {
 
 #### Terraform
 
-When deploying via Terraform modules, the parameters are configurable with module variables:
-
-| Terraform variable              | Default   |
-| ------------------------------- | --------- |
-| `evict_enable_scd_cron`         | `false`   |
-| `evict_scd_schedule`            | `""`      |
-| `evict_scd_ttl`                 | `"2688h"` |
-| `evict_scd_timeout`             | `""`      |
-| `evict_scd_limit`               | `0`       |
-| `evict_scd_operational_intents` | `true`    |
-| `evict_scd_subscriptions`       | `true`    |
-| `evict_enable_rid_cron`         | `true`    |
-| `evict_rid_schedule`            | `""`      |
-| `evict_rid_ttl`                 | `"30m"`   |
-| `evict_rid_timeout`             | `""`      |
-| `evict_rid_limit`               | `0`       |
-| `evict_rid_isas`                | `true`    |
-| `evict_rid_subscriptions`       | `true`    |
+When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
