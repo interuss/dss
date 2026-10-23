@@ -55,6 +55,7 @@ local volumes = import 'volumes.libsonnet';
                 value: 'kubernetes-multiregion',
               },
             ],
+            resources: util.resources(metadata.cockroach),
             livenessProbe: {
               httpGet: {
                 path: '/health',

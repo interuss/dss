@@ -77,6 +77,30 @@ Example:</li>
 <p>Example: <code>dss-che-1</code></p>
 </td>
             </tr><tr>
+                <td>core_service_cpu_limit (<code>string</code>)</td>
+                <td><p>Kubernetes CPU limit of the core-service containers.
+Not set by default.</p>
+<p>Example: <code>0.5</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>core_service_cpu_request (<code>string</code>)</td>
+                <td><p>Kubernetes CPU request of the core-service containers.
+Not set by default.</p>
+<p>Example: <code>0.5</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>core_service_memory_limit (<code>string</code>)</td>
+                <td><p>Kubernetes memory limit of the core-service containers.
+Not set by default.</p>
+<p>Example: <code>2Gi</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>core_service_memory_request (<code>string</code>)</td>
+                <td><p>Kubernetes memory request of the core-service containers.
+Not set by default.</p>
+<p>Example: <code>2Gi</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>crdb_cache (<code>string</code>)</td>
                 <td><p>Size of the CockroachDB storage engine cache, passed to the <code>--cache</code> flag of <code>cockroach start</code>.
 Either a percentage of the memory available to the container or an absolute size.</p>
@@ -91,6 +115,18 @@ The CRDB cluster name must be 6-20 characters in length, and can include lowerca
 and dashes (but no leading or trailing dashes). A cluster's name cannot be edited after it is created.</p>
 <p>Example: interuss-us-production</p>
 </td>
+            </tr><tr>
+                <td>crdb_cpu_limit (<code>string</code>)</td>
+                <td><p>Kubernetes CPU limit of the CockroachDB containers.
+Not set by default.</p>
+<p>Example: <code>3.5</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>crdb_cpu_request (<code>string</code>)</td>
+                <td><p>Kubernetes CPU request of the CockroachDB containers.
+Not set by default.</p>
+<p>Example: <code>3.5</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>crdb_external_nodes (<code>list(string)</code>)</td>
                 <td><p>Fully-qualified domain name of existing CRDB nodes outside of the cluster if you are joining an existing pool.
@@ -117,6 +153,18 @@ From v.17, the recommended CockroachDB version is v24.1.3.</p>
 Either a percentage of the memory available to the container or an absolute size.</p>
 <p>Example: <code>25%</code> or <code>2GiB</code></p>
 <br/>Default value: <code>"25%"</code></td>
+            </tr><tr>
+                <td>crdb_memory_limit (<code>string</code>)</td>
+                <td><p>Kubernetes memory limit of the CockroachDB containers.
+Not set by default.</p>
+<p>Example: <code>14Gi</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
+                <td>crdb_memory_request (<code>string</code>)</td>
+                <td><p>Kubernetes memory request of the CockroachDB containers.
+Not set by default.</p>
+<p>Example: <code>14Gi</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>datastore_max_open_conns (<code>number</code>)</td>
                 <td><p>Maximum number of open connections to the datastore.</p>

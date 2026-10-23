@@ -27,6 +27,10 @@ local metadata = metadataBase {
     clusterName: '${VAR_CRDB_CLUSTER_NAME}',
     cache: '${VAR_CRDB_CACHE}',
     maxSqlMemory: '${VAR_CRDB_MAX_SQL_MEMORY}',
+    cpuRequest: '${VAR_CRDB_CPU_REQUEST}',
+    memoryRequest: '${VAR_CRDB_MEMORY_REQUEST}',
+    cpuLimit: '${VAR_CRDB_CPU_LIMIT}',
+    memoryLimit: '${VAR_CRDB_MEMORY_LIMIT}',
   },
   yugabyte+: {
     image: '${VAR_YUGABYTE_DOCKER_IMAGE_NAME}',
@@ -64,7 +68,11 @@ local metadata = metadataBase {
     hostname: '${VAR_APP_HOSTNAME}',
     publicEndpoint: 'https://${VAR_APP_HOSTNAME}',
     dumpRequests: false,
-    sslPolicy: '${VAR_SSL_POLICY}'
+    sslPolicy: '${VAR_SSL_POLICY}',
+    cpuRequest: '${VAR_CORE_SERVICE_CPU_REQUEST}',
+    memoryRequest: '${VAR_CORE_SERVICE_MEMORY_REQUEST}',
+    cpuLimit: '${VAR_CORE_SERVICE_CPU_LIMIT}',
+    memoryLimit: '${VAR_CORE_SERVICE_MEMORY_LIMIT}',
   },
   schema_manager+: {
     enable: true,

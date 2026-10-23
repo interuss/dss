@@ -31,6 +31,7 @@ resource "local_file" "helm_chart_values" {
           "--locality-advertise-addr=zone=${var.locality}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
+        resources = local.helm_crdb_resources
       }
 
       storage = {
@@ -58,7 +59,11 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image         = var.image
+      cpuRequest    = var.core_service_cpu_request
+      memoryRequest = var.core_service_memory_request
+      cpuLimit      = var.core_service_cpu_limit
+      memoryLimit   = var.core_service_memory_limit
 
       conf = {
         pubKeys = [
@@ -273,7 +278,11 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image         = var.image
+      cpuRequest    = var.core_service_cpu_request
+      memoryRequest = var.core_service_memory_request
+      cpuLimit      = var.core_service_cpu_limit
+      memoryLimit   = var.core_service_memory_limit
 
       conf = {
         pubKeys = [

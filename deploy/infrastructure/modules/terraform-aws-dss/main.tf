@@ -28,6 +28,14 @@ module "terraform-commons-dss" {
   crdb_cluster_name                    = var.crdb_cluster_name
   crdb_cache                           = var.crdb_cache
   crdb_max_sql_memory                  = var.crdb_max_sql_memory
+  crdb_cpu_request                     = var.crdb_cpu_request
+  crdb_memory_request                  = var.crdb_memory_request
+  crdb_cpu_limit                       = var.crdb_cpu_limit
+  crdb_memory_limit                    = var.crdb_memory_limit
+  core_service_cpu_request             = var.core_service_cpu_request
+  core_service_memory_request          = var.core_service_memory_request
+  core_service_cpu_limit               = var.core_service_cpu_limit
+  core_service_memory_limit            = var.core_service_memory_limit
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
