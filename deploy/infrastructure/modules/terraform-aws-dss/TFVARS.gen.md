@@ -78,6 +78,19 @@ Example:</li>
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>aws_enable_node_auto_repair (<code>bool</code>)</td>
+                <td><p>Enable EKS node auto repair on the managed node group.</p>
+<p>When enabled, EKS monitors the health of the worker nodes and automatically replaces nodes
+which become unhealthy (for instance, nodes stuck in <code>NotReady</code>).
+This is particularly important for datastores, since a datastore pod cannot be rescheduled on
+another node already hosting a datastore pod.
+Nodes are repaired one at a time so that a majority of the datastore nodes stays available.</p>
+<p>This matches the default behavior of GKE node pools, where auto repair is enabled by default
+(see https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-repair).</p>
+<p>See https://docs.aws.amazon.com/eks/latest/userguide/node-health.html for more details.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>aws_enable_node_monitoring_agent (<code>bool</code>)</td>
                 <td><p>Install the EKS node monitoring agent add-on (<code>eks-node-monitoring-agent</code>).</p>
 <p>The agent runs on every worker node and reports additional node health conditions
