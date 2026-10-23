@@ -31,7 +31,11 @@ local metadata = metadataBase {
     memoryRequest: '${VAR_CRDB_MEMORY_REQUEST}',
     cpuLimit: '${VAR_CRDB_CPU_LIMIT}',
     memoryLimit: '${VAR_CRDB_MEMORY_LIMIT}',
-    env: ${VAR_CRDB_ENV},
+    env: {
+      %{~ for k, v in VAR_CRDB_ENV ~}
+      '${k}': '${v}',
+      %{~ endfor ~}
+    },
   },
   yugabyte+: {
     image: '${VAR_YUGABYTE_DOCKER_IMAGE_NAME}',
@@ -74,7 +78,11 @@ local metadata = metadataBase {
     memoryRequest: '${VAR_CORE_SERVICE_MEMORY_REQUEST}',
     cpuLimit: '${VAR_CORE_SERVICE_CPU_LIMIT}',
     memoryLimit: '${VAR_CORE_SERVICE_MEMORY_LIMIT}',
-    env: ${VAR_CORE_SERVICE_ENV},
+    env: {
+      %{~ for k, v in VAR_CORE_SERVICE_ENV ~}
+      '${k}': '${v}',
+      %{~ endfor ~}
+    },
   },
   schema_manager+: {
     enable: true,
