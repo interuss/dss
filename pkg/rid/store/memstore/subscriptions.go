@@ -26,8 +26,8 @@ func subRecordFromModel(s *ridmodels.Subscription, updatedAt time.Time) *subscri
 		NotificationIndex: s.NotificationIndex,
 		Owner:             s.Owner,
 		Cells:             slices.Clone(s.Cells),
-		StartTime:         utils.ClonePtr(s.StartTime),
-		EndTime:           utils.ClonePtr(s.EndTime),
+		StartTime:         *s.StartTime,
+		EndTime:           *s.EndTime,
 		AltitudeHi:        utils.ClonePtr(s.AltitudeHi), // TODO: As noted during review, altitudes seems unused.
 		AltitudeLo:        utils.ClonePtr(s.AltitudeLo),
 		Writer:            s.Writer,
@@ -45,8 +45,8 @@ func (rec *subscriptionRecord) toModel() *ridmodels.Subscription {
 		Writer:            rec.Writer,
 		CellsVolume4D: &dssmodels.CellsVolume4D{
 			Cells:      slices.Clone(rec.Cells),
-			StartTime:  utils.ClonePtr(rec.StartTime),
-			EndTime:    utils.ClonePtr(rec.EndTime),
+			StartTime:  new(rec.StartTime),
+			EndTime:    new(rec.EndTime),
 			AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
 			AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
 		},
@@ -113,7 +113,7 @@ func (r *repo) liveSubscriptionsInCells(now time.Time, cells s2.CellUnion, owner
 			if owner != nil && rec.Owner != *owner {
 				continue
 			}
-			if rec.EndTime == nil || rec.EndTime.Before(now) { // TODO: Don't allow endtime to be null, see #1492
+			if rec.EndTime.Before(now) {
 				continue
 			}
 			if !overlaps(rec.Cells, want) {
