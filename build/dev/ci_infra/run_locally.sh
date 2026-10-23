@@ -56,22 +56,16 @@ if [[ "$DC_COMMAND" == up* ]]; then
 fi
 
 if [[ "$DC_COMMAND" == up* ]]; then
-  RID_RAFT_NODES=""
-  SCD_RAFT_NODES=""
-  AUX_RAFT_NODES=""
+  RAFT_NODES=""
   for ((i=1; i<=NUM_USS; i++)); do
     for ((j=1; j<=NUM_NODES; j++)); do
       NODE_IDX=$(( (i-1) * NUM_NODES + j ))
       PADDED_NODE_IDX=$(printf "%02d" "$NODE_IDX")
       NODE_IP="172.27.${i}.${j}"
-      RID_RAFT_NODES="${RID_RAFT_NODES},${NODE_IDX}=http://${NODE_IP}:95${PADDED_NODE_IDX}"
-      SCD_RAFT_NODES="${SCD_RAFT_NODES},${NODE_IDX}=http://${NODE_IP}:96${PADDED_NODE_IDX}"
-      AUX_RAFT_NODES="${AUX_RAFT_NODES},${NODE_IDX}=http://${NODE_IP}:97${PADDED_NODE_IDX}"
+      RAFT_NODES="${RAFT_NODES},${NODE_IDX}=http://${NODE_IP}:95${PADDED_NODE_IDX}"
     done
   done
-  export RID_RAFT_NODES=${RID_RAFT_NODES#,}
-  export SCD_RAFT_NODES=${SCD_RAFT_NODES#,}
-  export AUX_RAFT_NODES=${AUX_RAFT_NODES#,}
+  export RAFT_NODES=${RAFT_NODES#,}
 
   echo "=== Local DSS pool configuration ==="
   echo "NUM_USS=${NUM_USS}"

@@ -21,8 +21,6 @@ services:
       - "40${PADDED_NODE_IDX:?}:4000"
       - "80${PADDED_NODE_IDX:?}:80"
       - "95${PADDED_NODE_IDX:?}:95${PADDED_NODE_IDX:?}"
-      - "96${PADDED_NODE_IDX:?}:96${PADDED_NODE_IDX:?}"
-      - "97${PADDED_NODE_IDX:?}:97${PADDED_NODE_IDX:?}"
     environment:
       # core-service is the alias used by build/dev/*_locally.sh to reach the load balancer
       JWT_AUDIENCES: core-service,dss${USS_NODE_IDX:?}.uss${USS_IDX:?}.localutm
@@ -32,9 +30,7 @@ services:
       INTER_USS_NETEM_CONF: ${INTER_USS_NETEM_CONF-}
       CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
       RAFT_ID: ${RAFT_ID:-1}
-      AUX_RAFT_NODES: ${AUX_RAFT_NODES-}
-      RID_RAFT_NODES: ${RID_RAFT_NODES-}
-      SCD_RAFT_NODES: ${SCD_RAFT_NODES-}
+      RAFT_NODES: ${RAFT_NODES-}
     healthcheck:
       test: wget -O - 'http://localhost/healthy' || exit 1
       start_period: 120s
