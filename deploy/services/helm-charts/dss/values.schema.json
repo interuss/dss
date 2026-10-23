@@ -258,6 +258,22 @@
           "type": "string",
           "description": "Kubernetes memory limit of the core-service containers. Not set if empty. Example: `2Gi`"
         },
+        "env": {
+          "type": "array",
+          "description": "Additional environment variables of the core-service containers. Example: `[{name: GOGC, value: '80'}]`",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "value"]
+          }
+        },
         "conf": {
           "type": "object",
           "properties": {

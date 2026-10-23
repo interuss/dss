@@ -32,6 +32,7 @@ resource "local_file" "helm_chart_values" {
           "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
         resources = local.helm_crdb_resources
+        env       = [for k, v in var.crdb_env : { name = k, value = v }]
       }
 
       storage = {
@@ -64,6 +65,7 @@ resource "local_file" "helm_chart_values" {
       memoryRequest = var.core_service_memory_request
       cpuLimit      = var.core_service_cpu_limit
       memoryLimit   = var.core_service_memory_limit
+      env           = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [
@@ -283,6 +285,7 @@ resource "local_file" "helm_chart_values" {
       memoryRequest = var.core_service_memory_request
       cpuLimit      = var.core_service_cpu_limit
       memoryLimit   = var.core_service_memory_limit
+      env           = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [

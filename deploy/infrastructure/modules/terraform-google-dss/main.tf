@@ -31,10 +31,12 @@ module "terraform-commons-dss" {
   crdb_memory_request                  = var.crdb_memory_request
   crdb_cpu_limit                       = var.crdb_cpu_limit
   crdb_memory_limit                    = var.crdb_memory_limit
+  crdb_env                             = var.crdb_env
   core_service_cpu_request             = var.core_service_cpu_request
   core_service_memory_request          = var.core_service_memory_request
   core_service_cpu_limit               = var.core_service_cpu_limit
   core_service_memory_limit            = var.core_service_memory_limit
+  core_service_env                     = var.core_service_env
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
