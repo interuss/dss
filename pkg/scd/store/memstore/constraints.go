@@ -33,7 +33,7 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 		if !overlaps(rec.Volume.Cells, want) {
 			continue
 		}
-		if !overlapsTime(rec.Volume.StartTime, rec.Volume.EndTime, cellsVolume) {
+		if !overlapsTime(*rec.Volume.StartTime, *rec.Volume.EndTime, cellsVolume) {
 			continue
 		}
 		out = append(out, rec.toModel())
@@ -56,6 +56,9 @@ func (r *repo) GetConstraint(_ context.Context, id dssmodels.ID) (*scdmodels.Con
 func (r *repo) UpsertConstraint(ctx context.Context, s *scdmodels.Constraint) (*scdmodels.Constraint, error) {
 	if _, err := dsssql.CellUnionToCellIdsWithValidation(s.Cells); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert array to jackc/pgtype")
+	}
+	if err := requireExtentTimes(s.StartTime, s.EndTime); err != nil {
+		return nil, err
 	}
 
 	now := timestamp.MustFromContext(ctx)

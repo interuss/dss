@@ -94,6 +94,16 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 		ussRequestedOVN = operation.OVN.String()
 	}
 
+	if err := requireExtentTimes(operation.StartTime, operation.EndTime); err != nil {
+		return nil, err
+	}
+	if operation.AltitudeLo == nil {
+		return nil, stacktrace.NewError("Lower altitude must be provided")
+	}
+	if operation.AltitudeHi == nil {
+		return nil, stacktrace.NewError("Upper altitude must be provided")
+	}
+
 	now := timestamp.MustFromContext(ctx)
 
 	rec := &operationalIntentRecord{
@@ -129,14 +139,14 @@ func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmod
 			continue
 		}
 		// COALESCE(altitude_upper >= $2, true) with $2 = cellsVolume.AltitudeLo
-		if rec.CellsVolume4D.AltitudeHi != nil && cellsVolume.AltitudeLo != nil && *rec.CellsVolume4D.AltitudeHi < *cellsVolume.AltitudeLo {
+		if cellsVolume.AltitudeLo != nil && *rec.CellsVolume4D.AltitudeHi < *cellsVolume.AltitudeLo {
 			continue
 		}
 		// COALESCE(altitude_lower <= $3, true) with $3 = cellsVolume.AltitudeHi
-		if rec.CellsVolume4D.AltitudeLo != nil && cellsVolume.AltitudeHi != nil && *rec.CellsVolume4D.AltitudeLo > *cellsVolume.AltitudeHi {
+		if cellsVolume.AltitudeHi != nil && *rec.CellsVolume4D.AltitudeLo > *cellsVolume.AltitudeHi {
 			continue
 		}
-		if !overlapsTime(rec.CellsVolume4D.StartTime, rec.CellsVolume4D.EndTime, cellsVolume) {
+		if !overlapsTime(*rec.CellsVolume4D.StartTime, *rec.CellsVolume4D.EndTime, cellsVolume) {
 			continue
 		}
 		matched = append(matched, rec)

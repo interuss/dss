@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	dsserr "github.com/interuss/dss/pkg/errors"
-	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -26,8 +25,8 @@ func (rec *subscriptionRecord) toModel() *scdmodels.Subscription {
 		NotifyForConstraints:        rec.NotifyForConstraints,
 		ImplicitSubscription:        rec.ImplicitSubscription,
 		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: utils.ClonePtr(rec.StartTime),
-			EndTime:   utils.ClonePtr(rec.EndTime),
+			StartTime: new(rec.StartTime),
+			EndTime:   new(rec.EndTime),
 			Cells:     slices.Clone(rec.Cells),
 		},
 	}
@@ -75,6 +74,10 @@ func (r *repo) GetSubscription(_ context.Context, id dssmodels.ID) (*scdmodels.S
 }
 
 func (r *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription) (*scdmodels.Subscription, error) {
+	if err := requireExtentTimes(s.StartTime, s.EndTime); err != nil {
+		return nil, err
+	}
+
 	now := timestamp.MustFromContext(ctx)
 
 	rec := &subscriptionRecord{
@@ -85,8 +88,8 @@ func (r *repo) UpsertSubscription(ctx context.Context, s *scdmodels.Subscription
 		NotifyForOperationalIntents: s.NotifyForOperationalIntents,
 		NotifyForConstraints:        s.NotifyForConstraints,
 		ImplicitSubscription:        s.ImplicitSubscription,
-		StartTime:                   utils.ClonePtr(s.StartTime),
-		EndTime:                     utils.ClonePtr(s.EndTime),
+		StartTime:                   *s.StartTime,
+		EndTime:                     *s.EndTime,
 		Cells:                       slices.Clone(s.Cells),
 		UpdatedAt:                   now,
 	}
