@@ -252,7 +252,7 @@
         },
         "cpuLimit": {
           "type": "string",
-          "description": "Kubernetes CPU limit of the core-service containers. Not set if empty. Example: `1`"
+          "description": "Kubernetes CPU limit of the core-service containers. Not set if empty. Example: `0.5`"
         },
         "memoryLimit": {
           "type": "string",

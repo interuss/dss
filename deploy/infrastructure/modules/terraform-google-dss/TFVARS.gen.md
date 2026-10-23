@@ -80,7 +80,7 @@ Example:</li>
                 <td>core_service_cpu_limit (<code>string</code>)</td>
                 <td><p>Kubernetes CPU limit of the core-service containers.
 Not set by default.</p>
-<p>Example: <code>1</code></p>
+<p>Example: <code>0.5</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>core_service_cpu_request (<code>string</code>)</td>

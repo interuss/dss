@@ -510,7 +510,7 @@ variable "core_service_cpu_limit" {
   Kubernetes CPU limit of the core-service containers.
   Not set by default.
 
-  Example: `1`
+  Example: `0.5`
   EOT
 
   default = ""

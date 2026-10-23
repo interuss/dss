@@ -46,6 +46,7 @@ To set them:
         backend+: {
           cpuRequest: '0.5',
           memoryRequest: '2Gi',
+          cpuLimit: '0.5',
           memoryLimit: '2Gi',
         },
         ```
@@ -61,14 +62,21 @@ To set them:
             cache: 25%
             max-sql-memory: 25%
           statefulset:
-            resources: {requests: {cpu: "3.5", memory: 14Gi}, limits: {cpu: "3.5", memory: 14Gi}}
+            resources:
+              requests:
+                cpu: "3.5"
+                memory: 14Gi
+              limits:
+                cpu: "3.5"
+                memory: 14Gi
         dss:
           cpuRequest: "0.5"
           memoryRequest: 2Gi
+          cpuLimit: "0.5"
           memoryLimit: 2Gi
         ```
 
-        CockroachDB resources are set with `statefulset.resources` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml).
+        CockroachDB resources are set with `statefulset.resources` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml).
         Core-service CPU and memory requests and limits left empty are not set on the containers.
 
 ## The SCD global lock option
