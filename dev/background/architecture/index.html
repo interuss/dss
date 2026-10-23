@@ -2014,14 +2014,14 @@ organizations (USSs) will have an architecture similar to the diagram below.</p>
 <p><em><strong>Note</strong> that the diagrams below shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets.</em></p>
 <h3 id="certificates">Certificates<a class="headerlink" href="#certificates" title="Permanent link">¶</a></h3>
 <p>This diagram shows how certificates are shared. It applies to both CockroachDB and Yugabyte deployments.</p>
-<p></p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_certs.png" data-desc-position="bottom"><img alt="Pool architecture diagram" src="../../assets/generated/pool_architecture_certs.png"></a></p>
 <h3 id="cochroachdb">CochroachDB<a class="headerlink" href="#cochroachdb" title="Permanent link">¶</a></h3>
-<p></p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture.png" data-desc-position="bottom"><img alt="Pool architecture diagram" src="../../assets/generated/pool_architecture.png"></a></p>
 <h3 id="yugabyte">Yugabyte<a class="headerlink" href="#yugabyte" title="Permanent link">¶</a></h3>
 <p>Detail on an instance level
-</p>
+<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_yugabyte_instance.png" data-desc-position="bottom"><img alt="Pool architecture diagram with Yugabyte" src="../../assets/generated/pool_architecture_yugabyte_instance.png"></a></p>
 <p>Top level simplified view, with one replica shown and yugabyte services regrouped in one box.
-</p>
+<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_yugabyte.png" data-desc-position="bottom"><img alt="Pool architecture diagram with Yugabyte" src="../../assets/generated/pool_architecture_yugabyte.png"></a></p>
 <p>To reduce the number of required public load balancers, we do use an intermediate reverse proxy to expose the ports of Yugabyte master and tserver on a shared public IP per stateful set instance.
 Usual Kubernetes load balancers can't assign connection based on ports out of the box, so we use the reverse proxy to dispatch connections on both services depending on the connected port.</p>
 <h3 id="survivability">Survivability<a class="headerlink" href="#survivability" title="Permanent link">¶</a></h3>
@@ -2030,7 +2030,7 @@ failures.  This resiliency is obtained primarily from the behavior of the
 underlying CockroachDB database technology and how we configure it.  The diagram
 below shows the result of failures (bringing a node down for maintenance, or
 having an entire USS go down) from different starting points, assuming 3 replicas.</p>
-<p></p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/survivability_3x2.png" data-desc-position="bottom"><img alt="Survivability diagram" src="../../assets/generated/survivability_3x2.png"></a></p>
 <p>The table below summarizes survivable failures with 3 DSS instances configured according
 to the architecture described above.  Each system state is summarized by three
 groups (one group per USS) of two nodes per USS.</p>

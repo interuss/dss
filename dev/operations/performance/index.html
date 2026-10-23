@@ -2020,8 +2020,11 @@
 <p>Overtime, old entries should be removed to ensure the system is not overloaded processing unrelevent data.</p>
 <p>See the detailed <a href="../cleanup/">section about cleanup</a>.</p>
 <h2 id="cpu-and-memory-allocation">CPU and memory allocation<a class="headerlink" href="#cpu-and-memory-allocation" title="Permanent link">¶</a></h2>
+<p>By default, the deployment tooling does not set any Kubernetes CPU or memory requests or limits on the CockroachDB and core-service containers.
+Kubernetes may then place them on nodes without enough free memory and kill them when the node runs out of memory (see issue <a href="https://github.com/interuss/dss/issues/1731">#1731</a>).</p>
 <p>The following settings are available:</p>
 <ul>
+<li>CPU and memory requests and limits of the CockroachDB and core-service containers.</li>
 <li>CockroachDB <code>--cache</code> and <code>--max-sql-memory</code> flags (both <code>25%</code> by default). See <a href="https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size">CockroachDB recommendations</a> before changing them.</li>
 </ul>
 <p>To set them:</p>
@@ -2033,31 +2036,83 @@
 <div class="tabbed-block">
 <p>Set the following variables (see <code>TFVARS.gen.md</code> for details):</p>
 <ul>
+<li><code>crdb_cpu_request</code>, <code>crdb_memory_request</code>, <code>crdb_cpu_limit</code> and <code>crdb_memory_limit</code>, e.g. <code>"3.5"</code> and <code>"14Gi"</code></li>
 <li><code>crdb_cache</code> and <code>crdb_max_sql_memory</code>, e.g. <code>"25%"</code></li>
+<li><code>core_service_cpu_request</code>, <code>core_service_memory_request</code>, <code>core_service_cpu_limit</code> and <code>core_service_memory_limit</code>, e.g. <code>"0.5"</code> and <code>"2Gi"</code></li>
 </ul>
+<p>CPU and memory requests and limits left empty are not set on the containers.</p>
 <p>Then run <code>terraform apply</code> to regenerate the Tanka and Helm configuration.</p>
 </div>
 <div class="tabbed-block">
 <p>Set the following fields of the metadata in your <code>main.jsonnet</code>:</p>
-<div class="language-jsonnet highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
-<span class="normal"><a href="#__codelineno-0-2">2</a></span>
-<span class="normal"><a href="#__codelineno-0-3">3</a></span>
-<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nv">cockroach</span><span class="o">+:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="w">  </span><span class="nv">cache</span><span class="p">:</span><span class="w"> </span><span class="s">'25%'</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="w">  </span><span class="nv">maxSqlMemory</span><span class="p">:</span><span class="w"> </span><span class="s">'25%'</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="p">}</span><span class="err">,</span>
+<div class="language-jsonnet highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nv">cockroach</span><span class="o">+:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="w">  </span><span class="nv">cpuRequest</span><span class="p">:</span><span class="w"> </span><span class="s">'3.5'</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="w">  </span><span class="nv">memoryRequest</span><span class="p">:</span><span class="w"> </span><span class="s">'14Gi'</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="w">  </span><span class="nv">cpuLimit</span><span class="p">:</span><span class="w"> </span><span class="s">'3.5'</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="w">  </span><span class="nv">memoryLimit</span><span class="p">:</span><span class="w"> </span><span class="s">'14Gi'</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="w">  </span><span class="nv">cache</span><span class="p">:</span><span class="w"> </span><span class="s">'25%'</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="w">  </span><span class="nv">maxSqlMemory</span><span class="p">:</span><span class="w"> </span><span class="s">'25%'</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="p">}</span><span class="err">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="nv">backend</span><span class="o">+:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">  </span><span class="nv">cpuRequest</span><span class="p">:</span><span class="w"> </span><span class="s">'0.5'</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">  </span><span class="nv">memoryRequest</span><span class="p">:</span><span class="w"> </span><span class="s">'2Gi'</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="w">  </span><span class="nv">cpuLimit</span><span class="p">:</span><span class="w"> </span><span class="s">'0.5'</span><span class="p">,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="w">  </span><span class="nv">memoryLimit</span><span class="p">:</span><span class="w"> </span><span class="s">'2Gi'</span><span class="p">,</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="p">}</span><span class="err">,</span>
 </code></pre></div></td></tr></tbody></table></div>
+<p>CPU and memory requests and limits left empty are not set on the containers.</p>
 </div>
 <div class="tabbed-block">
 <p>Set the following values:</p>
-<div class="language-yaml highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
-<span class="normal"><a href="#__codelineno-1-2">2</a></span>
-<span class="normal"><a href="#__codelineno-1-3">3</a></span>
-<span class="normal"><a href="#__codelineno-1-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nt">cockroachdb</span><span class="p">:</span>
+<div class="language-yaml highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-1-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-1-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-1-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-1-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-1-10">10</a></span>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span>
+<span class="normal"><a href="#__codelineno-1-12">12</a></span>
+<span class="normal"><a href="#__codelineno-1-13">13</a></span>
+<span class="normal"><a href="#__codelineno-1-14">14</a></span>
+<span class="normal"><a href="#__codelineno-1-15">15</a></span>
+<span class="normal"><a href="#__codelineno-1-16">16</a></span>
+<span class="normal"><a href="#__codelineno-1-17">17</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nt">cockroachdb</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="w">  </span><span class="nt">conf</span><span class="p">:</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="w">    </span><span class="nt">cache</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">25%</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="w">    </span><span class="nt">max-sql-memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">25%</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="w">  </span><span class="nt">statefulset</span><span class="p">:</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="w">    </span><span class="nt">resources</span><span class="p">:</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="w">      </span><span class="nt">requests</span><span class="p">:</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">"3.5"</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">14Gi</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="w">      </span><span class="nt">limits</span><span class="p">:</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="w">        </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s">"3.5"</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12"></a><span class="w">        </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">14Gi</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13"></a><span class="nt">dss</span><span class="p">:</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14"></a><span class="w">  </span><span class="nt">cpuRequest</span><span class="p">:</span><span class="w"> </span><span class="s">"0.5"</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15"></a><span class="w">  </span><span class="nt">memoryRequest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2Gi</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16"></a><span class="w">  </span><span class="nt">cpuLimit</span><span class="p">:</span><span class="w"> </span><span class="s">"0.5"</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17"></a><span class="w">  </span><span class="nt">memoryLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2Gi</span>
 </code></pre></div></td></tr></tbody></table></div>
+<p>CockroachDB resources are set with <code>statefulset.resources</code> of the <a href="https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml">official CockroachDB chart</a>.
+Core-service CPU and memory requests and limits left empty are not set on the containers.</p>
 </div>
 </div>
 </div>
@@ -2078,9 +2133,9 @@
 * If you have overlapping traffic and don't need high global throughput, enable this flag</p>
 <p>The following graphs show example throughput without (on the left) and with the flag (on the right). This has been run on a local machine; on a real deployment you can expect lower performance (due to various latency), but similar relative numbers.</p>
 <p>All graphs have been generated with the <a href="https://github.com/interuss/monitoring/blob/main/monitoring/loadtest/README.md">loadtest present in the monitoring repository</a> using <code>SCD.py</code>.</p>
-<p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_overlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_overlapping.png"></a>
 <em>Overlapping requests. Notice the huge spikes on the left, as the datastore struggles to acquire locks.</em></p>
-<p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/perfs_scd_lock_notoverlapping.png" data-desc-position="bottom"><img alt="" src="../../assets/perfs_scd_lock_notoverlapping.png"></a>
 <em>Non-overlapping requests. Notice the reduction of performance on the right, with a single lock.</em></p>
 <h2 id="the-scd-hash-lock-option">The SCD hash lock option<a class="headerlink" href="#the-scd-hash-lock-option" title="Permanent link">¶</a></h2>
 <div class="admonition danger">
@@ -2141,7 +2196,7 @@ Please check the details in the linked issue above and ensure you understand the
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 16, 2026 12:15:33 UTC">October 16, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 23, 2026 11:46:45 UTC">October 23, 2026</span>
   </span>
 
     
