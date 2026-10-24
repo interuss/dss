@@ -1,3 +1,4 @@
+{{- if not .Values.raft.enabled }}
 {{- $dss := .Values.dss -}}
 
 {{- $datastoreImage := (include "datastoreImage" .) -}}
@@ -139,3 +140,4 @@ spec:
         {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
         {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
         {{- include "public-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
+{{- end }}

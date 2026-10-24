@@ -1,3 +1,25 @@
+{{- define "dss.validate-datastore" -}}
+{{- $enabled := 0 -}}
+{{- if $.Values.cockroachdb.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if $.Values.yugabyte.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if $.Values.raft.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if ne $enabled 1 -}}
+{{- fail (printf "Exactly one datastore backend must be enabled: set exactly one of cockroachdb.enabled, yugabyte.enabled and raft.enabled to true (got %d enabled)" $enabled) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "dss.raft-peers" -}}
+{{- $releaseName := .releaseName -}}
+{{- $base := int .base -}}
+{{- $replicas := int .replicas -}}
+{{- $port := int .port -}}
+{{- $entries := list -}}
+{{- range $i := until $replicas -}}
+{{- $entries = append $entries (printf "%d=http://%s-core-service-%d.%s-core-service-headless:%d" (add $i $base) $releaseName $i $releaseName $port) -}}
+{{- end -}}
+{{- join "," $entries -}}
+{{- end -}}
+
 {{- define "datastoreImage" -}}
 {{- if $.Values.cockroachdb.enabled -}}
 {{ (printf "%s:%s" $.Values.cockroachdb.image.repository $.Values.cockroachdb.image.tag) }}

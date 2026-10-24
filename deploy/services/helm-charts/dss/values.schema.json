@@ -7,7 +7,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable CockroachDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+          "description": "Enable CockroachDB. Exactly one of CockroachDB, YugabyteDB and Raft should be enabled (only one at a time)."
         },
         "image": {
           "type": "object",
@@ -83,7 +83,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable YugabyteDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+          "description": "Enable YugabyteDB. Exactly one of CockroachDB, YugabyteDB and Raft should be enabled (only one at a time)."
         },
         "gflags": {
           "type": "object",
@@ -150,6 +150,90 @@
         "enabled"
       ],
       "additionalItems": true
+    },
+    "raft": {
+      "description": "Raft-based datastore related configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the Raft-based datastore. Exactly one of raft, cockroachdb or yugabyte should be enabled (only one at a time)."
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of DSS nodes (Raft voters) deployed by this instance. An odd number (2n+1) is recommended so the pool tolerates the loss of n nodes."
+        },
+        "nodeIDBase": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Raft node ID of the pod with ordinal 0. The node ID of pod ordinal N is nodeIDBase + N. Node IDs are never reused: do not change this value once the pool has been bootstrapped."
+        },
+        "clusterID": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Raft cluster ID. Must be identical on all nodes of the pool, and different from any other pool whose nodes could reach each other over the network (it rejects cross-pool messages by mistake)."
+        },
+        "datadir": {
+          "type": "string",
+          "description": "Directory mounted on the PVC where the node persists its Raft data (WAL segments and snapshots). These must not be deleted across restarts unless the node is permanently removed from the pool."
+        },
+        "ports": {
+          "type": "object",
+          "properties": {
+            "aux": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Raft listener port of the AUX service"
+            },
+            "rid": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Raft listener port of the RID service"
+            },
+            "scd": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Raft listener port of the SCD service"
+            }
+          },
+          "required": [
+            "aux",
+            "rid",
+            "scd"
+          ]
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "string",
+              "description": "PVC size for the Raft data (WAL and snapshots). A low-fsync-latency volume is recommended: the WAL is written before a proposal is acknowledged."
+            },
+            "storageClass": {
+              "type": "string",
+              "description": "Storage class depending on your cloud provider. Empty for the cluster default."
+            }
+          },
+          "required": [
+            "size"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "description": "Standard Kubernetes resources block for the core service pods. The design document recommends about 16Gi of memory and 4 vCPU per node."
+        },
+        "tuning": {
+          "type": "object",
+          "description": "Additional raft_* flags passed to the core service, keyed by flag name without the leading --, e.g. { \"raft_tick_interval\": \"200ms\" }."
+        }
+      },
+      "required": [
+        "enabled"
+      ]
     },
     "loadBalancers": {
       "description": "Load balancers configuration",
