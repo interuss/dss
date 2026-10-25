@@ -15,15 +15,15 @@ Raft nodes authenticate each other with mutual TLS when these three flags are se
 
 | Flag | Content |
 |---|---|
-| `--raft_cert_file` | PEM certificate of this node |
-| `--raft_key_file` | PEM private key of that certificate |
-| `--raft_trusted_ca_file` | PEM bundle of the CA certificates whose node certificates are accepted |
+| `--raft_tls_cert_file` | PEM certificate of this node |
+| `--raft_tls_key_file` | PEM private key of that certificate |
+| `--raft_tls_ca_file` | PEM bundle of the CA certificates whose node certificates are accepted |
 
 - Each participant operates its own CA and issues one certificate per node. The bundle holds the CA of every participant of the pool, including the node's own.
 - The same certificate is presented to peers and to nodes connecting to this one.
-- A connecting peer is accepted when its certificate is signed by a trusted CA. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
+- A connecting peer is accepted when its certificate is signed by one of these CAs. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
 - With mutual TLS enabled every peer URL must use `https`, otherwise `http`. A node with a peer URL of the other scheme, or with only some of the three flags set, does not start.
-- Restart the node after replacing its certificate or the trusted CA bundle.
+- Restart the node after replacing its certificate or the CA bundle.
 - Without the flags, Raft traffic is unauthenticated plain HTTP and a warning is logged. Mutual TLS will become mandatory (see [#1734](https://github.com/interuss/dss/issues/1734)).
 
 ## Terminology

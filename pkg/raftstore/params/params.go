@@ -51,16 +51,16 @@ type (
 		MaxSizePerMsg   uint64
 		MaxInflightMsgs int
 
-		// CertFile, KeyFile and TrustedCAFile enable mutual TLS between Raft nodes when set. They are either all set or all empty.
-		CertFile      string
-		KeyFile       string
-		TrustedCAFile string
+		// TLSCertFile, TLSKeyFile and TLSCAFile enable mutual TLS between Raft nodes when set. They are either all set or all empty.
+		TLSCertFile string
+		TLSKeyFile  string
+		TLSCAFile   string
 	}
 )
 
 // TLSEnabled reports whether Raft nodes authenticate each other with mutual TLS.
 func (c ConnectParameters) TLSEnabled() bool {
-	return c.CertFile != ""
+	return c.TLSCertFile != ""
 }
 
 // PeerMap parses the Peers string into a map of node ID to peer URL.
@@ -143,9 +143,9 @@ func init() {
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
 
-	flag.StringVar(&connectParameters.CertFile, "raft_cert_file", "", "PEM certificate of this node, presented to the other Raft nodes. Setting it alongside --raft_key_file and --raft_trusted_ca_file enables mutual TLS between Raft nodes. Peer URLs must then use https.")
-	flag.StringVar(&connectParameters.KeyFile, "raft_key_file", "", "PEM private key of --raft_cert_file.")
-	flag.StringVar(&connectParameters.TrustedCAFile, "raft_trusted_ca_file", "", "PEM bundle of the CA certificates trusted to sign the certificates of the other Raft nodes, usually one CA per participant.")
+	flag.StringVar(&connectParameters.TLSCertFile, "raft_tls_cert_file", "", "PEM certificate of this node, presented to the other Raft nodes. Setting it alongside --raft_tls_key_file and --raft_tls_ca_file enables mutual TLS between Raft nodes. Peer URLs must then use https.")
+	flag.StringVar(&connectParameters.TLSKeyFile, "raft_tls_key_file", "", "PEM private key of --raft_tls_cert_file.")
+	flag.StringVar(&connectParameters.TLSCAFile, "raft_tls_ca_file", "", "PEM bundle of the CA certificates that sign the certificates of the other Raft nodes, usually one CA per participant.")
 }
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
@@ -153,8 +153,8 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	if connectParameters.NodeID == 0 {
 		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
 	}
-	if (connectParameters.CertFile == "") != (connectParameters.KeyFile == "") || (connectParameters.CertFile == "") != (connectParameters.TrustedCAFile == "") {
-		return ConnectParameters{}, stacktrace.NewError("--raft_cert_file, --raft_key_file and --raft_trusted_ca_file must be set together")
+	if (connectParameters.TLSCertFile == "") != (connectParameters.TLSKeyFile == "") || (connectParameters.TLSCertFile == "") != (connectParameters.TLSCAFile == "") {
+		return ConnectParameters{}, stacktrace.NewError("--raft_tls_cert_file, --raft_tls_key_file and --raft_tls_ca_file must be set together")
 	}
 	p := connectParameters
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)

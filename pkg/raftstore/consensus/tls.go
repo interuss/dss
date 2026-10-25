@@ -10,16 +10,16 @@ import (
 )
 
 // newTLSInfo returns the mutual TLS settings between Raft nodes, empty when mutual TLS is disabled.
-// A peer must present a certificate signed by a CA of the trusted CA file. The certificate is not matched against the
+// A peer must present a certificate signed by a CA of the CA file. The certificate is not matched against the
 // peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer.
 func newTLSInfo(connectParams params.ConnectParameters, logger *zap.Logger) etcdtransport.TLSInfo {
 	if !connectParams.TLSEnabled() {
 		return etcdtransport.TLSInfo{}
 	}
 	return etcdtransport.TLSInfo{
-		CertFile:            connectParams.CertFile,
-		KeyFile:             connectParams.KeyFile,
-		TrustedCAFile:       connectParams.TrustedCAFile,
+		CertFile:            connectParams.TLSCertFile,
+		KeyFile:             connectParams.TLSKeyFile,
+		TrustedCAFile:       connectParams.TLSCAFile,
 		ClientCertAuth:      true,
 		SkipClientSANVerify: true,
 		Logger:              logger,

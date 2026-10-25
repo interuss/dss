@@ -97,7 +97,7 @@ func TestPeerMap(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ConnectParameters{Peers: tc.peers}
 			if tc.mutualTLS {
-				c.CertFile, c.KeyFile, c.TrustedCAFile = "node.crt", "node.key", "cas.crt"
+				c.TLSCertFile, c.TLSKeyFile, c.TLSCAFile = "node.crt", "node.key", "cas.crt"
 			}
 			got, err := c.PeerMap()
 			if tc.wantError {
@@ -117,28 +117,28 @@ func TestGetConnectParametersTLSFlags(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		certFile      string
-		keyFile       string
-		trustedCAFile string
-		wantError     bool
+		name      string
+		certFile  string
+		keyFile   string
+		caFile    string
+		wantError bool
 	}{
 		{name: "none set: no mutual TLS"},
-		{name: "all set: mutual TLS", certFile: "node.crt", keyFile: "node.key", trustedCAFile: "cas.crt"},
+		{name: "all set: mutual TLS", certFile: "node.crt", keyFile: "node.key", caFile: "cas.crt"},
 		{name: "only cert", certFile: "node.crt", wantError: true},
 		{name: "only key", keyFile: "node.key", wantError: true},
-		{name: "only trusted CAs", trustedCAFile: "cas.crt", wantError: true},
+		{name: "only CA file", caFile: "cas.crt", wantError: true},
 		{name: "cert and key", certFile: "node.crt", keyFile: "node.key", wantError: true},
-		{name: "cert and trusted CAs", certFile: "node.crt", trustedCAFile: "cas.crt", wantError: true},
-		{name: "key and trusted CAs", keyFile: "node.key", trustedCAFile: "cas.crt", wantError: true},
+		{name: "cert and CA file", certFile: "node.crt", caFile: "cas.crt", wantError: true},
+		{name: "key and CA file", keyFile: "node.key", caFile: "cas.crt", wantError: true},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			setFlag(t, "raft_node_id", "1")
-			setFlag(t, "raft_cert_file", tc.certFile)
-			setFlag(t, "raft_key_file", tc.keyFile)
-			setFlag(t, "raft_trusted_ca_file", tc.trustedCAFile)
+			setFlag(t, "raft_tls_cert_file", tc.certFile)
+			setFlag(t, "raft_tls_key_file", tc.keyFile)
+			setFlag(t, "raft_tls_ca_file", tc.caFile)
 
 			got, err := GetConnectParameters("rid")
 			if tc.wantError {
@@ -147,7 +147,7 @@ func TestGetConnectParametersTLSFlags(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.certFile != "", got.TLSEnabled())
-			assert.Equal(t, []string{tc.certFile, tc.keyFile, tc.trustedCAFile}, []string{got.CertFile, got.KeyFile, got.TrustedCAFile})
+			assert.Equal(t, []string{tc.certFile, tc.keyFile, tc.caFile}, []string{got.TLSCertFile, got.TLSKeyFile, got.TLSCAFile})
 		})
 	}
 }

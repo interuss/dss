@@ -238,7 +238,7 @@ func peersList(peers map[uint64]*url.URL) []raft.Peer {
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL, tlsInfo etcdtransport.TLSInfo) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 	if tlsInfo.Empty() {
-		c.logger.Warn("Raft nodes do not authenticate each other: set --raft_cert_file, --raft_key_file and --raft_trusted_ca_file to enable mutual TLS")
+		c.logger.Warn("Raft nodes do not authenticate each other: set --raft_tls_cert_file, --raft_tls_key_file and --raft_tls_ca_file to enable mutual TLS")
 	}
 
 	transport := &rafthttp.Transport{
