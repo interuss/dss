@@ -15,6 +15,7 @@ The following settings are available:
 
 * CPU and memory requests and limits of the CockroachDB and core-service containers.
 * CockroachDB `--cache` and `--max-sql-memory` flags (both `25%` by default). See [CockroachDB recommendations](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size) before changing them.
+* Additional environment variables of both containers, for instance to tune the Go runtime with `GOGC`, `GOMAXPROCS` or `GOMEMLIMIT`.
 
 To set them:
 
@@ -25,7 +26,9 @@ To set them:
 
         * `crdb_cpu_request`, `crdb_memory_request`, `crdb_cpu_limit` and `crdb_memory_limit`, e.g. `"3.5"` and `"14Gi"`
         * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
+        * `crdb_env`, e.g. `{ GOGC = "80", GOMAXPROCS = "2" }`
         * `core_service_cpu_request`, `core_service_memory_request`, `core_service_cpu_limit` and `core_service_memory_limit`, e.g. `"0.5"` and `"2Gi"`
+        * `core_service_env`, e.g. `{ GOMEMLIMIT = "1800MiB" }`
 
         CPU and memory requests and limits left empty are not set on the containers.
 
@@ -42,12 +45,14 @@ To set them:
           memoryLimit: '14Gi',
           cache: '25%',
           maxSqlMemory: '25%',
+          env: { GOGC: '80', GOMAXPROCS: '2' },
         },
         backend+: {
           cpuRequest: '0.5',
           memoryRequest: '2Gi',
           cpuLimit: '0.5',
           memoryLimit: '2Gi',
+          env: { GOMEMLIMIT: '1800MiB' },
         },
         ```
 
@@ -69,14 +74,22 @@ To set them:
               limits:
                 cpu: "3.5"
                 memory: 14Gi
+            env:
+              - name: GOGC
+                value: "80"
+              - name: GOMAXPROCS
+                value: "2"
         dss:
           cpuRequest: "0.5"
           memoryRequest: 2Gi
           cpuLimit: "0.5"
           memoryLimit: 2Gi
+          env:
+            - name: GOMEMLIMIT
+              value: 1800MiB
         ```
 
-        CockroachDB resources are set with `statefulset.resources` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml).
+        CockroachDB resources and environment variables are set with `statefulset.resources` and `statefulset.env` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml).
         Core-service CPU and memory requests and limits left empty are not set on the containers.
 
 ## The SCD global lock option

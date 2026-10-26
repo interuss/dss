@@ -54,7 +54,7 @@ local volumes = import 'volumes.libsonnet';
                 name: 'COCKROACH_CHANNEL',
                 value: 'kubernetes-multiregion',
               },
-            ],
+            ] + util.makeEnv(metadata.cockroach.env),
             resources: util.resources(metadata.cockroach),
             livenessProbe: {
               httpGet: {

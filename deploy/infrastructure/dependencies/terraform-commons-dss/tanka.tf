@@ -24,6 +24,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CORE_SERVICE_MEMORY_REQUEST          = var.core_service_memory_request
     VAR_CORE_SERVICE_CPU_LIMIT               = var.core_service_cpu_limit
     VAR_CORE_SERVICE_MEMORY_LIMIT            = var.core_service_memory_limit
+    VAR_CORE_SERVICE_ENV                     = var.core_service_env
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
     VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
     VAR_CRDB_CACHE                           = var.crdb_cache
@@ -32,6 +33,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CRDB_MEMORY_REQUEST                  = var.crdb_memory_request
     VAR_CRDB_CPU_LIMIT                       = var.crdb_cpu_limit
     VAR_CRDB_MEMORY_LIMIT                    = var.crdb_memory_limit
+    VAR_CRDB_ENV                             = var.crdb_env
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone

@@ -5,6 +5,7 @@
   filter(o, fields): { [field]: o[field] for field in std.setInter(std.objectFields(o), fields) },
   exclude(o, fields): { [field]: o[field] for field in std.setDiff(std.objectFields(o), fields) },
   makeArgs(o): ['--%s=%s' % kv for kv in $.objectItems(o)],
+  makeEnv(o): [{ name: kv[0], value: std.toString(kv[1]) } for kv in $.objectItems(o)],
   // Kubernetes container resources from the cpuRequest, memoryRequest, cpuLimit and memoryLimit fields of o, without the empty ones.
   resources(o):
     local requests = { [r]: o[r + 'Request'] for r in ['cpu', 'memory'] if o[r + 'Request'] != '' };

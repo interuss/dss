@@ -119,6 +119,7 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
                 },
               ] else [],
               volumeMounts: volumes.all(metadata).backendMounts,
+              env: util.makeEnv(metadata.backend.env),
               resources: util.resources(metadata.backend),
               command: ['core-service'],
               args_:: {
