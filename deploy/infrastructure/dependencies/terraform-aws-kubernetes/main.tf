@@ -26,7 +26,7 @@ provider "aws" {
 }
 
 data "aws_eks_cluster_auth" "kubernetes_cluster" {
-  name = aws_eks_cluster.kubernetes_cluster.name
+  name = var.cluster_name
 }
 
 provider "helm" {
