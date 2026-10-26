@@ -3,9 +3,7 @@ package consensus
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -28,15 +26,13 @@ type Consensus struct {
 	node   raft.Node
 
 	transport *rafthttp.Transport
-	server    *http.Server
+	listener  *listener
 
 	storage *storage
 	commitC chan<- EntryCommit
 
-	once            sync.Once
-	shutdownTimeout time.Duration
-	serverErrC      chan error    // http server errors
-	stopC           chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
+	once  sync.Once
+	stopC chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
 
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
@@ -80,15 +76,13 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		storage: storage,
 		commitC: commitC,
 
-		shutdownTimeout: 2 * connectParams.ElectionInterval(),
-		serverErrC:      make(chan error, 1),
-		stopC:           make(chan struct{}),
+		stopC: make(chan struct{}),
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.ClusterID, peers)
+	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -118,13 +112,8 @@ func (c *Consensus) Stop(ctx context.Context) {
 		c.logger.Info("stopping consensus")
 		close(c.stopC)
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), c.shutdownTimeout)
-		defer cancel()
-		if shutdownErr := c.server.Shutdown(shutdownCtx); shutdownErr != nil {
-			c.logger.Error("failed to shutdown http server", zap.Error(shutdownErr))
-		} else {
-			c.logger.Info("http server shutdown complete")
-		}
+		c.listener.unregister(c.transport.ClusterID)
+		c.logger.Info("unregistered from listener")
 
 		c.transport.Stop()
 		c.logger.Info("transport stopped")
@@ -254,34 +243,25 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		return stacktrace.Propagate(err, "failed to start transport")
 	}
 
-	var listeningAddr string
 	for peerID, peerURL := range peers {
 		if peerID == nodeID {
-			listeningAddr = ":" + peerURL.Port()
 			continue
 		}
 
 		transport.AddPeer(types.ID(peerID), []string{peerURL.String()})
 	}
 
-	if listeningAddr == "" {
-		return stacktrace.NewError("node ID %d not found in peers map", nodeID)
-	}
-
 	c.transport = transport
 
-	c.server = &http.Server{
-		Addr:    listeningAddr,
-		Handler: transport.Handler(),
+	l, err := getListener()
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to get the listener")
 	}
-
-	go func() {
-		err := c.server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			c.logger.Error("http server error", zap.Error(err))
-			c.serverErrC <- err
-		}
-	}()
+	err = l.register(transport.ClusterID, transport.Handler())
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to register the transport to the listener")
+	}
+	c.listener = l
 
 	return nil
 }
@@ -353,9 +333,6 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 				c.node.Advance()
 			case err := <-c.transport.ErrorC:
 				c.logger.Error("transport error", zap.Error(err))
-				return
-			case err := <-c.serverErrC:
-				c.logger.Error("http server error", zap.Error(err))
 				return
 			}
 		}

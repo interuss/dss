@@ -2,6 +2,7 @@ package raftstore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/memstore"
@@ -62,6 +63,49 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 	store.Consensus = consensusInstance
 
 	return store, nil
+}
+
+// StartListener starts the listener shared by the Raft groups of this node.
+// It must be called before any Raft store is initialized and lives as long as the core-service process.
+// It is stopped by StopListener.
+// A failure of the listener after it started is reported to onError.
+func StartListener(ctx context.Context, logger *zap.Logger, onError func(error)) error {
+	params, err := raftparams.GetConnectParameters("")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to get raft parameters")
+	}
+
+	peers, err := params.PeerMap()
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to parse peer map")
+	}
+
+	nodeURL, ok := peers[params.NodeID]
+	if !ok {
+		return stacktrace.NewError("node ID %d not found in peers map", params.NodeID)
+	}
+
+	err = consensus.StartListener(ctx, logger.With(zap.String("component", "listener")), fmt.Sprintf(":%s", nodeURL.Port()), onError)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to start the raft listener")
+	}
+	return nil
+}
+
+// StopListener stops the listener started by StartListener.
+func StopListener(ctx context.Context) error {
+	params, err := raftparams.GetConnectParameters("")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to get raft parameters")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 2*params.ElectionInterval())
+	defer cancel()
+	err = consensus.StopListener(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to stop the raft listener")
+	}
+	return nil
 }
 
 // Transact proposes the entry to Raft and blocks until it is committed and applied.
