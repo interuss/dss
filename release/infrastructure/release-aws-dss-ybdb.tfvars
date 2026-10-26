@@ -10,7 +10,7 @@ db_hostname_suffix = "db.release-ybdb.ci.aws-interuss.uspace.dev"
 
 # Kubernetes configuration
 cluster_name                 = "dss-r-ybdb"
-kubernetes_version           = 1.35
+kubernetes_version           = 1.36
 node_count                   = 3
 aws_instance_type            = "m5.xlarge"
 aws_kubernetes_storage_class = "gp3"
