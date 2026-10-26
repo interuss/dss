@@ -11,6 +11,7 @@ import (
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
+	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
 
@@ -54,8 +55,8 @@ type subscriptionRecord struct {
 	NotifyForOperationalIntents bool
 	NotifyForConstraints        bool
 	ImplicitSubscription        bool
-	StartTime                   *time.Time
-	EndTime                     *time.Time
+	StartTime                   time.Time
+	EndTime                     time.Time
 	Cells                       s2.CellUnion
 	UpdatedAt                   time.Time
 }
@@ -127,40 +128,40 @@ func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
 
 // overlapsTime reports whether the [start, end] interval of a record intersects the one of cellsVolume
 // (equivalent to the SQL "COALESCE(starts_at <= $end, true) AND COALESCE(ends_at >= $start, true)").
-func overlapsTime(start, end *time.Time, cellsVolume *dssmodels.CellsVolume4D) bool {
-	if start != nil && cellsVolume.EndTime != nil && start.After(*cellsVolume.EndTime) { // TODO: Don't allow startup to be null, see #1492
+func overlapsTime(start, end time.Time, cellsVolume *dssmodels.CellsVolume4D) bool {
+	if cellsVolume.EndTime != nil && start.After(*cellsVolume.EndTime) {
 		return false
 	}
-	if end != nil && cellsVolume.StartTime != nil && end.Before(*cellsVolume.StartTime) { // TODO: Don't allow endtime to be null, see #1492
+	if cellsVolume.StartTime != nil && end.Before(*cellsVolume.StartTime) {
 		return false
 	}
 	return true
 }
 
-type expiringRecord interface {
-	endTime() *time.Time
-	lastUpdate() time.Time
+func requireExtentTimes(start, end *time.Time) error {
+	if start == nil {
+		return stacktrace.NewError("Start time must be provided")
+	}
+	if end == nil {
+		return stacktrace.NewError("End time must be provided")
+	}
+	return nil
 }
 
-func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime }
+type expiringRecord interface {
+	endTime() time.Time
+}
 
-func (rec *subscriptionRecord) lastUpdate() time.Time { return rec.UpdatedAt }
+func (rec *subscriptionRecord) endTime() time.Time { return rec.EndTime }
 
-func (rec *operationalIntentRecord) endTime() *time.Time { return rec.CellsVolume4D.EndTime }
+func (rec *operationalIntentRecord) endTime() time.Time { return *rec.CellsVolume4D.EndTime }
 
-func (rec *operationalIntentRecord) lastUpdate() time.Time { return rec.UpdatedAt }
-
-// listExpired returns the records whose end time is at or before threshold, falling back on the
-// last update time when the end time is unknown. A limit of 0 means unlimited.
+// listExpired returns the records whose end time is at or before threshold. A limit of 0 means unlimited.
 func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time, limit int) []R {
 	var out []R
 	for _, rec := range store {
-		// (ends_at IS NOT NULL AND ends_at <= threshold) OR (ends_at IS NULL AND updated_at <= threshold)
-		if t := rec.endTime(); t != nil { // TODO: Don't allow endtime to be null, see #1492
-			if t.After(threshold) {
-				continue
-			}
-		} else if rec.lastUpdate().After(threshold) {
+		// ends_at <= threshold
+		if rec.endTime().After(threshold) {
 			continue
 		}
 		out = append(out, rec)
@@ -181,8 +182,6 @@ func (rec *constraintRecord) clone() *constraintRecord {
 func (rec *subscriptionRecord) clone() *subscriptionRecord {
 	cp := *rec
 	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = utils.ClonePtr(rec.StartTime)
-	cp.EndTime = utils.ClonePtr(rec.EndTime)
 	return &cp
 }
 
