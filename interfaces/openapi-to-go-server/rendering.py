@@ -28,9 +28,7 @@ def indent(lines: list[str], level: int) -> list[str]:
 
 
 def imports(import_list: list[str]) -> str:
-    return "\n".join(
-        indent([f'"{i}"' if '"' not in i else i for i in import_list], 2)
-    )
+    return "\n".join(indent([f'"{i}"' if '"' not in i else i for i in import_list], 2))
 
 
 def template_content(template_name: str, template_vars: dict[str, str]) -> str:
@@ -58,7 +56,7 @@ def data_type(d_type: data_types.DataType) -> list[str]:
     if data_types.is_primitive_go_type(d_type.go_type):
         lines.append(f"type {d_type.name} {d_type.go_type}")
     elif d_type.go_type == "struct":
-        lines.append("type %s struct {" % d_type.name)
+        lines.append(f"type {d_type.name} struct {{")
         for field in d_type.fields:
             lines.extend(indent(_object_field(field), 1))
             lines.append("")
@@ -121,15 +119,12 @@ def implementation_interface(
     lines.append("var (")
 
     for _, scope in api.security_scopes():
-        lines.append(
-            '%s = api.RequiredScope("%s")' % (scope.go_constant_name, scope.name)
-        )
+        lines.append(f'{scope.go_constant_name} = api.RequiredScope("{scope.name}")')
 
     var_body: list[str] = []
     for operation in api.operations:
         var_body.append(
-            "%sSecurity = []%s.AuthorizationOption{"
-            % (operation.interface_name, api_package)
+            f"{operation.interface_name}Security = []{api_package}.AuthorizationOption{{"
         )
 
         init_body: list[str] = []
@@ -139,8 +134,7 @@ def implementation_interface(
                 init_body.extend(
                     indent(
                         [
-                            '"%s": {%s},'
-                            % (
+                            '"{}": {{{}}},'.format(
                                 scheme,
                                 ", ".join(scope.go_constant_name for scope in scopes),
                             )
@@ -316,7 +310,7 @@ def routes(
             body.extend(comment(["Copy query parameters"]))
             body.append("query := r.URL.Query()")
             for q in operation.query_parameters:
-                body.append('if query.Has("%s") {' % q.name)
+                body.append(f'if query.Has("{q.name}") {{')
                 if_body: list[str] = []
                 if q.go_type == "string":
                     if_body.append(f'v := query.Get("{q.name}")')
@@ -324,9 +318,7 @@ def routes(
                 else:
                     primitive_type = api.primitive_go_type_for(q.go_type)
                     if primitive_type == "string":
-                        if_body.append(
-                            f'v := {q.go_type}(query.Get("{q.name}"))'
-                        )
+                        if_body.append(f'v := {q.go_type}(query.Get("{q.name}"))')
                         if_body.append(f"req.{q.go_field_name} = &v")
                     elif primitive_type.startswith("int") or primitive_type.startswith(
                         "float"
@@ -437,8 +429,7 @@ def routes(
             body.extend(indent(["return"], 1))
             body.append("}")
         body.append(
-            '%s.WriteJSON(w, 500, %s.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})'
-            % (api_package, api_package)
+            f'{api_package}.WriteJSON(w, 500, {api_package}.InternalServerErrorBody{{ErrorMessage: "Handler implementation did not set a response"}})'
         )
 
         lines.extend(indent(body, 1))
@@ -508,8 +499,7 @@ def routing(api: apis.API, api_package: str) -> list[str]:
     """
     lines: list[str] = []
     lines.append(
-        "router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*%s.Route, %d)}"
-        % (api_package, len(api.operations))
+        f"router := APIRouter{{Implementation: impl, Authorizer: auth, Routes: make([]*{api_package}.Route, {len(api.operations)})}}"
     )
     lines.append("")
     first_assignment = True
@@ -522,17 +512,7 @@ def routing(api: apis.API, api_package: str) -> list[str]:
             )
         )
         lines.append(
-            'router.Routes[%d] = &%s.Route{Method: %s, Pattern: pattern, Handler: router.%s, Name: "%s.%s", Path: "%s%s"}'
-            % (
-                i,
-                api_package,
-                operation.verb_const_name,
-                operation.interface_name,
-                api.package,
-                operation.interface_name,
-                prefix,
-                operation.path,
-            )
+            f'router.Routes[{i}] = &{api_package}.Route{{Method: {operation.verb_const_name}, Pattern: pattern, Handler: router.{operation.interface_name}, Name: "{api.package}.{operation.interface_name}", Path: "{prefix}{operation.path}"}}'
         )
         lines.append("")
         first_assignment = False
@@ -556,7 +536,7 @@ def example_implementation(api: apis.API, implementation_name: str) -> list[str]
     lines: list[str] = []
 
     # Define a concrete instance of the Implementation interface
-    lines.append("type %s struct {}" % implementation_name)
+    lines.append(f"type {implementation_name} struct {{}}")
     lines.append("")
     for operation in api.operations:
         lines.append(
@@ -577,8 +557,7 @@ def example_implementation(api: apis.API, implementation_name: str) -> list[str]
         if not response_type:
             response_type = "EmptyResponseBody"
         body.append(
-            "response.%s = &%s{}"
-            % (
+            "response.{} = &{}{{}}".format(
                 operation.responses[0].response_set_field,
                 api.package + "." + response_type,
             )
@@ -603,15 +582,13 @@ def example_router_defs(implementations: dict[str, str], api_package: str) -> li
 
     for api_name, implementation in implementations.items():
         lines.append(
-            "%sRouter := %s.MakeAPIRouter(&%s{}, &authorizer)"
-            % (api_name, api_name, implementation)
+            f"{api_name}Router := {api_name}.MakeAPIRouter(&{implementation}{{}}, &authorizer)"
         )
     router_list = ", ".join(
         f"&{api_name}Router" for api_name, _ in implementations.items()
     )
     lines.append(
-        "multiRouter := %s.MultiRouter{Routers: []%s.PartialRouter{%s}}"
-        % (api_package, api_package, router_list)
+        f"multiRouter := {api_package}.MultiRouter{{Routers: []{api_package}.PartialRouter{{{router_list}}}}}"
     )
 
     return lines

@@ -187,21 +187,21 @@ def main():
     node_addresses.extend(
         [
             "cockroachdb-balanced",
-            "cockroachdb-balanced.%s" % cr.namespace,
-            "cockroachdb-balanced.%s.svc.cluster.local" % cr.namespace,
+            f"cockroachdb-balanced.{cr.namespace}",
+            f"cockroachdb-balanced.{cr.namespace}.svc.cluster.local",
             "*.cockroachdb",
-            "*.cockroachdb.%s" % cr.namespace,
-            "cockroachdb.%s" % cr.namespace,
-            "*.cockroachdb.%s.svc.cluster.local" % cr.namespace,
+            f"*.cockroachdb.{cr.namespace}",
+            f"cockroachdb.{cr.namespace}",
+            f"*.cockroachdb.{cr.namespace}.svc.cluster.local",
             # New helm generated address
             # Individual nodes
             "*.dss-cockroachdb",
-            "*.dss-cockroachdb.%s" % cr.namespace,
-            "*.dss-cockroachdb.%s.svc.cluster.local" % cr.namespace,
+            f"*.dss-cockroachdb.{cr.namespace}",
+            f"*.dss-cockroachdb.{cr.namespace}.svc.cluster.local",
             # Internal load balancer
             "dss-cockroachdb-public",
-            "dss-cockroachdb-public.%s" % cr.namespace,
-            "dss-cockroachdb-public.%s.svc.cluster.local" % cr.namespace,
+            f"dss-cockroachdb-public.{cr.namespace}",
+            f"dss-cockroachdb-public.{cr.namespace}.svc.cluster.local",
         ]
     )
 
