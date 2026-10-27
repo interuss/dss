@@ -6,7 +6,7 @@ import shutil
 import subprocess
 
 
-class CockroachCluster(object):
+class CockroachCluster:
     def __init__(self, cluster_context, namespace, ca_cert_to_join=None):
         self._ca_cert_to_join = ca_cert_to_join
         self._cluster_context = cluster_context
@@ -152,7 +152,7 @@ def main():
                 new_certs_fh.write("\n")
 
     if cr.ca_cert_to_join and create_ca:
-        print("Created new CA certificate in {}".format(cr.ca_certs_dir))
+        print(f"Created new CA certificate in {cr.ca_certs_dir}")
 
     subprocess.check_call(
         [
@@ -180,7 +180,7 @@ def main():
         ]
     )
 
-    print("Created new clients certificate in {}".format(cr.client_certs_dir))
+    print(f"Created new clients certificate in {cr.client_certs_dir}")
 
     node_addresses = ["localhost"]
     node_addresses.extend(args.node_address)
@@ -218,7 +218,7 @@ def main():
         + node_addresses
     )
 
-    print("Created new node certificate in {}".format(cr.node_certs_dir))
+    print(f"Created new node certificate in {cr.node_certs_dir}")
 
     node_addresses = ["prometheus"]
 
@@ -235,7 +235,7 @@ def main():
         + node_addresses
     )
 
-    print("Created new prometheus certificate in {}".format(cr.prometheus_certs_dir))
+    print(f"Created new prometheus certificate in {cr.prometheus_certs_dir}")
 
 
 if __name__ == "__main__":

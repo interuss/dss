@@ -1,7 +1,7 @@
-import sys
-import subprocess
 import logging
 import os
+import subprocess
+import sys
 
 
 class EvictHelper:

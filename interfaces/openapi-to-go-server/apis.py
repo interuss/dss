@@ -1,6 +1,5 @@
 import dataclasses
 from itertools import chain
-from typing import Dict, List, Set, Tuple
 
 import data_types
 import operations
@@ -10,8 +9,8 @@ import operations
 class API:
     package: str
     path_prefix: str
-    data_types: List[data_types.DataType]
-    operations: List[operations.Operation]
+    data_types: list[data_types.DataType]
+    operations: list[operations.Operation]
 
     def primitive_go_type_for(self, data_type_name: str) -> str:
         if data_types.is_primitive_go_type(data_type_name):
@@ -21,17 +20,17 @@ class API:
             if d_type.name == data_type_name:
                 return self.primitive_go_type_for(d_type.go_type)
         raise ValueError(
-            "No data type named {} found in {} API".format(data_type_name, self.package)
+            f"No data type named {data_type_name} found in {self.package} API"
         )
 
-    def filter_operations(self, tags: Set[str]):
+    def filter_operations(self, tags: set[str]):
         # Select only the applicable operations
         self.operations = [
             op for op in self.operations if not all(tag not in op.tags for tag in tags)
         ]
 
         # Determine the necessary data types
-        required_data_types: Set[str] = set()
+        required_data_types: set[str] = set()
         for op in self.operations:
             for p in op.path_parameters + op.query_parameters:
                 required_data_types.add(p.go_type)
@@ -41,7 +40,7 @@ class API:
                 if response.json_body_type:
                     required_data_types.add(response.json_body_type)
 
-        data_types_by_name: Dict[str, data_types.DataType] = {
+        data_types_by_name: dict[str, data_types.DataType] = {
             dt.name: dt for dt in self.data_types
         }
         data_types_to_check = [dt for dt in required_data_types]
@@ -69,7 +68,7 @@ class API:
             dt for dt in self.data_types if dt.name in required_data_types
         ]
 
-    def security_scopes(self) -> List[Tuple[str, operations.Scope]]:
+    def security_scopes(self) -> list[tuple[str, operations.Scope]]:
         """Returns a set of unique security scopes used by this API.
 
         :return: set of unique tuples containing the authorization scheme and scope
@@ -83,7 +82,7 @@ class API:
         return sorted(scopes_set, key=lambda s: s[1].name)
 
 
-def make_api(package: str, api_path: str, spec: Dict) -> API:
+def make_api(package: str, api_path: str, spec: dict) -> API:
     """Create an API from the given OpenAPI specification
 
     :param package: Name of the Go package this API will reside in
@@ -92,10 +91,10 @@ def make_api(package: str, api_path: str, spec: Dict) -> API:
     :return: Representation of API
     """
     if "components" not in spec:
-        raise ValueError("Missing `components` in YAML for {}".format(package))
+        raise ValueError(f"Missing `components` in YAML for {package}")
     components = spec["components"]
     if "schemas" not in components:
-        raise ValueError("Missing `schemas` in `components` for {}".format(package))
+        raise ValueError(f"Missing `schemas` in `components` for {package}")
     declared_types = []
     for name, schema in components["schemas"].items():
         data_type, additional_types = data_types.make_data_types(name, schema)
@@ -104,7 +103,7 @@ def make_api(package: str, api_path: str, spec: Dict) -> API:
 
     # Parse all endpoints
     if "paths" not in spec:
-        raise ValueError("Missing `paths` in YAML for {}".format(package))
+        raise ValueError(f"Missing `paths` in YAML for {package}")
     paths = spec["paths"]
     declared_operations = []
     for name, schema in paths.items():

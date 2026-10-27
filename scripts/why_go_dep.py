@@ -1,6 +1,5 @@
 import subprocess
 import sys
-from typing import Dict, Set, Tuple
 
 """
 This script produces a graph indicating what dependencies lead to specified
@@ -24,13 +23,13 @@ def main():
 
   # `connections` contains a set of tuples describing a parent (first element)
   # connection to a child (second element)
-  connections: Set[Tuple[str, str]] = set()
+  connections: set[tuple[str, str]] = set()
 
   # `parents` maps the name of a child to a set of the names of its parents
-  parents: Dict[str, Set[str]] = {}
+  parents: dict[str, set[str]] = {}
 
   # `children` maps the name of a parent to a set of the names of its children
-  children: Dict[str, Set[str]] = {}
+  children: dict[str, set[str]] = {}
 
   for line in lines:
     cols = line.split(' ')
@@ -51,7 +50,7 @@ def main():
     parents[child] = parent_set
 
   # Identify all full node names that match a specified module of interest
-  key_nodes: Set[str] = set()
+  key_nodes: set[str] = set()
   for child in children.keys():
     for kw in keywords:
       if kw in child:
@@ -62,10 +61,10 @@ def main():
         key_nodes.add(parent)
 
   # Nodes are relevant if one of their descendents is a module of interest
-  relevant: Set[str] = {n for n in key_nodes}
-  newly_relevant: Set[str] = {n for n in relevant}
+  relevant: set[str] = {n for n in key_nodes}
+  newly_relevant: set[str] = {n for n in relevant}
   while len(newly_relevant) > 0:
-    next_relevant: Set[str] = set()
+    next_relevant: set[str] = set()
     for n in newly_relevant:
       for p in parents.get(n, set()):
         if p not in relevant:
@@ -77,10 +76,10 @@ def main():
     f.write('digraph g {\n')
     f.write('  node [shape=box]\n')
     for kn in key_nodes:
-      f.write('  "{}" [color=red]\n'.format(kn))
+      f.write(f'  "{kn}" [color=red]\n')
     for connection in connections:
       if connection[0] in relevant and connection[1] in relevant:
-        f.write('  "{}" -> "{}"\n'.format(connection[0], connection[1]))
+        f.write(f'  "{connection[0]}" -> "{connection[1]}"\n')
     f.write('}\n')
 
   img_gen = subprocess.check_output(['dot', '-Tpng', '-ogo_mod_graph.png', 'go_mod_graph.gv']).decode('utf8')
