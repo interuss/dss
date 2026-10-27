@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package scd;
+
+import "models.proto";
+import "scd/availability.proto";
+import "scd/ovn.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb";
+
+message Constraint {
+    bytes id = 1;
+    string manager = 2;
+    UssAvailabilityState uss_availability = 3;
+    int32 version = 4;
+    OVN ovn = 5;
+    string uss_base_url = 6;
+    models.CellsVolume4D volume = 7;
+}
+
+// Operations
+
+message GetConstraintReferenceOperation {
+    bytes id = 1;
+    string manager = 2;
+}
+
+message CreateConstraintReferenceOperation {
+    Constraint constraint = 1;
+}
+
+message UpdateConstraintReferenceOperation {
+    Constraint constraint = 1;
+}
+
+message DeleteConstraintReferenceOperation {
+    bytes id = 1;
+    string manager = 2;
+    OVN ovn = 3;
+}
+
+message QueryConstraintReferencesOperation {
+    models.CellsVolume4D area_of_interest = 1;
+    string manager = 2;
+}
+
+// Repository requests
+
+message SearchConstraintsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message GetConstraintRepoCall {
+    bytes id = 1;
+}
+
+message UpsertConstraintRepoCall {
+    Constraint constraint = 1;
+}
+
+message DeleteConstraintRepoCall {
+    bytes id = 1;
+}
+
+message CountConstraintsRepoCall {}
