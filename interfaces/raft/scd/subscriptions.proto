@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package scd;
+
+import "google/protobuf/timestamp.proto";
+import "models.proto";
+import "scd/ovn.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb";
+
+message Subscription {
+    bytes id = 1;
+    OVN version = 2;
+    int32 notification_index = 3;
+    string manager = 4;
+    string uss_base_url = 5;
+    bool notify_for_operational_intents = 6;
+    bool notify_for_constraints = 7;
+    bool implicit_subscription = 8;
+    models.CellsVolume4D volume = 9;
+}
+
+// Operations
+
+message GetSubscriptionOperation {
+    bytes id = 1;
+    string manager = 2;
+}
+
+message CreateSubscriptionOperation {
+    Subscription subscription = 1;
+}
+
+message UpdateSubscriptionOperation {
+    Subscription subscription = 1;
+}
+
+message DeleteSubscriptionOperation {
+    bytes id = 1;
+    string manager = 2;
+    OVN version = 3;
+}
+
+message QuerySubscriptionsOperation {
+    models.CellsVolume4D area_of_interest = 1;
+    string manager = 2;
+}
+
+// Repository requests
+
+message SearchSubscriptionsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message GetSubscriptionRepoCall {
+    bytes id = 1;
+}
+
+message UpsertSubscriptionRepoCall {
+    Subscription subscription = 1;
+}
+
+message DeleteSubscriptionRepoCall {
+    bytes id = 1;
+}
+
+message IncrementNotificationIndicesForOperationalIntentsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message IncrementNotificationIndicesForConstraintsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message ListExpiredSubscriptionsRepoCall {
+    google.protobuf.Timestamp threshold = 1;
+}
+
+message CountSubscriptionsRepoCall {}
