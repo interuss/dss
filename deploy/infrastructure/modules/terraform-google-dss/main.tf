@@ -41,6 +41,9 @@ module "terraform-commons-dss" {
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
   should_init                          = var.should_init
+  desired_rid_db_version               = var.desired_rid_db_version
+  desired_scd_db_version               = var.desired_scd_db_version
+  desired_aux_db_version               = var.desired_aux_db_version
   authorization                        = var.authorization
   locality                             = var.locality
   image_pull_secret                    = var.image_pull_secret

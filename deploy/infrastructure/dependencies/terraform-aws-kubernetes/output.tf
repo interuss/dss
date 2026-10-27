@@ -86,16 +86,6 @@ output "gateway_address" {
   }
 }
 
-output "prometheus_address" {
-  value = length(aws_eip.ip_prometheus) > 0 ? {
-    expected_dns : aws_eip.ip_prometheus[0].tags.ExpectedDNS,
-    address : aws_eip.ip_prometheus[0].public_ip,
-    } : {
-    expected_dns : null,
-    address : null,
-  }
-}
-
 output "workload_subnet" {
   value = data.aws_subnet.main_subnet.id
 }
