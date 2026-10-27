@@ -11,7 +11,7 @@ db_hostname_suffix           = "db.release-crdb.ci.google-interuss.uspace.dev"
 
 # Kubernetes configuration
 cluster_name       = "dss-r-crdb"
-kubernetes_version = 1.35
+kubernetes_version = 1.36
 node_count         = 3
 google_machine_type             = "n2-standard-4"
 google_kubernetes_storage_class = "standard"
