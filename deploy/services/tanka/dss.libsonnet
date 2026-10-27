@@ -7,7 +7,6 @@ local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
 local alertmanager = import 'alertmanager.libsonnet';
-local base = import 'base.libsonnet';
 local schema_manager = import 'schema-manager.libsonnet';
 local evict = import 'evict.libsonnet';
 
