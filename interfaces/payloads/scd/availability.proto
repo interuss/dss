@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package scd;
+
+import "scd/ovn.proto";
+
+option go_package = "github.com/interuss/dss/pkg/scd/scdpb";
+
+enum UssAvailabilityState {
+    USS_AVAILABILITY_STATE_UNKNOWN = 0;
+    USS_AVAILABILITY_STATE_NORMAL = 1;
+    USS_AVAILABILITY_STATE_DOWN = 2;
+}
+
+message UssAvailabilityStatus {
+    string uss = 1;
+    UssAvailabilityState availability = 2;
+    OVN version = 3;
+}
+
+// Operations
+
+message GetUssAvailability {
+    string uss = 1;
+}
+
+message SetUssAvailability {
+    string uss = 1;
+    UssAvailabilityState availability = 2;
+    OVN old_version = 3;
+}
+
+// Repository requests
+
+message GetUssAvailabilityFromRepo {
+    string uss = 1;
+}
+
+message UpsertUssAvailability {
+    UssAvailabilityStatus status = 1;
+}
