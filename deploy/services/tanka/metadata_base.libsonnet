@@ -33,6 +33,8 @@
     cpuLimit: '',
     memoryLimit: '',
     env: {}, // Additional environment variables, e.g. { GOGC: '80', GOMAXPROCS: '2' }
+    enableLivenessProbe: true, // If false, the liveness probe always succeeds
+    enableReadinessProbe: true, // If false, the readiness probe always succeeds
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',

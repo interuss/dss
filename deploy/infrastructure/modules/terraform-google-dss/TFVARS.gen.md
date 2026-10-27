@@ -133,6 +133,14 @@ Not set by default.</p>
 <p>Example: <code>3.5</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>crdb_enable_liveness_probe (<code>bool</code>)</td>
+                <td><p>Set this boolean false to replace the CockroachDB liveness probe by a probe that always succeeds. See https://github.com/interuss/dss/issues/1732 for potential reasons to do so.</p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
+                <td>crdb_enable_readiness_probe (<code>bool</code>)</td>
+                <td><p>Set this boolean false to replace the CockroachDB readiness probe by a probe that always succeeds. See https://github.com/interuss/dss/issues/1732 for potential reasons to do so.</p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>crdb_env (<code>map(string)</code>)</td>
                 <td><p>Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.</p>
 <p>Example: <code>{ GOGC = &quot;80&quot;, GOMAXPROCS = &quot;2&quot; }</code></p>

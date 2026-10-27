@@ -23,3 +23,18 @@ It is temporarily the only release name possible.
 When changing the values in values.dev.yaml, values.yaml, the templates or upgrading the helm chart dependencies, changes can be applied to the cluster using the following command:
 
 1. Run `helm upgrade --kube-context=$KUBE_CONTEXT -f values.dev.yaml $RELEASE_NAME .`
+
+### Disable CockroachDB probes
+
+The `cockroachdb` Chart always renders a liveness and a readiness probe. To disable one of them (see https://github.com/interuss/dss/issues/1732 for potential reasons to do so), replace it by a probe that always succeeds in `values.dev.yaml`:
+
+```yaml
+cockroachdb:
+  statefulset:
+    customLivenessProbe:
+      exec:
+        command: ["/bin/bash", "-c", "true"]
+    customReadinessProbe:
+      exec:
+        command: ["/bin/bash", "-c", "true"]
+```
