@@ -20,3 +20,11 @@ message RecordHeartbeat {
     optional google.protobuf.Timestamp next_heartbeat_expected_before = 4;
     string reporter = 5;
 }
+
+message Payload {
+    oneof payload {
+        SaveOwnMetadata save_own_metadata = 1;
+        GetDSSMetadata get_dss_metadata = 2;
+        RecordHeartbeat record_heartbeat = 3;
+    }
+}

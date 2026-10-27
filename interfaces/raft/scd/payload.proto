@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package scd;
+
+import "scd/availability.proto";
+import "scd/constraint.proto";
+import "scd/operational_intents.proto";
+import "scd/subscriptions.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb";
+
+message Payload {
+    oneof payload {
+        // USS availability operations
+        GetUssAvailabilityOperation get_uss_availability_operation = 20;
+        SetUssAvailabilityOperation set_uss_availability_operation = 21;
+
+        // USS availability repository requests
+        GetUssAvailabilityRepoCall get_uss_availability_repo_call = 40;
+        UpsertUssAvailabilityRepoCall upsert_uss_availability_repo_call = 41;
+
+        // Constraint operations
+        GetConstraintReferenceOperation get_constraint_reference_operation = 60;
+        CreateConstraintReferenceOperation create_constraint_reference_operation = 61;
+        UpdateConstraintReferenceOperation update_constraint_reference_operation = 62;
+        DeleteConstraintReferenceOperation delete_constraint_reference_operation = 63;
+        QueryConstraintReferencesOperation query_constraint_references_operation = 64;
+
+        // Constraint repository requests
+        SearchConstraintsRepoCall search_constraints_repo_call = 80;
+        GetConstraintRepoCall get_constraint_repo_call = 81;
+        UpsertConstraintRepoCall upsert_constraint_repo_call = 82;
+        DeleteConstraintRepoCall delete_constraint_repo_call = 83;
+        CountConstraintsRepoCall count_constraints_repo_call = 84;
+
+        // Operational intent operations
+        GetOperationalIntentReferenceOperation get_operational_intent_reference_operation = 100;
+        CreateOperationalIntentReferenceOperation create_operational_intent_reference_operation = 101;
+        UpdateOperationalIntentReferenceOperation update_operational_intent_reference_operation = 102;
+        DeleteOperationalIntentReferenceOperation delete_operational_intent_reference_operation = 103;
+        QueryOperationalIntentReferencesOperation query_operational_intent_references_operation = 104;
+
+        // Operational intent repository requests
+        GetOperationalIntentRepoCall get_operational_intent_repo_call = 120;
+        DeleteOperationalIntentRepoCall delete_operational_intent_repo_call = 121;
+        UpsertOperationalIntentRepoCall upsert_operational_intent_repo_call = 122;
+        SearchOperationalIntentsRepoCall search_operational_intents_repo_call = 123;
+        GetDependentOperationalIntentsRepoCall get_dependent_operational_intents_repo_call = 124;
+        CountOperationalIntentsRepoCall count_operational_intents_repo_call = 125;
+
+        // Subscription operations
+        GetSubscriptionOperation get_subscription_operation = 140;
+        CreateSubscriptionOperation create_subscription_operation = 141;
+        UpdateSubscriptionOperation update_subscription_operation = 142;
+        DeleteSubscriptionOperation delete_subscription_operation = 143;
+        QuerySubscriptionsOperation query_subscriptions_operation = 144;
+
+        // Subscription repository requests
+        SearchSubscriptionsRepoCall search_subscriptions_repo_call = 160;
+        GetSubscriptionRepoCall get_subscription_repo_call = 161;
+        UpsertSubscriptionRepoCall upsert_subscription_repo_call = 162;
+        DeleteSubscriptionRepoCall delete_subscription_repo_call = 163;
+        IncrementNotificationIndicesForOperationalIntentsRepoCall increment_notification_indices_for_operational_intents_repo_call = 164;
+        IncrementNotificationIndicesForConstraintsRepoCall increment_notification_indices_for_constraints_repo_call = 165;
+        CountSubscriptionsRepoCall count_subscriptions_repo_call = 166;
+    }
+}
