@@ -125,7 +125,7 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 
 	if old.UssAvailability == scdmodels.UssAvailabilityStateDown {
 		return nil, stacktrace.NewErrorWithCode(dsserr.PreconditionFailed,
-			"USS %s may not delete OperationalIntent %s while marked as Down in the DSS", *req.Auth.ClientID, id)
+			"USS %s may not delete OperationalIntent %s while marked as Down in the DSS", payload.Manager, id)
 	}
 
 	// Lock subscriptions based on the cell and subscriptions we're going to use
