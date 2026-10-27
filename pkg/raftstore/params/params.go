@@ -104,6 +104,8 @@ func (c ConnectParameters) RaftConfig(storage raft.Storage) *raft.Config {
 		MaxSizePerMsg:   c.MaxSizePerMsg,
 		MaxInflightMsgs: c.MaxInflightMsgs,
 		Storage:         storage,
+		// a removed leader steps down so that the remaining nodes elect a new leader
+		StepDownOnRemoval: true,
 	}
 }
 
