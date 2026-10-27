@@ -49,42 +49,30 @@ lint: python-lint shell-lint go-lint terraform-lint
 check-hygiene: python-lint hygiene shell-lint go-lint terraform-lint
 
 .PHONY: python-lint
-python-lint: openapi-to-go-server
-	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
-	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
-			interuss/openapi-to-go-server \
-            run ruff check
-	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
-	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
-			interuss/openapi-to-go-server \
-            run ruff format --check
-	docker run --rm -u "$(USER_GROUP)" \
-	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
-			ghcr.io/astral-sh/ruff:0.15.10 \
-            check /app/ --no-cache
-	docker run --rm -u "$(USER_GROUP)" \
-	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
-			ghcr.io/astral-sh/ruff:0.15.10 \
-            format --check /app/ --no-cache
+python-lint:
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uvx \
+	    -e HOME=/tmp \
+	    -v "$(CURDIR):/app" -w /app \
+		ghcr.io/astral-sh/uv:python3.14-alpine \
+		ruff@0.17.1 check
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uvx \
+	    -e HOME=/tmp \
+	    -v "$(CURDIR):/app" -w /app \
+		ghcr.io/astral-sh/uv:python3.14-alpine \
+		ruff@0.17.1 format --check
 
 .PHONY: python-format
-python-format: openapi-to-go-server
-	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
-	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
-			interuss/openapi-to-go-server \
-            run ruff check --fix
-	docker run --rm -u "$(USER_GROUP)" --entrypoint uv \
-	    -v "$(CURDIR)/interfaces/openapi-to-go-server:/app/" \
-			interuss/openapi-to-go-server \
-            run ruff format
-	docker run --rm -u "$(USER_GROUP)" \
-	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
-			ghcr.io/astral-sh/ruff:0.15.10 \
-            check /app/ --fix --no-cache
-	docker run --rm -u "$(USER_GROUP)" \
-	    -v "$(CURDIR)/deploy/operations/certificates-management:/app/" \
-			ghcr.io/astral-sh/ruff:0.15.10 \
-            format /app/ --no-cache
+python-format:
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uvx \
+	    -e HOME=/tmp \
+	    -v "$(CURDIR):/app" -w /app \
+		ghcr.io/astral-sh/uv:python3.14-alpine \
+		ruff@0.17.1 check --fix
+	docker run --rm -u "$(USER_GROUP)" --entrypoint uvx \
+	    -e HOME=/tmp \
+	    -v "$(CURDIR):/app" -w /app \
+		ghcr.io/astral-sh/uv:python3.14-alpine \
+		ruff@0.17.1 format
 
 .PHONY: hygiene
 hygiene:
