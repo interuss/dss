@@ -25,24 +25,120 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Payload struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*Payload_AuxPayload
+	//	*Payload_RidPayload
+	//	*Payload_ScdPayload
+	Payload       isPayload_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Payload) Reset() {
+	*x = Payload{}
+	mi := &file_proposal_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Payload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Payload) ProtoMessage() {}
+
+func (x *Payload) ProtoReflect() protoreflect.Message {
+	mi := &file_proposal_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Payload.ProtoReflect.Descriptor instead.
+func (*Payload) Descriptor() ([]byte, []int) {
+	return file_proposal_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Payload) GetPayload() isPayload_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *Payload) GetAuxPayload() *auxpb.Payload {
+	if x != nil {
+		if x, ok := x.Payload.(*Payload_AuxPayload); ok {
+			return x.AuxPayload
+		}
+	}
+	return nil
+}
+
+func (x *Payload) GetRidPayload() *ridpb.Payload {
+	if x != nil {
+		if x, ok := x.Payload.(*Payload_RidPayload); ok {
+			return x.RidPayload
+		}
+	}
+	return nil
+}
+
+func (x *Payload) GetScdPayload() *scdpb.Payload {
+	if x != nil {
+		if x, ok := x.Payload.(*Payload_ScdPayload); ok {
+			return x.ScdPayload
+		}
+	}
+	return nil
+}
+
+type isPayload_Payload interface {
+	isPayload_Payload()
+}
+
+type Payload_AuxPayload struct {
+	AuxPayload *auxpb.Payload `protobuf:"bytes,1,opt,name=aux_payload,json=auxPayload,proto3,oneof"`
+}
+
+type Payload_RidPayload struct {
+	RidPayload *ridpb.Payload `protobuf:"bytes,2,opt,name=rid_payload,json=ridPayload,proto3,oneof"`
+}
+
+type Payload_ScdPayload struct {
+	ScdPayload *scdpb.Payload `protobuf:"bytes,3,opt,name=scd_payload,json=scdPayload,proto3,oneof"`
+}
+
+func (*Payload_AuxPayload) isPayload_Payload() {}
+
+func (*Payload_RidPayload) isPayload_Payload() {}
+
+func (*Payload_ScdPayload) isPayload_Payload() {}
+
 type Proposal struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Id        []byte                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	NodeId    uint64                 `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Types that are valid to be assigned to Payload:
-	//
-	//	*Proposal_AuxPayload
-	//	*Proposal_RidPayload
-	//	*Proposal_ScdPayload
-	Payload       isProposal_Payload `protobuf_oneof:"payload"`
+	Payload   *Payload               `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
+	// TODO: remove request_type and value once all the requests are carried by payload.
+	RequestType   string `protobuf:"bytes,5,opt,name=request_type,json=requestType,proto3" json:"request_type,omitempty"`
+	Value         []byte `protobuf:"bytes,6,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Proposal) Reset() {
 	*x = Proposal{}
-	mi := &file_proposal_proto_msgTypes[0]
+	mi := &file_proposal_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -54,7 +150,7 @@ func (x *Proposal) String() string {
 func (*Proposal) ProtoMessage() {}
 
 func (x *Proposal) ProtoReflect() protoreflect.Message {
-	mi := &file_proposal_proto_msgTypes[0]
+	mi := &file_proposal_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -67,7 +163,7 @@ func (x *Proposal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Proposal.ProtoReflect.Descriptor instead.
 func (*Proposal) Descriptor() ([]byte, []int) {
-	return file_proposal_proto_rawDescGZIP(), []int{0}
+	return file_proposal_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Proposal) GetId() []byte {
@@ -91,78 +187,47 @@ func (x *Proposal) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *Proposal) GetPayload() isProposal_Payload {
+func (x *Proposal) GetPayload() *Payload {
 	if x != nil {
 		return x.Payload
 	}
 	return nil
 }
 
-func (x *Proposal) GetAuxPayload() *auxpb.Payload {
+func (x *Proposal) GetRequestType() string {
 	if x != nil {
-		if x, ok := x.Payload.(*Proposal_AuxPayload); ok {
-			return x.AuxPayload
-		}
+		return x.RequestType
+	}
+	return ""
+}
+
+func (x *Proposal) GetValue() []byte {
+	if x != nil {
+		return x.Value
 	}
 	return nil
 }
-
-func (x *Proposal) GetRidPayload() *ridpb.Payload {
-	if x != nil {
-		if x, ok := x.Payload.(*Proposal_RidPayload); ok {
-			return x.RidPayload
-		}
-	}
-	return nil
-}
-
-func (x *Proposal) GetScdPayload() *scdpb.Payload {
-	if x != nil {
-		if x, ok := x.Payload.(*Proposal_ScdPayload); ok {
-			return x.ScdPayload
-		}
-	}
-	return nil
-}
-
-type isProposal_Payload interface {
-	isProposal_Payload()
-}
-
-type Proposal_AuxPayload struct {
-	AuxPayload *auxpb.Payload `protobuf:"bytes,4,opt,name=aux_payload,json=auxPayload,proto3,oneof"`
-}
-
-type Proposal_RidPayload struct {
-	RidPayload *ridpb.Payload `protobuf:"bytes,5,opt,name=rid_payload,json=ridPayload,proto3,oneof"`
-}
-
-type Proposal_ScdPayload struct {
-	ScdPayload *scdpb.Payload `protobuf:"bytes,6,opt,name=scd_payload,json=scdPayload,proto3,oneof"`
-}
-
-func (*Proposal_AuxPayload) isProposal_Payload() {}
-
-func (*Proposal_RidPayload) isProposal_Payload() {}
-
-func (*Proposal_ScdPayload) isProposal_Payload() {}
 
 var File_proposal_proto protoreflect.FileDescriptor
 
 const file_proposal_proto_rawDesc = "" +
 	"\n" +
-	"\x0eproposal.proto\x12\x17dss.raftstore.consensus\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0faux_/aux_.proto\x1a\x11rid/payload.proto\x1a\x11scd/payload.proto\"\x8b\x02\n" +
+	"\x0eproposal.proto\x12\x17dss.raftstore.consensus\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0faux_/aux_.proto\x1a\x11rid/payload.proto\x1a\x11scd/payload.proto\"\xa7\x01\n" +
+	"\aPayload\x12/\n" +
+	"\vaux_payload\x18\x01 \x01(\v2\f.aux.PayloadH\x00R\n" +
+	"auxPayload\x12/\n" +
+	"\vrid_payload\x18\x02 \x01(\v2\f.rid.PayloadH\x00R\n" +
+	"ridPayload\x12/\n" +
+	"\vscd_payload\x18\x03 \x01(\v2\f.scd.PayloadH\x00R\n" +
+	"scdPayloadB\t\n" +
+	"\apayload\"\xe2\x01\n" +
 	"\bProposal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\fR\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x04R\x06nodeId\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12/\n" +
-	"\vaux_payload\x18\x04 \x01(\v2\f.aux.PayloadH\x00R\n" +
-	"auxPayload\x12/\n" +
-	"\vrid_payload\x18\x05 \x01(\v2\f.rid.PayloadH\x00R\n" +
-	"ridPayload\x12/\n" +
-	"\vscd_payload\x18\x06 \x01(\v2\f.scd.PayloadH\x00R\n" +
-	"scdPayloadB\t\n" +
-	"\apayloadB'Z%github.com/interuss/dss/pkg/pb/raftpbb\x06proto3"
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12:\n" +
+	"\apayload\x18\x04 \x01(\v2 .dss.raftstore.consensus.PayloadR\apayload\x12!\n" +
+	"\frequest_type\x18\x05 \x01(\tR\vrequestType\x12\x14\n" +
+	"\x05value\x18\x06 \x01(\fR\x05valueB'Z%github.com/interuss/dss/pkg/pb/raftpbb\x06proto3"
 
 var (
 	file_proposal_proto_rawDescOnce sync.Once
@@ -176,24 +241,26 @@ func file_proposal_proto_rawDescGZIP() []byte {
 	return file_proposal_proto_rawDescData
 }
 
-var file_proposal_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proposal_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proposal_proto_goTypes = []any{
-	(*Proposal)(nil),              // 0: dss.raftstore.consensus.Proposal
-	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(*Payload)(nil),               // 0: dss.raftstore.consensus.Payload
+	(*Proposal)(nil),              // 1: dss.raftstore.consensus.Proposal
 	(*auxpb.Payload)(nil),         // 2: aux.Payload
 	(*ridpb.Payload)(nil),         // 3: rid.Payload
 	(*scdpb.Payload)(nil),         // 4: scd.Payload
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_proposal_proto_depIdxs = []int32{
-	1, // 0: dss.raftstore.consensus.Proposal.timestamp:type_name -> google.protobuf.Timestamp
-	2, // 1: dss.raftstore.consensus.Proposal.aux_payload:type_name -> aux.Payload
-	3, // 2: dss.raftstore.consensus.Proposal.rid_payload:type_name -> rid.Payload
-	4, // 3: dss.raftstore.consensus.Proposal.scd_payload:type_name -> scd.Payload
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	2, // 0: dss.raftstore.consensus.Payload.aux_payload:type_name -> aux.Payload
+	3, // 1: dss.raftstore.consensus.Payload.rid_payload:type_name -> rid.Payload
+	4, // 2: dss.raftstore.consensus.Payload.scd_payload:type_name -> scd.Payload
+	5, // 3: dss.raftstore.consensus.Proposal.timestamp:type_name -> google.protobuf.Timestamp
+	0, // 4: dss.raftstore.consensus.Proposal.payload:type_name -> dss.raftstore.consensus.Payload
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proposal_proto_init() }
@@ -202,9 +269,9 @@ func file_proposal_proto_init() {
 		return
 	}
 	file_proposal_proto_msgTypes[0].OneofWrappers = []any{
-		(*Proposal_AuxPayload)(nil),
-		(*Proposal_RidPayload)(nil),
-		(*Proposal_ScdPayload)(nil),
+		(*Payload_AuxPayload)(nil),
+		(*Payload_RidPayload)(nil),
+		(*Payload_ScdPayload)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -212,7 +279,7 @@ func file_proposal_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proposal_proto_rawDesc), len(file_proposal_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
