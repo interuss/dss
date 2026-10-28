@@ -174,16 +174,6 @@ local volumes = import 'volumes.libsonnet';
         matchLabels: sset.spec.template.metadata.labels,
       },
 
-      volumeClaimTemplates_:: {},
-      volumeClaimTemplates: [
-        // StatefulSet is overly fussy about "changes" (even when
-        // they're no-ops).
-        // In particular annotations={} is apparently a "change",
-        // since the comparison is ignorant of defaults.
-        std.prune($.PersistentVolumeClaim($.hyphenate(kv[0])) + { apiVersion:: null, kind:: null } + kv[1])
-        for kv in util.objectItems(self.volumeClaimTemplates_)
-      ],
-
       replicas: std.length(if metadata.datastore == 'cockroachdb' then metadata.cockroach.nodeIPs else metadata.yugabyte.masterNodeIPs),
       assert self.replicas >= 1,
     },

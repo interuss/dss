@@ -4,7 +4,6 @@ locals {
 
 resource "local_file" "tanka_config_main" {
   content = templatefile("${path.module}/templates/main.jsonnet.tmp", {
-    root_path                                = path.module
     VAR_NAMESPACE                            = var.kubernetes_namespace
     VAR_CLUSTER_CONTEXT                      = var.kubernetes_context_name
     VAR_ENABLE_SCD                           = var.enable_scd
@@ -53,7 +52,6 @@ resource "local_file" "tanka_config_main" {
     VAR_JWKS_REFRESH_INTERVAL                = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
     VAR_JWKS_KEY_TTL                         = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
     VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
-    VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION               = local.scd_db_schema
     VAR_DESIRED_AUX_DB_VERSION               = local.aux_db_schema
     VAR_SHOULD_INIT                          = var.should_init
@@ -84,7 +82,6 @@ resource "local_file" "tanka_config_main" {
 
 resource "local_file" "tanka_config_spec" {
   content = templatefile("${path.module}/templates/spec.json.tmp", {
-    root_path       = path.module
     namespace       = var.kubernetes_namespace
     cluster_context = var.kubernetes_context_name
     api_server      = var.kubernetes_api_endpoint

@@ -10,8 +10,5 @@
 {{- define "minikube-ingress-dss-gateway-annotations" -}}
 {{- end -}}
 
-{{- define "minikube-ingress-prometheus-annotations" -}}
-{{- end -}}
-
 {{- define "minikube-ingress-spec" -}}
 {{- end -}}

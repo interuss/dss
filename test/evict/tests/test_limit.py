@@ -1,8 +1,9 @@
-import sys
-from datetime import datetime, timedelta, UTC
-import time
 import logging
-from typing import Any, Callable
+import sys
+import time
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from evict_helper import EvictHelper
 from query_helper import QueryHelper

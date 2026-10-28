@@ -5,16 +5,17 @@
 # Assume all endpoint need authentification, but some can be whitelisted there.
 # Expect that `start-locally` have been ran
 
-import sys
+import base64
+import glob
+import hashlib
+import hmac
+import http.client
+import json
 import logging
 import re
-import glob
-import json
+import sys
 from urllib import request
-import http.client
-import base64
-import hmac
-import hashlib
+
 import jwt
 
 ENDPOINT_WITHOUT_AUTHS = [

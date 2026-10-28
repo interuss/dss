@@ -224,7 +224,7 @@ def do_init(cluster):
     make_directories(cluster)
     generate_ca(cluster)
 
-    with open(cluster.ca_cert_file, "r") as f:
+    with open(cluster.ca_cert_file) as f:
         do_add_cas(cluster, f.read())
 
     generate_clients(cluster)

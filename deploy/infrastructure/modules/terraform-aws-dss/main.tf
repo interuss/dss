@@ -8,6 +8,7 @@ module "terraform-aws-kubernetes" {
   aws_instance_type                = var.aws_instance_type
   aws_route53_zone_id              = var.aws_route53_zone_id
   aws_iam_permissions_boundary     = var.aws_iam_permissions_boundary
+  aws_create_storage_class         = var.aws_create_storage_class
   aws_enable_node_monitoring_agent = var.aws_enable_node_monitoring_agent
   node_count                       = var.node_count
   kubernetes_version               = var.kubernetes_version
@@ -44,6 +45,9 @@ module "terraform-commons-dss" {
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
   should_init                          = var.should_init
+  desired_rid_db_version               = var.desired_rid_db_version
+  desired_scd_db_version               = var.desired_scd_db_version
+  desired_aux_db_version               = var.desired_aux_db_version
   authorization                        = var.authorization
   locality                             = var.locality
   crdb_external_nodes                  = var.crdb_external_nodes

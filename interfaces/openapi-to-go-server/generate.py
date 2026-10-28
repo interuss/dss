@@ -2,13 +2,11 @@
 
 import argparse
 import os
-from typing import List, Dict
-
-import yaml
 
 import apis
 import formatting
 import rendering
+import yaml
 
 
 def _parse_args():
@@ -51,7 +49,7 @@ def _parse_args():
 
 
 def _generate_apis(
-    api_list: List[apis.API], apis_folder: str, api_import: str, ensure_500: bool
+    api_list: list[apis.API], apis_folder: str, api_import: str, ensure_500: bool
 ):
     """Generate Go libraries for APIs.
 
@@ -123,7 +121,7 @@ def _generate_apis(
             f.write(rendering.template_content("server", server_template_vars))
 
 
-def _generate_example(api_list: List[apis.API], output_folder: str, api_import: str):
+def _generate_example(api_list: list[apis.API], output_folder: str, api_import: str):
     """Generate example implementations and entry point.
 
     :param api_list: APIs implemented and hosted in example
@@ -133,8 +131,8 @@ def _generate_example(api_list: List[apis.API], output_folder: str, api_import: 
     api_package = formatting.package_of_import(api_import)
 
     # Generate example Go API implementations
-    implementations: Dict[str, str] = {}
-    implementation_lines: List[str] = []
+    implementations: dict[str, str] = {}
+    implementation_lines: list[str] = []
     for api in api_list:
         implementation = (
             formatting.snake_case_to_pascal_case(api.package) + "Implementation"
@@ -165,7 +163,7 @@ def main():
     args = _parse_args()
 
     # Parse API definitions
-    api_list: List[apis.API] = []
+    api_list: list[apis.API] = []
     for api_declaration in args.apis:
         if "@" in api_declaration:
             input_yaml, package = api_declaration.split("@")
@@ -185,7 +183,7 @@ def main():
         else:
             tags = set()
 
-        with open(input_yaml, mode="r") as f:
+        with open(input_yaml) as f:
             spec = yaml.full_load(f)
 
         api = apis.make_api(package, api_path, spec)
@@ -196,10 +194,10 @@ def main():
     # Render Go code
     if args.api_folder:
         _generate_apis(api_list, args.api_folder, args.api_import, True)
-        os.system("cd {} && gofmt -s -w .".format(args.api_folder))
+        os.system(f"cd {args.api_folder} && gofmt -s -w .")
     if args.example_folder:
         _generate_example(api_list, args.example_folder, args.api_import)
-        os.system("cd {} && gofmt -s -w .".format(args.example_folder))
+        os.system(f"cd {args.example_folder} && gofmt -s -w .")
 
 
 if __name__ == "__main__":
