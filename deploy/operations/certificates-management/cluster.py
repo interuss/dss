@@ -3,7 +3,7 @@ import os
 from utils import slugify
 
 
-class Cluster(object):
+class Cluster:
     """Represent an instance of a cluster, expose paths"""
 
     def __init__(

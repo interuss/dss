@@ -1,8 +1,7 @@
-import subprocess
 import logging
-from typing import Optional
-
+import subprocess
 from enum import Enum
+from typing import Optional
 
 
 class Workspace(Enum):
