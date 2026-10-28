@@ -2,7 +2,6 @@ data "aws_caller_identity" "current" {}
 
 locals {
   aws_account_id          = data.aws_caller_identity.current.account_id
-  aws_cluster_id          = aws_eks_cluster.kubernetes_cluster.id
   aws_cluster_oidc_issuer = aws_eks_cluster.kubernetes_cluster.identity[0].oidc[0].issuer
 }
 
