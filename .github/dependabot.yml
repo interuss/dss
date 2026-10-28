@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  - package-ecosystem: "gomod"
+    directories:
+      - "/"
+      - "/interfaces/openapi-to-go-server/example/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/docs/"
+      - "/test/repo_hygiene/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "uv"
+    directory: "/interfaces/openapi-to-go-server/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "cron"
+      cronjob: "0 0 1,15 * *"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/cmds/dummy-oauth/"
+      - "/build/test-certs/"
+      - "/test/repo_hygiene/"
+      - "/interfaces/openapi-to-go-server/"
+      - "/interfaces/openapi-to-go-server/example/"
+      - "/deploy/infrastructure/utils/"
+      - "/deploy/operations/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "daily"
