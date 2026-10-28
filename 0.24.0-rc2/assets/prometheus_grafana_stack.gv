@@ -1,0 +1,21 @@
+digraph monitoring {
+  rankdir=LR;
+  node [shape=box, colorscheme=paired8];
+  graph [dpi = 300];
+
+  subgraph cluster_dbs {
+    label="Database instances";
+    style=dashed;
+    db1 [label="db-1"];
+    db2 [label="db-2"];
+    db3 [label="db-3"];
+  }
+
+  prometheus [label="Prometheus", shape=cylinder];
+  grafana    [label="Grafana"];
+
+  prometheus -> db1 [label="scrape"];
+  prometheus -> db2 [label="scrape"];
+  prometheus -> db3 [label="scrape"];
+  grafana -> prometheus [label="query"];
+}
