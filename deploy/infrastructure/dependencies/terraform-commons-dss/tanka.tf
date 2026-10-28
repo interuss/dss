@@ -33,6 +33,8 @@ resource "local_file" "tanka_config_main" {
     VAR_CRDB_CPU_LIMIT                       = var.crdb_cpu_limit
     VAR_CRDB_MEMORY_LIMIT                    = var.crdb_memory_limit
     VAR_CRDB_ENV                             = var.crdb_env
+    VAR_CRDB_ENABLE_LIVENESS_PROBE           = var.crdb_enable_liveness_probe
+    VAR_CRDB_ENABLE_READINESS_PROBE          = var.crdb_enable_readiness_probe
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone

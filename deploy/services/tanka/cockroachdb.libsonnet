@@ -56,7 +56,7 @@ local volumes = import 'volumes.libsonnet';
               },
             ] + util.makeEnv(metadata.cockroach.env),
             resources: util.resources(metadata.cockroach),
-            livenessProbe: {
+            [if metadata.cockroach.enableLivenessProbe then 'livenessProbe']: {
               httpGet: {
                 path: '/health',
                 port: 'http',
@@ -65,7 +65,7 @@ local volumes = import 'volumes.libsonnet';
               initialDelaySeconds: 30,
               periodSeconds: 5,
             },
-            readinessProbe: {
+            [if metadata.cockroach.enableReadinessProbe then 'readinessProbe']: {
               httpGet: {
                 path: '/health?ready=1',
                 port: 'http',

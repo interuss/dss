@@ -56,6 +56,8 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_cpu_limit",
     "crdb_memory_limit",
     "crdb_env",
+    "crdb_enable_liveness_probe",
+    "crdb_enable_readiness_probe",
     "core_service_cpu_request",
     "core_service_memory_request",
     "core_service_cpu_limit",

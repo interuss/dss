@@ -32,6 +32,8 @@ module "terraform-commons-dss" {
   crdb_cpu_limit                       = var.crdb_cpu_limit
   crdb_memory_limit                    = var.crdb_memory_limit
   crdb_env                             = var.crdb_env
+  crdb_enable_liveness_probe           = var.crdb_enable_liveness_probe
+  crdb_enable_readiness_probe          = var.crdb_enable_readiness_probe
   core_service_cpu_request             = var.core_service_cpu_request
   core_service_memory_request          = var.core_service_memory_request
   core_service_cpu_limit               = var.core_service_cpu_limit
