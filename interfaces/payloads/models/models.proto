@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package models;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/interuss/dss/pkg/models/modelspb";
+
+message CellsVolume4D {
+    repeated fixed64 cells = 1;
+    google.protobuf.Timestamp start_time = 2;
+    google.protobuf.Timestamp end_time = 3;
+    optional float altitude_lo = 4;
+    optional float altitude_hi = 5;
+}
