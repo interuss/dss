@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -14,6 +16,7 @@ import (
 	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
 	scdmemstore "github.com/interuss/dss/pkg/scd/store/memstore"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -49,6 +52,37 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
+	switch payload := proposal.Payload.GetScdPayload().GetPayload().(type) {
+	// USS availability operations
+	case *scdpb.Payload_GetUssAvailabilityOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.GetUssAvailabilityOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_SetUssAvailabilityOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.SetUssAvailabilityOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	// USS availability repository requests
+	case *scdpb.Payload_GetUssAvailabilityRepoCall:
+		return r.Store.GetRepo().GetUssAvailability(ctx, dssmodels.Manager(payload.GetUssAvailabilityRepoCall.GetUss()))
+
+	case *scdpb.Payload_UpsertUssAvailabilityRepoCall:
+		req := payload.UpsertUssAvailabilityRepoCall
+		ussa := &scdmodels.UssAvailabilityStatus{Uss: dssmodels.Manager(req.GetUss())}
+		if err := ussa.Availability.FromProto(req.GetAvailability()); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to decode USS availability state for operation %q", restapi.SetUssAvailabilityOperationID)
+		}
+		if err := ussa.Version.FromProto(req.GetVersion()); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to decode USS version for operation %q", restapi.SetUssAvailabilityOperationID)
+		}
+		return r.Store.GetRepo().UpsertUssAvailability(ctx, ussa)
+
+	default:
+		return r.applyLegacy(ctx, proposal)
+	}
+}
+
+// applyLegacy applies the proposals carrying a JSON encoded request.
+// TODO: remove once all the requests are carried by a payload.
+func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
 
 	// Constraints
@@ -184,22 +218,6 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case string(countOperationalIntents):
 		return r.Store.GetRepo().CountOperationalIntents(ctx)
-
-	// USS Availability
-
-	case string(getUssAvailability):
-		var manager dssmodels.Manager
-		if err := json.Unmarshal(proposal.Value, &manager); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getUssAvailability)
-		}
-		return r.Store.GetRepo().GetUssAvailability(ctx, manager)
-
-	case string(upsertUssAvailability):
-		var ussa scdmodels.UssAvailabilityStatus
-		if err := json.Unmarshal(proposal.Value, &ussa); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertUssAvailability)
-		}
-		return r.Store.GetRepo().UpsertUssAvailability(ctx, &ussa)
 
 	// Operations registry (transactions)
 	default:

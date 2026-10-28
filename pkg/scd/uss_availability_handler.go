@@ -23,7 +23,7 @@ func (a *Server) GetUssAvailability(ctx context.Context, req *restapi.GetUssAvai
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "UssId not provided"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.UssAvailabilityStatusResponse](ctx, a.Store, req)
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.UssAvailabilityStatusResponse](ctx, a.Store, operations.NewGetUssAvailabilityPayload(id))
 	if err != nil {
 		// In case of older DB versions where availability table doesn't exist
 		if strings.Contains(err.Error(), "does not exist") {
