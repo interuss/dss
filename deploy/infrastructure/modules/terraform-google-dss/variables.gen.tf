@@ -426,6 +426,148 @@ variable "crdb_max_sql_memory" {
 }
 
 
+variable "crdb_cpu_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU request of the CockroachDB containers.
+  Not set by default.
+
+  Example: `3.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_memory_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory request of the CockroachDB containers.
+  Not set by default.
+
+  Example: `14Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_cpu_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU limit of the CockroachDB containers.
+  Not set by default.
+
+  Example: `3.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_memory_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory limit of the CockroachDB containers.
+  Not set by default.
+
+  Example: `14Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "crdb_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the CockroachDB containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMAXPROCS = "2" }`
+  EOT
+
+  default = {}
+}
+
+
+variable "crdb_enable_liveness_probe" {
+  type        = bool
+  description = "Set this boolean false to replace the CockroachDB liveness probe by a probe that always succeeds. See https://github.com/interuss/dss/issues/1732 for potential reasons to do so."
+  default     = true
+}
+
+
+variable "crdb_enable_readiness_probe" {
+  type        = bool
+  description = "Set this boolean false to replace the CockroachDB readiness probe by a probe that always succeeds. See https://github.com/interuss/dss/issues/1732 for potential reasons to do so."
+  default     = true
+}
+
+
+variable "core_service_cpu_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU request of the core-service containers.
+  Not set by default.
+
+  Example: `0.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_memory_request" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory request of the core-service containers.
+  Not set by default.
+
+  Example: `2Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_cpu_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes CPU limit of the core-service containers.
+  Not set by default.
+
+  Example: `0.5`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_memory_limit" {
+  type        = string
+  description = <<-EOT
+  Kubernetes memory limit of the core-service containers.
+  Not set by default.
+
+  Example: `2Gi`
+  EOT
+
+  default = ""
+}
+
+
+variable "core_service_env" {
+  type        = map(string)
+  description = <<-EOT
+  Additional environment variables of the core-service containers, for instance to tune the Go runtime.
+
+  Example: `{ GOGC = "80", GOMEMLIMIT = "1800MiB" }`
+  EOT
+
+  default = {}
+}
+
+
 variable "locality" {
   type        = string
   description = <<-EOT

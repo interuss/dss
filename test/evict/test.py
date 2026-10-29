@@ -2,14 +2,13 @@
 # run everywhere.
 # Expect that `start-locally` have been ran
 
-import sys
+import importlib
 import logging
 import os
-import importlib
+import sys
 
 from evict_helper import EvictHelper
 from query_helper import QueryHelper
-
 
 logging.basicConfig(
     level=logging.DEBUG,

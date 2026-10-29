@@ -92,6 +92,31 @@ spec:
             {{- end }}
           command:
             - core-service
+          {{- with $dss.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or $dss.cpuRequest $dss.memoryRequest $dss.cpuLimit $dss.memoryLimit }}
+          resources:
+            {{- if or $dss.cpuRequest $dss.memoryRequest }}
+            requests:
+              {{- with $dss.cpuRequest }}
+              cpu: {{ . | quote }}
+              {{- end }}
+              {{- with $dss.memoryRequest }}
+              memory: {{ . | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if or $dss.cpuLimit $dss.memoryLimit }}
+            limits:
+              {{- with $dss.cpuLimit }}
+              cpu: {{ . | quote }}
+              {{- end }}
+              {{- with $dss.memoryLimit }}
+              memory: {{ . | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
           image: {{ $dss.image }}
           imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
           name: core-service

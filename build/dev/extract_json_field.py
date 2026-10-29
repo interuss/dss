@@ -13,7 +13,12 @@ except KeyboardInterrupt:
 try:
     obj = json.loads(s)
 except ValueError as e:
-    raise ValueError(str(e) + "\nvvvvv Unable to decode JSON: vvvvv\n" + s + "^^^^^ Unable to decode JSON: ^^^^^")
+    raise ValueError(
+        str(e)
+        + "\nvvvvv Unable to decode JSON: vvvvv\n"
+        + s
+        + "^^^^^ Unable to decode JSON: ^^^^^"
+    )
 fields = sys.argv[1].split(".")
 for field in fields:
     obj = obj[field]

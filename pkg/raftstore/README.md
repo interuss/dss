@@ -5,6 +5,7 @@
 ## Key assumptions
 
 - **Single Raft group:** Each service (aux, rid, scd) is backed by exactly one Raft group (one [`Consensus`](consensus/consensus.go) instance). There is no sharding or partitioning of data across multiple groups for now.
+- **Single listener:** The Raft groups of a DSS node share one `rafthttp` listener ([consensus/listener.go](consensus/listener.go)), at the node's URL in `--raft_peers`. Each group has its own cluster ID, derived from `--raft_cluster_id` and the group name, which is used to route the requests to the right group. The listener is started by the process before any group is created and lives as long as the process, whether or not groups are registered on it.
 - **Persistent log:** The Raft log and snapshots are durable: each node writes its entries to a [write-ahead log (WAL)](https://pkg.go.dev/go.etcd.io/etcd/server/v3/storage/wal) and periodically persists snapshots to disk ([consensus/storage.go](consensus/storage.go)), so a node can restart and rejoin the cluster by replaying its own WAL. The log consists of a series of Raft proposals (see the data model section below), and snapshots are serialized representations of the in-memory store.
 - **In-memory data projection:** The application state machine derived from the committed log (i.e. ISAs, subscriptions, operational intents, etc.) lives in-memory. It is not persisted but rather reconstructed by replaying the log / snapshot on startup.
 - **Data model:** Each service (`rid`, `scd`, `aux_`) defines its own request/response structs. During replication, they are wrapped in a [`Proposal`](consensus/proposal.go), which carries metadata (an ID, the originating node, and a timestamp for determinism) with a `RequestType` string and a request payload as a serialized `Value`. [`pkg/raftstore/store.go`](store.go) replicates the `Proposal` through Raft and, once committed, the service specific raftstore implementation interprets `RequestType`/`Value` and applies the resulting change to its own in-memory store.
@@ -59,6 +60,18 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
   Because the transition is deterministic, replaying the same sequence of entries from the same starting state always produces the same final state on every node in the group, so any non-deterministic value (a timestamp, a generated UUID) shall be decided once by the proposer and carried inside the `Proposal`.
 - **Snapshot:** A serialized copy of the application state at a given point in time.
 - **WAL (write-ahead log):** The on-disk files a node uses to persist its Raft log entries before they're considered durable.
+
+## Membership
+
+The members of a Raft group are bootstrapped from the `--raft_peers` flag on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
+
+- **Joining:** Starting a node that joins a running group is not supported yet, see [#1802](https://github.com/interuss/dss/issues/1802).
+- **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
+  - adding a node that is already a member or with an invalid peer URL.
+  - removing a node that is not a member, or a voter if the group would be left with fewer than 3 voters.
+  - adding or removing a node ID that was previously removed from the group.
+- **Removal:** A node stops when it applies its own removal.
+- **Persistence:** The peer URLs of the members and the removed node IDs are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
 
 ## Future Work
 

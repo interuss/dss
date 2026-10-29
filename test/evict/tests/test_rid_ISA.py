@@ -1,7 +1,7 @@
-import sys
-from datetime import datetime, timedelta, UTC
-import time
 import logging
+import sys
+import time
+from datetime import UTC, datetime, timedelta
 
 from evict_helper import EvictHelper
 from query_helper import QueryHelper

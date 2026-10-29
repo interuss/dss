@@ -1,4 +1,3 @@
-from typing import Dict
 import re
 
 
@@ -14,7 +13,7 @@ def string_to_pascal_case(s: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]", " ", s).title().replace(" ", "")
 
 
-def replace(s: str, template_vars: Dict[str, str]) -> str:
+def replace(s: str, template_vars: dict[str, str]) -> str:
     for k, v in template_vars.items():
         s = s.replace(k, v)
     return s

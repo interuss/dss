@@ -7,7 +7,7 @@ from .local_links import check_local_links
 
 
 def check_md_file(md_file_path: str, repo_root: str) -> None:
-    with open(md_file_path, "r") as f:
+    with open(md_file_path) as f:
         doc = marko.parse(f.read())
     check_local_links(doc, md_file_path, repo_root)
 

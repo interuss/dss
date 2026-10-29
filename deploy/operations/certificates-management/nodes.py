@@ -1,7 +1,7 @@
 import logging
+import shutil
 import subprocess
 import sys
-import shutil
 
 from utils import get_cert_display_name
 

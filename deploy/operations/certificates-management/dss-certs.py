@@ -6,16 +6,16 @@ import shutil
 import sys
 
 from apply import do_apply
-from cluster import Cluster
-from init import do_init, do_generate_clients
-from nodes import do_generate_nodes
 from ca_pool import (
-    do_get_pool_ca,
-    do_get_ca,
     do_add_cas,
+    do_get_ca,
+    do_get_pool_ca,
     do_list_pool_ca,
     do_remove_cas,
 )
+from cluster import Cluster
+from init import do_generate_clients, do_init
+from nodes import do_generate_nodes
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def main():
         if args.ca_file == "-":
             return sys.stdin.read()
 
-        with open(args.ca_file, "r") as f:
+        with open(args.ca_file) as f:
             return f.read()
 
     if args.action == "init":

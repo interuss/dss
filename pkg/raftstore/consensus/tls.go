@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// newTLSInfo returns the mutual TLS settings between Raft nodes, empty when mutual TLS is disabled.
+// NewTLSInfo returns the mutual TLS settings between Raft nodes, empty when mutual TLS is disabled.
 // A peer must present a certificate signed by a CA of the CA file. The certificate is not matched against the
 // peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer.
-func newTLSInfo(connectParams params.ConnectParameters, logger *zap.Logger) etcdtransport.TLSInfo {
+func NewTLSInfo(connectParams params.ConnectParameters, logger *zap.Logger) etcdtransport.TLSInfo {
 	if !connectParams.TLSEnabled() {
 		return etcdtransport.TLSInfo{}
 	}

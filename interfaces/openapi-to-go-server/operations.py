@@ -1,5 +1,4 @@
 import dataclasses
-from typing import Dict, List, Tuple
 
 import data_types
 import formatting
@@ -34,7 +33,7 @@ class Scope:
     @property
     def go_constant_name(self) -> str:
         """Go-style field name for this parameter in the Operation's `request_type_name`"""
-        return "{}Scope".format(formatting.string_to_pascal_case(self.name))
+        return f"{formatting.string_to_pascal_case(self.name)}Scope"
 
     def __hash__(self):
         return self.name.__hash__()
@@ -44,7 +43,7 @@ class Scope:
 class AuthorizationOption:
     """One acceptable option for authorization to invoke a particular Operation"""
 
-    option: Dict[str, List[Scope]]
+    option: dict[str, list[Scope]]
     """Mapping between authorization scheme name and a list of scope combination options that may be used to access the Operation under that authorization scheme"""
 
 
@@ -52,7 +51,7 @@ class AuthorizationOption:
 class Security:
     """Set of all defined authorization options for a particular Operation"""
 
-    options: List[AuthorizationOption]
+    options: list[AuthorizationOption]
     """List of authorization options that may be used to access the Operation"""
 
 
@@ -72,7 +71,7 @@ class Response:
     @property
     def response_set_field(self) -> str:
         """Name of the field in the Operation's `response_type_name` where this response can be set"""
-        return "Response{}".format(self.code)
+        return f"Response{self.code}"
 
 
 @dataclasses.dataclass
@@ -91,7 +90,7 @@ class Operation:
     operation_id: str
     """Explicitly defined operation ID for this operation"""
 
-    tags: List[str]
+    tags: list[str]
     """Set of tags which apply to this operation"""
 
     security: Security
@@ -100,16 +99,16 @@ class Operation:
     verb: str
     """HTTP verb for this operation"""
 
-    path_parameters: List[StringParameter]
+    path_parameters: list[StringParameter]
     """Parameters found in the path when invoking this operation"""
 
-    query_parameters: List[StringParameter]
+    query_parameters: list[StringParameter]
     """Parameters found in the query when invoking this operation"""
 
     json_request_body_type: str
     """Request body type, if an application/json request body is defined for this operation (blank otherwise)"""
 
-    responses: List[Response]
+    responses: list[Response]
     """All defined responses that may be returned from this operation"""
 
     @property
@@ -141,8 +140,8 @@ class Operation:
 
 
 def _parse_parameters(
-    schema: Dict,
-) -> Tuple[List[StringParameter], List[StringParameter], List[data_types.DataType]]:
+    schema: dict,
+) -> tuple[list[StringParameter], list[StringParameter], list[data_types.DataType]]:
     """Parse operation parameters from an OpenAPI schema for path or verb
 
     :param schema: Schema for an OpenAPI path or an OpenAPI verb
@@ -150,9 +149,9 @@ def _parse_parameters(
       * Path parameters
       * Query parameters
     """
-    path_parameters: List[StringParameter] = []
-    query_parameters: List[StringParameter] = []
-    additional_types: List[data_types.DataType] = []
+    path_parameters: list[StringParameter] = []
+    query_parameters: list[StringParameter] = []
+    additional_types: list[data_types.DataType] = []
     for parameter in schema.get("parameters", []):
         parameter_name = parameter["name"]
         parameter_description = parameter.get("description", "")
@@ -184,17 +183,15 @@ def _parse_parameters(
             )
         else:
             raise NotImplementedError(
-                'Parameter in "{}" (`{}`) not yet implemented'.format(
-                    parameter_in, parameter_name
-                )
+                f'Parameter in "{parameter_in}" (`{parameter_name}`) not yet implemented'
             )
 
     return path_parameters, query_parameters, additional_types
 
 
 def make_operations(
-    path: str, schema: Dict
-) -> Tuple[List[Operation], List[data_types.DataType]]:
+    path: str, schema: dict
+) -> tuple[list[Operation], list[data_types.DataType]]:
     """Parse all operations defined within the specified path definition.
 
     :param path: Relative path of operations described in `schema`
@@ -203,7 +200,7 @@ def make_operations(
         * Operations defined by `schema`
         * Additional data types implicitly defined within operation definitions
     """
-    declared_operations: List[Operation] = []
+    declared_operations: list[Operation] = []
 
     summary = schema.get("summary", "")
     description = schema.get("description", "")
@@ -245,7 +242,7 @@ def make_operations(
                 auth_option.option[scheme] = [Scope(s) for s in scopes]
             security.options.append(auth_option)
 
-        responses: List[Response] = []
+        responses: list[Response] = []
         for code, response in action.get("responses", {}).items():
             component_name = (
                 response.get("content", {})

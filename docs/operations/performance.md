@@ -8,9 +8,14 @@ See the detailed [section about cleanup](cleanup.md).
 
 ## CPU and memory allocation
 
+By default, the deployment tooling does not set any Kubernetes CPU or memory requests or limits on the CockroachDB and core-service containers.
+Kubernetes may then place them on nodes without enough free memory and kill them when the node runs out of memory (see issue [#1731](https://github.com/interuss/dss/issues/1731)).
+
 The following settings are available:
 
+* CPU and memory requests and limits of the CockroachDB and core-service containers.
 * CockroachDB `--cache` and `--max-sql-memory` flags (both `25%` by default). See [CockroachDB recommendations](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#cache-and-sql-memory-size) before changing them.
+* Additional environment variables of both containers, for instance to tune the Go runtime with `GOGC`, `GOMAXPROCS` or `GOMEMLIMIT`.
 
 To set them:
 
@@ -19,7 +24,13 @@ To set them:
     === "Terraform"
         Set the following variables (see `TFVARS.gen.md` for details):
 
+        * `crdb_cpu_request`, `crdb_memory_request`, `crdb_cpu_limit` and `crdb_memory_limit`, e.g. `"3.5"` and `"14Gi"`
         * `crdb_cache` and `crdb_max_sql_memory`, e.g. `"25%"`
+        * `crdb_env`, e.g. `{ GOGC = "80", GOMAXPROCS = "2" }`
+        * `core_service_cpu_request`, `core_service_memory_request`, `core_service_cpu_limit` and `core_service_memory_limit`, e.g. `"0.5"` and `"2Gi"`
+        * `core_service_env`, e.g. `{ GOMEMLIMIT = "1800MiB" }`
+
+        CPU and memory requests and limits left empty are not set on the containers.
 
         Then run `terraform apply` to regenerate the Tanka and Helm configuration.
 
@@ -28,10 +39,24 @@ To set them:
 
         ```jsonnet
         cockroach+: {
+          cpuRequest: '3.5',
+          memoryRequest: '14Gi',
+          cpuLimit: '3.5',
+          memoryLimit: '14Gi',
           cache: '25%',
           maxSqlMemory: '25%',
+          env: { GOGC: '80', GOMAXPROCS: '2' },
+        },
+        backend+: {
+          cpuRequest: '0.5',
+          memoryRequest: '2Gi',
+          cpuLimit: '0.5',
+          memoryLimit: '2Gi',
+          env: { GOMEMLIMIT: '1800MiB' },
         },
         ```
+
+        CPU and memory requests and limits left empty are not set on the containers.
 
     === "Helm"
         Set the following values:
@@ -41,7 +66,31 @@ To set them:
           conf:
             cache: 25%
             max-sql-memory: 25%
+          statefulset:
+            resources:
+              requests:
+                cpu: "3.5"
+                memory: 14Gi
+              limits:
+                cpu: "3.5"
+                memory: 14Gi
+            env:
+              - name: GOGC
+                value: "80"
+              - name: GOMAXPROCS
+                value: "2"
+        dss:
+          cpuRequest: "0.5"
+          memoryRequest: 2Gi
+          cpuLimit: "0.5"
+          memoryLimit: 2Gi
+          env:
+            - name: GOMEMLIMIT
+              value: 1800MiB
         ```
+
+        CockroachDB resources and environment variables are set with `statefulset.resources` and `statefulset.env` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml).
+        Core-service CPU and memory requests and limits left empty are not set on the containers.
 
 ## The SCD global lock option
 

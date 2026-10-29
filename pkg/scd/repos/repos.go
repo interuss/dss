@@ -2,12 +2,16 @@ package repos
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 )
+
+// ErrNotFound indicates that a requested resource does not exist.
+var ErrNotFound = errors.New("resource not found")
 
 // Subscriptions enables operations on a list of Subscriptions.
 type Subscriptions []*scdmodels.Subscription
@@ -86,6 +90,7 @@ type Subscription interface {
 }
 
 type UssAvailability interface {
+	// GetUssAvailability returns (nil, ErrNotFound) if the USS availability does not exist.
 	GetUssAvailability(ctx context.Context, id dssmodels.Manager) (*scdmodels.UssAvailabilityStatus, error)
 
 	UpsertUssAvailability(ctx context.Context, ussa *scdmodels.UssAvailabilityStatus) (*scdmodels.UssAvailabilityStatus, error)
@@ -97,15 +102,14 @@ type Constraint interface {
 	SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error)
 
 	// GetConstraint returns the Constraint referenced by id, or
-	// (nil, sql.ErrNoRows) if the Constraint doesn't exist
+	// (nil, ErrNotFound) if the Constraint doesn't exist.
 	GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.Constraint, error)
 
 	// UpsertConstraint upserts "constraint" into the store.
 	UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error)
 
-	// DeleteConstraint deletes a Constraint from the store and returns the
-	// deleted subscription.  Returns nil and an error if the Constraint does
-	// not exist.
+	// DeleteConstraint deletes a Constraint from the store.
+	// Returns ErrNotFound if the Constraint does not exist.
 	DeleteConstraint(ctx context.Context, id dssmodels.ID) error
 
 	// Count the number of existing constraint

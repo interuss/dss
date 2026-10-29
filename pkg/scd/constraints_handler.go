@@ -21,7 +21,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 ) restapi.DeleteConstraintReferenceResponseSet {
 
 	// Retrieve Constraint ID
-	_, err := dssmodels.IDFromString(string(req.Entityid))
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.DeleteConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -39,7 +39,9 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing OVN for constraint to modify"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, req)
+	payload := operations.NewDeleteConstraintPayload(id, dssmodels.Manager(*req.Auth.ClientID), scdmodels.OVN(req.Ovn))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.ChangeConstraintReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not delete constraint")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}

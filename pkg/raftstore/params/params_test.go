@@ -136,6 +136,7 @@ func TestGetConnectParametersTLSFlags(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			setFlag(t, "raft_node_id", "1")
+			setFlag(t, "raft_peers", "1=http://127.0.0.1:9011")
 			setFlag(t, "raft_tls_cert_file", tc.certFile)
 			setFlag(t, "raft_tls_key_file", tc.keyFile)
 			setFlag(t, "raft_tls_ca_file", tc.caFile)
@@ -149,6 +150,21 @@ func TestGetConnectParametersTLSFlags(t *testing.T) {
 			assert.Equal(t, tc.certFile != "", got.TLSEnabled())
 			assert.Equal(t, []string{tc.certFile, tc.keyFile, tc.caFile}, []string{got.TLSCertFile, got.TLSKeyFile, got.TLSCAFile})
 		})
+	}
+}
+
+func TestGroupClusterID(t *testing.T) {
+	ids := map[uint64]string{}
+	for _, clusterID := range []uint64{1, 2} {
+		for _, group := range []string{"aux", "rid", "scd"} {
+			id, err := groupClusterID(clusterID, group)
+			require.NoError(t, err)
+			again, err := groupClusterID(clusterID, group)
+			require.NoError(t, err)
+			assert.Equal(t, id, again)
+			assert.NotContains(t, ids, id)
+			ids[id] = group
+		}
 	}
 }
 

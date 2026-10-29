@@ -2,7 +2,6 @@
   cloud_provider: 'google', // Either google, aws or minikube
   namespace: error 'must supply namespace',
   clusterName: error 'must supply cluster name',
-  release: 'config',
   environment: 'dev',
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.
@@ -27,6 +26,14 @@
     clusterName: '',
     cache: '25%', // Value of the --cache flag of `cockroach start`
     maxSqlMemory: '25%', // Value of the --max-sql-memory flag of `cockroach start`
+    // Kubernetes container resources, e.g. '3.5' CPU and '14Gi' memory. Not set if empty.
+    cpuRequest: '',
+    memoryRequest: '',
+    cpuLimit: '',
+    memoryLimit: '',
+    env: {}, // Additional environment variables, e.g. { GOGC: '80', GOMAXPROCS: '2' }
+    enableLivenessProbe: true, // If false, the liveness probe always succeeds
+    enableReadinessProbe: true, // If false, the readiness probe always succeeds
   },
   yugabyte: {
     image: error 'must specify yugabyte db image',
@@ -69,6 +76,12 @@
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
     sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
+    // Kubernetes container resources, e.g. '0.5' CPU and '2Gi' memory. Not set if empty.
+    cpuRequest: '',
+    memoryRequest: '',
+    cpuLimit: '',
+    memoryLimit: '',
+    env: {}, // Additional environment variables, e.g. { GOGC: '80', GOMEMLIMIT: '1800MiB' }
   },
   alert: {
     enable: false,
