@@ -17,6 +17,6 @@ message RecordHeartbeat {
     string locality = 1;
     string source = 2;
     google.protobuf.Timestamp timestamp = 3;
-    google.protobuf.Timestamp next_heartbeat_expected_before = 4;
+    optional google.protobuf.Timestamp next_heartbeat_expected_before = 4;
     string reporter = 5;
 }
