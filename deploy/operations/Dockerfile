@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 ENV COCKROACH_VERSION 24.1.3
 
