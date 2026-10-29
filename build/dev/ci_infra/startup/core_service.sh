@@ -39,7 +39,7 @@ if [ -n "$INTRA_USS_NETEM_CONF" ] || [ -n "$INTER_USS_NETEM_CONF" ]; then
   fi
 fi
 
-DATASTORE_CONNECTION="-store_type raft -raft_node_id=${RAFT_ID} -raft_peers=${RAFT_NODES} -raft_datadir /raftdata"
+DATASTORE_CONNECTION="-store_type raft -raft_node_id=${RAFT_ID} -raft_peers=${RAFT_NODES} -raft_datadir /raftdata -raft_insecure"
 
 if [ "$DEBUG_ON" = "1" ]; then
   echo "Debug Mode: on"

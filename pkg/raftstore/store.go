@@ -85,7 +85,7 @@ func StartListener(ctx context.Context, logger *zap.Logger, onError func(error))
 		return stacktrace.NewError("node ID %d not found in peers map", params.NodeID)
 	}
 
-	err = consensus.StartListener(ctx, logger.With(zap.String("component", "listener")), fmt.Sprintf(":%s", nodeURL.Port()), onError)
+	err = consensus.StartListener(ctx, logger.With(zap.String("component", "listener")), fmt.Sprintf(":%s", nodeURL.Port()), consensus.NewTLSInfo(params, logger), onError)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to start the raft listener")
 	}

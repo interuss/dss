@@ -10,6 +10,24 @@
 - **In-memory data projection:** The application state machine derived from the committed log (i.e. ISAs, subscriptions, operational intents, etc.) lives in-memory. It is not persisted but rather reconstructed by replaying the log / snapshot on startup.
 - **Data model:** Each service (`rid`, `scd`, `aux_`) defines its own request/response structs. During replication, they are wrapped in a [`Proposal`](consensus/proposal.go), which carries metadata (an ID, the originating node, and a timestamp for determinism) with a `RequestType` string and a request payload as a serialized `Value`. [`pkg/raftstore/store.go`](store.go) replicates the `Proposal` through Raft and, once committed, the service specific raftstore implementation interprets `RequestType`/`Value` and applies the resulting change to its own in-memory store.
 
+## Node authentication
+
+Raft nodes authenticate each other with mutual TLS, configured by these three flags. They are shared by the aux, rid and scd Raft groups.
+
+| Flag | Content |
+|---|---|
+| `--raft_tls_cert_file` | PEM certificate of this node |
+| `--raft_tls_key_file` | PEM private key of that certificate |
+| `--raft_tls_ca_file` | PEM bundle of the CA certificates whose node certificates are accepted |
+
+- Each participant operates its own CA and issues one certificate per node. The bundle holds the CA of every participant of the pool, including the node's own.
+- The same certificate is presented to peers and to nodes connecting to this one.
+- A connecting peer is accepted when its certificate is signed by one of these CAs. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
+- Every peer URL must use `https`. A node with an `http` peer URL, or with only some of the three flags set, does not start.
+- A node does not start if its certificate cannot be loaded or has expired, or if every CA of the bundle has expired. Each expired CA is logged as a warning.
+- Restart the node after replacing its certificate or the CA bundle.
+- For local development and tests only, you can use `--raft_insecure` to disable TLS.
+
 ## Terminology
 
 Most of the concepts defined below come from the Raft consensus algorithm itself, described in ["In Search of an Understandable Consensus Algorithm" by D. Ongaro and J. Ousterhout](https://raft.github.io/raft.pdf). Please refer to the original paper for more details on how the Raft protocol works although the definitions in this documentation aim to be self-contained.

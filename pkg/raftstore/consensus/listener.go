@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"sync"
 
 	"github.com/interuss/stacktrace"
+	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	"go.uber.org/zap"
@@ -28,14 +28,15 @@ type listener struct {
 
 var raftListener *listener
 
-// StartListener starts serving the transports of the Raft groups on addr. It must be called before any Raft group is created.
+// StartListener starts serving the transports of the Raft groups on addr, with mutual TLS unless tlsInfo is empty.
+// It must be called before any Raft group is created.
 // A failure of the server after it started is reported to onError.
-func StartListener(ctx context.Context, logger *zap.Logger, addr string, onError func(error)) error {
+func StartListener(ctx context.Context, logger *zap.Logger, addr string, tlsInfo etcdtransport.TLSInfo, onError func(error)) error {
 	if raftListener != nil {
 		return stacktrace.NewError("the Raft listener is already started")
 	}
 
-	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
+	ln, err := newListener(ctx, addr, tlsInfo, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to listen on %s", addr)
 	}

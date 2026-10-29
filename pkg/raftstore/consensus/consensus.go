@@ -16,6 +16,7 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
+	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
@@ -103,7 +104,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		},
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers)
+	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers, NewTLSInfo(connectParams, logger))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -264,8 +265,11 @@ func peersList(peers map[uint64]*url.URL) ([]raft.Peer, error) {
 	return result, nil
 }
 
-func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL, tlsInfo etcdtransport.TLSInfo) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
+	if tlsInfo.Empty() {
+		c.logger.Warn("--raft_insecure is set: Raft nodes do not authenticate each other and connection is not encrypted. Don't use this node in production environments.")
+	}
 
 	nodeURL, ok := peers[nodeID]
 	if !ok {
@@ -284,7 +288,8 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		LeaderStats: v2stats.NewLeaderStats(c.logger, nodeIDStr),
 		// ErrorC is buffered to make sure rafthttp can send errors even if the raft updates consumer is not listening yet.
 		// The buffer size of 1 is sufficient because the transport will only send one error before stopping.
-		ErrorC: make(chan error, 1),
+		ErrorC:  make(chan error, 1),
+		TLSInfo: tlsInfo,
 	}
 
 	err := transport.Start()
