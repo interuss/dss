@@ -1,6 +1,7 @@
 # Default configuration
 
 dss:
+  env: []
   conf:
     enableScd: true
     evict:
@@ -24,7 +25,7 @@ dss:
 
 cockroachdb:
   enabled: true
-  # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb/values.yaml
+  # See https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml
   image:
     repository: cockroachdb/cockroach
   tls:

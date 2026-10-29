@@ -20,8 +20,8 @@ func isaRecordFromModel(isa *ridmodels.IdentificationServiceArea, updatedAt time
 		URL:        isa.URL,
 		Owner:      isa.Owner,
 		Cells:      slices.Clone(isa.Cells),
-		StartTime:  utils.ClonePtr(isa.StartTime),
-		EndTime:    utils.ClonePtr(isa.EndTime),
+		StartTime:  *isa.StartTime,
+		EndTime:    *isa.EndTime,
 		AltitudeHi: utils.ClonePtr(isa.AltitudeHi),
 		AltitudeLo: utils.ClonePtr(isa.AltitudeLo),
 		Writer:     isa.Writer,
@@ -39,8 +39,8 @@ func (rec *isaRecord) toModel() *ridmodels.IdentificationServiceArea {
 		Writer:  rec.Writer,
 		CellsVolume4D: &dssmodels.CellsVolume4D{
 			Cells:      slices.Clone(rec.Cells),
-			StartTime:  utils.ClonePtr(rec.StartTime),
-			EndTime:    utils.ClonePtr(rec.EndTime),
+			StartTime:  new(rec.StartTime),
+			EndTime:    new(rec.EndTime),
 			AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
 			AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
 		},
@@ -110,11 +110,11 @@ func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.
 	var out []*ridmodels.IdentificationServiceArea
 	for _, rec := range r.state.ISAs {
 		// ends_at >= earliest
-		if rec.EndTime == nil || rec.EndTime.Before(*earliest) { // TODO: Don't allow endtime to be null, see #1492
+		if rec.EndTime.Before(*earliest) {
 			continue
 		}
 		// COALESCE(starts_at <= latest, true)
-		if latest != nil && rec.StartTime != nil && rec.StartTime.After(*latest) { // TODO: Don't allow startup to be null, see #1492
+		if latest != nil && rec.StartTime.After(*latest) {
 			continue
 		}
 		if !overlaps(rec.Cells, want) {

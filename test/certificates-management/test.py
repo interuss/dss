@@ -1,10 +1,10 @@
 # Small python script to do some evict tests. Use only standard libraries to
 # run everywhere.
 
-import sys
+import importlib
 import logging
 import os
-import importlib
+import sys
 
 from cm_helper import CMHelper
 

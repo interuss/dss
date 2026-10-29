@@ -1,0 +1,16 @@
+target-version = "py314"
+extend-exclude = [
+    "interfaces/astm-utm",
+    "interfaces/automated_testing_interfaces",
+    "interfaces/rid",
+]
+line-length = 88
+
+[lint]
+# Default + isort + pyupgrade
+select = [
+    "E4", "E7", "E9", "F", "I", "UP"
+]
+# Explicitly ignore UP045 (Optional[Foo] -> Foo | None)
+ignore = ["UP045"]
+unfixable = ["UP045"]

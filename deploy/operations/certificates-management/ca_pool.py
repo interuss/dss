@@ -60,7 +60,7 @@ def regenerate_ca_files(cluster):
     CAs = []
     for filename in os.listdir(cluster.ca_pool_dir):
         if filename.endswith(".crt") and filename != "ca.crt":
-            with open(os.path.join(cluster.ca_pool_dir, filename), "r") as f:
+            with open(os.path.join(cluster.ca_pool_dir, filename)) as f:
                 CAs.append(f.read())
 
     CAs = sorted(CAs)
@@ -128,12 +128,12 @@ def do_remove_cas(cluster, certificates_or_serial):
 
 
 def do_get_ca(cluster):
-    with open(cluster.ca_cert_file, "r") as f:
+    with open(cluster.ca_cert_file) as f:
         print(f.read())
 
 
 def do_get_pool_ca(cluster):
-    with open(cluster.ca_pool_ca, "r") as f:
+    with open(cluster.ca_pool_ca) as f:
         print(f.read())
 
 

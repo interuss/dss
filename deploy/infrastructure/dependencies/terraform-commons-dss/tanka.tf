@@ -4,7 +4,6 @@ locals {
 
 resource "local_file" "tanka_config_main" {
   content = templatefile("${path.module}/templates/main.jsonnet.tmp", {
-    root_path                                = path.module
     VAR_NAMESPACE                            = var.kubernetes_namespace
     VAR_CLUSTER_CONTEXT                      = var.kubernetes_context_name
     VAR_ENABLE_SCD                           = var.enable_scd
@@ -20,10 +19,22 @@ resource "local_file" "tanka_config_main" {
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
     VAR_STORAGE_CLASS                        = var.kubernetes_storage_class
     VAR_DOCKER_IMAGE_NAME                    = var.image
+    VAR_CORE_SERVICE_CPU_REQUEST             = var.core_service_cpu_request
+    VAR_CORE_SERVICE_MEMORY_REQUEST          = var.core_service_memory_request
+    VAR_CORE_SERVICE_CPU_LIMIT               = var.core_service_cpu_limit
+    VAR_CORE_SERVICE_MEMORY_LIMIT            = var.core_service_memory_limit
+    VAR_CORE_SERVICE_ENV                     = var.core_service_env
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
     VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
     VAR_CRDB_CACHE                           = var.crdb_cache
     VAR_CRDB_MAX_SQL_MEMORY                  = var.crdb_max_sql_memory
+    VAR_CRDB_CPU_REQUEST                     = var.crdb_cpu_request
+    VAR_CRDB_MEMORY_REQUEST                  = var.crdb_memory_request
+    VAR_CRDB_CPU_LIMIT                       = var.crdb_cpu_limit
+    VAR_CRDB_MEMORY_LIMIT                    = var.crdb_memory_limit
+    VAR_CRDB_ENV                             = var.crdb_env
+    VAR_CRDB_ENABLE_LIVENESS_PROBE           = var.crdb_enable_liveness_probe
+    VAR_CRDB_ENABLE_READINESS_PROBE          = var.crdb_enable_readiness_probe
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone
@@ -40,7 +51,6 @@ resource "local_file" "tanka_config_main" {
     VAR_JWKS_KEY_ID                          = var.authorization.jwks != null ? var.authorization.jwks.key_id : ""
     VAR_JWKS_REFRESH_INTERVAL                = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
     VAR_JWKS_KEY_TTL                         = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
-    VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION               = local.scd_db_schema
     VAR_DESIRED_AUX_DB_VERSION               = local.aux_db_schema
@@ -72,7 +82,6 @@ resource "local_file" "tanka_config_main" {
 
 resource "local_file" "tanka_config_spec" {
   content = templatefile("${path.module}/templates/spec.json.tmp", {
-    root_path       = path.module
     namespace       = var.kubernetes_namespace
     cluster_context = var.kubernetes_context_name
     api_server      = var.kubernetes_api_endpoint

@@ -18,10 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// snapshotProvider is a function that returns the snapshot data to be included in the Raft snapshot.
-// We use a snapshotProvider from each component (scd, rid and aux).
-type snapshotProvider func() ([]byte, error)
-
 // storage persists the Raft log and snapshots and manages the raft in-memory storage.
 type storage struct {
 	logger *zap.Logger
@@ -30,8 +26,7 @@ type storage struct {
 
 	wal *wal.WAL
 
-	snapper  *snap.Snapshotter
-	snapshot snapshotProvider
+	snapper *snap.Snapshotter
 
 	snapshotCatchUpEntries uint64
 }
@@ -39,7 +34,7 @@ type storage struct {
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
 // and applies them to the Raft memory storage.
 // It returns the initialized storage, a boolean indicating whether the storage was pre-existent or an error.
-func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, provider snapshotProvider, snapshotCatchUpEntries uint64) (*storage, bool, error) {
+func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, snapshotCatchUpEntries uint64) (*storage, bool, error) {
 	logger = logging.WithValuesFromContext(ctx, logger)
 
 	// load the latest snapshot
@@ -123,8 +118,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 
 		wal: w,
 
-		snapper:  snapper,
-		snapshot: provider,
+		snapper: snapper,
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
 	}, ok, nil
@@ -177,13 +171,9 @@ func (s *storage) save(snapshot raftpb.Snapshot) error {
 	return s.wal.ReleaseLockTo(snapshot.Metadata.Index)
 }
 
-func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfState) error {
+// triggerSnapshot creates a snapshot holding data at appliedIndex, persists it and compacts the log.
+func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfState, data []byte) error {
 	s.logger.Info("triggering snapshot", zap.Uint64("appliedIndex", appliedIndex))
-	data, err := s.snapshot()
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to get snapshot data")
-	}
-
 	snap, err := s.CreateSnapshot(appliedIndex, confState, data)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create snapshot from raft memory storage")

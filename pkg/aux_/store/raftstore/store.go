@@ -7,10 +7,10 @@ import (
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	"github.com/interuss/dss/pkg/aux_/repos"
 	auxmemstore "github.com/interuss/dss/pkg/aux_/store/memstore"
-	auxraftparams "github.com/interuss/dss/pkg/aux_/store/raftstore/params"
 	"github.com/interuss/dss/pkg/memstore"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
+	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -28,7 +28,7 @@ type repo struct {
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
-	params, err := auxraftparams.GetConnectParameters()
+	params, err := raftparams.GetConnectParameters("aux")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get aux raft parameters")
 	}

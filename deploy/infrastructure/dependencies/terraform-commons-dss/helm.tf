@@ -3,6 +3,12 @@ locals {
   # the following variable has to be provided here.
   helm_crdb_statefulset_name = "dss-cockroachdb"
 
+  helm_crdb_always_true_probe = {
+    exec = {
+      command = ["/bin/bash", "-c", "true"]
+    }
+  }
+
   # This pre command is used below in yugabyte deployments to make the local ip pointing to the public hostname we want to use, until https://github.com/yugabyte/yugabyte-db/issues/27367 is fixed
   yugabyte_precommand_prefix = "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}."
   yugabyte_precommand_suffix = ".${var.db_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
@@ -31,6 +37,10 @@ resource "local_file" "helm_chart_values" {
           "--locality-advertise-addr=zone=${var.locality}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
+        resources            = local.helm_crdb_resources
+        env                  = [for k, v in var.crdb_env : { name = k, value = v }]
+        customLivenessProbe  = var.crdb_enable_liveness_probe ? null : local.helm_crdb_always_true_probe
+        customReadinessProbe = var.crdb_enable_readiness_probe ? null : local.helm_crdb_always_true_probe
       }
 
       storage = {
@@ -58,7 +68,12 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image         = var.image
+      cpuRequest    = var.core_service_cpu_request
+      memoryRequest = var.core_service_memory_request
+      cpuLimit      = var.core_service_cpu_limit
+      memoryLimit   = var.core_service_memory_limit
+      env           = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [
@@ -273,7 +288,12 @@ resource "local_file" "helm_chart_values" {
     }
 
     dss = {
-      image = var.image
+      image         = var.image
+      cpuRequest    = var.core_service_cpu_request
+      memoryRequest = var.core_service_memory_request
+      cpuLimit      = var.core_service_cpu_limit
+      memoryLimit   = var.core_service_memory_limit
+      env           = [for k, v in var.core_service_env : { name = k, value = v }]
 
       conf = {
         pubKeys = [

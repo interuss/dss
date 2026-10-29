@@ -37,8 +37,8 @@ type isaRecord struct {
 	URL        string
 	Owner      dssmodels.Owner
 	Cells      s2.CellUnion
-	StartTime  *time.Time
-	EndTime    *time.Time
+	StartTime  time.Time
+	EndTime    time.Time
 	AltitudeHi *float32
 	AltitudeLo *float32
 	Writer     string
@@ -52,8 +52,8 @@ type subscriptionRecord struct {
 	NotificationIndex int
 	Owner             dssmodels.Owner
 	Cells             s2.CellUnion
-	StartTime         *time.Time
-	EndTime           *time.Time
+	StartTime         time.Time
+	EndTime           time.Time
 	AltitudeHi        *float32
 	AltitudeLo        *float32
 	Writer            string
@@ -92,7 +92,13 @@ func validateWriteData(cells s2.CellUnion, start, end *time.Time) error {
 			return stacktrace.Propagate(err, "Error validating cell")
 		}
 	}
-	if start != nil && end != nil && !start.Before(*end) {
+	if start == nil {
+		return stacktrace.NewError("Start time must be provided")
+	}
+	if end == nil {
+		return stacktrace.NewError("End time must be provided")
+	}
+	if !start.Before(*end) {
 		return stacktrace.NewError("Start time must be strictly before end time")
 	}
 	return nil
@@ -140,19 +146,19 @@ func findForWrite[R versionedRecord](store map[dssmodels.ID]R, id dssmodels.ID, 
 }
 
 type expiringRecord interface {
-	endTime() *time.Time
+	endTime() time.Time
 }
 
-func (rec *isaRecord) endTime() *time.Time { return rec.EndTime }
+func (rec *isaRecord) endTime() time.Time { return rec.EndTime }
 
-func (rec *subscriptionRecord) endTime() *time.Time { return rec.EndTime }
+func (rec *subscriptionRecord) endTime() time.Time { return rec.EndTime }
 
 // listExpired returns the IDs of the records whose end time is at or before threshold.
 // A limit of 0 means unlimited.
 func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time, limit int) []dssmodels.ID {
 	var out []dssmodels.ID
 	for id, rec := range store {
-		if t := rec.endTime(); t == nil || t.After(threshold) { // TODO: Don't allow endtime to be null, see #1492
+		if rec.endTime().After(threshold) {
 			continue
 		}
 		out = append(out, id)
@@ -167,8 +173,6 @@ func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time
 func (rec *isaRecord) clone() *isaRecord {
 	cp := *rec
 	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = utils.ClonePtr(rec.StartTime)
-	cp.EndTime = utils.ClonePtr(rec.EndTime)
 	cp.AltitudeHi = utils.ClonePtr(rec.AltitudeHi)
 	cp.AltitudeLo = utils.ClonePtr(rec.AltitudeLo)
 	return &cp
@@ -177,8 +181,6 @@ func (rec *isaRecord) clone() *isaRecord {
 func (rec *subscriptionRecord) clone() *subscriptionRecord {
 	cp := *rec
 	cp.Cells = slices.Clone(rec.Cells)
-	cp.StartTime = utils.ClonePtr(rec.StartTime)
-	cp.EndTime = utils.ClonePtr(rec.EndTime)
 	cp.AltitudeHi = utils.ClonePtr(rec.AltitudeHi)
 	cp.AltitudeLo = utils.ClonePtr(rec.AltitudeLo)
 	return &cp

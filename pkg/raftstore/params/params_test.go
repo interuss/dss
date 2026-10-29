@@ -85,6 +85,21 @@ func TestPeerMap(t *testing.T) {
 	}
 }
 
+func TestGroupClusterID(t *testing.T) {
+	ids := map[uint64]string{}
+	for _, clusterID := range []uint64{1, 2} {
+		for _, group := range []string{"aux", "rid", "scd"} {
+			id, err := groupClusterID(clusterID, group)
+			require.NoError(t, err)
+			again, err := groupClusterID(clusterID, group)
+			require.NoError(t, err)
+			assert.Equal(t, id, again)
+			assert.NotContains(t, ids, id)
+			ids[id] = group
+		}
+	}
+}
+
 func mustParseURL(s string) *url.URL {
 	u, err := url.Parse(s)
 	if err != nil {

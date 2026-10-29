@@ -25,6 +25,7 @@ import (
 	"github.com/interuss/dss/pkg/build"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/raftstore"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	rids "github.com/interuss/dss/pkg/rid/store"
@@ -491,6 +492,17 @@ func main() {
 		}
 		// Handle shutdown properly so nothing leaks.
 		defer func() { _ = otelShutdown(context.Background()) }()
+	}
+
+	if params.GetStoreParameters().StoreType == params.RaftStoreType {
+		if err := raftstore.StartListener(ctx, logger, func(error) { cancel() }); err != nil {
+			logger.Panic("Failed to start the Raft listener", zap.Error(err))
+		}
+		defer func() {
+			if err := raftstore.StopListener(context.Background()); err != nil {
+				logger.Warn("Failed to stop the Raft listener", zap.Error(err))
+			}
+		}()
 	}
 
 	backoffs := []time.Duration{

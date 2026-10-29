@@ -4,15 +4,16 @@
 # This is particularly helpful since most of the variables are nested in submodules
 # (See modules and dependencies in /deploy/infrastructure).
 
+import argparse
+import re
+import sys
+import textwrap
 from os import listdir
-from os.path import isfile, join, abspath, dirname, exists
+from os.path import abspath, dirname, exists, isfile, join
+
 import hcl2
 import marko
-import argparse
-import sys
 from hcl2 import SerializationOptions
-import re
-import textwrap
 
 DEFINITIONS_PATH = join(abspath(dirname(__file__)), "definitions")
 GENERATED_TFVARS_MD_FILENAME = "TFVARS.gen.md"
@@ -50,6 +51,18 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "crdb_cluster_name",
     "crdb_cache",
     "crdb_max_sql_memory",
+    "crdb_cpu_request",
+    "crdb_memory_request",
+    "crdb_cpu_limit",
+    "crdb_memory_limit",
+    "crdb_env",
+    "crdb_enable_liveness_probe",
+    "crdb_enable_readiness_probe",
+    "core_service_cpu_request",
+    "core_service_memory_request",
+    "core_service_cpu_limit",
+    "core_service_memory_limit",
+    "core_service_env",
     "locality",
     "datastore_max_open_conns",
     "crdb_external_nodes",
@@ -226,7 +239,7 @@ def write_file(filepath: str, content: str) -> None:
     print("*****")
     print("** " + filepath)
     print(content)
-    with open(filepath, "wt") as file:
+    with open(filepath, "w") as file:
         file.write(content)
 
 
@@ -343,7 +356,7 @@ def read_file(file_path: str) -> str:
     Returns:
         the content of the file as a str
     """
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         content = file.read()
     return content
 

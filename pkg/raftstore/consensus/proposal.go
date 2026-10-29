@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/interuss/dss/pkg/timestamp"
 )
 
@@ -31,7 +31,7 @@ func (c *Consensus) newProposal(ctx context.Context, requestType string, value [
 	timestamp := timestamp.MustFromContext(ctx)
 
 	return Proposal{
-		ID:          uuid.NewString(),
+		ID:          uuid.New().String(),
 		NodeID:      c.nodeID,
 		Timestamp:   timestamp.UTC(),
 		RequestType: requestType,
