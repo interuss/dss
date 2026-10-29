@@ -12,7 +12,7 @@
 
 ## Node authentication
 
-Raft nodes authenticate each other with mutual TLS when these three flags are set. They are shared by the aux, rid and scd Raft groups.
+Raft nodes authenticate each other with mutual TLS, configured by these three flags. They are shared by the aux, rid and scd Raft groups.
 
 | Flag | Content |
 |---|---|
@@ -23,9 +23,10 @@ Raft nodes authenticate each other with mutual TLS when these three flags are se
 - Each participant operates its own CA and issues one certificate per node. The bundle holds the CA of every participant of the pool, including the node's own.
 - The same certificate is presented to peers and to nodes connecting to this one.
 - A connecting peer is accepted when its certificate is signed by one of these CAs. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
-- With mutual TLS enabled every peer URL must use `https`, otherwise `http`. A node with a peer URL of the other scheme, or with only some of the three flags set, does not start.
+- Every peer URL must use `https`. A node with an `http` peer URL, or with only some of the three flags set, does not start.
+- A node does not start if its certificate cannot be loaded or has expired, or if every CA of the bundle has expired. Each expired CA is logged as a warning.
 - Restart the node after replacing its certificate or the CA bundle.
-- Without the flags, Raft traffic is unauthenticated plain HTTP and a warning is logged. Mutual TLS will become mandatory (see [#1734](https://github.com/interuss/dss/issues/1734)).
+- For local development and tests only, you can use `--raft_insecure` to disable TLS.
 
 ## Terminology
 

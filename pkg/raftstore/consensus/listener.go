@@ -36,7 +36,7 @@ func StartListener(ctx context.Context, logger *zap.Logger, addr string, tlsInfo
 		return stacktrace.NewError("the Raft listener is already started")
 	}
 
-	ln, err := newListener(ctx, addr, tlsInfo)
+	ln, err := newListener(ctx, addr, tlsInfo, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to listen on %s", addr)
 	}
