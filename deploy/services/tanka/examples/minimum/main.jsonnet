@@ -77,6 +77,7 @@ local metadata = metadataBase {
       ttl: "VAR_EVICT_SCD_TTL",
       timeout: "VAR_EVICT_SCD_TIMEOUT",
       limit: 0, // <-- this integer value is VAR_EVICT_SCD_LIMIT
+      batch_size: 0, // <-- this integer value is VAR_EVICT_SCD_BATCH_SIZE
       operational_intents: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS
     },
@@ -86,6 +87,7 @@ local metadata = metadataBase {
       ttl: "VAR_EVICT_RID_TTL",
       timeout: "VAR_EVICT_RID_TIMEOUT",
       limit: 0, // <-- this integer value is VAR_EVICT_RID_LIMIT
+      batch_size: 0, // <-- this integer value is VAR_EVICT_RID_BATCH_SIZE
       ISAs: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_ISAS
       subscriptions: true, // <-- this boolean value is VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS
     },

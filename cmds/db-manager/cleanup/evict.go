@@ -12,6 +12,7 @@ import (
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 var (
@@ -30,8 +31,10 @@ var (
 	deleteExpired = flags.Bool("delete", false, "set this flag to true to delete the expired entities")
 	_             = flags.String("locality", "", "self-identification string of this DSS instance")
 	timeout       = flags.Duration("timeout", 5*time.Minute, "Timeout for the command")
-	scdLimit      = flags.Int("scd_limit", 0, "maximum number of SCD entities deleted, defaults to unlimited")
-	ridLimit      = flags.Int("rid_limit", 0, "maximum number of RID entities deleted, defaults to unlimited")
+	scdLimit      = flags.Int("scd_limit", 0, "maximum number of SCD entities deleted per entity type (may be exceeded by up to scd_batch_size - 1 when scd_batch_size is set), defaults to unlimited")
+	ridLimit      = flags.Int("rid_limit", 0, "maximum number of RID entities deleted per entity type (may be exceeded by up to rid_batch_size - 1 when rid_batch_size is set), defaults to unlimited")
+	scdBatchSize  = flags.Int("scd_batch_size", 0, "number of SCD entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)")
+	ridBatchSize  = flags.Int("rid_batch_size", 0, "number of RID entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)")
 )
 
 func init() {
@@ -41,6 +44,30 @@ func init() {
 	EvictCmd.Flags().AddFlagSet(flags)
 }
 
+func deleteExpiredEntities(
+	ctx context.Context,
+	deleteFn func(ctx context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error),
+	threshold time.Time,
+	limit int,
+	batchSize int,
+) ([]dssmodels.ID, error) {
+	if batchSize == 0 {
+		return deleteFn(ctx, threshold, limit)
+	}
+	var deleted []dssmodels.ID
+	for {
+		batch, err := deleteFn(ctx, threshold, batchSize)
+		if err != nil {
+			return deleted, err
+		}
+		deleted = append(deleted, batch...)
+		if len(batch) < batchSize || (limit > 0 && len(deleted) >= limit) {
+			break
+		}
+	}
+	return deleted, nil
+}
+
 func evict(cmd *cobra.Command, _ []string) error {
 	var (
 		ctx          = cmd.Context()
@@ -48,6 +75,8 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ridThreshold = time.Now().Add(-*ridTtl)
 		scdLimit     = *scdLimit
 		ridLimit     = *ridLimit
+		scdBatchSize = *scdBatchSize
+		ridBatchSize = *ridBatchSize
 	)
 	if scdLimit < 0 {
 		return fmt.Errorf("scd_limit must be equal to or greater than 0, got %d", scdLimit)
@@ -55,9 +84,15 @@ func evict(cmd *cobra.Command, _ []string) error {
 	if ridLimit < 0 {
 		return fmt.Errorf("rid_limit must be equal to or greater than 0, got %d", ridLimit)
 	}
-	for _, limitFlag := range []string{"scd_limit", "rid_limit"} {
-		if cmd.Flags().Changed(limitFlag) && !*deleteExpired {
-			return fmt.Errorf("%s can only be set together with --delete", limitFlag)
+	if scdBatchSize < 0 {
+		return fmt.Errorf("scd_batch_size must be equal to or greater than 0, got %d", scdBatchSize)
+	}
+	if ridBatchSize < 0 {
+		return fmt.Errorf("rid_batch_size must be equal to or greater than 0, got %d", ridBatchSize)
+	}
+	for _, deleteOnlyFlag := range []string{"scd_limit", "rid_limit", "scd_batch_size", "rid_batch_size"} {
+		if cmd.Flags().Changed(deleteOnlyFlag) && !*deleteExpired {
+			return fmt.Errorf("%s can only be set together with --delete", deleteOnlyFlag)
 		}
 	}
 	log.Printf("WARNING: The usage of this tool may have an impact on performance when deleting entities. Read more in the README.")
@@ -82,6 +117,7 @@ func evict(cmd *cobra.Command, _ []string) error {
 		scdExpiredSub    []dssmodels.ID
 		expiredISAs      []dssmodels.ID
 		ridExpiredSub    []dssmodels.ID
+		delErr           error
 	)
 	scdRepo, err := scdStore.Interact(ctx)
 	if err != nil {
@@ -90,9 +126,9 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkScdOirs {
 		if *deleteExpired {
-			expiredOpIntents, err = scdRepo.DeleteExpiredOperationalIntents(ctx, scdThreshold, scdLimit)
+			expiredOpIntents, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredOperationalIntents, scdThreshold, scdLimit, scdBatchSize)
 			if err != nil {
-				return fmt.Errorf("failed to delete expired operational intents: %w", err)
+				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired operational intents: %w", err))
 			}
 		} else {
 			expiredOpIntents, err = scdRepo.ListExpiredOperationalIntents(ctx, scdThreshold)
@@ -104,9 +140,9 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkScdSubs {
 		if *deleteExpired {
-			scdExpiredSub, err = scdRepo.DeleteExpiredSubscriptions(ctx, scdThreshold, scdLimit)
+			scdExpiredSub, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredSubscriptions, scdThreshold, scdLimit, scdBatchSize)
 			if err != nil {
-				return fmt.Errorf("failed to delete expired SCD subscriptions: %w", err)
+				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired SCD subscriptions: %w", err))
 			}
 		} else {
 			scdExpiredSub, err = scdRepo.ListExpiredSubscriptions(ctx, scdThreshold)
@@ -123,9 +159,9 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidISAs {
 		if *deleteExpired {
-			expiredISAs, err = ridRepo.DeleteExpiredISAs(ctx, ridThreshold, ridLimit)
+			expiredISAs, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredISAs, ridThreshold, ridLimit, ridBatchSize)
 			if err != nil {
-				return fmt.Errorf("failed to delete expired ISAs: %w", err)
+				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired ISAs: %w", err))
 			}
 		} else {
 			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, ridThreshold)
@@ -137,9 +173,9 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	if *checkRidSubs {
 		if *deleteExpired {
-			ridExpiredSub, err = ridRepo.DeleteExpiredSubscriptions(ctx, ridThreshold, ridLimit)
+			ridExpiredSub, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredSubscriptions, ridThreshold, ridLimit, ridBatchSize)
 			if err != nil {
-				return fmt.Errorf("failed to delete expired RID subscriptions: %w", err)
+				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired RID subscriptions: %w", err))
 			}
 		} else {
 			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, ridThreshold)
@@ -169,6 +205,11 @@ func evict(cmd *cobra.Command, _ []string) error {
 		log.Printf("no SCD entity older than %s and no RID entity older than %s found", scdThreshold.String(), ridThreshold.String())
 	} else if !*deleteExpired {
 		log.Printf("no entity was deleted, run the command again with the `--delete` flag to do so")
+	}
+
+	if delErr != nil {
+		log.Printf("error(s) while deleting entities: %v", delErr)
+		return delErr
 	}
 	return nil
 }
