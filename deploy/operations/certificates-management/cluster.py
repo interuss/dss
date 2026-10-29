@@ -89,6 +89,14 @@ class Cluster:
         return os.path.join(self.prometheus_certs_dir, "ca.crt")
 
     @property
+    def raft_certs_dir(self):
+        return os.path.join(self.directory, "raft")
+
+    @property
+    def raft_ca(self):
+        return os.path.join(self.raft_certs_dir, "ca.crt")
+
+    @property
     def ca_pool_dir(self):
         return os.path.join(self.directory, "ca_pool")
 
@@ -129,6 +137,9 @@ class Cluster:
         if node_type == "prometheus":
             return "prometheus"
 
+        if node_type == "raft":
+            return f"raft-{node_id}"
+
         return f"yb-{node_type}-{node_id}"
 
     def get_node_short_name_group(self, node_type, node_id):
@@ -139,6 +150,9 @@ class Cluster:
         return f"{short_name}.yb-{node_type}s"
 
     def get_node_full_name(self, node_type, node_id):
+        if node_type == "raft":
+            return self.get_node_short_name(node_type, node_id)
+
         short_name_group = self.get_node_short_name_group(node_type, node_id)
         return f"{short_name_group}.{self.namespace}.svc.cluster.local"
 
@@ -172,13 +186,13 @@ class Cluster:
     def get_node_cert_second_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
         address = self.get_node_public_address(node_type, node_id)
-        if address:
+        if address and node_type != "raft":
             return f"{folder}/node.{address}.crt"
 
     def get_node_key_second_file(self, node_type, node_id):
         folder = getattr(self, f"{node_type}_certs_dir")
         address = self.get_node_public_address(node_type, node_id)
-        if address:
+        if address and node_type != "raft":
             return f"{folder}/node.{address}.key"
 
     def get_node_csr_file(self, node_type, node_id):
