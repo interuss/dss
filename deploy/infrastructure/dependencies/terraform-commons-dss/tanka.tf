@@ -65,6 +65,7 @@ resource "local_file" "tanka_config_main" {
     VAR_EVICT_SCD_TTL                        = var.evict_scd_ttl
     VAR_EVICT_SCD_TIMEOUT                    = var.evict_scd_timeout
     VAR_EVICT_SCD_LIMIT                      = var.evict_scd_limit
+    VAR_EVICT_SCD_BATCH_SIZE                 = var.evict_scd_batch_size
     VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS = var.evict_scd_operational_intents
     VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS       = var.evict_scd_subscriptions
     VAR_EVICT_ENABLE_RID_CRON                = var.evict_enable_rid_cron
@@ -72,6 +73,7 @@ resource "local_file" "tanka_config_main" {
     VAR_EVICT_RID_TTL                        = var.evict_rid_ttl
     VAR_EVICT_RID_TIMEOUT                    = var.evict_rid_timeout
     VAR_EVICT_RID_LIMIT                      = var.evict_rid_limit
+    VAR_EVICT_RID_BATCH_SIZE                 = var.evict_rid_batch_size
     VAR_EVICT_RID_ENABLE_ISAS                = var.evict_rid_isas
     VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS       = var.evict_rid_subscriptions
     VAR_PROMETHEUS_EXPOSE_EXTERNAL           = var.prometheus_hostname != ""

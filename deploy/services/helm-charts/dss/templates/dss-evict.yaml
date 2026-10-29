@@ -45,6 +45,9 @@ spec:
   {{- if $.Values.dss.conf.evict.scd.limit }}
                 - --scd_limit={{ $.Values.dss.conf.evict.scd.limit }}
   {{- end }}
+  {{- if $.Values.dss.conf.evict.scd.batchSize }}
+                - --scd_batch_size={{ $.Values.dss.conf.evict.scd.batchSize }}
+  {{- end }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
                 - --datastore_port={{ $datastorePort }}
@@ -105,6 +108,9 @@ spec:
   {{- end }}
   {{- if $.Values.dss.conf.evict.rid.limit }}
                 - --rid_limit={{ $.Values.dss.conf.evict.rid.limit }}
+  {{- end }}
+  {{- if $.Values.dss.conf.evict.rid.batchSize }}
+                - --rid_batch_size={{ $.Values.dss.conf.evict.rid.batchSize }}
   {{- end }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
