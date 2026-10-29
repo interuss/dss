@@ -17,12 +17,14 @@ components:
         Name of a Raft group of a DSS node, one per service. Examples: aux, rid, scd.
       type: string
 
-    RaftGroupMember:
+    RaftNode:
+      description: A DSS node in a Raft group.
       type: object
       required:
         - id
         - name
         - url
+        - state
       properties:
         id:
           description: ID of the node in the Raft group.
@@ -38,49 +40,37 @@ components:
             It is served by the Raft communication listener.
           type: string
           example: http://uss2.instance1.example.com:9500
-
-    CreateRaftGroupMemberParameters:
-      description: >-
-        Request to add another DSS node to a Raft group. This request is sent to a member of the group, which does not
-        know the node to add yet: the client passes it as `member`, as returned in the `member` field of
-        `GET /admin/v1/raft/groups/{group_name}/this_node` on the node to add.
-      type: object
-      required:
-        - member
-      properties:
-        member:
-          $ref: '#/components/schemas/RaftGroupMember'
-        replaces:
-          description: >-
-            ID of a member with the same name that the node replaces, e.g. after it lost its data directory.
-            Without it, adding a node whose name is already used by a member is rejected.
-            The replaced member is not removed by this request: it must be removed once the node is added.
-          type: string
-          example: "5740029381146209443"
-
-    RaftNode:
-      type: object
-      required:
-        - member
-        - state
-      properties:
-        member:
-          description: >-
-            This DSS node as a member of a given Raft group.
-          allOf:
-            - $ref: '#/components/schemas/RaftGroupMember'
         state:
           description: >-
-            State of this DSS node in the Raft group:
+            State of the node in the Raft group:
               * `waiting`: the node is not a member of the group yet. It waits to be added to a running group or to create a new one.
               * `member`: the node is a member of the group.
-              * `removed`: the node was removed from the group.
+              * `removed`: the node was removed from the group. Its ID can never be added to the group again.
           type: string
           enum:
             - waiting
             - member
             - removed
           example: member
+
+    CreateRaftGroupMemberParameters:
+      description: >-
+        Request to add another DSS node to a Raft group. This request is sent to a member of the group, which does not
+        know the node to add yet: the client passes it as `node`, as returned by
+        `GET /admin/v1/raft/groups/{group_name}/this_node` on the node to add.
+      type: object
+      required:
+        - node
+      properties:
+        node:
+          $ref: '#/components/schemas/RaftNode'
+        replaces:
+          description: >-
+            ID of a node with the same name and in the `member` state that the node replaces, e.g. after it lost its data directory.
+            Without it, adding a node whose name is already used by a member is rejected.
+            The replaced member is not removed by this request: it must be removed once the node is added.
+          type: string
+          example: "5740029381146209443"
 
     CreateRaftGroupParameters:
       description: >-
@@ -100,8 +90,7 @@ components:
         - group_name
         - cluster_id
         - leader_id
-        - members
-        - removed_ids
+        - nodes
       properties:
         group_name:
           $ref: '#/components/schemas/RaftGroupName'
@@ -113,17 +102,12 @@ components:
           description: ID of the current leader of the Raft group, empty if unknown.
           type: string
           example: "4401297763280950187"
-        members:
-          description: Members of the Raft group, all of which are voters.
+        nodes:
+          description: >-
+            Nodes that are or were members of the Raft group.
           type: array
           items:
-            $ref: '#/components/schemas/RaftGroupMember'
-        removed_ids:
-          description: IDs of the nodes removed from the Raft group. IDs removed from the Raft group can never be added to it again.
-          type: array
-          items:
-            type: string
-          example: ["5740029381146209443"]
+            $ref: '#/components/schemas/RaftNode'
 
 paths:
   /admin/v1/raft/groups/{group_name}/this_node:
@@ -251,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RaftGroupMember'
+                $ref: '#/components/schemas/RaftNode'
         '400':
           description: The request was not properly formed, or adding the node would lead to an invalid membership.
           content:
