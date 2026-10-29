@@ -100,7 +100,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
     )
 
     # Operational intents are spread apart so they don't conflict with each other
-    op_intent_lngs = iter(56 + 0.01 * i for i in range(ENTITY_COUNT))
+    op_intent_lngs = iter(56 + 0.05 * i for i in range(ENTITY_COUNT))
     check_limit(
         logger,
         "SCD operational intents",
