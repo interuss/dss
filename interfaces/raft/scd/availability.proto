@@ -12,12 +12,6 @@ enum UssAvailabilityState {
     USS_AVAILABILITY_STATE_DOWN = 2;
 }
 
-message UssAvailabilityStatus {
-    string uss = 1;
-    UssAvailabilityState availability = 2;
-    OVN version = 3;
-}
-
 // Operations
 
 message GetUssAvailabilityOperation {
@@ -32,10 +26,12 @@ message SetUssAvailabilityOperation {
 
 // Repository requests
 
-message GetUssAvailability {
+message GetUssAvailabilityRepoCall {
     string uss = 1;
 }
 
-message UpsertUssAvailability {
-    UssAvailabilityStatus status = 1;
+message UpsertUssAvailabilityRepoCall {
+    string uss = 1;
+    UssAvailabilityState availability = 2;
+    OVN version = 3;
 }
