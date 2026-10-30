@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package rid;
+
+import "google/protobuf/timestamp.proto";
+import "models.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/ridpb";
+
+message IdentificationServiceArea {
+    bytes id = 1;
+    string url = 2;
+    string owner = 3;
+    optional string version = 4;
+    string writer = 5;
+    models.CellsVolume4D volume = 6;
+}
+
+// Operations
+
+message CreateIdentificationServiceAreaOperation {
+    IdentificationServiceArea isa = 1;
+}
+
+message UpdateIdentificationServiceAreaOperation {
+    IdentificationServiceArea isa = 1;
+}
+
+message DeleteIdentificationServiceAreaOperation {
+    bytes id = 1;
+    string owner = 2;
+    optional string version = 3;
+}
+
+// Repository requests
+
+message GetISARepoCall {
+    bytes id = 1;
+}
+
+message InsertISARepoCall {
+    IdentificationServiceArea isa = 1;
+}
+
+message UpdateISARepoCall {
+    IdentificationServiceArea isa = 1;
+}
+
+message DeleteISARepoCall {
+    IdentificationServiceArea isa = 1;
+}
+
+message SearchISAsRepoCall {
+    repeated fixed64 cells = 1;
+    google.protobuf.Timestamp earliest = 2;
+    google.protobuf.Timestamp latest = 3;
+}
+
+message ListExpiredISAsRepoCall {
+    google.protobuf.Timestamp threshold = 1;
+}
+
+message CountISAsRepoCall {}
