@@ -14,16 +14,16 @@ import (
 func TestValidateConfChange(t *testing.T) {
 	voters := []uint64{1, 2, 3, 4}
 	removed := []uint64{5}
-	add := func(id uint64) raftpb.ConfChangeSingle {
-		return raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode, NodeID: id}
+	add := func(id uint64) *raftpb.ConfChangeSingle {
+		return &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(id)}
 	}
-	remove := func(id uint64) raftpb.ConfChangeSingle {
-		return raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode, NodeID: id}
+	remove := func(id uint64) *raftpb.ConfChangeSingle {
+		return &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(id)}
 	}
 
 	tests := []struct {
 		name    string
-		change  raftpb.ConfChangeSingle
+		change  *raftpb.ConfChangeSingle
 		url     string
 		voters  []uint64
 		wantErr bool
