@@ -57,6 +57,7 @@ The release notes should contain at least the following sections:
 * [deploy] CPU and memory requests and limits, additional environment variables (e.g. `GOGC`, `GOMAXPROCS`) and the CockroachDB `--cache` and `--max-sql-memory` flags of the CockroachDB and core-service containers can now be configured with Terraform, Tanka and Helm. See [CPU and memory allocation](docs/operations/performance.md#cpu-and-memory-allocation).
 * [deploy] Some users reported issues with CockroachDB under load in [#1732](https://github.com/interuss/dss/issues/1732). Please review it and consider using the new options `crdb_enable_liveness_probe` and `crdb_enable_readiness_probe` (Terraform), or `cockroach.enableLivenessProbe` and `cockroach.enableReadinessProbe` (Tanka), to disable the CockroachDB probes. For Helm, see the chart's README.
 * [terraform] The variables `desired_rid_db_version`, `desired_scd_db_version`, `desired_aux_db_version` and `aws_create_storage_class` were previously ignored by the `terraform-aws-dss` and `terraform-google-dss` modules and are now taken into account. Review your `terraform.tfvars` carefully before applying.
+* [terraform/helm] The CockroachDB nodes are now started with `--locality=zone=<locality>`, as with Tanka. The CockroachDB pods are restarted one by one at the next `helm upgrade`.
 
 ## Minimal database schema version
 

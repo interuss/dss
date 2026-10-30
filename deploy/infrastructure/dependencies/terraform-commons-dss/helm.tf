@@ -28,6 +28,7 @@ resource "local_file" "helm_chart_values" {
         cluster-name   = var.crdb_cluster_name
         cache          = var.crdb_cache
         max-sql-memory = var.crdb_max_sql_memory
+        locality       = "zone=${var.locality}"
         single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
       }
 
