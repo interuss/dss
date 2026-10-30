@@ -342,8 +342,8 @@ components:
       description: A member of a Raft group.
       required:
       - id
+      - name
       - url
-      - is_this_node
       - membership
       - health
       type: object
@@ -363,9 +363,6 @@ components:
             It is served by the Raft communication listener.
           type: string
           example: http://uss2.instance1.example.com:9500
-        is_this_node:
-          description: True for the serving node.
-          type: boolean
         membership:
           $ref: '#/components/schemas/RaftMembership'
         role:
