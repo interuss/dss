@@ -54,6 +54,13 @@ components:
       description: ID of the node in the Raft group.
       type: string
       example: "2213958870532660157"
+    # Copy of #/components/schemas/RaftNode/properties/name in interfaces/admin/admin.yaml.
+    # Copied rather than referenced because interfaces/openapi-to-go-server only
+    # resolves $ref within the same file.  Keep both copies identical.
+    NodeName:
+      description: Name of the node which is the same across all Raft groups.
+      type: string
+      example: uss2.instance1
     LogIndex:
       description: >-
         Position of an entry in the Raft log.  The first entry is at index 1;
@@ -233,11 +240,14 @@ components:
       description: The serving node.
       required:
       - id
+      - name
       - locality
       type: object
       properties:
         id:
           $ref: '#/components/schemas/NodeID'
+        name:
+          $ref: '#/components/schemas/NodeName'
         locality:
           description: Locality of the node (`--locality`).
           type: string
@@ -274,10 +284,17 @@ components:
         # Copy of #/components/schemas/RaftGroup/properties/leader_id in interfaces/admin/admin.yaml.
         # Copied rather than referenced because interfaces/openapi-to-go-server only
         # resolves $ref within the same file.  Keep both copies identical.
-        leader_id:
-          description: ID of the current leader of the Raft group, empty if unknown.
-          type: string
-          example: "4401297763280950187"
+        leader:
+          type: object
+          description: Current leader of the Raft group, empty if unknown.
+          required:
+            - id
+            - name
+          properties:
+            id:
+              $ref: '#/components/schemas/NodeID'
+            name:
+              $ref: '#/components/schemas/NodeName'
         term:
           description: Current term.  Increments upon each election.
           type: integer
@@ -359,9 +376,7 @@ components:
         # Copied rather than referenced because interfaces/openapi-to-go-server only
         # resolves $ref within the same file.  Keep both copies identical.
         name:
-          description: Name of the node which is the same across all Raft groups.
-          type: string
-          example: uss2.instance1
+          $ref: '#/components/schemas/NodeName'
         url:
           description: >-
             URL at which the other members of the Raft group send Raft messages to the node.
