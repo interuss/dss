@@ -38,8 +38,8 @@ for file in "${BASEDIR}/deploy/services/tanka/metadata_base.libsonnet" "${BASEDI
 done
 
 # Replace helm latests
-sed -i -E -e "s/(\\\$schemas := dict ).*}}/\1\"rid\" \"$CRDB_RID\" \"scd\" \"$CRDB_SCD\" \"aux_\" \"$AUX\" }}/" "${BASEDIR}/deploy/services/helm-charts/dss/templates/schema-manager.yaml"
-sed -i -E -e "s/(\\\$schemas = dict ).*}}/\1\"rid\" \"$YBDB_RID\" \"scd\" \"$YBDB_SCD\" \"aux_\" \"$AUX\" }}/" "${BASEDIR}/deploy/services/helm-charts/dss/templates/schema-manager.yaml"
+sed -i -E -e "s/(\\\$schemas := dict ).*}}/\1\"rid\" (\$schemaManager.desiredRidDbVersion | default \"$CRDB_RID\") \"scd\" (\$schemaManager.desiredScdDbVersion | default \"$CRDB_SCD\") \"aux_\" (\$schemaManager.desiredAuxDbVersion | default \"$AUX\") }}/" "${BASEDIR}/deploy/services/helm-charts/dss/templates/schema-manager.yaml"
+sed -i -E -e "s/(\\\$schemas = dict ).*}}/\1\"rid\" (\$schemaManager.desiredRidDbVersion | default \"$YBDB_RID\") \"scd\" (\$schemaManager.desiredScdDbVersion | default \"$YBDB_SCD\") \"aux_\" (\$schemaManager.desiredAuxDbVersion | default \"$AUX\") }}/" "${BASEDIR}/deploy/services/helm-charts/dss/templates/schema-manager.yaml"
 
 # Generate libsonnet files with list of migrations
 cat <<EOF > rid.libsonnet

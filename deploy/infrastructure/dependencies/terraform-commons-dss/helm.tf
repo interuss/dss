@@ -114,6 +114,12 @@ resource "local_file" "helm_chart_values" {
           }
         }
       }
+
+      schemaManager = {
+        desiredRidDbVersion = local.rid_db_schema
+        desiredScdDbVersion = local.scd_db_schema
+        desiredAuxDbVersion = local.aux_db_schema
+      }
     }
 
     global = {
@@ -333,6 +339,12 @@ resource "local_file" "helm_chart_values" {
             subscriptions : var.evict_rid_subscriptions
           }
         }
+      }
+
+      schemaManager = {
+        desiredRidDbVersion = local.rid_db_schema
+        desiredScdDbVersion = local.scd_db_schema
+        desiredAuxDbVersion = local.aux_db_schema
       }
     }
 

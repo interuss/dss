@@ -21,6 +21,10 @@ dss:
           limit: 0
           ISAs: true
           subscriptions: true
+  schemaManager:
+    desiredRidDbVersion: ""
+    desiredScdDbVersion: ""
+    desiredAuxDbVersion: ""
 
 
 cockroachdb:

@@ -59,6 +59,8 @@ The release notes should contain at least the following sections:
 * [terraform] The variables `desired_rid_db_version`, `desired_scd_db_version`, `desired_aux_db_version` and `aws_create_storage_class` were previously ignored by the `terraform-aws-dss` and `terraform-google-dss` modules and are now taken into account. Review your `terraform.tfvars` carefully before applying.
 * [helm] A secret to pull the DSS image from a private registry can now be set with `dss.imagePullSecret`. Terraform now pass `image_pull_secret` to Helm.
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
+* [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
+* [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
 
 ## Minimal database schema version
 

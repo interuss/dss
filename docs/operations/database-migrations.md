@@ -19,9 +19,6 @@ When operating outside of the automated deployment tools, you can use the `db-ma
 
 ---
 
-!!! warning "Helm Restrictions"
-    When using Helm (either directly or via Terraform), only the `latest` version will be installed for now.
-
 === "Terraform"
     Controlled by the following variables:
 
@@ -38,4 +35,8 @@ When operating outside of the automated deployment tools, you can use the `db-ma
 
 
 === "Helm"
-    Manual version targeting is not available for now.
+    Controlled by the following values (latest version when empty):
+
+    * `dss.schemaManager.desiredRidDbVersion`
+    * `dss.schemaManager.desiredScdDbVersion`
+    * `dss.schemaManager.desiredAuxDbVersion`
