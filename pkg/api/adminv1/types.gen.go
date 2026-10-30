@@ -6,24 +6,27 @@ type ErrorResponse struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// Name of a Raft group of a DSS node, one per service. Examples: aux, rid, scd.
+// Name of a Raft group of a DSS node, one per service (e.g., `aux`, `rid`, `scd`).
 type RaftGroupName string
 
 // A DSS node in a Raft group.
 type RaftNode struct {
-	// ID of the node in the Raft group.
+	// Identifier for the node within the Raft group.
 	Id string `json:"id"`
 
-	// Name of the node which is the same across all Raft groups.
+	// Name of the node, identical across all Raft groups.
 	Name string `json:"name"`
 
-	// URL at which the other members of the Raft group send Raft messages to the node. It is served by the Raft communication listener.
+	// URL at which the other members of the Raft group send Raft messages to the node. Served by the Raft communication listener.
 	Url string `json:"url"`
 
-	// State of the node in the Raft group:
-	//   * `waiting`: the node is not a member of the group yet. It waits to be added to a running group or to create a new one.
-	//   * `member`: the node is a member of the group.
-	//   * `removed`: the node was removed from the group. Its ID can never be added to the group again.
+	// State of the node in the Raft group.
+	//
+	// * `waiting`: Node is not yet a member of the group. It waits to be added to a running group or to create a new one.
+	//
+	// * `member`: Node is a member of the group.
+	//
+	// * `removed`: Node was removed from the group. Its ID can never be added to the group again.
 	State string `json:"state"`
 }
 
@@ -44,10 +47,10 @@ type CreateRaftGroupParameters struct {
 type RaftGroup struct {
 	GroupName RaftGroupName `json:"group_name"`
 
-	// ID of the Raft group within the cluster. It is identical on all the members of the group.
+	// Identifier for the Raft group within the cluster. Identical on all the members of the group.
 	ClusterId string `json:"cluster_id"`
 
-	// ID of the current leader of the Raft group, empty if unknown.
+	// Identifier for the current leader of the Raft group. Empty if unknown.
 	LeaderId string `json:"leader_id"`
 
 	// Nodes that are or were members of the Raft group.
