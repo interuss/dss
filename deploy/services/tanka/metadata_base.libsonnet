@@ -10,6 +10,7 @@
   enableScdGlobalLock: false,
   enableTimeBasedNotificationIndex: false,
   enableDssMetrics: false,
+  enableMonitoring: true,
   datastore: 'cockroachdb',
   datastoreMaxOpenConns: 4,
   locality: error 'must supply locality',
