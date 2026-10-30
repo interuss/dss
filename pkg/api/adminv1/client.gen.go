@@ -82,7 +82,11 @@ func (c *Client) CreateRaftGroup(ctx context.Context, body *CreateRaftGroupParam
 
 	path := "/admin/v1/raft/groups"
 
-	resp, err := c.do(ctx, http.MethodPost, path, body)
+	var requestBody any
+	if body != nil {
+		requestBody = body
+	}
+	resp, err := c.do(ctx, http.MethodPost, path, requestBody)
 	if err != nil {
 		return response, err
 	}
@@ -144,7 +148,11 @@ func (c *Client) CreateRaftGroupMember(ctx context.Context, groupName RaftGroupN
 
 	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/members"
 
-	resp, err := c.do(ctx, http.MethodPost, path, body)
+	var requestBody any
+	if body != nil {
+		requestBody = body
+	}
+	resp, err := c.do(ctx, http.MethodPost, path, requestBody)
 	if err != nil {
 		return response, err
 	}

@@ -600,7 +600,14 @@ def client_methods(
         body.append("")
 
         # Send the request
-        request_body = "body" if operation.json_request_body_type else "nil"
+        # The body is passed to do only if set.
+        request_body = "nil"
+        if operation.json_request_body_type:
+            request_body = "requestBody"
+            body.append("var requestBody any")
+            body.append("if body != nil {")
+            body.extend(indent(["requestBody = body"], 1))
+            body.append("}")
         body.append(
             f"resp, err := c.do(ctx, {operation.verb_const_name}, path, {request_body})"
         )
