@@ -45,6 +45,8 @@ The release notes should contain at least the following sections:
 
 ## Mandatory migration tasks
 
+* [terraform/tanka] `enable_monitoring` (default `false`) now also applies to Tanka. To keep Prometheus and Grafana managed by Tanka, set `enable_monitoring = true`. Otherwise, they are no longer rendered by Tanka; `tk apply` does not delete them, remove them manually if needed.
+
 ## Optional migration tasks
 
 ## Important information
@@ -61,6 +63,7 @@ The release notes should contain at least the following sections:
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 
 ## Minimal database schema version
 
