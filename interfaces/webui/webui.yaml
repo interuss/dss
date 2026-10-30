@@ -1,0 +1,522 @@
+openapi: 3.0.2
+info:
+  title: DSS Web Interface API
+  version: 0.1.0
+  description: >-
+    Interface definitions for the read-only web interface of a Discovery and
+    Synchronization Service (DSS) node.
+
+    Web interface functionality includes describing the Raft groups run by a
+    DSS node, the members of each group, the latency to each member, and the
+    certificates used for mutual TLS between the Raft nodes.
+
+    Every value is the view of the DSS node serving the request.  It may
+    differ from the view of another DSS node of the pool, e.g. during a
+    network partition.
+
+    No endpoint of this API produces any mutation, in the DSS node or in the
+    pool.  Administrative operations are performed with dssctl instead.
+
+tags:
+- name: Raft groups
+  description: Endpoints describing the Raft groups of the DSS node.
+- name: Trust
+  description: >-
+    Endpoints describing the certificates used for mutual TLS between Raft
+    nodes.
+- name: webui
+  description: Endpoints exposed by the web interface listener.
+components:
+  schemas:
+    Time:
+      required:
+      - value
+      - format
+      type: object
+      properties:
+        value:
+          type: string
+          description: >-
+            RFC3339-formatted time/date string.  The time zone must be 'Z'.
+          format: date-time
+          example: '1985-04-12T23:20:50.52Z'
+        format:
+          type: string
+          enum:
+          - RFC3339
+    ErrorResponse:
+      description: >-
+        Human-readable string returned when a request to the web interface
+        fails.
+      type: object
+      properties:
+        message:
+          description: >-
+            Human-readable message indicating what error occurred and/or why.
+          type: string
+          example: The error occurred because [...]
+    NodeID:
+      description: >-
+        ID of a node in a Raft group, as in the admin API.  Decimal string of
+        an unsigned 64-bit integer, which a JSON number cannot always hold.
+      type: string
+      pattern: ^[1-9][0-9]{0,19}$
+      example: '2213958870532660157'
+    LogIndex:
+      description: >-
+        Position of an entry in the Raft log.  The first entry is at index 1;
+        0 means no entry.
+      type: integer
+      format: int64
+      minimum: 0
+      example: 48213
+    RaftGroupName:
+      description: >-
+        Raft group of a DSS node, one per service: 'aux' (auxiliary), 'rid'
+        (remote identification) and 'scd' (strategic conflict detection, when
+        enabled).
+      type: string
+      enum:
+      - aux
+      - rid
+      - scd
+      example: rid
+    RaftRole:
+      description: >-
+        Raft role of a node.  The serving node knows its own role and the
+        identity of the leader only.
+
+        'Leader': orders and replicates the proposals of the group.  At most
+        one leader per term.
+
+        'Follower': replicates the log of the leader.
+
+        'Unknown': not known by the serving node.
+      type: string
+      enum:
+      - Leader
+      - Follower
+      - Unknown
+    RaftMembership:
+      description: >-
+        Membership of a node in its Raft group.
+
+        'Voter': counts towards the quorum.  An entry is committed once a
+        majority of voters have written it to disk.
+
+        'Learner': receives and applies the log without counting towards the
+        quorum.
+      type: string
+      enum:
+      - Voter
+      - Learner
+    NodeHealth:
+      description: >-
+        Health of a member.
+
+        'Up': the Raft stream between the serving node and the member is
+        active.  On the leader, the member must also have been recently
+        active.
+
+        'Down': the Raft stream is not active.  A stopped member and a
+        partitioned member look the same.
+
+        'Unknown': no information yet, e.g. right after the serving node
+        started.
+      type: string
+      enum:
+      - Up
+      - Down
+      - Unknown
+    GroupHealth:
+      description: >-
+        Health of a Raft group.
+
+        'Healthy': a leader is known and every voter is up.
+
+        'Degraded': a leader is known and a majority of voters is up, but at
+        least one member is down.  The group still commits proposals.
+
+        'NoQuorum': fewer than a majority of voters are up.  The group commits
+        nothing until voters return.
+
+        'NoLeader': no leader is known, e.g. during an election.
+      type: string
+      enum:
+      - Healthy
+      - Degraded
+      - NoQuorum
+      - NoLeader
+    CertificateStatus:
+      description: >-
+        Validity of a certificate at the time of the request.
+
+        'Valid': valid beyond the warning period of the serving node.
+
+        'Expiring': valid, but expires within the warning period.  Renew it and
+        install the renewed certificate before it expires.
+
+        'Expired': no longer valid.  Connections relying on it are rejected.
+
+        'NotYetValid': not valid yet.
+      type: string
+      enum:
+      - Valid
+      - Expiring
+      - Expired
+      - NotYetValid
+    ThisNode:
+      description: The serving node.
+      required:
+      - id
+      - locality
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NodeID'
+        locality:
+          description: Locality of the node (`--locality`).
+          type: string
+          example: uss1-instance1
+        version:
+          description: Version of the DSS software.
+          type: string
+          example: v0.21.0
+    RaftGroupSummary:
+      description: Overview of a Raft group.
+      required:
+      - group_name
+      - cluster_id
+      - health
+      - local_role
+      - voters_total
+      - voters_up
+      - learners_total
+      type: object
+      properties:
+        group_name:
+          $ref: '#/components/schemas/RaftGroupName'
+        cluster_id:
+          description: >-
+            ID of the group within the cluster, as in the admin API.  Identical
+            on every member.
+          type: string
+          example: '12638153115695167455'
+        health:
+          $ref: '#/components/schemas/GroupHealth'
+        leader_id:
+          description: Current leader.  Omitted when unknown.
+          anyOf:
+          - $ref: '#/components/schemas/NodeID'
+        term:
+          description: Current term.  Increments upon each election.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 7
+        commit_index:
+          description: Highest index known to be committed.
+          anyOf:
+          - $ref: '#/components/schemas/LogIndex'
+        applied_index:
+          description: Highest index applied by the serving node.
+          anyOf:
+          - $ref: '#/components/schemas/LogIndex'
+        local_role:
+          description: Role of the serving node.
+          anyOf:
+          - $ref: '#/components/schemas/RaftRole'
+        voters_total:
+          description: Number of voters.
+          type: integer
+          format: int32
+          minimum: 0
+          example: 5
+        voters_up:
+          description: Number of voters that are up, the serving node included.
+          type: integer
+          format: int32
+          minimum: 0
+          example: 4
+        learners_total:
+          description: Number of learners.
+          type: integer
+          format: int32
+          minimum: 0
+          example: 1
+        max_lag_entries:
+          description: >-
+            Highest `lag_entries` among the members.  Populated on the leader
+            only.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 12
+    GetRaftGroupsResponse:
+      description: Raft groups of the serving node.
+      required:
+      - this_node
+      - observed_at
+      - groups
+      type: object
+      properties:
+        this_node:
+          $ref: '#/components/schemas/ThisNode'
+        observed_at:
+          description: Time at which the serving node gathered the response.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        groups:
+          description: >-
+            Raft groups run by the serving node.  Empty when the node does not
+            use the Raft store.
+          type: array
+          items:
+            $ref: '#/components/schemas/RaftGroupSummary'
+          default: [ ]
+    RaftNodeStatus:
+      description: A member of a Raft group.
+      required:
+      - id
+      - url
+      - is_this_node
+      - membership
+      - health
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NodeID'
+        url:
+          description: >-
+            URL of the Raft listener of the member, as in the admin API.
+          type: string
+          format: url
+          example: https://uss2.instance1.example.com:9500
+        is_this_node:
+          description: True for the serving node.
+          type: boolean
+        membership:
+          $ref: '#/components/schemas/RaftMembership'
+        role:
+          $ref: '#/components/schemas/RaftRole'
+        health:
+          $ref: '#/components/schemas/NodeHealth'
+        active_since:
+          description: >-
+            Start of the current Raft stream between the serving node and the
+            member.  Omitted when the stream is not active, and for the serving
+            node.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        rtt_last_ms:
+          description: >-
+            Round-trip time of the last successful probe to the member, in
+            milliseconds.  The Raft groups of a node share one listener, so the
+            value is the same in every group.  Omitted for the serving node.
+          type: number
+          format: double
+          minimum: 0
+          example: 16.5
+        rtt_avg_ms:
+          description: Average round-trip time over the probing window, in milliseconds.
+          type: number
+          format: double
+          minimum: 0
+          example: 17.2
+        measured_at:
+          description: Time of the last successful probe.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        match_index:
+          description: >-
+            Highest index known to be replicated on the member.  Populated on
+            the leader only.
+          anyOf:
+          - $ref: '#/components/schemas/LogIndex'
+        lag_entries:
+          description: >-
+            Number of entries the member is behind.  On the leader, populated
+            for every member as the commit index minus `match_index`.  On other
+            nodes, populated for the serving node only, as its commit index
+            minus its applied index.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 3
+    GetRaftGroupResponse:
+      description: A Raft group and its members.
+      required:
+      - this_node
+      - observed_at
+      - summary
+      - nodes
+      type: object
+      properties:
+        this_node:
+          $ref: '#/components/schemas/ThisNode'
+        observed_at:
+          description: Time at which the serving node gathered the response.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        summary:
+          $ref: '#/components/schemas/RaftGroupSummary'
+        nodes:
+          description: Members of the group.
+          type: array
+          items:
+            $ref: '#/components/schemas/RaftNodeStatus'
+          default: [ ]
+    Certificate:
+      description: A certificate used for mutual TLS between Raft nodes.
+      required:
+      - fingerprint_sha256
+      - subject
+      - not_before
+      - not_after
+      - status
+      type: object
+      properties:
+        fingerprint_sha256:
+          description: >-
+            Hex-encoded SHA-256 digest of the DER certificate.  Identifies a
+            certificate across nodes.
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          example: 3f1c9b2e7a4d5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8
+        subject:
+          description: Distinguished name of the subject.
+          type: string
+          example: CN=USS1 Raft CA,O=USS1
+        organization:
+          description: >-
+            Organization of the subject, usually the participant operating the
+            certificate authority.  Omitted when absent.
+          type: string
+          example: USS1
+        not_before:
+          description: Start of the validity period.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        not_after:
+          description: End of the validity period.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        status:
+          $ref: '#/components/schemas/CertificateStatus'
+    GetTrustResponse:
+      description: >-
+        Certificates of the serving node for mutual TLS.  Shared by all its
+        Raft groups.
+      required:
+      - this_node
+      - observed_at
+      - tls_enabled
+      - certificate_authorities
+      type: object
+      properties:
+        this_node:
+          $ref: '#/components/schemas/ThisNode'
+        observed_at:
+          description: Time at which the serving node gathered the response.
+          anyOf:
+          - $ref: '#/components/schemas/Time'
+        tls_enabled:
+          description: >-
+            True when the Raft listener requires mutual TLS.  False with
+            `--raft_insecure`, in which case the other fields are empty.
+          type: boolean
+        node_certificate:
+          description: >-
+            Certificate presented to the other Raft nodes
+            (`--raft_tls_cert_file`).
+          anyOf:
+          - $ref: '#/components/schemas/Certificate'
+        certificate_authorities:
+          description: >-
+            Certificate authorities whose node certificates are accepted
+            (`--raft_tls_ca_file`), usually one per participant.
+          type: array
+          items:
+            $ref: '#/components/schemas/Certificate'
+          default: [ ]
+paths:
+  #
+  # Web interface endpoints for Raft groups
+  #
+  /webui/v1/raft/groups:
+    summary: Raft groups of the DSS node.
+    description: Interface to the Raft groups of the DSS node.
+    get:
+      tags:
+      - Raft groups
+      - webui
+      summary: List the Raft groups of the DSS node, with an overview of each.
+      operationId: getRaftGroups
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRaftGroupsResponse'
+          description: Raft groups were retrieved successfully.
+  /webui/v1/raft/groups/{group_name}:
+    summary: Read endpoint for a specified Raft group of the DSS node.
+    parameters:
+    - name: group_name
+      description: Name of the Raft group.
+      schema:
+        $ref: '#/components/schemas/RaftGroupName'
+      in: path
+      required: true
+    get:
+      tags:
+      - Raft groups
+      - webui
+      summary: Retrieve the specified Raft group and its members.
+      description: >-
+        Only the leader knows the progress of every member.  The lag of every
+        member is therefore available on the leader only; other nodes report
+        their own lag.
+      operationId: getRaftGroup
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRaftGroupResponse'
+          description: Raft group was retrieved successfully.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: One or more input parameters were missing or invalid.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: >-
+            The DSS node does not run the requested Raft group (e.g. 'scd'
+            without strategic conflict detection), or is not a member of it yet.
+  #
+  # Web interface endpoints for trust
+  #
+  /webui/v1/raft/trust:
+    summary: Certificates of the DSS node for mutual TLS.
+    description: Interface to the certificates of the Raft listener.
+    get:
+      tags:
+      - Trust
+      - webui
+      summary: >-
+        Retrieve the certificate of the DSS node and the certificate
+        authorities it trusts.
+      operationId: getRaftTrust
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTrustResponse'
+          description: Certificates were retrieved successfully.
