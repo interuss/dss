@@ -14,7 +14,7 @@ components:
 
     RaftGroupName:
       description: >-
-        Name of a Raft group of a DSS node, one per service. Examples: aux, rid, scd.
+        Name of a Raft group of a DSS node, one per service (e.g., `aux`, `rid`, `scd`).
       type: string
 
     RaftNode:
@@ -27,25 +27,28 @@ components:
         - state
       properties:
         id:
-          description: ID of the node in the Raft group.
+          description: Identifier for the node within the Raft group.
           type: string
           example: "2213958870532660157"
         name:
-          description: Name of the node which is the same across all Raft groups.
+          description: Name of the node, identical across all Raft groups.
           type: string
           example: uss2.instance1
         url:
           description: >-
             URL at which the other members of the Raft group send Raft messages to the node.
-            It is served by the Raft communication listener.
+            Served by the Raft communication listener.
           type: string
           example: http://uss2.instance1.example.com:9500
         state:
-          description: >-
-            State of the node in the Raft group:
-              * `waiting`: the node is not a member of the group yet. It waits to be added to a running group or to create a new one.
-              * `member`: the node is a member of the group.
-              * `removed`: the node was removed from the group. Its ID can never be added to the group again.
+          description: |-
+            State of the node in the Raft group.
+
+            * `waiting`: Node is not yet a member of the group. It waits to be added to a running group or to create a new one.
+
+            * `member`: Node is a member of the group.
+
+            * `removed`: Node was removed from the group. Its ID can never be added to the group again.
           type: string
           enum:
             - waiting
@@ -95,11 +98,11 @@ components:
         group_name:
           $ref: '#/components/schemas/RaftGroupName'
         cluster_id:
-          description: ID of the Raft group within the cluster. It is identical on all the members of the group.
+          description: Identifier for the Raft group within the cluster. Identical on all the members of the group.
           type: string
           example: "12638153115695167455"
         leader_id:
-          description: ID of the current leader of the Raft group, empty if unknown.
+          description: Identifier for the current leader of the Raft group. Empty if unknown.
           type: string
           example: "4401297763280950187"
         nodes:
@@ -119,7 +122,7 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     get:
-      summary: Describes this DSS node in a Raft group.
+      summary: Describe this DSS node in a Raft group
       description: >-
         Representation of this node within the specified group. It is available for every group that the
         node runs, including while the node waits to create or join it.
@@ -141,7 +144,7 @@ paths:
 
   /admin/v1/raft/groups:
     post:
-      summary: Creates a new Raft group with this DSS node as its only member.
+      summary: Create a new Raft group with this DSS node as its only member
       description: >-
         This DSS node must be waiting, i.e. not a member of a group with this name yet. The other nodes are then added
         to the group one at a time. The request returns once this DSS node is the leader of the new group.
@@ -184,23 +187,23 @@ paths:
       - name: group_name
         in: path
         required: true
-        description: Name of the Raft group.
+        description: Name of the Raft group of interest.
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     get:
-      summary: Describes a Raft group, as known by this DSS node.
+      summary: Retrieve the specified Raft group, as known by this DSS node
       operationId: getRaftGroup
       tags: [ raft ]
       responses:
         '200':
-          description: The Raft group is successfully described.
+          description: Raft group information was retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RaftGroup'
         '404':
           description: >-
-            This DSS node has no Raft group with this name, e.g. `scd` when it runs without `--enable_scd`, or it is
+            This DSS node has no Raft group with this name, e.g., `scd` when running without `--enable_scd`, or while
             still waiting to create or join one.
           content:
             application/json:
@@ -216,7 +219,7 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     post:
-      summary: Adds a node to a Raft group, as a voter.
+      summary: Add a node to a Raft group, as a voter
       description: >-
         The request must be sent to a member of the group, and the node to add is another DSS node, which must be
         running and waiting: as soon as it is added, it counts in the quorum of the group. A node started with an empty
@@ -265,7 +268,7 @@ paths:
           type: string
           example: "5740029381146209443"
     delete:
-      summary: Removes a node from a Raft group.
+      summary: Remove a node from a Raft group
       description: >-
         The ID of the removed node is retired permanently: it can never be added again to the group.
         A voter cannot be removed if the group would be left with fewer than 3 voters.
@@ -290,4 +293,4 @@ paths:
 
 tags:
   - name: raft
-    description: Endpoints exposed by a DSS node to manage Raft groups.
+    description: Endpoints exposed by a DSS node for management of its Raft groups.

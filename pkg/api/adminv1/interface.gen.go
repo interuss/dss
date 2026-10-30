@@ -70,7 +70,7 @@ type CreateRaftGroupResponseSet struct {
 }
 
 type GetRaftGroupRequest struct {
-	// Name of the Raft group.
+	// Name of the Raft group of interest.
 	GroupName RaftGroupName
 
 	// The result of attempting to authorize this request
@@ -82,10 +82,10 @@ const GetRaftGroupOperationID = "adminv1.GetRaftGroup"
 func (request *GetRaftGroupRequest) OperationID() string { return GetRaftGroupOperationID }
 
 type GetRaftGroupResponseSet struct {
-	// The Raft group is successfully described.
+	// Raft group information was retrieved successfully.
 	Response200 *RaftGroup
 
-	// This DSS node has no Raft group with this name, e.g. `scd` when it runs without `--enable_scd`, or it is still waiting to create or join one.
+	// This DSS node has no Raft group with this name, e.g., `scd` when running without `--enable_scd`, or while still waiting to create or join one.
 	Response404 *ErrorResponse
 
 	// Auto-generated internal server error response
@@ -158,25 +158,25 @@ type DeleteRaftGroupMemberResponseSet struct {
 }
 
 type Implementation interface {
-	// Describes this DSS node in a Raft group.
+	// Describe this DSS node in a Raft group
 	// ---
 	// Representation of this node within the specified group. It is available for every group that the node runs, including while the node waits to create or join it.
 	GetThisRaftNode(ctx context.Context, req *GetThisRaftNodeRequest) GetThisRaftNodeResponseSet
 
-	// Creates a new Raft group with this DSS node as its only member.
+	// Create a new Raft group with this DSS node as its only member
 	// ---
 	// This DSS node must be waiting, i.e. not a member of a group with this name yet. The other nodes are then added to the group one at a time. The request returns once this DSS node is the leader of the new group.
 	CreateRaftGroup(ctx context.Context, req *CreateRaftGroupRequest) CreateRaftGroupResponseSet
 
-	// Describes a Raft group, as known by this DSS node.
+	// Retrieve the specified Raft group, as known by this DSS node
 	GetRaftGroup(ctx context.Context, req *GetRaftGroupRequest) GetRaftGroupResponseSet
 
-	// Adds a node to a Raft group, as a voter.
+	// Add a node to a Raft group, as a voter
 	// ---
 	// The request must be sent to a member of the group, and the node to add is another DSS node, which must be running and waiting: as soon as it is added, it counts in the quorum of the group. A node started with an empty data directory waits to be added. The request returns once the change is adopted by the group.
 	CreateRaftGroupMember(ctx context.Context, req *CreateRaftGroupMemberRequest) CreateRaftGroupMemberResponseSet
 
-	// Removes a node from a Raft group.
+	// Remove a node from a Raft group
 	// ---
 	// The ID of the removed node is retired permanently: it can never be added again to the group. A voter cannot be removed if the group would be left with fewer than 3 voters. The request returns once the change is adopted by the group.
 	DeleteRaftGroupMember(ctx context.Context, req *DeleteRaftGroupMemberRequest) DeleteRaftGroupMemberResponseSet
