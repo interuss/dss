@@ -137,7 +137,10 @@ spec:
             {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
-      imagePullSecrets: []
+      {{- with $.Values.dss.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
       terminationGracePeriodSeconds: 30
       volumes:
         {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
