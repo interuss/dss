@@ -12,9 +12,9 @@ info:
     Administrative operations are performed with dssctl instead.
 
 tags:
-- name: Raft groups
+- name: raft
   description: Endpoints describing the Raft groups of the DSS node.
-- name: Trust
+- name: trust
   description: >-
     Endpoints describing the certificates used for mutual TLS between Raft
     nodes.
@@ -527,7 +527,7 @@ paths:
     description: Interface to the Raft groups of the DSS node.
     get:
       tags:
-      - Raft groups
+      - raft
       - webui
       summary: List the Raft groups of the DSS node, with an overview of each.
       operationId: getRaftGroups
@@ -549,7 +549,7 @@ paths:
       required: true
     get:
       tags:
-      - Raft groups
+      - raft
       - webui
       summary: Retrieve the specified Raft group and its members.
       description: >-
@@ -586,7 +586,7 @@ paths:
     description: Interface to the certificates of the Raft listener.
     get:
       tags:
-      - Trust
+      - trust
       - webui
       summary: >-
         Retrieve the certificate of the DSS node and the certificate
