@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package scd;
+
+import "google/protobuf/timestamp.proto";
+import "models.proto";
+import "scd/availability.proto";
+import "scd/ovn.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb";
+
+enum OperationalIntentState {
+    OPERATIONAL_INTENT_STATE_UNKNOWN = 0;
+    OPERATIONAL_INTENT_STATE_ACCEPTED = 1;
+    OPERATIONAL_INTENT_STATE_ACTIVATED = 2;
+    OPERATIONAL_INTENT_STATE_NONCONFORMING = 3;
+    OPERATIONAL_INTENT_STATE_CONTINGENT = 4;
+}
+
+message OperationalIntent {
+    bytes id = 1;
+    string manager = 2;
+    UssAvailabilityState uss_availability = 3;
+    int32 version = 4;
+    OperationalIntentState state = 5;
+    OVN ovn = 6;
+    repeated OVN past_ovns = 7;
+    string uss_base_url = 8;
+    optional bytes subscription_id = 9;
+    optional models.CellsVolume4D volume = 10;
+}
+
+message ImplicitSubscription {
+    bytes id = 1;
+    string base_url = 2;
+    bool for_constraints = 3;
+}
+
+message OperationalIntentParams {
+    bytes id = 1;
+    OVN ovn = 2;
+    OVN new_ovn = 3;
+    OperationalIntentState state = 4;
+    models.CellsVolume4D volume = 5;
+    bytes subscription_id = 6;
+    string uss_base_url = 7;
+    ImplicitSubscription implicit_subscription = 8;
+    repeated OVN key = 9;
+}
+
+// Operations
+
+message GetOperationalIntentReferenceOperation {
+    bytes id = 1;
+    string manager = 2;
+}
+
+message CreateOperationalIntentReferenceOperation {
+    string manager = 1;
+    OperationalIntentParams params = 2;
+}
+
+message UpdateOperationalIntentReferenceOperation {
+    string manager = 1;
+    OperationalIntentParams params = 2;
+}
+
+message DeleteOperationalIntentReferenceOperation {
+    bytes id = 1;
+    string manager = 2;
+    OVN ovn = 3;
+}
+
+message QueryOperationalIntentReferencesOperation {
+    models.CellsVolume4D area_of_interest = 1;
+    string manager = 2;
+}
+
+// Repository requests
+
+message GetOperationalIntentRepoCall {
+    bytes id = 1;
+}
+
+message DeleteOperationalIntentRepoCall {
+    bytes id = 1;
+}
+
+message UpsertOperationalIntentRepoCall {
+    OperationalIntent operational_intent = 1;
+}
+
+message SearchOperationalIntentsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message GetDependentOperationalIntentsRepoCall {
+    bytes subscription_id = 1;
+}
+
+message ListExpiredOperationalIntentsRepoCall {
+    google.protobuf.Timestamp threshold = 1;
+}
+
+message CountOperationalIntentsRepoCall {}
