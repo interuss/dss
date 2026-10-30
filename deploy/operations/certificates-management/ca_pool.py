@@ -74,6 +74,9 @@ def regenerate_ca_files(cluster):
     for node_type in ["master", "tserver", "prometheus"]:
         shutil.copy(cluster.ca_pool_ca, getattr(cluster, f"{node_type}_ca"))
 
+    if os.path.isdir(cluster.raft_certs_dir):
+        shutil.copy(cluster.ca_pool_ca, cluster.raft_ca)
+
     h = build_pool_hash(cluster)
 
     logger.info(f"Regenerated CA files from the CA pool. Current pool hash: {h}")

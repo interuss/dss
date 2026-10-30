@@ -15,14 +15,14 @@ from ca_pool import (
 )
 from cluster import Cluster
 from init import do_generate_clients, do_init
-from nodes import do_generate_nodes
+from nodes import do_generate_nodes, do_generate_raft_nodes
 
 logger = logging.getLogger(__name__)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Manage certificates for a DSS Instance using yugabyte"
+        description="Manage certificates for a DSS Instance using yugabyte or raft"
     )
     parser.add_argument(
         "--name",
@@ -52,13 +52,13 @@ def parse_args():
         "--nodes-count",
         metavar="NODES_COUNT",
         default="3",
-        help="Number of yugabyte nodes in the cluster, default to 3",
+        help="Number of yugabyte nodes in the cluster, or of raft nodes for generate-raft-nodes, default to 3",
     )
     parser.add_argument(
         "--nodes-public-address",
         metavar="NODES_PUBLIC_ADDRESS",
         default="",
-        help="Public node address. Use <ID> to indicate id of the node (0, 1, ...), <TYPE> for the type (tserver, masters). Example: '<ID>.<TYPE>.db.interuss.example'",
+        help="Public node address. Use <ID> to indicate id of the node (0, 1, ...), <TYPE> for the type (tserver, masters, raft). Example: '<ID>.<TYPE>.db.interuss.example'. Required by generate-raft-nodes",
     )
     parser.add_argument(
         "--ca-file",
@@ -86,6 +86,7 @@ def parse_args():
             "get-ca",
             "destroy",
             "generate-clients",
+            "generate-raft-nodes",
         ],
     )
     parser.add_argument(
@@ -146,6 +147,8 @@ def main():
         do_get_ca(cluster)
     elif args.action == "generate-clients":
         do_generate_clients(cluster)
+    elif args.action == "generate-raft-nodes":
+        do_generate_raft_nodes(cluster)
     elif args.action == "destroy":
         if input("Are you sure? You will loose all your certificates! [yN]") == "y":
             shutil.rmtree(cluster.directory)
