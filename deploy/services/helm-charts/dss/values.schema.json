@@ -274,6 +274,24 @@
             "required": ["name", "value"]
           }
         },
+        "schemaManager": {
+          "description": "Schema manager jobs configuration",
+          "type": "object",
+          "properties": {
+            "desiredRidDbVersion": {
+              "type": "string",
+              "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
+            },
+            "desiredScdDbVersion": {
+              "type": "string",
+              "description": "Desired SCD DB schema version. When empty, the latest version for the datastore is used. Example: `3.4.1`"
+            },
+            "desiredAuxDbVersion": {
+              "type": "string",
+              "description": "Desired AUX DB schema version. When empty, the latest version for the datastore is used. Example: `1.1.0`"
+            }
+          }
+        },
         "conf": {
           "type": "object",
           "properties": {
