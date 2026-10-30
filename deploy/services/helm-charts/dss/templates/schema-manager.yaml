@@ -13,6 +13,7 @@
 {{- $schemas = dict "rid" ($schemaManager.desiredRidDbVersion | default "1.0.1") "scd" ($schemaManager.desiredScdDbVersion | default "1.1.1") "aux_" ($schemaManager.desiredAuxDbVersion | default "1.1.0") }}
 {{- end -}}
 
+{{- if not .Values.raft.enabled }}
 {{- range $service, $schemaVersion := $schemas }}
 {{- $serviceClean := $service | replace "_" "" }}
 ---
@@ -70,4 +71,5 @@ spec:
       volumes:
         {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
         {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}
-{{- end -}}
+{{- end }}
+{{- end }}

@@ -1,5 +1,5 @@
 # Helm Chart
-This directory provides an [Helm Chart](https://helm.sh/) to deploy the DSS and datastore (CockroachDB or Yugabyte) kubernetes resources.
+This directory provides an [Helm Chart](https://helm.sh/) to deploy the DSS and datastore (CockroachDB, Yugabyte, or the Raft-based store) kubernetes resources. Exactly one datastore backend must be enabled: `cockroachdb.enabled`, `yugabyte.enabled` or `raft.enabled`.
 
 ## Requirements
 1. A Kubernetes cluster should be running and you should be properly authenticated. Requirements and instructions to create a new Kubernetes cluster can be found here:

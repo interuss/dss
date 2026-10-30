@@ -77,6 +77,44 @@ yugabyte:
       use_client_to_server_encryption: true
       ysql_hba_conf_csv: 'hostssl all all 0.0.0.0/0 cert'
 
+raft:
+  enabled: false
+  # Number of DSS nodes (Raft voters) deployed by this instance.
+  replicas: 3
+  # Raft node ID of pod ordinal 0. The node ID of pod ordinal N is nodeIDBase + N.
+  # Node IDs are never reused: do not change this once the pool has been bootstrapped.
+  nodeIDBase: 1
+  # Must be identical on all nodes of the pool, and different from other pools
+  # that could reach each other over the network.
+  clusterID: 1
+  # Directory where the node persists its Raft data (WAL and snapshots), on the PVC.
+  datadir: /raft_data
+  # Raft listener ports, one per service. Every node listens on the port of its
+  # own entry in the generated peer lists.
+  ports:
+    rid: 9011
+    scd: 9021
+    aux: 9031
+  storage:
+    # The write-ahead log is written before a proposal is acknowledged, so a
+    # low-fsync-latency volume is recommended.
+    size: 100Gi
+    storageClass: ""
+  # the whole dataset is held in memory and disk latency is on the commit path.
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 4
+      memory: 16Gi
+  # Additional raft_* flags passed to the core service, keyed by flag name
+  # without the leading --, e.g. { "raft_tick_interval": "200ms" }.
+  # See `core-service --help` (flags: raft_snapshot_catchup_entries,
+  # raft_snapshot_interval_entries, raft_tick_interval, raft_election_tick,
+  # raft_heartbeat_tick, raft_max_size_per_msg, raft_max_inflight_msgs).
+  tuning: {}
+
 monitoring:
   enabled: false
   externalService:

@@ -1,0 +1,160 @@
+{{/* Exactly one datastore backend must be enabled */}}
+{{- include "dss.validate-datastore" . -}}
+{{- if .Values.raft.enabled }}
+{{- $dss := .Values.dss -}}
+{{- $raft := .Values.raft -}}
+{{- $ridPeers := include "dss.raft-peers" (dict "releaseName" .Release.Name "base" $raft.nodeIDBase "replicas" $raft.replicas "port" $raft.ports.rid) -}}
+{{- $scdPeers := include "dss.raft-peers" (dict "releaseName" .Release.Name "base" $raft.nodeIDBase "replicas" $raft.replicas "port" $raft.ports.scd) -}}
+{{- $auxPeers := include "dss.raft-peers" (dict "releaseName" .Release.Name "base" $raft.nodeIDBase "replicas" $raft.replicas "port" $raft.ports.aux) -}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: {{.Release.Name}}-core-service-headless
+  name: {{.Release.Name}}-core-service-headless
+spec:
+  clusterIP: None
+  selector:
+    app: {{.Release.Name}}-core-service
+  ports:
+    - port: {{ $raft.ports.aux }}
+      targetPort: {{ $raft.ports.aux }}
+      protocol: TCP
+      name: raft-aux
+    - port: {{ $raft.ports.rid }}
+      targetPort: {{ $raft.ports.rid }}
+      protocol: TCP
+      name: raft-rid
+    - port: {{ $raft.ports.scd }}
+      targetPort: {{ $raft.ports.scd }}
+      protocol: TCP
+      name: raft-scd
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    name: {{.Release.Name}}-core-service
+  name: {{.Release.Name}}-core-service
+spec:
+  # All nodes must start together: each node blocks at startup on its first proposal
+  # (its own metadata), which needs a quorum, and the HTTP server only starts once the
+  # stores are initialized. With the default OrderedReady policy, pod-0 could never
+  # become ready before pods 1..N start, deadlocking the bootstrap.
+  podManagementPolicy: Parallel
+  minReadySeconds: 30
+  serviceName: {{.Release.Name}}-core-service-headless
+  replicas: {{ $raft.replicas }}
+  selector:
+    matchLabels:
+      app: {{.Release.Name}}-core-service
+  template:
+    metadata:
+      labels:
+        app: {{.Release.Name}}-core-service
+{{ if $dss.conf.enableDssMetrics }}
+      annotations:
+        prometheus.io/path: metrics
+        prometheus.io/port: '8079'
+        prometheus.io/scrape: 'true'
+{{ end }}
+    spec:
+      containers:
+        - name: core-service
+{{/* The node ID is derived from the pod ordinal at runtime: pod <name>-N is raft node <N + nodeIDBase>. */}}
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              exec core-service \
+                --accepted_jwt_audiences={{$dss.conf.hostname}} \
+                --addr=:8080 \
+{{- if $dss.conf.publicEndpoint }}
+                --public_endpoint={{$dss.conf.publicEndpoint}} \
+{{- end }}
+                --locality={{$dss.conf.locality}} \
+                --store_type=raft \
+                --raft_node_id=$(( ${HOSTNAME##*-} + {{ $raft.nodeIDBase }} )) \
+                --raft_cluster_id={{ $raft.clusterID }} \
+                --raft_datadir={{ $raft.datadir }} \
+{{- range $flag, $value := $raft.tuning }}
+                --{{ $flag }}={{ $value }} \
+{{- end }}
+                --rid_raft_peers='{{ $ridPeers }}' \
+                --scd_raft_peers='{{ $scdPeers }}' \
+                --aux_raft_peers='{{ $auxPeers }}' \
+                --enable_scd={{$dss.conf.enableScd}} \
+                --enable_scd_global_lock={{$dss.conf.enableScdGlobalLock | default false}} \
+{{- if $dss.conf.enableTimeBasedNotificationIndex }}
+                --enable_time_based_notification_index=true \
+{{- end }}
+{{- if $dss.conf.enableDssMetrics }}
+                --enable_metrics=true \
+{{- end }}
+                --gcp_prof_service_name= \
+{{- if $dss.conf.jwksEndpoint }}
+                --jwks_endpoint={{ $dss.conf.jwksEndpoint }} \
+{{- end }}
+{{- if $dss.conf.jwksKeyIds }}
+                --jwks_key_ids={{ $dss.conf.jwksKeyIds | join "," }} \
+{{- end }}
+{{- if $dss.conf.pubKeys }}
+                --public_key_files={{ $dss.conf.pubKeys | join "," }} \
+{{- end }}
+          image: {{ $dss.image }}
+          imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
+          ports:
+            - containerPort: 8080
+              name: http
+{{ if $dss.conf.enableDssMetrics }}
+            - containerPort: 8079
+              name: metrics
+{{ end }}
+            - containerPort: {{ $raft.ports.aux }}
+              name: raft-aux
+            - containerPort: {{ $raft.ports.rid }}
+              name: raft-rid
+            - containerPort: {{ $raft.ports.scd }}
+              name: raft-scd
+          # TCP probe on the first Raft listener (aux): the transport is up as soon as
+          # the node is initialized, i.e. before it blocks on its first proposal
+          # (which needs a quorum). Readiness must not depend on quorum: headless
+          # services only publish DNS records for Ready pods, and peers are reached
+          # through exactly those records, so a /healthy-based readiness would
+          # deadlock the bootstrap (no quorum -> not ready -> no DNS -> no quorum).
+          readinessProbe:
+            tcpSocket:
+              port: raft-aux
+          resources:
+{{ toYaml $raft.resources | indent 12 }}
+          stdin: false
+          tty: false
+          volumeMounts:
+            - mountPath: {{ $raft.datadir }}
+              name: raft-data
+            {{- if $dss.conf.pubKeys }}
+            {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" false) | nindent 12 }}
+            {{- end }}
+      imagePullSecrets: []
+      terminationGracePeriodSeconds: 30
+      {{- if $dss.conf.pubKeys }}
+      volumes:
+        {{- include "public-certs:volume" (dict "cockroachdbEnabled" false) | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: raft-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+{{ if $raft.storage.storageClass }}
+        storageClassName: {{ $raft.storage.storageClass }}
+{{ end }}
+        resources:
+          requests:
+            storage: {{ $raft.storage.size }}
+{{- end }}
