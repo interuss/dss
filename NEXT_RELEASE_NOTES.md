@@ -61,6 +61,7 @@ The release notes should contain at least the following sections:
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
 
 ## Minimal database schema version
 

@@ -22,7 +22,7 @@ metadata:
   labels:
     name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
   name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   completions: 1
   parallelism: 1
