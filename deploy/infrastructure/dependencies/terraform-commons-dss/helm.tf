@@ -92,6 +92,7 @@ resource "local_file" "helm_chart_values" {
         enableDssMetrics                 = var.enable_dss_metrics
         locality                         = "zone=${var.locality}"
         datastoreMaxOpenConns            = var.datastore_max_open_conns
+        dumpRequests                     = var.dump_requests
 
         evict = {
           scd = {

@@ -4,6 +4,7 @@ dss:
   env: []
   conf:
     enableScd: true
+    dumpRequests: true
     evict:
       scd:
           enableCron: false

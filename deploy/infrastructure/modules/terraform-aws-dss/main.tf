@@ -45,6 +45,7 @@ module "terraform-commons-dss" {
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
+  dump_requests                        = var.dump_requests
   should_init                          = var.should_init
   desired_rid_db_version               = var.desired_rid_db_version
   desired_scd_db_version               = var.desired_scd_db_version
