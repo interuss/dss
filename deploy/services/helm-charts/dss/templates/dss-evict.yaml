@@ -20,7 +20,7 @@ metadata:
   labels:
     name: dss-scd-evict
   name: dss-scd-evict
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   schedule: "{{ $.Values.dss.conf.evict.scd.schedule }}"
   suspend: {{ not $.Values.dss.conf.evict.scd.enableCron }}
@@ -84,7 +84,7 @@ metadata:
   labels:
     name: dss-rid-evict
   name: dss-rid-evict
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   schedule: "{{ $.Values.dss.conf.evict.rid.schedule }}"
   suspend: {{ not $.Values.dss.conf.evict.rid.enableCron }}

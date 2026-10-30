@@ -54,7 +54,7 @@ yugabyte:
 
   isMultiAz: true
 
-  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+  masterAddresses: "yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"
 
   tls:
     enabled: true

@@ -21,7 +21,7 @@ metadata:
     app: prometheus
     name: prometheus-external
   name: prometheus-external
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $.Values.monitoring.externalService.ip) | nindent 2}}
   ports:

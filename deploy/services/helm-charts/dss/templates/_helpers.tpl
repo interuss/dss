@@ -25,9 +25,9 @@ yugabyte
 
 {{- define "datastoreHost" -}}
 {{- if $.Values.cockroachdb.enabled -}}
-{{- printf "%s-public.default" $.Values.cockroachdb.fullnameOverride -}}
+{{- printf "%s-public.%s" $.Values.cockroachdb.fullnameOverride $.Release.Namespace -}}
 {{- else -}}
-{{- printf "yb-tservers.default" -}}
+{{- printf "yb-tservers.%s" $.Release.Namespace -}}
 {{- end -}}
 {{- end -}}
 
