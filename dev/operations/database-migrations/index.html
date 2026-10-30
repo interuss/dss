@@ -1952,10 +1952,6 @@
 <h3 id="manual-migrations">Manual Migrations<a class="headerlink" href="#manual-migrations" title="Permanent link">¶</a></h3>
 <p>When operating outside of the automated deployment tools, you can use the <code>db-manager migrate</code> CLI command to apply migrations directly. Refer to the tool's built-in help (<code>--help</code>) for specific command arguments and flags.</p>
 <hr>
-<div class="admonition warning">
-<p class="admonition-title">Helm Restrictions</p>
-<p>When using Helm (either directly or via Terraform), only the <code>latest</code> version will be installed for now.</p>
-</div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="terraform" name="__tabbed_1" type="radio"><input id="tanka" name="__tabbed_1" type="radio"><input id="helm" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="terraform">Terraform</label><label for="tanka">Tanka</label><label for="helm">Helm</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1975,7 +1971,12 @@
 </ul>
 </div>
 <div class="tabbed-block">
-<p>Manual version targeting is not available for now.</p>
+<p>Controlled by the following values (latest version when empty):</p>
+<ul>
+<li><code>dss.schemaManager.desiredRidDbVersion</code></li>
+<li><code>dss.schemaManager.desiredScdDbVersion</code></li>
+<li><code>dss.schemaManager.desiredAuxDbVersion</code></li>
+</ul>
 </div>
 </div>
 </div>
@@ -1999,7 +2000,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 17, 2026 15:41:43 UTC">June 17, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 30, 2026 13:44:32 UTC">October 30, 2026</span>
   </span>
 
     
