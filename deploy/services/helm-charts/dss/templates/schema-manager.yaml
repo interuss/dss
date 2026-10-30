@@ -13,6 +13,10 @@
 {{- $schemas = dict "rid" ($schemaManager.desiredRidDbVersion | default "1.0.1") "scd" ($schemaManager.desiredScdDbVersion | default "1.1.1") "aux_" ($schemaManager.desiredAuxDbVersion | default "1.1.0") }}
 {{- end -}}
 
+{{- if not .Values.dss.conf.enableScd }}
+{{- $schemas = omit $schemas "scd" }}
+{{- end }}
+
 {{- range $service, $schemaVersion := $schemas }}
 {{- $serviceClean := $service | replace "_" "" }}
 ---
