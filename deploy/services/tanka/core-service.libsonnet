@@ -15,6 +15,20 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
   }
 };
 
+local minikubeLoadBalancer(metadata) = base.Service(metadata, 'gateway') {
+  app:: 'core-service',
+  port:: metadata.backend.port,
+  type:: 'LoadBalancer',
+  spec+: {
+    ports: [{
+      port: 80,
+      targetPort: metadata.backend.port,
+      protocol: "TCP",
+      name: "http",
+    }]
+  }
+};
+
 {
   GoogleIngress(metadata): base.Ingress(metadata, 'https-ingress') {
     metadata+: {
@@ -76,7 +90,8 @@ local awsLoadBalancer(metadata) = base.AWSLoadBalancerWithManagedCert(metadata, 
       [if metadata.backend.sslPolicy != '' then 'frontendConfig']: $.GoogleSSLPolicyFrontendConfig(metadata),
       service: $.GoogleService(metadata),
     },
-    aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata)
+    aws_loadbalancer: if metadata.cloud_provider == "aws" then awsLoadBalancer(metadata),
+    minikube_loadbalancer: if metadata.cloud_provider == "minikube" then minikubeLoadBalancer(metadata),
   },
 
   all(metadata): {

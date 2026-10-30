@@ -64,6 +64,7 @@ The release notes should contain at least the following sections:
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
+* [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
 
 ## Minimal database schema version
 

@@ -22,7 +22,7 @@ You can now deploy the DSS services using Helm or Tanka. See the repository `/de
 
 ---
 
-To access the service, find the external IP using the `kubectl get services dss-dss-gateway` command. The port 80, without HTTPs is used.
+To access the service, find the external IP using the `kubectl get services dss-dss-gateway` (Helm) or `kubectl get services gateway` (Tanka) command. The port 80, without HTTPs is used.
 
 ## Next steps
 
