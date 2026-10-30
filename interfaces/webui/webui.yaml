@@ -38,24 +38,22 @@ components:
           type: string
           enum:
           - RFC3339
+    # Copy of #/components/schemas/ErrorResponse in interfaces/admin/admin.yaml.
+    # Copied rather than referenced because interfaces/openapi-to-go-server only
+    # resolves $ref within the same file.  Keep both copies identical.
     ErrorResponse:
-      description: >-
-        Human-readable string returned when a request to the web interface
-        fails.
       type: object
       properties:
         message:
-          description: >-
-            Human-readable message indicating what error occurred and/or why.
+          description: Human-readable message indicating what error occurred and/or why.
           type: string
-          example: The error occurred because [...]
+    # Copy of #/components/schemas/RaftNode/properties/id in interfaces/admin/admin.yaml.
+    # Copied rather than referenced because interfaces/openapi-to-go-server only
+    # resolves $ref within the same file.  Keep both copies identical.
     NodeID:
-      description: >-
-        ID of a node in a Raft group, as in the admin API.  Decimal string of
-        an unsigned 64-bit integer, which a JSON number cannot always hold.
+      description: ID of the node in the Raft group.
       type: string
-      pattern: ^[1-9][0-9]{0,19}$
-      example: '2213958870532660157'
+      example: "2213958870532660157"
     LogIndex:
       description: >-
         Position of an entry in the Raft log.  The first entry is at index 1;
@@ -64,17 +62,43 @@ components:
       format: int64
       minimum: 0
       example: 48213
+    EntryCount:
+      description: Number of entries of the Raft log.
+      type: integer
+      format: int64
+      minimum: 0
+      example: 3
+    Counter:
+      description: >-
+        Number of events since the serving node started.  A client derives a
+        rate from two successive responses.
+      type: integer
+      format: int64
+      minimum: 0
+      example: 40127
+    NodeCount:
+      description: Number of nodes.
+      type: integer
+      format: int32
+      minimum: 0
+      example: 5
+    Milliseconds:
+      description: Duration in milliseconds.
+      type: number
+      format: double
+      minimum: 0
+      example: 16.5
+    ObservedAt:
+      description: Time at which the serving node gathered the response.
+      anyOf:
+      - $ref: '#/components/schemas/Time'
+    # Copy of #/components/schemas/RaftGroupName in interfaces/admin/admin.yaml.
+    # Copied rather than referenced because interfaces/openapi-to-go-server only
+    # resolves $ref within the same file.  Keep both copies identical.
     RaftGroupName:
       description: >-
-        Raft group of a DSS node, one per service: 'aux' (auxiliary), 'rid'
-        (remote identification) and 'scd' (strategic conflict detection, when
-        enabled).
+        Name of a Raft group of a DSS node, one per service. Examples: aux, rid, scd.
       type: string
-      enum:
-      - aux
-      - rid
-      - scd
-      example: rid
     RaftRole:
       description: >-
         Raft role of a node.  The serving node knows its own role and the
@@ -170,25 +194,19 @@ components:
         reads_total:
           description: >-
             Read requests, served without adding an entry to the log.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 182311
+          anyOf:
+          - $ref: '#/components/schemas/Counter'
         writes_total:
           description: >-
             Write requests, each proposed as one entry of the log.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 40127
+          anyOf:
+          - $ref: '#/components/schemas/Counter'
         errors_total:
           description: >-
             Read and write requests that failed, e.g. on timeout or when
             rejected by the business logic.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 12
+          anyOf:
+          - $ref: '#/components/schemas/Counter'
     CertificateStatus:
       description: >-
         Validity of a certificate at the time of the request.
@@ -235,22 +253,27 @@ components:
       - voters_up
       - learners_total
       - requests
+      - leader_id
       type: object
       properties:
         group_name:
           $ref: '#/components/schemas/RaftGroupName'
+        # Copy of #/components/schemas/RaftGroup/properties/cluster_id in interfaces/admin/admin.yaml.
+        # Copied rather than referenced because interfaces/openapi-to-go-server only
+        # resolves $ref within the same file.  Keep both copies identical.
         cluster_id:
-          description: >-
-            ID of the group within the cluster, as in the admin API.  Identical
-            on every member.
+          description: ID of the Raft group within the cluster. It is identical on all the members of the group.
           type: string
-          example: '12638153115695167455'
+          example: "12638153115695167455"
         health:
           $ref: '#/components/schemas/GroupHealth'
+        # Copy of #/components/schemas/RaftGroup/properties/leader_id in interfaces/admin/admin.yaml.
+        # Copied rather than referenced because interfaces/openapi-to-go-server only
+        # resolves $ref within the same file.  Keep both copies identical.
         leader_id:
-          description: Current leader.  Omitted when unknown.
-          anyOf:
-          - $ref: '#/components/schemas/NodeID'
+          description: ID of the current leader of the Raft group, empty if unknown.
+          type: string
+          example: "4401297763280950187"
         term:
           description: Current term.  Increments upon each election.
           type: integer
@@ -279,30 +302,22 @@ components:
           - $ref: '#/components/schemas/RaftRole'
         voters_total:
           description: Number of voters.
-          type: integer
-          format: int32
-          minimum: 0
-          example: 5
+          anyOf:
+          - $ref: '#/components/schemas/NodeCount'
         voters_up:
           description: Number of voters that are up, the serving node included.
-          type: integer
-          format: int32
-          minimum: 0
-          example: 4
+          anyOf:
+          - $ref: '#/components/schemas/NodeCount'
         learners_total:
           description: Number of learners.
-          type: integer
-          format: int32
-          minimum: 0
-          example: 1
+          anyOf:
+          - $ref: '#/components/schemas/NodeCount'
         max_lag_entries:
           description: >-
             Highest `lag_entries` among the members.  Populated on the leader
             only.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 12
+          anyOf:
+          - $ref: '#/components/schemas/EntryCount'
     GetRaftGroupsResponse:
       description: Raft groups of the serving node.
       required:
@@ -314,9 +329,7 @@ components:
         this_node:
           $ref: '#/components/schemas/ThisNode'
         observed_at:
-          description: Time at which the serving node gathered the response.
-          anyOf:
-          - $ref: '#/components/schemas/Time'
+          $ref: '#/components/schemas/ObservedAt'
         groups:
           description: >-
             Raft groups run by the serving node.  Empty when the node does not
@@ -337,18 +350,19 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/NodeID'
+        # Copy of #/components/schemas/RaftNode/properties/name and url in interfaces/admin/admin.yaml.
+        # Copied rather than referenced because interfaces/openapi-to-go-server only
+        # resolves $ref within the same file.  Keep both copies identical.
         name:
-          description: >-
-            Name of the member, identical across Raft groups, as in the admin
-            API.  Omitted when unknown.
+          description: Name of the node which is the same across all Raft groups.
           type: string
           example: uss2.instance1
         url:
           description: >-
-            URL of the Raft listener of the member, as in the admin API.
+            URL at which the other members of the Raft group send Raft messages to the node.
+            It is served by the Raft communication listener.
           type: string
-          format: url
-          example: https://uss2.instance1.example.com:9500
+          example: http://uss2.instance1.example.com:9500
         is_this_node:
           description: True for the serving node.
           type: boolean
@@ -370,16 +384,13 @@ components:
             Round-trip time of the last successful probe to the member, in
             milliseconds.  The Raft groups of a node share one listener, so the
             value is the same in every group.  Omitted for the serving node.
-          type: number
-          format: double
-          minimum: 0
-          example: 16.5
+          anyOf:
+          - $ref: '#/components/schemas/Milliseconds'
         rtt_avg_ms:
-          description: Average round-trip time over the probing window, in milliseconds.
-          type: number
-          format: double
-          minimum: 0
-          example: 17.2
+          description: >-
+            Average round-trip time over the probing window, in milliseconds.
+          anyOf:
+          - $ref: '#/components/schemas/Milliseconds'
         measured_at:
           description: Time of the last successful probe.
           anyOf:
@@ -408,20 +419,16 @@ components:
             node.  Every proposal carries the ID of its proposing node, so every
             member can count it.  Read requests are not in the log and are only
             counted by the member that serves them, in `requests`.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 1604
+          anyOf:
+          - $ref: '#/components/schemas/Counter'
         lag_entries:
           description: >-
             Number of entries the member is behind.  On the leader, populated
             for every member as the commit index minus `match_index`.  On other
             nodes, populated for the serving node only, as its commit index
             minus its applied index.
-          type: integer
-          format: int64
-          minimum: 0
-          example: 3
+          anyOf:
+          - $ref: '#/components/schemas/EntryCount'
     GetRaftGroupResponse:
       description: A Raft group and its members.
       required:
@@ -434,9 +441,7 @@ components:
         this_node:
           $ref: '#/components/schemas/ThisNode'
         observed_at:
-          description: Time at which the serving node gathered the response.
-          anyOf:
-          - $ref: '#/components/schemas/Time'
+          $ref: '#/components/schemas/ObservedAt'
         summary:
           $ref: '#/components/schemas/RaftGroupSummary'
         nodes:
@@ -496,9 +501,7 @@ components:
         this_node:
           $ref: '#/components/schemas/ThisNode'
         observed_at:
-          description: Time at which the serving node gathered the response.
-          anyOf:
-          - $ref: '#/components/schemas/Time'
+          $ref: '#/components/schemas/ObservedAt'
         tls_enabled:
           description: >-
             True when the Raft listener requires mutual TLS.  False with
@@ -541,12 +544,15 @@ paths:
   /webui/v1/raft/groups/{group_name}:
     summary: Read endpoint for a specified Raft group of the DSS node.
     parameters:
+    # Copy of the group_name path parameter of /admin/v1/raft/groups/{group_name} in interfaces/admin/admin.yaml.
+    # Copied rather than referenced because interfaces/openapi-to-go-server only
+    # resolves $ref within the same file.  Keep both copies identical.
     - name: group_name
+      in: path
+      required: true
       description: Name of the Raft group.
       schema:
         $ref: '#/components/schemas/RaftGroupName'
-      in: path
-      required: true
     get:
       tags:
       - raft
@@ -570,14 +576,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
           description: One or more input parameters were missing or invalid.
+        # Copy of the 404 response of getRaftGroup in interfaces/admin/admin.yaml.
+        # Copied rather than referenced because interfaces/openapi-to-go-server only
+        # resolves $ref within the same file.  Keep both copies identical.
         '404':
+          description: >-
+            This DSS node has no Raft group with this name, e.g. `scd` when it runs without `--enable_scd`, or it is
+            still waiting to create or join one.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-          description: >-
-            The DSS node does not run the requested Raft group (e.g. 'scd'
-            without strategic conflict detection), or is not a member of it yet.
   #
   # Web interface endpoints for trust
   #
