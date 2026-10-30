@@ -2,30 +2,6 @@
 
 Data will accumulate over time in the database if client USSs do not remove their expired entities, and this can lead to lower performance due to quantity of stale entities.  For this reason, InterUSS recommends periodically cleaning up no-longer-relevant entities if USS clients do not always clean up after themselves.
 
-This page describes how to clean up expired entities from the DSS datastore using the `db-manager evict` command.
-
-## Overview
-
-The `evict` subcommand of `db-manager` is a CLI tool that lists and deletes expired entities in the DSS store. The following entity types are supported:
-
-- SCD operational intents
-- SCD subscriptions
-- RID identification service areas (ISAs)
-- RID subscriptions
-
-By default, the tool only lists expired entities. Deletion is opt-in via the `--delete` flag.
-
-!!! warning
-    Using this tool incorrectly may result in **loss of data**. Before deleting anything:
-
-    - Always review and validate the list of entities identified as expired (run the tool without `--delete` first).
-    - Ensure a backup of the data is available.
-    - Double-check the TTL values passed to `--rid_ttl` and `--scd_ttl`.
-
-    A preview run (without `--delete`) and a later `--delete` run are two separate invocations, not one atomic operation. Entities can expire, be created or be removed between the preview and the delete, and the delete run re-evaluates the threshold at its own execution time. With `--rid_limit`/`--scd_limit`, the delete run removes only part of the entities listed by the preview. Keep the gap between the two runs short and re-review if in doubt.
-
-Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
-
 ## Why and when to run the cleanup
 
 Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:
@@ -35,7 +11,10 @@ Expired entities (operational intents past their end time, stale subscriptions, 
 
 There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long clients may legitimately need to query historical entities.
 
-The defaults shipped with the deployment tooling (`30m` TTL on RID running every 30 min, `2688h` ≈ 56-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.
+The defaults shipped with the deployment tooling (`30m` TTL on RID running hourly, `2688h` ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.
+
+Additionally, it is important to note that in a DSS pool, all DSS instances should be running the cleanup, even though it removes entities belonging to all instances.
+First, out of governance concerns, as this avoids an undesirable asymmetry between DSS instances. And second, doing so brings redundancy across the pool, in case one of the instances fails to properly perform the cleanup.
 
 ## Performance impact
 
@@ -46,8 +25,35 @@ To mitigate contention:
 - Run the cleanup during low-intensity periods (e.g. at night).
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
 - Use `--rid_limit`/`--scd_limit` to bound the size of each deletion if a batch still causes performance issues.
+- Within a DSS pool, offset the cleanup schedules of the different instances to avoid having them running concurrently.
 
-## Usage
+## How to run the cleanup
+
+The `evict` subcommand of `db-manager` is a CLI tool that lists and deletes expired entities in the DSS store.
+It supports cleanup of the following entity types: SCD operational intents, SCD subscriptions, RID identification service areas (ISAs), and RID subscriptions.
+Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
+All cleanups are global operations that remove expired entities across all DSS instances in the pool, regardless of which instance created them.
+
+The usage of this tool is preferably automated by scheduling regular cleanups via a Kubernetes `CronJob`. But if necessary, it can be invoked manually.
+
+### Automated regular cleanup via Kubernetes `CronJob`
+
+The supported Terraform-based deployments include the RID and SCD eviction cron jobs. Those are shipped with safe defaults but should probably be tuned to your DSS pool:
+
+- RID: enabled by default, schedule: `<min> * * * *`, TTL of 30 minutes;
+- SCD: disabled by default, schedule `<min> 2 * * *`, TTL of 2688 hours (2 x 56 days).
+
+Where `<min>` is a minute (`0`–`59`) deterministically derived from the DSS instance's `locality` when `schedule` is left empty (`""`).
+As noted in [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
+
+When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
+See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for details.
+
+### Manual ad-hoc cleanup via CLI `db-manager` tool
+
+!!! warning
+    Using this tool incorrectly may result in **loss of data**.
+    Notably, ensure the clock on the system this tool is run on is reasonably accurate: the expiration of entities is determined based on this clock, and not the server's clock.
 
 Extracted from `db-manager evict --help`:
 
@@ -82,112 +88,12 @@ Global Flags:
       --datastore_user string               database user to authenticate as (default "root")
 ```
 
-Notes:
+Additional information:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
+- A preview run (without `--delete`) and a later `--delete` run are two separate invocations, not one atomic operation. Entities can expire, be created or be removed between the preview and the delete, and the delete run re-evaluates the threshold at its own execution time. With `--rid_limit`/`--scd_limit`, the delete run removes only part of the entities listed by the preview. Keep the gap between the two runs short and re-review if in doubt.
 - `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
 - `--locality` is deprecated and has no effect: RID cleanup considers the expired ISAs and subscriptions of all the DSS instances of the pool.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
-
-## Regular cleanup
-
-Beyond running `db-manager evict` manually, the DSS deployment tooling can schedule the cleanup as a recurring Kubernetes `CronJob`. Three deployment paths expose the same set of evict knobs, but will always run with the  `--delete` flag set.
-
-Shared default: RID cleanup is enabled by default (`*/30 * * * *`, `ttl = 30m`); SCD cleanup is disabled by default (suggested schedule `0 2 * * *`, `ttl = 2688h` - i.e. 2 x 56 days).
-
-RID and SCD cleanups are both global operations: they consider the expired entities of all the DSS instances of the pool, regardless of the instance that created them. DSS operators should therefore coordinate to avoid redundant tasks, or potentially designate a single USS to handle the cleanup process.
-
-### Helm
-
-The `dss` chart includes a `dss-evict` CronJob (see `deploy/services/helm-charts/dss/templates/dss-evict.yaml`), configured under `dss.conf.evict` in `values.yaml`:
-
-```
-dss:
-    conf:
-        evict:
-            scd:
-                enableCron: false
-                schedule: "0 2 * * *"
-                ttl: 2688h
-                timeout: ""
-                operationalIntents: true
-                subscriptions: true
-            rid:
-                enableCron: true
-                schedule: "*/30 * * * *"
-                ttl: 30m
-                timeout: ""
-                ISAs: true
-                subscriptions: true
-```
-
-### Tanka
-
- Configure it under the `evict` key of your environment metadata:
-
-```jsonnet
-evict+: {
-    scd+: {
-        enable_cron: false,
-        schedule: "0 2 * * *",
-        ttl: "2688h",
-        timeout: "",
-        operational_intents: true,
-        subscriptions: true,
-    },
-    rid+: {
-        enable_cron: true,
-        schedule: "*/30 * * * *",
-        ttl: "30m",
-        timeout: "",
-        ISAs: true,
-        subscriptions: true,
-    },
-},
-```
-
-### Terraform
-
-When deploying via terrafrom modules, the parameters are configurable with module variables:
-
-| Terraform variable                | Default            |
-| --------------------------------- | ------------------ |
-| `evict_enable_scd_cron`         | `false`          |
-| `evict_scd_schedule`            | `"0 2 * * *"`    |
-| `evict_scd_ttl`                 | `"2688h"`        |
-| `evict_scd_timeout`             | `""`             |
-| `evict_scd_operational_intents` | `true`           |
-| `evict_scd_subscriptions`       | `true`           |
-| `evict_enable_rid_cron`         | `true`           |
-| `evict_rid_schedule`            | `"*/30 * * * *"` |
-| `evict_rid_ttl`                 | `"30m"`          |
-| `evict_rid_timeout`             | `""`             |
-| `evict_rid_isas`                | `true`           |
-| `evict_rid_subscriptions`       | `true`           |
-
-## Examples
-
-The examples below assume a DSS running locally via the `run_locally.sh` script.
-
-### List all entities older than 1 week
-
-```shell
-docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
-  --datastore_host=local-dss-crdb --scd_ttl=168h --rid_ttl=168h
-```
-
-### List only operational intents older than 1 week
-
-```shell
-docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
-  --datastore_host=local-dss-crdb --scd_ttl=168h --scd_oir=true --scd_sub=false
-```
-
-### Delete all entities older than 30 days
-
-```shell
-docker compose -f docker-compose_dss.yaml -p dss_sandbox exec local-dss-core-service db-manager evict \
-  --datastore_host=local-dss-crdb --scd_ttl=720h --rid_ttl=720h --delete
-```

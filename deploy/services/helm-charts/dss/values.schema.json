@@ -360,7 +360,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run daily at 2 AM at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",
@@ -392,7 +392,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run hourly at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",

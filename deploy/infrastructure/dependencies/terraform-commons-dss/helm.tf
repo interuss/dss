@@ -96,7 +96,7 @@ resource "local_file" "helm_chart_values" {
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
-            schedule   = var.evict_scd_schedule
+            schedule   = local.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
@@ -105,7 +105,7 @@ resource "local_file" "helm_chart_values" {
           }
           rid = {
             enableCron = var.evict_enable_rid_cron
-            schedule   = var.evict_rid_schedule
+            schedule   = local.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
@@ -322,7 +322,7 @@ resource "local_file" "helm_chart_values" {
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
-            schedule   = var.evict_scd_schedule
+            schedule   = local.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
@@ -331,7 +331,7 @@ resource "local_file" "helm_chart_values" {
           }
           rid = {
             enableCron = var.evict_enable_rid_cron
-            schedule   = var.evict_rid_schedule
+            schedule   = local.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
