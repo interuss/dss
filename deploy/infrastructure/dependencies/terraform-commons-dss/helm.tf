@@ -77,7 +77,7 @@ resource "local_file" "helm_chart_values" {
 
       conf = {
         pubKeys = [
-          "/test-certs/auth2.pem"
+          for p in [var.authorization.public_key_pem_path] : p if p != null
         ]
         jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
         jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
