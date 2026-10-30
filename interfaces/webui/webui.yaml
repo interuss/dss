@@ -109,11 +109,15 @@ components:
 
         'Follower': replicates the log of the leader.
 
+        'Candidate': requests votes to become leader, after missing the leader
+        for an election timeout.
+
         'Unknown': not known by the serving node.
       type: string
       enum:
       - Leader
       - Follower
+      - Candidate
       - Unknown
     RaftMembership:
       description: >-
