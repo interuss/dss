@@ -119,9 +119,9 @@ components:
       - Follower
       - Candidate
       - Unknown
-    RaftMembership:
+    RaftVotingRight:
       description: >-
-        Membership of a node in its Raft group.
+        Voting right of a node in its Raft group.
 
         'Voter': counts towards the quorum.  An entry is committed once a
         majority of voters have written it to disk.
@@ -348,7 +348,8 @@ components:
       - id
       - name
       - url
-      - membership
+      - voting_right
+      - role
       - health
       type: object
       properties:
@@ -367,8 +368,8 @@ components:
             It is served by the Raft communication listener.
           type: string
           example: http://uss2.instance1.example.com:9500
-        membership:
-          $ref: '#/components/schemas/RaftMembership'
+        voting_right:
+          $ref: '#/components/schemas/RaftVotingRight'
         role:
           $ref: '#/components/schemas/RaftRole'
         health:
