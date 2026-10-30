@@ -122,7 +122,7 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     get:
-      summary: Describes this DSS node in a Raft group.
+      summary: Describe this DSS node in a Raft group
       description: >-
         Representation of this node within the specified group. It is available for every group that the
         node runs, including while the node waits to create or join it.
@@ -144,7 +144,7 @@ paths:
 
   /admin/v1/raft/groups:
     post:
-      summary: Creates a new Raft group with this DSS node as its only member.
+      summary: Create a new Raft group with this DSS node as its only member
       description: >-
         This DSS node must be waiting, i.e. not a member of a group with this name yet. The other nodes are then added
         to the group one at a time. The request returns once this DSS node is the leader of the new group.
@@ -191,7 +191,7 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     get:
-      summary: Retrieve the specified Raft group, as known by this DSS node.
+      summary: Retrieve the specified Raft group, as known by this DSS node
       operationId: getRaftGroup
       tags: [ raft ]
       responses:
@@ -219,7 +219,7 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     post:
-      summary: Adds a node to a Raft group, as a voter.
+      summary: Add a node to a Raft group, as a voter
       description: >-
         The request must be sent to a member of the group, and the node to add is another DSS node, which must be
         running and waiting: as soon as it is added, it counts in the quorum of the group. A node started with an empty
@@ -268,7 +268,7 @@ paths:
           type: string
           example: "5740029381146209443"
     delete:
-      summary: Removes a node from a Raft group.
+      summary: Remove a node from a Raft group
       description: >-
         The ID of the removed node is retired permanently: it can never be added again to the group.
         A voter cannot be removed if the group would be left with fewer than 3 voters.
