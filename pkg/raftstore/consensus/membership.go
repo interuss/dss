@@ -95,38 +95,38 @@ func (m *membership) restore(members map[uint64]member, removedIDs []uint64) err
 // It uses members and not the ConfState, which can be more recent than the members after restoring
 // a snapshot received from the leader (see Consensus.updateSnapshotConfState).
 // A rejected change is reported as a dsserr.BadRequest error.
-func (m *membership) validateConfChange(change raftpb.ConfChangeSingle, peerURL string) error {
+func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, peerURL string) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	if change.NodeID == raft.None {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d is invalid", change.NodeID)
+	if change.GetNodeId() == raft.None {
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d is invalid", change.GetNodeId())
 	}
 
-	if slices.Contains(m.removedIDs, change.NodeID) {
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d was removed from the group and cannot be reused", change.NodeID)
+	if slices.Contains(m.removedIDs, change.GetNodeId()) {
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d was removed from the group and cannot be reused", change.GetNodeId())
 	}
 
-	_, isMember := m.members[change.NodeID]
-	switch change.Type {
+	_, isMember := m.members[change.GetNodeId()]
+	switch change.GetType() {
 	case raftpb.ConfChangeAddNode:
 		if isMember {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is already a member of the group", change.NodeID)
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is already a member of the group", change.GetNodeId())
 		}
 		if _, err := types.NewURLs([]string{peerURL}); err != nil {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "invalid URL %q for node %d: %v", peerURL, change.NodeID, err)
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "invalid URL %q for node %d: %v", peerURL, change.GetNodeId(), err)
 		}
 
 	case raftpb.ConfChangeRemoveNode:
 		if !isMember {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is not a member of the group", change.NodeID)
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is not a member of the group", change.GetNodeId())
 		}
 		if len(m.members)-1 < minVoters {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "removing node %d would leave %d voters, below the minimum of %d", change.NodeID, len(m.members)-1, minVoters)
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "removing node %d would leave %d voters, below the minimum of %d", change.GetNodeId(), len(m.members)-1, minVoters)
 		}
 
 	default:
-		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "unsupported config change type %s", change.Type)
+		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "unsupported config change type %s", change.GetType())
 	}
 
 	return nil
