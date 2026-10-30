@@ -65,7 +65,7 @@ spec:
             - --datastore_ssl_dir=/opt/yugabyte-certs
             - --datastore_ssl_mode=verify-full
 {{ end }}
-            - --dump_requests=true
+            - --dump_requests={{$dss.conf.dumpRequests}}
             - --enable_scd={{$dss.conf.enableScd}}
             - --enable_scd_global_lock={{$dss.conf.enableScdGlobalLock | default false}}
 {{ if $dss.conf.enableTimeBasedNotificationIndex }}

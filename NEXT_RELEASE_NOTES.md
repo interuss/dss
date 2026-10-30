@@ -61,6 +61,8 @@ The release notes should contain at least the following sections:
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
+* [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
 
 ## Minimal database schema version
 

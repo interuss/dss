@@ -74,7 +74,7 @@ local metadata = metadataBase {
     jwksKeyTtl: '${VAR_JWKS_KEY_TTL}',
     hostname: '${VAR_APP_HOSTNAME}',
     publicEndpoint: 'https://${VAR_APP_HOSTNAME}',
-    dumpRequests: false,
+    dumpRequests: ${VAR_DUMP_REQUESTS},
     sslPolicy: '${VAR_SSL_POLICY}',
     cpuRequest: '${VAR_CORE_SERVICE_CPU_REQUEST}',
     memoryRequest: '${VAR_CORE_SERVICE_MEMORY_REQUEST}',

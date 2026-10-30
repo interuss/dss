@@ -43,6 +43,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "enable_scd",
     "enable_scd_global_lock",
     "enable_time_based_notification_index",
+    "dump_requests",
     "should_init",
     "desired_rid_db_version",
     "desired_scd_db_version",

@@ -14,6 +14,7 @@ resource "local_file" "tanka_config_main" {
     VAR_LOCALITY                             = var.locality
     VAR_DATASTORE                            = var.datastore_type
     VAR_DATASTORE_MAX_OPEN_CONNS             = var.datastore_max_open_conns
+    VAR_DUMP_REQUESTS                        = var.dump_requests
     VAR_CRDB_NODE_IPS                        = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
     VAR_INGRESS_NAME                         = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
