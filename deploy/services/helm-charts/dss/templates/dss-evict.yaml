@@ -67,7 +67,10 @@ spec:
               volumeMounts:
                 {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
                 {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
-          imagePullSecrets: []
+          {{- with $.Values.dss.imagePullSecret }}
+          imagePullSecrets:
+            - name: {{ . }}
+          {{- end }}
           terminationGracePeriodSeconds: 30
           restartPolicy: Never
           volumes:
@@ -128,7 +131,10 @@ spec:
               volumeMounts:
                 {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
                 {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 16 }}
-          imagePullSecrets: []
+          {{- with $.Values.dss.imagePullSecret }}
+          imagePullSecrets:
+            - name: {{ . }}
+          {{- end }}
           terminationGracePeriodSeconds: 30
           restartPolicy: Never
           volumes:

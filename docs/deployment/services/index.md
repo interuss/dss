@@ -86,6 +86,7 @@ To build these images locally and, optionally, push them to a docker registry:
 ### Access to private repository
 
 See the description of `VAR_DOCKER_IMAGE_PULL_SECRET` in TFVARS.gen.md to configure authentication when using terraform to deploy [infrastructure](../infrastructure/index.md).
+When using the helm chart directly, set `dss.imagePullSecret` to the name of the secret.
 
 ### Verify signature of prebuilt InterUSS Docker images
 

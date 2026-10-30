@@ -242,6 +242,10 @@
           "type": "string",
           "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
         },
+        "imagePullSecret": {
+          "type": "string",
+          "description": "Optional: Name of the secret holding the credentials to pull the DSS image. Example: `private-registry-credentials`"
+        },
         "cpuRequest": {
           "type": "string",
           "description": "Kubernetes CPU request of the core-service containers. Not set if empty. Example: `0.5`"
