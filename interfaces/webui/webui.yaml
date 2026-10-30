@@ -5,16 +5,11 @@ info:
   description: >-
     Interface definitions for the read-only web interface of a DSS node.
 
-    Web interface functionality includes describing the Raft groups run by a
-    DSS node, the members of each group, the latency to each member, and the
-    certificates used for mutual TLS between the Raft nodes.
+    The web interface allows DSS operator's users to inspect the status of the DSS node.
 
-    Every value is the view of the DSS node serving the request.  It may
-    differ from the view of another DSS node of the pool, e.g. during a
-    network partition.
+    Every value is the view of the DSS node serving the request.
 
-    No endpoint of this API produces any mutation, in the DSS node or in the
-    pool.  Administrative operations are performed with dssctl instead.
+    Administrative operations are performed with dssctl instead.
 
 tags:
 - name: Raft groups
