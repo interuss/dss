@@ -3,8 +3,7 @@ info:
   title: DSS Web Interface API
   version: 0.1.0
   description: >-
-    Interface definitions for the read-only web interface of a Discovery and
-    Synchronization Service (DSS) node.
+    Interface definitions for the read-only web interface of a DSS node.
 
     Web interface functionality includes describing the Raft groups run by a
     DSS node, the members of each group, the latency to each member, and the
