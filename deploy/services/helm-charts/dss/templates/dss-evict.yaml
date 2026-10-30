@@ -13,6 +13,7 @@
 {{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 {{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 
+{{- if $.Values.dss.conf.enableScd }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -76,6 +77,7 @@ spec:
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+{{- end }}
 
 ---
 apiVersion: batch/v1
