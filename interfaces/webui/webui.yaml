@@ -147,6 +147,54 @@ components:
       - Degraded
       - NoQuorum
       - NoLeader
+    ReplicationState:
+      description: >-
+        Replication of the log from the leader to a member.  Known by the leader
+        only.
+
+        'Replicating': the member is up to date or catching up entry by entry.
+
+        'Probing': the leader is searching for the last entry it shares with
+        the member, e.g. after a restart or a rejected append.
+
+        'Snapshot': the member is too far behind the log and receives a
+        snapshot.
+      type: string
+      enum:
+      - Replicating
+      - Probing
+      - Snapshot
+    RequestCounters:
+      description: >-
+        Requests to a Raft group handled by the serving node.
+      required:
+      - reads_total
+      - writes_total
+      - errors_total
+      type: object
+      properties:
+        reads_total:
+          description: >-
+            Read requests, served without adding an entry to the log.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 182311
+        writes_total:
+          description: >-
+            Write requests, each proposed as one entry of the log.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 40127
+        errors_total:
+          description: >-
+            Read and write requests that failed, e.g. on timeout or when
+            rejected by the business logic.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 12
     CertificateStatus:
       description: >-
         Validity of a certificate at the time of the request.
@@ -192,6 +240,7 @@ components:
       - voters_total
       - voters_up
       - learners_total
+      - requests
       type: object
       properties:
         group_name:
@@ -222,6 +271,14 @@ components:
           description: Highest index applied by the serving node.
           anyOf:
           - $ref: '#/components/schemas/LogIndex'
+        snapshot_index:
+          description: >-
+            Index of the last snapshot taken by the serving node.  Entries up to
+            this index are compacted out of its log.
+          anyOf:
+          - $ref: '#/components/schemas/LogIndex'
+        requests:
+          $ref: '#/components/schemas/RequestCounters'
         local_role:
           description: Role of the serving node.
           anyOf:
@@ -286,6 +343,12 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/NodeID'
+        name:
+          description: >-
+            Name of the member, identical in all Raft groups, as in the admin
+            API.  Omitted when unknown.
+          type: string
+          example: uss2.instance1
         url:
           description: >-
             URL of the Raft listener of the member, as in the admin API.
@@ -327,12 +390,34 @@ components:
           description: Time of the last successful probe.
           anyOf:
           - $ref: '#/components/schemas/Time'
+        replication_state:
+          description: >-
+            Replication of the log to the member.  Populated on the leader
+            only, for the other members.
+          anyOf:
+          - $ref: '#/components/schemas/ReplicationState'
         match_index:
           description: >-
             Highest index known to be replicated on the member.  Populated on
             the leader only.
           anyOf:
           - $ref: '#/components/schemas/LogIndex'
+        pending_snapshot_index:
+          description: >-
+            Index of the snapshot being sent to the member.  Populated on the
+            leader only, when `replication_state` is 'Snapshot'.
+          anyOf:
+          - $ref: '#/components/schemas/LogIndex'
+        committed_writes_total:
+          description: >-
+            Write requests proposed by the member and applied by the serving
+            node.  Every proposal carries the ID of its proposing node, so every
+            member can count it.  Read requests are not in the log and are only
+            counted by the member that serves them, in `requests`.
+          type: integer
+          format: int64
+          minimum: 0
+          example: 1604
         lag_entries:
           description: >-
             Number of entries the member is behind.  On the leader, populated
