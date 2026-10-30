@@ -21,7 +21,7 @@ resource "helm_release" "aws-load-balancer-controller" {
     },
     {
       name  = "vpcId"
-      value = aws_subnet.dss[0].vpc_id
+      value = local.vpc_id
     },
     {
       name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"

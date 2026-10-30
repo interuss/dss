@@ -124,7 +124,12 @@ AWS_KUBERNETES_VARIABLES = [
     "aws_create_storage_class",
     "aws_enable_node_auto_repair",
     "aws_enable_node_monitoring_agent",
-] + COMMON_KUBERNETES_VARIABLES
+] + COMMON_KUBERNETES_VARIABLES + [
+    "use_public_subnets",
+    "vpc_id",
+    "public_subnet_ids",
+    "private_subnet_ids",
+]
 
 # modules/terraform-aws-dss
 AWS_MODULE_VARIABLES = (
