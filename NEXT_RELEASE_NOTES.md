@@ -46,6 +46,8 @@ The release notes should contain at least the following sections:
 ## Mandatory migration tasks
 
 * [terraform/tanka] `enable_monitoring` (default `false`) now also applies to Tanka. To keep Prometheus and Grafana managed by Tanka, set `enable_monitoring = true`. Otherwise, they are no longer rendered by Tanka; `tk apply` does not delete them, remove them manually if needed.
+* [tanka] The CockroachDB nodes are now started with `--locality=<locality>` instead of `--locality=zone=<locality>`. Please update your locality setting accordingly. To keep the same value, add `zone=` to your existing value. Example: `uss1` changed to `zone=uss1`.
+* [terraform/helm] The CockroachDB nodes are now started with `--locality=<locality>`, as with Tanka. The CockroachDB pods are restarted one by one at the next `helm upgrade`.
 
 ## Optional migration tasks
 
