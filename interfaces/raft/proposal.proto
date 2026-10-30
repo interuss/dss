@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package dss.raftstore.consensus;
+
+import "google/protobuf/timestamp.proto";
+import "aux_/aux_.proto";
+import "rid/isa.proto";
+import "rid/subscriptions.proto";
+import "scd/availability.proto";
+import "scd/constraint.proto";
+import "scd/operational_intents.proto";
+import "scd/subscriptions.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/raftpb";
+
+message Proposal {
+    bytes id = 1;
+    uint64 node_id = 2;
+    google.protobuf.Timestamp timestamp = 3;
+
+    oneof payload {
+        // AUX
+        aux.SaveOwnMetadata aux_save_own_metadata = 20;
+        aux.GetDSSMetadata aux_get_dss_metadata = 21;
+        aux.RecordHeartbeat aux_record_heartbeat = 22;
+
+        // RID ISA operations
+        rid.CreateIdentificationServiceAreaOperation rid_create_identification_service_area_operation = 40;
+        rid.UpdateIdentificationServiceAreaOperation rid_update_identification_service_area_operation = 41;
+        rid.DeleteIdentificationServiceAreaOperation rid_delete_identification_service_area_operation = 42;
+
+        // RID ISA repository requests
+        rid.GetISARepoCall rid_get_isa_repo_call = 60;
+        rid.InsertISARepoCall rid_insert_isa_repo_call = 61;
+        rid.UpdateISARepoCall rid_update_isa_repo_call = 62;
+        rid.DeleteISARepoCall rid_delete_isa_repo_call = 63;
+        rid.SearchISAsRepoCall rid_search_isas_repo_call = 64;
+        rid.ListExpiredISAsRepoCall rid_list_expired_isas_repo_call = 65;
+        rid.CountISAsRepoCall rid_count_isas_repo_call = 66;
+
+        // RID subscription operations
+        rid.CreateSubscriptionOperation rid_create_subscription_operation = 80;
+        rid.UpdateSubscriptionOperation rid_update_subscription_operation = 81;
+        rid.DeleteSubscriptionOperation rid_delete_subscription_operation = 82;
+
+        // RID subscription repository requests
+        rid.GetSubscriptionRepoCall rid_get_subscription_repo_call = 100;
+        rid.InsertSubscriptionRepoCall rid_insert_subscription_repo_call = 101;
+        rid.UpdateSubscriptionRepoCall rid_update_subscription_repo_call = 102;
+        rid.DeleteSubscriptionRepoCall rid_delete_subscription_repo_call = 103;
+        rid.SearchSubscriptionsRepoCall rid_search_subscriptions_repo_call = 104;
+        rid.SearchSubscriptionsByOwnerRepoCall rid_search_subscriptions_by_owner_repo_call = 105;
+        rid.UpdateNotificationIdxsInCellsRepoCall rid_update_notification_idxs_in_cells_repo_call = 106;
+        rid.MaxSubscriptionCountInCellsByOwnerRepoCall rid_max_subscription_count_in_cells_by_owner_repo_call = 107;
+        rid.ListExpiredSubscriptionsRepoCall rid_list_expired_subscriptions_repo_call = 108;
+        rid.CountSubscriptionsRepoCall rid_count_subscriptions_repo_call = 109;
+
+        // SCD USS availability operations
+        scd.GetUssAvailabilityOperation scd_get_uss_availability_operation = 120;
+        scd.SetUssAvailabilityOperation scd_set_uss_availability_operation = 121;
+
+        // SCD USS availability repository requests
+        scd.GetUssAvailabilityRepoCall scd_get_uss_availability_repo_call = 140;
+        scd.UpsertUssAvailabilityRepoCall scd_upsert_uss_availability_repo_call = 141;
+
+        // SCD constraint operations
+        scd.GetConstraintReferenceOperation scd_get_constraint_reference_operation = 160;
+        scd.CreateConstraintReferenceOperation scd_create_constraint_reference_operation = 161;
+        scd.UpdateConstraintReferenceOperation scd_update_constraint_reference_operation = 162;
+        scd.DeleteConstraintReferenceOperation scd_delete_constraint_reference_operation = 163;
+        scd.QueryConstraintReferencesOperation scd_query_constraint_references_operation = 164;
+
+        // SCD constraint repository requests
+        scd.SearchConstraintsRepoCall scd_search_constraints_repo_call = 180;
+        scd.GetConstraintRepoCall scd_get_constraint_repo_call = 181;
+        scd.UpsertConstraintRepoCall scd_upsert_constraint_repo_call = 182;
+        scd.DeleteConstraintRepoCall scd_delete_constraint_repo_call = 183;
+        scd.CountConstraintsRepoCall scd_count_constraints_repo_call = 184;
+
+        // SCD operational intent operations
+        scd.GetOperationalIntentReferenceOperation scd_get_operational_intent_reference_operation = 200;
+        scd.CreateOperationalIntentReferenceOperation scd_create_operational_intent_reference_operation = 201;
+        scd.UpdateOperationalIntentReferenceOperation scd_update_operational_intent_reference_operation = 202;
+        scd.DeleteOperationalIntentReferenceOperation scd_delete_operational_intent_reference_operation = 203;
+        scd.QueryOperationalIntentReferencesOperation scd_query_operational_intent_references_operation = 204;
+
+        // SCD operational intent repository requests
+        scd.GetOperationalIntentRepoCall scd_get_operational_intent_repo_call = 220;
+        scd.DeleteOperationalIntentRepoCall scd_delete_operational_intent_repo_call = 221;
+        scd.UpsertOperationalIntentRepoCall scd_upsert_operational_intent_repo_call = 222;
+        scd.SearchOperationalIntentsRepoCall scd_search_operational_intents_repo_call = 223;
+        scd.GetDependentOperationalIntentsRepoCall scd_get_dependent_operational_intents_repo_call = 224;
+        scd.ListExpiredOperationalIntentsRepoCall scd_list_expired_operational_intents_repo_call = 225;
+        scd.CountOperationalIntentsRepoCall scd_count_operational_intents_repo_call = 226;
+
+        // SCD subscription operations
+        scd.GetSubscriptionOperation scd_get_subscription_operation = 240;
+        scd.CreateSubscriptionOperation scd_create_subscription_operation = 241;
+        scd.UpdateSubscriptionOperation scd_update_subscription_operation = 242;
+        scd.DeleteSubscriptionOperation scd_delete_subscription_operation = 243;
+        scd.QuerySubscriptionsOperation scd_query_subscriptions_operation = 244;
+
+        // SCD subscription repository requests
+        scd.SearchSubscriptionsRepoCall scd_search_subscriptions_repo_call = 260;
+        scd.GetSubscriptionRepoCall scd_get_subscription_repo_call = 261;
+        scd.UpsertSubscriptionRepoCall scd_upsert_subscription_repo_call = 262;
+        scd.DeleteSubscriptionRepoCall scd_delete_subscription_repo_call = 263;
+        scd.IncrementNotificationIndicesForOperationalIntentsRepoCall scd_increment_notification_indices_for_operational_intents_repo_call = 264;
+        scd.IncrementNotificationIndicesForConstraintsRepoCall scd_increment_notification_indices_for_constraints_repo_call = 265;
+        scd.ListExpiredSubscriptionsRepoCall scd_list_expired_subscriptions_repo_call = 266;
+        scd.CountSubscriptionsRepoCall scd_count_subscriptions_repo_call = 267;
+    }
+}
