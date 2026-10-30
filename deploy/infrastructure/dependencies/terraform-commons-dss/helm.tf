@@ -99,6 +99,7 @@ resource "local_file" "helm_chart_values" {
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
+            batchSize : var.evict_scd_batch_size
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -108,6 +109,7 @@ resource "local_file" "helm_chart_values" {
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
+            batchSize : var.evict_rid_batch_size
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
@@ -319,6 +321,7 @@ resource "local_file" "helm_chart_values" {
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
+            batchSize : var.evict_scd_batch_size
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
@@ -328,6 +331,7 @@ resource "local_file" "helm_chart_values" {
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
+            batchSize : var.evict_rid_batch_size
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
