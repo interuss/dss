@@ -344,7 +344,7 @@ components:
           $ref: '#/components/schemas/NodeID'
         name:
           description: >-
-            Name of the member, identical in all Raft groups, as in the admin
+            Name of the member, identical across Raft groups, as in the admin
             API.  Omitted when unknown.
           type: string
           example: uss2.instance1
