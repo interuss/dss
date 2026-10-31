@@ -1,4 +1,5 @@
 import dataclasses
+from urllib.parse import unquote
 
 import formatting
 
@@ -77,7 +78,11 @@ def get_data_type_name(component_name: str, data_type_name: str) -> str:
     if component_name == "":
         return ""
     elif component_name.startswith("#/components/schemas/"):
-        return component_name[len("#/components/schemas/") :]
+        return (
+            unquote(component_name[len("#/components/schemas/") :])
+            .replace("~1", "/")
+            .replace("~0", "~")
+        )
     else:
         raise NotImplementedError(
             f"$ref expected to start with `#/components/schemas/`, but found `{component_name}` instead for {data_type_name}"
@@ -190,7 +195,9 @@ def make_data_types(api_name: str, schema: dict) -> tuple[DataType, list[DataTyp
     if "description" in schema:
         data_type.description = schema["description"]
 
-    if "type" in schema:
+    if "$ref" in schema:
+        data_type.go_type = get_data_type_name(schema["$ref"], api_name)
+    elif "type" in schema:
         if schema["type"] in go_primitives:
             data_type.go_type = go_primitives[schema["type"]]
         elif schema["type"] in {"number", "integer"}:

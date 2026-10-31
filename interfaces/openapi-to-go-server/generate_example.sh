@@ -20,5 +20,6 @@ docker container run --rm \
 	      --api_import example/api \
 	      --api /resources/utm.yaml#dss@scd \
 	      --api /resources/rid.yaml#dss@rid \
+	      --api /resources/example/exampleapi/api.yaml@exampleapi \
 	      --api_folder /resources/example/api \
 	      --example_folder /resources/example

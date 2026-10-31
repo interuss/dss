@@ -1,0 +1,15 @@
+openapi: 3.0.2
+info:
+  title: Cross-file reference example
+  version: 1.0.0
+paths:
+  /greeting:
+    get:
+      operationId: getGreeting
+      responses:
+        '200':
+          description: A greeting
+          content:
+            application/json:
+              schema:
+                $ref: './schemas.yaml#/components/schemas/Greeting'

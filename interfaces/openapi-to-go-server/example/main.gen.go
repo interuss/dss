@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"example/api"
+	"example/api/exampleapi"
 	"example/api/rid"
 	"example/api/scd"
 	"log"
@@ -189,11 +190,20 @@ func (*RidImplementation) DeleteSubscription(ctx context.Context, req *rid.Delet
 	return response
 }
 
+type ExampleapiImplementation struct{}
+
+func (*ExampleapiImplementation) GetGreeting(ctx context.Context, req *exampleapi.GetGreetingRequest) exampleapi.GetGreetingResponseSet {
+	response := exampleapi.GetGreetingResponseSet{}
+	response.Response200 = &exampleapi.Greeting{}
+	return response
+}
+
 func main() {
 	authorizer := PermissiveAuthorizer{}
 	scdRouter := scd.MakeAPIRouter(&ScdImplementation{}, &authorizer)
 	ridRouter := rid.MakeAPIRouter(&RidImplementation{}, &authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&scdRouter, &ridRouter}}
+	exampleapiRouter := exampleapi.MakeAPIRouter(&ExampleapiImplementation{}, &authorizer)
+	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&scdRouter, &ridRouter, &exampleapiRouter}}
 	s := &http.Server{
 		Addr:           ":8080",
 		Handler:        &multiRouter,

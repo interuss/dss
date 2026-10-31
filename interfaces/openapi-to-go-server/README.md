@@ -14,9 +14,27 @@ The script `generate_example.sh` demonstrates the usage of this tool to generate
 
 A client is only generated for the APIs specified with `--client`, by the name of their package (e.g. `--client adminv1`).
 
+### References to other files
+
+`$ref` may refer to schemas and other OpenAPI objects in local YAML or JSON files:
+
+```yaml
+components:
+  schemas:
+    Request:
+      type: object
+      properties:
+        volume:
+          $ref: './models/geotemporal.yaml#/components/schemas/Volume4D'
+```
+
+Relative paths are resolved from the file containing each reference, including references inside imported files.  Fragments use JSON Pointer syntax.  Remote URLs and named anchors are not supported.  When using Docker, mount the referenced files as well, preserving their relative directory structure.
+
+Referenced schemas and their dependencies are generated in the same Go package as the API.  Only referenced schemas are imported from other files. Shared and recursive schema references are preserved.  Root schema names are retained; imported schemas use the final pointer segment (or filename without its extension for an entire-file reference).  Distinct schemas with the same name cause an error identifying both sources, even if their definitions are identical.
+
 ## openapi-to-go-server architecture
 
-The generate.py entrypoint first parses all specified APIs into the forms recognized by openapi-to-go-server using the routines in apis.py.  The two primary components in APIs are data types, which are parsed with the tools in data_types.py, and operations (endpoints) which are parsed with the tools in operations.py (both incidentally using small utilities in formatting.py).  Once the APIs have been parsed into openapi-to-go-server's preferred representations, rendering.py then produces Go code to form an api library including all specified APIs, clients for the APIs requested, as well as an example entrypoint and dummy implementation.
+The generate.py entrypoint first loads each API with references.py, which bundles file references into local schema references and expands references to other OpenAPI objects. It then parses all specified APIs into the forms recognized by openapi-to-go-server using the routines in apis.py.  The two primary components in APIs are data types, which are parsed with the tools in data_types.py, and operations (endpoints) which are parsed with the tools in operations.py (both incidentally using small utilities in formatting.py).  Once the APIs have been parsed into openapi-to-go-server's preferred representations, rendering.py then produces Go code to form an api library including all specified APIs, clients for the APIs requested, as well as an example entrypoint and dummy implementation.
 
 ## Generated architecture
 
