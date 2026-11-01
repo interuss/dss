@@ -102,6 +102,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		membership: membership{
 			nodeID:  connectParams.NodeID,
 			members: map[uint64]member{},
+			removed: map[uint64]member{},
 		},
 	}
 
@@ -124,7 +125,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to decode snapshot")
 		}
-		err = consensus.membership.restore(initSnapshot.Members, initSnapshot.RemovedIDs)
+		err = consensus.membership.restore(initSnapshot.Members, initSnapshot.Removed)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
@@ -356,7 +357,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						return
 					}
 
-					err = c.membership.restore(env.Members, env.RemovedIDs)
+					err = c.membership.restore(env.Members, env.Removed)
 					if err != nil {
 						c.logger.Error("failed to restore membership", zap.Error(err))
 						return
@@ -527,28 +528,25 @@ type confChangeContext struct {
 // AddNode proposes adding nodeID, reachable by its peers at peerURL, as a voter of the Raft group.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) error {
-	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, peerURL)
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, confChangeContext{member: member{URL: peerURL}})
 }
 
 // RemoveNode proposes removing nodeID from the Raft group. Its ID is retired and can never be reused.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
-	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, "")
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, confChangeContext{})
 }
 
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
 // Note that Raft only allows one config change in flight: a change proposed while another one is pending
 // is silently dropped by the leader, in which case this blocks until ctx is cancelled.
-func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, peerURL string) error {
-	err := c.membership.validateConfChange(change, peerURL)
+func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, cctx confChangeContext) error {
+	err := c.membership.validateConfChange(change, cctx.member)
 	if err != nil {
 		return err
 	}
 
-	cctx := confChangeContext{
-		ID:  uuid.New().String(),
-		URL: peerURL,
-	}
+	cctx.ID = uuid.New().String()
 
 	ctxBuf, err := json.Marshal(cctx)
 	if err != nil {
@@ -598,7 +596,7 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 	if len(cc.GetChanges()) != 1 {
 		err = stacktrace.NewErrorWithCode(dsserr.BadRequest, "expected exactly one change, got %d", len(cc.GetChanges()))
 	} else {
-		err = c.membership.validateConfChange(cc.GetChanges()[0], cctx.URL)
+		err = c.membership.validateConfChange(cc.GetChanges()[0], cctx.member)
 	}
 	if err != nil {
 		c.logger.Warn("rejecting config change", zap.String("id", cctx.ID), zap.Error(err))
@@ -642,10 +640,10 @@ func (c *Consensus) updateSnapshotConfState(msgs []*raftpb.Message) {
 // so that a node catching up via a snapshot fully recovers it, including which IDs must never be reused.
 // TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
 type snapshot struct {
-	// Members maps the ID of every member of the group to its description.
+	// Members maps the ID of every member of the group to its membership properties.
 	Members map[uint64]member
-	// RemovedIDs are the IDs of the nodes permanently removed from the group.
-	RemovedIDs []uint64
+	// Removed maps the ID of every node permanently removed from the group to its membership properties when it was removed.
+	Removed map[uint64]member
 	// AppData is the application snapshot data.
 	AppData []byte
 }
@@ -659,8 +657,8 @@ func (c *Consensus) encodeSnapshot() ([]byte, error) {
 	}
 
 	env := snapshot{
-		Members:    c.membership.members,
-		RemovedIDs: c.membership.removedIDs,
+		Members: c.membership.members,
+		Removed: c.membership.removed,
 		// TODO: Avoid encoding the data twice (to be addressed as part of https://github.com/interuss/dss/pull/1765)
 		AppData: appData,
 	}
