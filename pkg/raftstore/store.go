@@ -120,9 +120,9 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 			return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 		}
 		if handler.IsReadOnly {
-			return s.Consensus.HandleReadPayload[any](ctx, payload)
+			return s.HandleReadPayload[any](ctx, payload)
 		}
-		return s.Consensus.HandleWritePayload[any](ctx, payload)
+		return s.HandleWritePayload[any](ctx, payload)
 	}
 	payload, err := handler.Encode(request)
 	if err != nil {
