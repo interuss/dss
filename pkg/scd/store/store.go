@@ -18,13 +18,13 @@ import (
 type Store = dssstore.Store[repos.Repository]
 
 // Init selects and initializes the scd store backend.
-func Init(ctx context.Context, logger *zap.Logger, withCheckCron bool) (Store, error) {
+func Init(ctx context.Context, logger *zap.Logger, publicEndpoint string, withCheckCron bool) (Store, error) {
 	storeType := params.GetStoreParameters().StoreType
 	switch storeType {
 	case params.SQLStoreType:
 		return scdsqlstore.Init(ctx, logger, withCheckCron)
 	case params.RaftStoreType:
-		return scdraftstore.Init(ctx, logger)
+		return scdraftstore.Init(ctx, logger, publicEndpoint)
 	case params.MemStoreType:
 		return scdmemstore.Init(ctx, logger)
 	default:

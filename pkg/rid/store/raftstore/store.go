@@ -24,7 +24,7 @@ type repo struct {
 	*memstore.Store[repos.Repository]
 }
 
-func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
+func Init(ctx context.Context, logger *zap.Logger, publicEndpoint string) (*raftstore.Store[repos.Repository], error) {
 	params, err := raftparams.GetConnectParameters("rid")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to get rid raft parameters")
@@ -36,7 +36,7 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	}
 
 	r := &repo{Store: memStore}
-	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "rid")), params, r, operations.Registry)
+	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "rid")), publicEndpoint, params, r, operations.Registry)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize rid raftstore")
 	}

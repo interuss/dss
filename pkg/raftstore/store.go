@@ -36,7 +36,7 @@ type Store[R any] struct {
 	done chan struct{}
 }
 
-func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
+func Init[R any](ctx context.Context, logger *zap.Logger, publicEndpoint string, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	sugar := logger.WithOptions(zap.AddCallerSkip(1)).Sugar()
@@ -55,7 +55,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 		store.processCommits(ctx, commitC)
 	}()
 
-	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
+	consensusInstance, err := consensus.NewConsensus(ctx, logger, publicEndpoint, params, r.GetSnapshot, commitC)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}

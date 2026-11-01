@@ -100,7 +100,7 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 		return nil, stacktrace.NewError("Public endpoint not set")
 	}
 
-	auxStore, err := auxs.Init(ctx, logger, true)
+	auxStore, err := auxs.Init(ctx, logger, publicEndpoint, true)
 	if err != nil {
 		return nil, err
 	}
@@ -121,9 +121,9 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 	return &aux.Server{Store: auxStore, Locality: locality, Options: opts}, nil
 }
 
-func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+func createRIDServers(ctx context.Context, locality string, publicEndpoint string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true)
+	ridStore, err := rids.Init(ctx, logger, publicEndpoint, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,9 +152,9 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}, nil
 }
 
-func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
+func createSCDServer(ctx context.Context, logger *zap.Logger, publicEndpoint string) (*scd.Server, error) {
 
-	scdStore, err := scds.Init(ctx, logger, true)
+	scdStore, err := scds.Init(ctx, logger, publicEndpoint, true)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, *publicEndpoint, logger)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
@@ -351,7 +351,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
+		scdV1Server, err = createSCDServer(ctx, logger, *publicEndpoint)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}

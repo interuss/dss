@@ -66,6 +66,7 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 
 The members of a Raft group are bootstrapped from the `--raft_peers` flag on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
 
+- **Identity:** A DSS node is named by its public endpoint, which is unique within the cluster. On its first start, the node records its `--raft_node_id` with its name and `--raft_cluster_id` in the metadata of each group's WAL, and refuses to start if its ID, name or cluster ID no longer match its data directory.
 - **Joining:** Starting a node that joins a running group is not supported yet, see [#1802](https://github.com/interuss/dss/issues/1802).
 - **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
   - adding a node that is already a member or with an invalid peer URL.

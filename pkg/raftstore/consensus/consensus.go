@@ -55,8 +55,8 @@ type Consensus struct {
 	appliedIndex  uint64
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
+func NewConsensus(ctx context.Context, logger *zap.Logger, name string, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
+	storage, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, name, connectParams.ClusterID, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
@@ -73,7 +73,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 	var node raft.Node
 	config := connectParams.RaftConfig(storage)
-	if old {
+	if hasState {
 		logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
 		node = raft.RestartNode(config)
 	} else {

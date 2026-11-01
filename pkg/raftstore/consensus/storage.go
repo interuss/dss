@@ -2,8 +2,8 @@ package consensus
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 
@@ -31,14 +31,22 @@ type storage struct {
 	snapshotCatchUpEntries uint64
 }
 
+// identity identifies the node in its Raft group. It is persisted in the metadata of the WAL on the first start.
+type identity struct {
+	NodeID    uint64 `json:"node_id"`
+	Name      string `json:"name"`
+	ClusterID uint64 `json:"cluster_id"`
+}
+
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
-// and applies them to the Raft memory storage.
-// It returns the initialized storage, a boolean indicating whether the storage was pre-existent or an error.
-func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, snapshotCatchUpEntries uint64) (*storage, bool, error) {
+// and applies them to the Raft memory storage. On the first start, the WAL is created with the identity of the node.
+// It returns the initialized storage, a boolean indicating whether the storage holds Raft state or an error.
+// nodeID, name and clusterID must match the ones the WAL was created with.
+func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID uint64, name string, clusterID uint64, snapshotCatchUpEntries uint64) (*storage, bool, error) {
 	logger = logging.WithValuesFromContext(ctx, logger)
 
 	// load the latest snapshot
-	snapshotPath := path.Join(dataDir, fmt.Sprintf("snapshot_%d", nodeID))
+	snapshotPath := path.Join(dataDir, "snap")
 	if !fileutil.Exist(snapshotPath) {
 		err := os.MkdirAll(snapshotPath, 0o750)
 		if err != nil {
@@ -46,7 +54,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 		}
 	}
 
-	walPath := path.Join(dataDir, fmt.Sprintf("wal_%d", nodeID))
+	walPath := path.Join(dataDir, "wal")
 
 	snapper := snap.New(logger, snapshotPath)
 
@@ -55,12 +63,16 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 		err      error
 		snapshot *raftpb.Snapshot
 	)
-	ok := wal.Exist(walPath)
-	if !ok {
+	if !wal.Exist(walPath) {
+		metadata, err := json.Marshal(identity{NodeID: nodeID, Name: name, ClusterID: clusterID})
+		if err != nil {
+			return nil, false, stacktrace.Propagate(err, "failed to marshal node identity")
+		}
+
 		if err = os.MkdirAll(walPath, 0o750); err != nil {
 			return nil, false, stacktrace.Propagate(err, "failed to create directory for wal storage at: %s", walPath)
 		}
-		w, err = wal.Create(logger, walPath, nil)
+		w, err = wal.Create(logger, walPath, metadata)
 		if err != nil {
 			return nil, false, stacktrace.Propagate(err, "failed to create wal at: %s", walPath)
 		}
@@ -85,9 +97,23 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 		return nil, false, stacktrace.Propagate(err, "failed to open wal with index %d, term %d and confstate %v at: %s", snapshot.GetMetadata().GetIndex(), snapshot.GetMetadata().GetTerm(), snapshot.GetMetadata().GetConfState(), walPath)
 	}
 
-	_, state, entries, err := w.ReadAll()
+	metadata, state, entries, err := w.ReadAll()
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, "failed to read wal state and entries")
+	}
+
+	var id identity
+	if err := json.Unmarshal(metadata, &id); err != nil {
+		return nil, false, stacktrace.Propagate(err, "failed to read the node identity from the wal at %s", walPath)
+	}
+	if id.NodeID != nodeID {
+		return nil, false, stacktrace.NewError("the data directory %s belongs to node ID %d, not to --raft_node_id %d", dataDir, id.NodeID, nodeID)
+	}
+	if id.Name != name {
+		return nil, false, stacktrace.NewError("the data directory %s belongs to the node with public endpoint %s, not the current %s", dataDir, id.Name, name)
+	}
+	if id.ClusterID != clusterID {
+		return nil, false, stacktrace.NewError("the data directory %s belongs to cluster %d, not to --raft_cluster_id %d", dataDir, id.ClusterID, clusterID)
 	}
 
 	// initialize the raft memory storage with the loaded snapshot and wal entries
@@ -121,7 +147,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 		snapper: snapper,
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
-	}, ok, nil
+	}, !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
 }
 
 func loadSnapshot(logger *zap.Logger, walPath string, snapshotter *snap.Snapshotter) (*raftpb.Snapshot, error) {
