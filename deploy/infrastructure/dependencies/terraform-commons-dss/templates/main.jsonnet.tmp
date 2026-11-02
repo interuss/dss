@@ -94,6 +94,10 @@ local metadata = metadataBase {
     desired_scd_db_version: '${VAR_DESIRED_SCD_DB_VERSION}',
     desired_aux_db_version: '${VAR_DESIRED_AUX_DB_VERSION}',
   },
+  PSP+: {
+    roleRef: '${VAR_PSP_ROLE_REF}',
+    roleBinding: ${VAR_PSP_ROLE_REF != ""},
+  },
   evict+: {
     scd+: {
       enable_cron: ${VAR_EVICT_ENABLE_SCD_CRON},

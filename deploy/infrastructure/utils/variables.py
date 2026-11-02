@@ -68,6 +68,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "datastore_max_open_conns",
     "crdb_external_nodes",
     "kubernetes_namespace",
+    "psp_role_ref",
     "yugabyte_cloud",
     "yugabyte_region",
     "yugabyte_zone",
