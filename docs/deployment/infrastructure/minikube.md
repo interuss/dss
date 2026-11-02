@@ -31,4 +31,4 @@ You can also use any other tool as needed. You can switch to the cluster's conte
 
 ## Next steps
 
-[Deploy services](../services/to-minikube.md)
+Proceed to [pooling configuration](../pooling/index.md).
