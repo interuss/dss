@@ -39,6 +39,7 @@ GLOBAL_VARIABLES = [
 COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "image",
     "image_pull_secret",
+    "core_service_image_pull_policy",
     "authorization",
     "enable_scd",
     "enable_scd_global_lock",

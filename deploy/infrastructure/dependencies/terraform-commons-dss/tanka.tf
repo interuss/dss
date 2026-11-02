@@ -21,6 +21,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
     VAR_STORAGE_CLASS                        = var.kubernetes_storage_class
     VAR_DOCKER_IMAGE_NAME                    = var.image
+    VAR_CORE_SERVICE_IMAGE_PULL_POLICY       = var.core_service_image_pull_policy
     VAR_CORE_SERVICE_CPU_REQUEST             = var.core_service_cpu_request
     VAR_CORE_SERVICE_MEMORY_REQUEST          = var.core_service_memory_request
     VAR_CORE_SERVICE_CPU_LIMIT               = var.core_service_cpu_limit

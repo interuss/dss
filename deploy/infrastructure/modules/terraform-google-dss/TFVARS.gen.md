@@ -94,6 +94,12 @@ Not set by default.</p>
 <p>Example: <code>{ GOGC = &quot;80&quot;, GOMEMLIMIT = &quot;1800MiB&quot; }</code></p>
 <br/>Default value: <code>{}</code></td>
             </tr><tr>
+                <td>core_service_image_pull_policy (<code>string</code>)</td>
+                <td><p>Kubernetes image pull policy of the core-service containers.
+When empty, <code>Always</code> is used (<code>IfNotPresent</code> on minikube with Tanka).</p>
+<p>Example: <code>IfNotPresent</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>core_service_memory_limit (<code>string</code>)</td>
                 <td><p>Kubernetes memory limit of the core-service containers.
 Not set by default.</p>

@@ -68,6 +68,7 @@ local metadata = metadataBase {
     certName: '${VAR_CERT_NAME}',
     %{endif}
     image: '${VAR_DOCKER_IMAGE_NAME}',
+    imagePullPolicy: '${VAR_CORE_SERVICE_IMAGE_PULL_POLICY}',
     pubKeys: ['${VAR_PUBLIC_KEY_PEM_PATH}'],
     jwksEndpoint: '${VAR_JWKS_ENDPOINT}',
     jwksKeyIds: ['${VAR_JWKS_KEY_ID}'],

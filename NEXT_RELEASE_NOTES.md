@@ -70,6 +70,8 @@ The release notes should contain at least the following sections:
 * [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
+* [tanka] The image pull policy of the core-service can now be set with `backend.imagePullPolicy`. The default is unchanged.
+* [terraform] New variable `core_service_image_pull_policy` (default empty, keeps the current behavior), passed to Helm and Tanka.
 
 ## Minimal database schema version
 

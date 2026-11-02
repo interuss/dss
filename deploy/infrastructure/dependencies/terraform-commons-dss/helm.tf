@@ -70,6 +70,7 @@ resource "local_file" "helm_chart_values" {
     dss = {
       image           = var.image
       imagePullSecret = var.image_pull_secret != null ? var.image_pull_secret : ""
+      imagePullPolicy = var.core_service_image_pull_policy
       cpuRequest      = var.core_service_cpu_request
       memoryRequest   = var.core_service_memory_request
       cpuLimit        = var.core_service_cpu_limit
