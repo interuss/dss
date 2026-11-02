@@ -45,6 +45,8 @@ The release notes should contain at least the following sections:
 
 ## Mandatory migration tasks
 
+* [terraform/tanka] `enable_monitoring` (default `false`) now also applies to Tanka. To keep Prometheus and Grafana managed by Tanka, set `enable_monitoring = true`. Otherwise, they are no longer rendered by Tanka; `tk apply` does not delete them, remove them manually if needed.
+
 ## Optional migration tasks
 
 ## Important information
@@ -62,6 +64,13 @@ The release notes should contain at least the following sections:
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
 * [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
+* [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
+* [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
+* [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
+* [tanka] When `enableScd` is `false`, the core-service no longer waits for the SCD schema and the SCD evict CronJob is no longer deployed: the core-service could not start on a new database in that case.
+* [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
+* [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
+* [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
 
 ## Minimal database schema version
 

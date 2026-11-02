@@ -323,6 +323,10 @@
             "enableScd": {
               "type": "boolean"
             },
+            "dumpRequests": {
+              "type": "boolean",
+              "description": "Log full HTTP request and response. Intended only for debugging and/or development."
+            },
             "enableScdGlobalLock": {
               "type": "boolean"
             },

@@ -48,7 +48,7 @@ func (c *Client) do(ctx context.Context, method string, path string, body any) (
 	return httpClient.Do(req)
 }
 
-// Describes this DSS node in a Raft group.
+// Describe this DSS node in a Raft group
 func (c *Client) GetThisRaftNode(ctx context.Context, groupName RaftGroupName) (GetThisRaftNodeResponseSet, error) {
 	var response GetThisRaftNodeResponseSet
 
@@ -76,7 +76,7 @@ func (c *Client) GetThisRaftNode(ctx context.Context, groupName RaftGroupName) (
 	return response, err
 }
 
-// Creates a new Raft group with this DSS node as its only member.
+// Create a new Raft group with this DSS node as its only member
 func (c *Client) CreateRaftGroup(ctx context.Context, body *CreateRaftGroupParameters) (CreateRaftGroupResponseSet, error) {
 	var response CreateRaftGroupResponseSet
 
@@ -114,7 +114,7 @@ func (c *Client) CreateRaftGroup(ctx context.Context, body *CreateRaftGroupParam
 	return response, err
 }
 
-// Describes a Raft group, as known by this DSS node.
+// Retrieve the specified Raft group, as known by this DSS node
 func (c *Client) GetRaftGroup(ctx context.Context, groupName RaftGroupName) (GetRaftGroupResponseSet, error) {
 	var response GetRaftGroupResponseSet
 
@@ -142,7 +142,7 @@ func (c *Client) GetRaftGroup(ctx context.Context, groupName RaftGroupName) (Get
 	return response, err
 }
 
-// Adds a node to a Raft group, as a voter.
+// Add a node to a Raft group, as a voter
 func (c *Client) CreateRaftGroupMember(ctx context.Context, groupName RaftGroupName, body *CreateRaftGroupMemberParameters) (CreateRaftGroupMemberResponseSet, error) {
 	var response CreateRaftGroupMemberResponseSet
 
@@ -177,7 +177,7 @@ func (c *Client) CreateRaftGroupMember(ctx context.Context, groupName RaftGroupN
 	return response, err
 }
 
-// Removes a node from a Raft group.
+// Remove a node from a Raft group
 func (c *Client) DeleteRaftGroupMember(ctx context.Context, groupName RaftGroupName, nodeId string) (DeleteRaftGroupMemberResponseSet, error) {
 	var response DeleteRaftGroupMemberResponseSet
 

@@ -218,6 +218,12 @@ Use <code>latest</code> to use the latest schema version.</p>
 <p>Example: <code>3.1.0</code></p>
 <br/>Default value: <code>"latest"</code></td>
             </tr><tr>
+                <td>dump_requests (<code>bool</code>)</td>
+                <td><p>Set to true to log full HTTP requests and responses of the core-service.
+It dumps sensitive information to logs; intended only for debugging and/or development.</p>
+<p>Example: <code>false</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>enable_dss_metrics (<code>bool</code>)</td>
                 <td><p>Enable DSS's prometheus metric.</p>
 <p>Require DSS version to be at least 0.23.0.</p>
