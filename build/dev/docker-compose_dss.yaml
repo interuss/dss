@@ -112,8 +112,10 @@ services:
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
       - $PWD/startup/coverdata:/startup/coverdata:rw  # we will save coverage info here
       - raftdata:/raftdata
+      - adminsocket:/run/dss
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+      RAFT_URL: http://local-dss-core-service:9011
       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
       GOCOVERDIR: "/startup/coverdata"
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
@@ -156,9 +158,10 @@ services:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
       - raftdata2:/raftdata
+      - adminsocket2:/run/dss
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
-      RAFT_NODE_ID: 2
+      RAFT_URL: http://local-dss-core-service-2:9011
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
       CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
     command: /startup/core_service.sh 0
@@ -174,9 +177,10 @@ services:
       - $PWD/../test-certs:/var/test-certs:ro
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
       - raftdata3:/raftdata
+      - adminsocket3:/run/dss
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
-      RAFT_NODE_ID: 3
+      RAFT_URL: http://local-dss-core-service-3:9011
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
       CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
     command: /startup/core_service.sh 0
@@ -185,6 +189,31 @@ services:
     networks:
       - dss_sandbox_default_network
     profiles: ["with-raft-cluster"]
+
+  # Forms the Raft groups of the core services, which wait for them on their first start and only become healthy once
+  # they are formed. It shares the directory of the Unix socket on which each core service serves its admin API.
+  local-dss-raft-bootstrapper:
+    image: interuss-local/dss
+    entrypoint: /startup/raft_bootstrapper.sh
+    volumes:
+      - $PWD/startup/raft_bootstrapper.sh:/startup/raft_bootstrapper.sh:ro
+      - adminsocket:/run/dss
+      - adminsocket2:/run/dss2
+      - adminsocket3:/run/dss3
+    environment:
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+    depends_on:
+      local-dss-core-service:
+        condition: service_started
+      local-dss-core-service-2:
+        condition: service_started
+        required: false
+      local-dss-core-service-3:
+        condition: service_started
+        required: false
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-raft", "with-raft-cluster"]
 
   local-dss-dummy-oauth:
     build:
@@ -257,3 +286,6 @@ volumes:
   raftdata:
   raftdata2:
   raftdata3:
+  adminsocket:
+  adminsocket2:
+  adminsocket3:

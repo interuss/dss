@@ -5,7 +5,7 @@
 ## Key assumptions
 
 - **Single Raft group:** Each service (aux, rid, scd) is backed by exactly one Raft group (one [`Consensus`](consensus/consensus.go) instance). There is no sharding or partitioning of data across multiple groups for now.
-- **Single listener:** The Raft groups of a DSS node share one `rafthttp` listener ([consensus/listener.go](consensus/listener.go)), at the node's URL in `--raft_peers`. Each group has its own cluster ID, derived from `--raft_cluster_id` and the group name, which is used to route the requests to the right group. The listener is started by the process before any group is created and lives as long as the process, whether or not groups are registered on it.
+- **Single listener:** The Raft groups of a DSS node share one `rafthttp` listener ([consensus/listener.go](consensus/listener.go)), on the port of the node's `--raft_url`. Each group has its own cluster ID, derived from `--raft_cluster_id` and the group name, which is used to route the requests to the right group. The listener is started by the process before any group is created and lives as long as the process, whether or not groups are registered on it.
 - **Persistent log:** The Raft log and snapshots are durable: each node writes its entries to a [write-ahead log (WAL)](https://pkg.go.dev/go.etcd.io/etcd/server/v3/storage/wal) and periodically persists snapshots to disk ([consensus/storage.go](consensus/storage.go)), so a node can restart and rejoin the cluster by replaying its own WAL. The log consists of a series of Raft proposals (see the data model section below), and snapshots are serialized representations of the in-memory store.
 - **In-memory data projection:** The application state machine derived from the committed log (i.e. ISAs, subscriptions, operational intents, etc.) lives in-memory. It is not persisted but rather reconstructed by replaying the log / snapshot on startup.
 - **Data model:** Each service (`rid`, `scd`, `aux_`) defines its own request/response structs. During replication, they are wrapped in a [`Proposal`](consensus/proposal.go), which carries metadata (an ID, the originating node, and a timestamp for determinism) with a `RequestType` string and a request payload as a serialized `Value`. [`pkg/raftstore/store.go`](store.go) replicates the `Proposal` through Raft and, once committed, the service specific raftstore implementation interprets `RequestType`/`Value` and applies the resulting change to its own in-memory store.
@@ -23,7 +23,7 @@ Raft nodes authenticate each other with mutual TLS, configured by these three fl
 - Each participant operates its own CA and issues one certificate per node. The bundle holds the CA of every participant of the pool, including the node's own.
 - The same certificate is presented to peers and to nodes connecting to this one.
 - A connecting peer is accepted when its certificate is signed by one of these CAs. The certificate is not matched against the peer's source IP, which differs from the addresses in the certificate behind NAT or a load balancer. Other connections are dropped during the TLS handshake, before any Raft message is read.
-- Every peer URL must use `https`. A node with an `http` peer URL, or with only some of the three flags set, does not start.
+- `--raft_url` must use `https`, so that the URLs at which the members reach each other do. A node with an `http` `--raft_url`, or with only some of the three flags set, does not start.
 - A node does not start if its certificate cannot be loaded or has expired, or if every CA of the bundle has expired. Each expired CA is logged as a warning.
 - Restart the node after replacing its certificate or the CA bundle.
 - For local development and tests only, you can use `--raft_insecure` to disable TLS.
@@ -35,7 +35,7 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 ### Actors
 
 - **Raft group:** A set of Raft nodes that replicate one Raft log via the Raft consensus protocol (one leader and its followers).
-- **Raft Node:** One participant in a Raft group, identified by a unique `NodeID`. One [`Consensus`](consensus/consensus.go) instance wraps one Raft node.
+- **Raft Node:** One participant in a Raft group, identified by a unique `NodeID` generated on its first start. One [`Consensus`](consensus/consensus.go) instance wraps one Raft node.
 - **DSS Node:** One running core-service. Each DSS Node runs 3 Raft nodes (aux, rid, scd).
 - **Peer:** Another Raft node in the same Raft group, reachable over `rafthttp` at a configured URL. Peers exchange Raft messages (votes, log replication, heartbeats) with each other.
 - **Client:** An entity sending requests to a DSS node (e.g. via the REST ASTM API).
@@ -64,17 +64,20 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 
 ## Membership
 
-The members of a Raft group are bootstrapped from the `--raft_peers` flag on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time, through the [admin API](../../interfaces/admin/admin.yaml) served by the core-service on the Unix socket at `--admin_socket`, with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
+Each Raft group is managed independently: a DSS node bootstraps, joins or leaves each of its groups separately, through the [admin API](../../interfaces/admin/admin.yaml) served by the core-service on the Unix socket at `--admin_socket` using `dssctl raft`, so a change may succeed for some groups and fail for others, in which case it is retried for the failed groups only. Nodes are added to and removed from a running group one at a time. [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go) propose a configuration change through the Raft log and block until it is applied.
 
-- **Joining:** Starting a node that joins a running group is not supported yet, see [#1802](https://github.com/interuss/dss/issues/1802).
+- **Identity:** A DSS node is identified by its `--raft_url`, which must be unique within the cluster. On its first start, the node generates a random ID per group and records it in the metadata of the group's WAL. The node keeps this ID across restarts.
+- **Startup:** What a node does when it starts only depends on its data directory: a node with Raft state restarts as a member, a node without Raft state waits (`GET /admin/v1/raft/groups/{group_name}/this_node` reports its state) to be added to a running group or to create a new one. A waiting or removed node rejects the requests to the group.
+- **Bootstrapping:** `POST /admin/v1/raft/groups` on a waiting node creates a new group with this node as its only member. The other nodes are then added to it.
+- **Joining:** A node is started, then added with `POST /admin/v1/raft/groups/{group_name}/members` sent to a member, with the URL of the node. The member reads the ID of the node from the node itself, on its Raft listener, and rejects a node that is unreachable, not waiting, or not running this group in this cluster. The node learns the configuration and the application state of the group from the leader.
+- **Replacing:** Replacing a node at the same URL is not supported yet. A node that lost its data directory starts with a new ID, and its old ID still uses its URL. With 4 voters or more, its old ID is removed, then the node is added. A group of 3 voters cannot go below the minimum: the node must be restarted with a different `--raft_url` and added before its old ID is removed.
 - **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
   - adding a node that is already a member, with an invalid peer URL, or with the peer URL of another member.
   - removing a node that is not a member, or a voter if the group would be left with fewer than 3 voters.
   - adding or removing a node ID that was previously removed from the group.
-- **Removal:** A node stops when it applies its own removal.
+- **Removal:** A node stops when it applies its own removal, and its state becomes `removed`.
 - **Persistence:** The peer URLs of the members and of the removed nodes are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
 
 ## Future Work
 
-- **Client-initiated config changes are not supported yet:** See the `TODO` in [consensus/consensus.go](consensus/consensus.go).
 - **No background WAL cleanup:** Old, WAL segment files that are no longer needed are unlocked (`ReleaseLockTo`) but not actively deleted by a cleanup goroutine yet. See the `TODO` in [consensus/storage.go](consensus/storage.go).

@@ -41,7 +41,13 @@ type Consensus struct {
 	nodeID    uint64
 	group     string
 	publicURL string
-	node      *node.NodeState
+	// config is used to start the raft node, either when bootstrapping a group or when joining one.
+	config *raft.Config
+
+	tickInterval     time.Duration
+	snapshotInterval uint64
+
+	node *node.NodeState
 
 	transport *rafthttp.Transport
 	listener  *listener
@@ -72,42 +78,27 @@ type Consensus struct {
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
+	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
 
-	peers, err := connectParams.PeerMap()
+	nodeURL, err := url.Parse(connectParams.URL)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to parse peer map")
-	}
-
-	nodeUrl, ok := peers[connectParams.NodeID]
-	if !ok {
-		return nil, stacktrace.NewError("node ID %d not found in peers map", connectParams.NodeID)
-	}
-
-	var raftNode raft.Node
-	config := connectParams.RaftConfig(storage)
-	if old {
-		logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
-		raftNode = raft.RestartNode(config)
-	} else {
-		logger.Info("starting new raft node", zap.String("address", nodeUrl.String()))
-		raftPeers, err := peersList(peers)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to build the list of bootstrap peers")
-		}
-		raftNode = raft.StartNode(config, raftPeers)
+		return nil, stacktrace.Propagate(err, "failed to parse the URL of the node")
 	}
 
 	consensus := &Consensus{
-		logger: logging.WithValuesFromContext(ctx, logger),
+		logger: logging.WithValuesFromContext(ctx, logger).With(zap.Uint64("nodeID", nodeID)),
 
-		nodeID:         connectParams.NodeID,
-		group:          connectParams.Group,
-		publicURL:      nodeUrl.String(),
-		node:           node.NewNodeState(raftNode),
+		nodeID:           nodeID,
+		group:            connectParams.Group,
+		publicURL:        nodeURL.String(),
+		config:           connectParams.RaftConfig(nodeID, storage),
+		tickInterval:     connectParams.TickInterval,
+		snapshotInterval: connectParams.SnapshotIntervalEntries,
+		node:             node.NewNodeState(),
+
 		storage:        storage,
 		getAppSnapshot: provider,
 		commitC:        commitC,
@@ -119,13 +110,13 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		readTracker: newReadIndexTracker(),
 
 		membership: membership{
-			nodeID:  connectParams.NodeID,
+			nodeID:  nodeID,
 			members: map[uint64]member{},
 			removed: map[uint64]member{},
 		},
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers, NewTLSInfo(connectParams, logger))
+	err = consensus.initTransport(ctx, nodeID, connectParams.GroupClusterID, nodeURL, NewTLSInfo(connectParams, logger))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -148,10 +139,6 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
-		// A removal in the log is recorded when it is applied again, but not one that is already in the snapshot.
-		if consensus.membership.isIDRemoved(connectParams.NodeID) {
-			consensus.node.SetRemoved()
-		}
 		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
 	}
 
@@ -160,9 +147,28 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to register raft metrics")
 	}
 
-	consensus.startRaftUpdatesConsumer(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
+	switch {
+	case consensus.membership.isIDRemoved(nodeID):
+		consensus.logger.Warn("this node was removed from the Raft group")
+		consensus.node.SetRemoved()
+	case hasState:
+		consensus.logger.Info("restarting raft node", zap.String("address", nodeURL.String()))
+		consensus.startNode(func() raft.Node { return raft.RestartNode(consensus.config) })
+	default:
+		consensus.logger.Info("waiting to be added to a Raft group or to bootstrap one", zap.String("address", nodeURL.String()))
+	}
 
 	return consensus, nil
+}
+
+// startNode makes this node a member of the group with the raft node returned by newNode and starts the consumer of
+// its updates, if this node is waiting. It returns whether the raft node was started, and the state of this node.
+func (c *Consensus) startNode(newNode func() raft.Node) (bool, node.State) {
+	started, state := c.node.Start(newNode)
+	if started {
+		c.startRaftUpdatesConsumer(c.tickInterval, c.snapshotInterval)
+	}
+	return started, state
 }
 
 // TODO: ctx is currently ignored (see issue: https://github.com/interuss/dss/issues/1610)
@@ -181,9 +187,11 @@ func (c *Consensus) Stop(ctx context.Context) {
 		c.transport.Stop()
 		c.logger.Info("transport stopped")
 		c.endpoint.close()
-		raftNode := c.node.RaftNode()
-		raftNode.Stop()
-		c.logger.Info("raft node stopped")
+		// A waiting node has no raft node.
+		if raftNode := c.node.RaftNode(); raftNode != nil {
+			raftNode.Stop()
+			c.logger.Info("raft node stopped")
+		}
 	})
 }
 
@@ -321,29 +329,10 @@ type member struct {
 	URL string `json:"url,omitempty"`
 }
 
-func peersList(peers map[uint64]*url.URL) ([]raft.Peer, error) {
-	result := make([]raft.Peer, 0, len(peers))
-	for id, peerURL := range peers {
-		peerCtx, err := json.Marshal(member{URL: peerURL.String()})
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to marshal context of peer %d", id)
-		}
-
-		// We pass member as the Context so that we can recover the peer URL when applying a config change.
-		result = append(result, raft.Peer{ID: id, Context: peerCtx})
-	}
-	return result, nil
-}
-
-func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL, tlsInfo etcdtransport.TLSInfo) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, nodeURL *url.URL, tlsInfo etcdtransport.TLSInfo) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 	if tlsInfo.Empty() {
 		c.logger.Warn("--raft_insecure is set: Raft nodes do not authenticate each other and connection is not encrypted. Don't use this node in production environments.")
-	}
-
-	nodeURL, ok := peers[nodeID]
-	if !ok {
-		return stacktrace.NewError("node ID %d not found in peers map", nodeID)
 	}
 
 	transport := &rafthttp.Transport{
@@ -455,7 +444,12 @@ func (c *Consensus) registerMetrics() error {
 	}
 
 	c.metricsRegistration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		status := c.node.RaftNode().Status()
+		raftNode := c.node.RaftNode()
+		if raftNode == nil {
+			// A waiting node, or one found removed at startup, has no raft node to report on.
+			return nil
+		}
+		status := raftNode.Status()
 		attrs := metric.WithAttributes(c.metricAttributes()...)
 
 		o.ObserveInt64(gauges["raft_term"], int64(status.GetTerm()), attrs)
@@ -792,7 +786,12 @@ func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
 }
 
 // Members returns the membership of the Raft group as currently known by this node.
+// It returns a dsserr.NotFound error while this node is waiting to bootstrap or join the group.
 func (c *Consensus) Members() (Membership, error) {
+	if c.node.Current() == node.Waiting {
+		return Membership{}, stacktrace.NewErrorWithCode(dsserr.NotFound, "this node is waiting to bootstrap or join the Raft group")
+	}
+
 	c.membership.RLock()
 	nodes := make(map[uint64]node.Info, len(c.membership.members)+len(c.membership.removed))
 	for id, m := range c.membership.members {
@@ -803,9 +802,15 @@ func (c *Consensus) Members() (Membership, error) {
 	}
 	c.membership.RUnlock()
 
+	// A node found removed at startup has no raft node, so it knows no leader.
+	var leaderID uint64
+	if raftNode := c.node.RaftNode(); raftNode != nil {
+		leaderID = raftNode.Status().Lead
+	}
+
 	return Membership{
 		ClusterID: uint64(c.transport.ClusterID),
-		LeaderID:  c.node.RaftNode().Status().Lead,
+		LeaderID:  leaderID,
 		Nodes:     nodes,
 	}, nil
 }
@@ -818,11 +823,40 @@ func (c *Consensus) Node() (node.Info, error) {
 	}, nil
 }
 
-// Bootstrap starts a new Raft group with this node as its only member.
-// TODO: The groups are still formed from --raft_peers: this node is a member of its group from its first start, or
-// was removed from it, so a dsserr.AlreadyExists error is always returned.
-func (c *Consensus) Bootstrap() (Membership, error) {
-	return Membership{}, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the Raft group is formed from --raft_peers, the state of this node is %s", c.node.Current())
+// Bootstrap starts a new Raft group with this node as its only member, and blocks until this node is its leader or
+// ctx is cancelled. Only a waiting node can bootstrap a group, otherwise a dsserr.AlreadyExists error is returned.
+func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
+	selfCtx, err := json.Marshal(member{URL: c.publicURL})
+	if err != nil {
+		return Membership{}, stacktrace.Propagate(err, "failed to marshal the context of this node")
+	}
+
+	// We pass member as the Context so that every node records the URL of this node when applying the config change.
+	started, state := c.startNode(func() raft.Node {
+		return raft.StartNode(c.config, []raft.Peer{{ID: c.nodeID, Context: selfCtx}})
+	})
+	if !started {
+		return Membership{}, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "only a waiting node can bootstrap a Raft group, the state of this node is %s", state)
+	}
+	c.logger.Info("bootstrapping a new Raft group")
+
+	ticker := time.NewTicker(c.tickInterval)
+	defer ticker.Stop()
+	for {
+		membership, err := c.Members()
+		if err != nil {
+			return Membership{}, err
+		}
+		if membership.LeaderID == c.nodeID && len(membership.Nodes) > 0 {
+			return membership, nil
+		}
+
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return Membership{}, ctx.Err()
+		}
+	}
 }
 
 // Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, knows its leader and the
@@ -1002,8 +1036,32 @@ func decodeSnapshot(data []byte) (snapshot, error) {
 
 // Process implements the rafthttp.Raft interface.
 func (c *Consensus) Process(ctx context.Context, m *raftpb.Message) error {
-	raftNode := c.node.RaftNode()
+	if m.GetTo() != c.nodeID {
+		return stacktrace.NewError("received a message for node %d, this node is %d", m.GetTo(), c.nodeID)
+	}
+	raftNode, err := c.nodeForMessage(m.GetFrom())
+	if err != nil {
+		return err
+	}
 	return raftNode.Step(ctx, m)
+}
+
+// nodeForMessage returns the raft node that processes a message received from a peer.
+// A waiting node only receives messages from the leader of a group it was added to: it then starts its raft node to
+// join the group, and learns the configuration and the application state of the group from the leader.
+func (c *Consensus) nodeForMessage(from uint64) (raft.Node, error) {
+	raftNode, state := c.node.Get()
+	if state == node.Waiting {
+		if started, _ := c.startNode(func() raft.Node { return raft.RestartNode(c.config) }); started {
+			c.logger.Info("joining the Raft group", zap.Uint64("from", from))
+		}
+		// The raft node was started either above or concurrently, by another message or by Bootstrap.
+		raftNode, state = c.node.Get()
+	}
+	if state == node.Removed {
+		return nil, stacktrace.NewError("this node was removed from the Raft group")
+	}
+	return raftNode, nil
 }
 
 // IsIDRemoved implements the rafthttp.Raft interface.
