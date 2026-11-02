@@ -10,10 +10,12 @@ resource "local_file" "tanka_config_main" {
     VAR_ENABLE_SCD_GLOBAL_LOCK               = var.enable_scd_global_lock
     VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX = var.enable_time_based_notification_index
     VAR_ENABLE_DSS_METRICS                   = var.enable_dss_metrics
+    VAR_ENABLE_MONITORING                    = var.enable_monitoring
     VAR_DB_HOSTNAME_SUFFIX                   = var.db_hostname_suffix
     VAR_LOCALITY                             = var.locality
     VAR_DATASTORE                            = var.datastore_type
     VAR_DATASTORE_MAX_OPEN_CONNS             = var.datastore_max_open_conns
+    VAR_DUMP_REQUESTS                        = var.dump_requests
     VAR_CRDB_NODE_IPS                        = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
     VAR_INGRESS_NAME                         = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
@@ -24,6 +26,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CORE_SERVICE_CPU_LIMIT               = var.core_service_cpu_limit
     VAR_CORE_SERVICE_MEMORY_LIMIT            = var.core_service_memory_limit
     VAR_CORE_SERVICE_ENV                     = var.core_service_env
+    VAR_GCP_PROF_SERVICE_NAME                = var.gcp_prof_service_name
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
     VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
     VAR_CRDB_CACHE                           = var.crdb_cache

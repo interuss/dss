@@ -4,7 +4,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
 
 {
   all(metadata): {
-    SCDEvict: base.CronJob(metadata, 'dss-scd-evict') {
+    SCDEvict: if metadata.enableScd then base.CronJob(metadata, 'dss-scd-evict') {
       spec+: {
         schedule: metadata.evict.scd.schedule,
         suspend: !metadata.evict.scd.enable_cron,

@@ -16,7 +16,7 @@ This can be enabled via:
 
 - The `enable_monitoring` option in terraform
 - The `monitoring.enabled` option in helm
-- By using tanka, which always enables it
+- The `enableMonitoring` option in tanka (enabled by default)
 
 By default, DSS metrics are not enabled; see below, OpenTelemetry section, to activate them.
 

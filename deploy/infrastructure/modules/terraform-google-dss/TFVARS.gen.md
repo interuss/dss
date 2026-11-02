@@ -218,6 +218,12 @@ Use <code>latest</code> to use the latest schema version.</p>
 <p>Example: <code>3.1.0</code></p>
 <br/>Default value: <code>"latest"</code></td>
             </tr><tr>
+                <td>dump_requests (<code>bool</code>)</td>
+                <td><p>Set to true to log full HTTP requests and responses of the core-service.
+It dumps sensitive information to logs; intended only for debugging and/or development.</p>
+<p>Example: <code>false</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
                 <td>enable_dss_metrics (<code>bool</code>)</td>
                 <td><p>Enable DSS's prometheus metric.</p>
 <p>Require DSS version to be at least 0.23.0.</p>
@@ -304,6 +310,11 @@ Leave empty to use the default value of the command.</p>
                 <td>evict_scd_ttl (<code>string</code>)</td>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"2688h"</code></td>
+            </tr><tr>
+                <td>gcp_prof_service_name (<code>string</code>)</td>
+                <td><p>Service name for the Go profiler of the core-service. The profiler is disabled when empty.</p>
+<p>Example: <code>dss-core-service</code></p>
+<br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>google_delete_protection (<code>bool</code>)</td>
                 <td><p>Setting this to false make the GKE cluster deletable. Use with caution as this removes deletion protection.
