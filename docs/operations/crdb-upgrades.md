@@ -28,22 +28,14 @@ be different by DSS instance.
 
 If a DSS instance has been deployed with terraform, first upgrade the cluster using [Helm](#helm-deployment)
 or [Tanka](#tanka-deployment). Then, update the variable `crdb_image_tag` in your `terraform.tfvars` to
-align your configuration with the new state of the cluster.
+align your configuration with the new state of the cluster (see [Modifying a deployment](modifying-deployment.md)).
 
 ## Helm deployment
 
 If you deployed the DSS using the Helm chart and the instructions provided in this repository, follow the instructions
-provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). Note that the CockroachDB documentation
-suggests to edit the values using `helm upgrade ... --set` commands. You will need to use the root key `cockroachdb`
+provided by CockroachDB `Cluster Upgrade with Helm` (See specific links below). You will need to use the root key `cockroachdb`
 since the cockroachdb Helm chart is a dependency of the dss chart.
-For instance, setting the image tag and partition using the command line would look like this:
-```
-helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.image.tag=v24.1.3 --reuse-values
-```
-```
-helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] --set cockroachdb.statefulset.updateStrategy.rollingUpdate.partition=0 --reuse-values
-```
-Alternatively, you can update `helm_values.yml` in your deployment and set the new image tag and rollout partition like this:
+Set the new image tag and rollout partition in your values file like this:
 ```yaml
 cockroachdb:
   image:
@@ -54,8 +46,7 @@ cockroachdb:
       rollingUpdate:
         partition: 0
 ```
-New values can then be applied using `helm upgrade [RELEASE_NAME] [PATH_TO_DSS_HELM] -f [helm_values.yml]`.
-We recommend the second approach to keep your helm values in sync with the cluster state.
+New values can then be applied as described in [Modifying a deployment](modifying-deployment.md).
 
 ### 21.2.7 to 24.1.3
 

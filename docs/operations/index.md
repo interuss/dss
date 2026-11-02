@@ -7,6 +7,7 @@ This section contains the instructions and related material used to operate a de
 - [Health checks](healthchecks.md)
 - [Performance](performance.md)
 - [Database migrations](database-migrations.md)
+- [Modifying a deployment](modifying-deployment.md)
 - [DSS upgrades](upgrades.md)
 - [CockroachDB version upgrades](crdb-upgrades.md)
 - [Kubernetes upgrades](kubernetes-upgrades.md)

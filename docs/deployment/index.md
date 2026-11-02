@@ -59,3 +59,4 @@ Once a DSS instance is deployed, its owner will need to [operate it](../operatio
 
 * [ ] Identify [operational procedures](../operations/index.md) that may be needed while operating the DSS instance.
 * [ ] Ensure operating personnel are trained on all applicable operational procedures that may be needed.
+* [ ] Ensure operating personnel know how to [modify the deployment](../operations/modifying-deployment.md).
