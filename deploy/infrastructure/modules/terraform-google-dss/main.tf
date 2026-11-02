@@ -81,6 +81,7 @@ module "terraform-commons-dss" {
   evict_rid_isas                       = var.evict_rid_isas
   evict_rid_subscriptions              = var.evict_rid_subscriptions
   enable_monitoring                    = var.enable_monitoring
+  alerting                             = var.alerting
   enable_scd                           = var.enable_scd
   enable_scd_global_lock               = var.enable_scd_global_lock
   enable_time_based_notification_index = var.enable_time_based_notification_index

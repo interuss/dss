@@ -70,6 +70,9 @@ The release notes should contain at least the following sections:
 * [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
+* [helm] Alerting by email is now available with the Alertmanager of the official Prometheus chart. Set `prometheus.alertmanager.enabled` to `true`, the SMTP parameters in `prometheus.alertmanager.config` and the Grafana contact point and notification policy in `grafana.alerting`. See `values.example.yaml`.
+* [tanka] Grafana now sends its alerts to Alertmanager with a contact point and a notification policy provisioned in `/etc/grafana/provisioning/alerting` (ConfigMap `grafana-alerting-provisioning`), instead of the legacy notifier, ignored since Grafana 11. The `grafana-notifier-provisioning` ConfigMap is not deleted by `tk apply` and can be removed manually.
+* [terraform] New variable `alerting` (SMTP server, email, password and destination), passed to Helm and Tanka.
 
 ## Minimal database schema version
 

@@ -1,0 +1,15 @@
+prometheus:
+  server:
+    podAnnotations:
+      serverFilesVersion: "4"
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: test
+          rules:
+            - alert: DSSTestAlert
+              expr: vector(1)
+              labels:
+                severity: test
+              annotations:
+                summary: Test alert from Prometheus

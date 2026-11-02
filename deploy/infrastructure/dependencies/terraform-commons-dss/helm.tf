@@ -153,12 +153,49 @@ resource "local_file" "helm_chart_values" {
           }
         }
       }
+
+      alertmanager = {
+        enabled = var.alerting != null
+        config = {
+          global = {
+            smtp_smarthost     = var.alerting != null ? var.alerting.smtp_host : ""
+            smtp_from          = var.alerting != null ? var.alerting.smtp_email : ""
+            smtp_auth_username = var.alerting != null ? var.alerting.smtp_email : ""
+            smtp_auth_password = var.alerting != null ? var.alerting.smtp_password : ""
+          }
+          receivers = [{
+            name          = "dss-team"
+            email_configs = [{ to = var.alerting != null ? var.alerting.dest : "" }]
+          }]
+        }
+      }
     }
 
     grafana = {
       persistence = {
         storageClassName = var.kubernetes_storage_class
       }
+
+      alerting = { for k, v in {
+        "alerting.yaml" = {
+          apiVersion = 1
+          contactPoints = [{
+            orgId = 1
+            name  = "alertmanager"
+            receivers = [{
+              uid  = "alertmanager"
+              type = "prometheus-alertmanager"
+              settings = {
+                url = "http://dss-alertmanager:9093"
+              }
+            }]
+          }]
+          policies = [{
+            orgId    = 1
+            receiver = "alertmanager"
+          }]
+        }
+      } : k => v if var.alerting != null }
     }
 
     }) : yamlencode({
