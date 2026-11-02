@@ -86,12 +86,14 @@ resource "local_file" "helm_chart_values" {
         jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
+        gcpProfServiceName               = var.gcp_prof_service_name
         enableScd                        = var.enable_scd
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
         locality                         = "zone=${var.locality}"
         datastoreMaxOpenConns            = var.datastore_max_open_conns
+        dumpRequests                     = var.dump_requests
 
         evict = {
           scd = {

@@ -207,6 +207,18 @@ variable "enable_time_based_notification_index" {
 }
 
 
+variable "dump_requests" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Set to true to log full HTTP requests and responses of the core-service.
+  It dumps sensitive information to logs; intended only for debugging and/or development.
+
+  Example: `false`
+  EOT
+}
+
+
 variable "should_init" {
   type        = bool
   description = <<-EOT
@@ -449,6 +461,17 @@ variable "core_service_env" {
   EOT
 
   default = {}
+}
+
+
+variable "gcp_prof_service_name" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Service name for the Go profiler of the core-service. The profiler is disabled when empty.
+
+  Example: `dss-core-service`
+  EOT
 }
 
 
