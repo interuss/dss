@@ -62,6 +62,8 @@ The release notes should contain at least the following sections:
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
 * [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
+* [terraform] `kubernetes_namespace` now accepts namespaces other than `default`.
+* [tanka] The subject of the `cockroachdb` ClusterRoleBinding now uses the namespace of the deployment instead of `default`.
 
 ## Minimal database schema version
 
