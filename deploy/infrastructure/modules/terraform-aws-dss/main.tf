@@ -50,6 +50,7 @@ module "terraform-commons-dss" {
   desired_rid_db_version               = var.desired_rid_db_version
   desired_scd_db_version               = var.desired_scd_db_version
   desired_aux_db_version               = var.desired_aux_db_version
+  schema_manager_enabled               = var.schema_manager_enabled
   authorization                        = var.authorization
   locality                             = var.locality
   crdb_external_nodes                  = var.crdb_external_nodes

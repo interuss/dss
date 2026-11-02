@@ -23,6 +23,7 @@ dss:
           ISAs: true
           subscriptions: true
   schemaManager:
+    enabled: true
     desiredRidDbVersion: ""
     desiredScdDbVersion: ""
     desiredAuxDbVersion: ""

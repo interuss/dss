@@ -282,6 +282,10 @@
           "description": "Schema manager jobs configuration",
           "type": "object",
           "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Deploy the schema manager jobs."
+            },
             "desiredRidDbVersion": {
               "type": "string",
               "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
