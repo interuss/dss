@@ -49,6 +49,7 @@ module "terraform-commons-dss" {
   desired_scd_db_version               = var.desired_scd_db_version
   desired_aux_db_version               = var.desired_aux_db_version
   schema_manager_enabled               = var.schema_manager_enabled
+  schema_manager_image                 = var.schema_manager_image
   authorization                        = var.authorization
   locality                             = var.locality
   image_pull_secret                    = var.image_pull_secret

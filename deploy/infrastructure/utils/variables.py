@@ -50,6 +50,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "desired_scd_db_version",
     "desired_aux_db_version",
     "schema_manager_enabled",
+    "schema_manager_image",
     "crdb_image_tag",
     "crdb_cluster_name",
     "crdb_cache",

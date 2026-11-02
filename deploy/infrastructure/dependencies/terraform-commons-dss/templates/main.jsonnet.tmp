@@ -91,7 +91,7 @@ local metadata = metadataBase {
   },
   schema_manager+: {
     enable: ${VAR_SCHEMA_MANAGER_ENABLED},
-    image: '${VAR_DOCKER_IMAGE_NAME}',
+    image: '${VAR_SCHEMA_MANAGER_IMAGE}',
     desired_rid_db_version: '${VAR_DESIRED_RID_DB_VERSION}',
     desired_scd_db_version: '${VAR_DESIRED_SCD_DB_VERSION}',
     desired_aux_db_version: '${VAR_DESIRED_AUX_DB_VERSION}',

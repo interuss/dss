@@ -1,4 +1,4 @@
-{{- $image := .Values.dss.image }}
+{{- $image := .Values.dss.schemaManager.image | default .Values.dss.image }}
 {{- $datastoreHost :=  (include "datastoreHost" .) -}}
 {{- $datastorePort :=  (include "datastorePort" .) -}}
 {{- $datastoreUser :=  (include "datastoreUser" .) -}}
