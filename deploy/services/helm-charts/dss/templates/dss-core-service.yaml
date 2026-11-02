@@ -45,7 +45,9 @@ spec:
       initContainers:
         {{- $waitForDatastore | nindent 8 }}
         {{- $waitForRIDSchema | nindent 8 }}
+        {{- if $dss.conf.enableScd }}
         {{- $waitForSCDSchema | nindent 8 }}
+        {{- end }}
       containers:
         - args:
             - --accepted_jwt_audiences={{$dss.conf.hostname}}

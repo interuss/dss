@@ -10,6 +10,7 @@ resource "local_file" "tanka_config_main" {
     VAR_ENABLE_SCD_GLOBAL_LOCK               = var.enable_scd_global_lock
     VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX = var.enable_time_based_notification_index
     VAR_ENABLE_DSS_METRICS                   = var.enable_dss_metrics
+    VAR_ENABLE_MONITORING                    = var.enable_monitoring
     VAR_DB_HOSTNAME_SUFFIX                   = var.db_hostname_suffix
     VAR_LOCALITY                             = var.locality
     VAR_DATASTORE                            = var.datastore_type
