@@ -86,7 +86,7 @@ local minikubeLoadBalancer(metadata) = base.Service(metadata, 'gateway') {
 
   CloudNetwork(metadata): {
     google: if metadata.cloud_provider == "google" then {
-      ingress: $.GoogleManagedCertIngress(metadata),
+      ingress: if metadata.backend.preSharedCert != '' then $.GooglePresharedCertIngress(metadata, metadata.backend.preSharedCert) else $.GoogleManagedCertIngress(metadata),
       [if metadata.backend.sslPolicy != '' then 'frontendConfig']: $.GoogleSSLPolicyFrontendConfig(metadata),
       service: $.GoogleService(metadata),
     },

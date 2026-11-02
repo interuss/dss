@@ -28,6 +28,7 @@ metadata:
       (dict
         "certName" (printf "%s-core-service-https-certificate" $.Release.Name)
         "ip" .ip
+        "preSharedCert" .preSharedCert
         "frontendConfig" (empty .sslPolicy | ternary "" "ssl-frontend-config")
       ) | nindent 4
     }}
@@ -46,6 +47,7 @@ spec:
                 name: {{$.Release.Name}}-core-service
                 port:
                   number: 8080
+{{- if not .preSharedCert }}
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -56,6 +58,7 @@ metadata:
 spec:
   domains:
     - {{$dssHostname}}
+{{- end }}
 
 {{ if .sslPolicy }}
 ---

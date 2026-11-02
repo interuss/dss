@@ -62,6 +62,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CERT_NAME                            = var.gateway_cert_name
     VAR_SUBNET                               = var.workload_subnet
     VAR_SSL_POLICY                           = var.ssl_policy
+    VAR_GOOGLE_PRESHARED_CERT                = var.google_preshared_cert
     VAR_EVICT_ENABLE_SCD_CRON                = var.evict_enable_scd_cron
     VAR_EVICT_SCD_SCHEDULE                   = var.evict_scd_schedule
     VAR_EVICT_SCD_TTL                        = var.evict_scd_ttl

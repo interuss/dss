@@ -78,6 +78,12 @@ variable "workload_subnet" {
   default     = ""
 }
 
+variable "google_preshared_cert" {
+  type        = string
+  description = "Only used by Google cloud provider. Name of the pre-shared certificate used by the DSS Gateway Ingress instead of a Google-managed certificate."
+  default     = ""
+}
+
 variable "ssl_policy" {
   type        = string
   description = "Only required for Google cloud provider. Name of the SSL policy created for the DSS Gateway Ingress."
