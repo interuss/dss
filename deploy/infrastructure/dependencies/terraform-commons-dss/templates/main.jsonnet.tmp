@@ -82,6 +82,7 @@ local metadata = metadataBase {
   },
   backend+: {
     ipName: '${VAR_INGRESS_NAME}',
+    preSharedCert: '${VAR_GOOGLE_PRESHARED_CERT}',
     %{if VAR_CLOUD_PROVIDER == "aws"}
     certName: '${VAR_CERT_NAME}',
     %{endif}

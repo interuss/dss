@@ -91,6 +91,7 @@
     dumpRequests: false,
     certName: if $.cloud_provider == "aws" then error 'must specify certName for AWS cloud provider', # Only used by AWS
     sslPolicy: '', # SSL Policy Name. Only used by Google Cloud.
+    preSharedCert: '', # Pre-shared certificate name. Only used by Google Cloud.
     // Kubernetes container resources, e.g. '0.5' CPU and '2Gi' memory. Not set if empty.
     cpuRequest: '',
     memoryRequest: '',
