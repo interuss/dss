@@ -47,7 +47,7 @@ Where `<min>` is a minute (`0`–`59`) deterministically derived from the DSS in
 As noted in [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
 
 When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
-See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for details.
+See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for details. To change these parameters on an existing deployment, see [Modifying a deployment](modifying-deployment.md).
 
 ### Manual ad-hoc cleanup via CLI `db-manager` tool
 
