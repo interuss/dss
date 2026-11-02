@@ -311,6 +311,11 @@ Leave empty to use the default value of the command.</p>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"2688h"</code></td>
             </tr><tr>
+                <td>gcp_prof_service_name (<code>string</code>)</td>
+                <td><p>Service name for the Go profiler of the core-service. The profiler is disabled when empty.</p>
+<p>Example: <code>dss-core-service</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>google_delete_protection (<code>bool</code>)</td>
                 <td><p>Setting this to false make the GKE cluster deletable. Use with caution as this removes deletion protection.
 This setting should only be used to ease the management of test clusters.</p>

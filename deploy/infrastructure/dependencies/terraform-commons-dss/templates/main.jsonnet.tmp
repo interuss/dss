@@ -81,6 +81,7 @@ local metadata = metadataBase {
     memoryRequest: '${VAR_CORE_SERVICE_MEMORY_REQUEST}',
     cpuLimit: '${VAR_CORE_SERVICE_CPU_LIMIT}',
     memoryLimit: '${VAR_CORE_SERVICE_MEMORY_LIMIT}',
+    prof_grpc_name: '${VAR_GCP_PROF_SERVICE_NAME}',
     env: {
       %{~ for k, v in VAR_CORE_SERVICE_ENV ~}
       '${k}': '${v}',

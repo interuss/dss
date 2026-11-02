@@ -64,6 +64,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "core_service_cpu_limit",
     "core_service_memory_limit",
     "core_service_env",
+    "gcp_prof_service_name",
     "locality",
     "datastore_max_open_conns",
     "crdb_external_nodes",

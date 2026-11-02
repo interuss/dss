@@ -39,6 +39,7 @@ module "terraform-commons-dss" {
   core_service_cpu_limit               = var.core_service_cpu_limit
   core_service_memory_limit            = var.core_service_memory_limit
   core_service_env                     = var.core_service_env
+  gcp_prof_service_name                = var.gcp_prof_service_name
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
