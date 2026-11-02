@@ -410,7 +410,7 @@ For docker hub private repository, use <code>docker.io</code> as <code>DOCKER_RE
 <br/>Default value: <code>""</code></td>
             </tr><tr>
                 <td>kubernetes_namespace (<code>string</code>)</td>
-                <td><p>Namespace where to deploy Kubernetes resources. Only default is supported at the moment.</p>
+                <td><p>Namespace where to deploy Kubernetes resources.</p>
 <p>Example: <code>default</code></p>
 <br/>Default value: <code>"default"</code></td>
             </tr><tr>
