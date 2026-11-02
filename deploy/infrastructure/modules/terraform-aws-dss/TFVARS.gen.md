@@ -379,6 +379,11 @@ Leave empty to use the default value of the command.</p>
                 <td><p>How long expired SCD items should stay before being automatically removed; expressed in Go duration format (https://pkg.go.dev/time#ParseDuration).</p>
 <br/>Default value: <code>"2688h"</code></td>
             </tr><tr>
+                <td>gcp_prof_service_name (<code>string</code>)</td>
+                <td><p>Service name for the Go profiler of the core-service. The profiler is disabled when empty.</p>
+<p>Example: <code>dss-core-service</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>image (<code>string</code>)</td>
                 <td><p>URL of the DSS docker image.</p>
 <p>Official public images are available on Docker Hub: https://hub.docker.com/r/interuss/dss/tags

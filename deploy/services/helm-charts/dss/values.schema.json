@@ -351,6 +351,10 @@
             "datastoreMaxOpenConns": {
               "type": "integer"
             },
+            "gcpProfServiceName": {
+              "type": "string",
+              "description": "Optional: Service name for the Go profiler."
+            },
             "evict": {
               "description": "Evict jobs configuration",
               "type": "object",
