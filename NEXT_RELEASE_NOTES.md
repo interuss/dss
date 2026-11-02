@@ -63,6 +63,8 @@ The release notes should contain at least the following sections:
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
+* [tanka] When `enableScd` is `false`, the core-service no longer waits for the SCD schema and the SCD evict CronJob is no longer deployed: the core-service could not start on a new database in that case.
 * [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 
