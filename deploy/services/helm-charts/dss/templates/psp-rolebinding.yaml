@@ -1,0 +1,20 @@
+{{- with .Values.dss.psp }}
+{{- if .roleBinding }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    name: default-privileged
+  name: default:privileged
+  namespace: {{ $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .roleRef }}
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:serviceaccounts:{{ $.Release.Namespace }}
+{{- end }}
+{{- end }}

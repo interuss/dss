@@ -68,6 +68,7 @@ resource "local_file" "tanka_config_main" {
     VAR_SHOULD_INIT                          = var.should_init
     VAR_DOCKER_IMAGE_PULL_SECRET             = var.image_pull_secret != null ? var.image_pull_secret : ""
     VAR_CLOUD_PROVIDER                       = var.kubernetes_cloud_provider_name
+    VAR_PSP_ROLE_REF                         = var.psp_role_ref
     VAR_CERT_NAME                            = var.gateway_cert_name
     VAR_SUBNET                               = var.workload_subnet
     VAR_SSL_POLICY                           = var.ssl_policy
