@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,22 @@ def generate_node_config(cluster, node_type, node_id):
     )
     public_address = cluster.get_node_public_address(node_type, node_id)
 
+    # Raft nodes are reached by their peers at their public address only.
+    if node_type == "raft":
+        alt_names = [public_address]
+    else:
+        alt_names = [
+            short_name,
+            full_name,
+            short_name_group,
+            full_name_without_group,
+            f"yb-{node_type}s",
+            f"yb-{node_type}s.{cluster.namespace}",
+            f"yb-{node_type}s.{cluster.namespace}.svc.cluster.local",
+        ]
+        if public_address:
+            alt_names.append(public_address)
+
     with open(cluster.get_node_conf_file(node_type, node_id), "w") as f:
         f.write(
             f"""[ req ]
@@ -34,19 +51,10 @@ commonName = {short_name}
 [ req_ext ]
 subjectAltName = @alt_names
 [ alt_names ]
-DNS.1 = {short_name}
-DNS.2 = {full_name}
-DNS.3 = {short_name_group}
-DNS.4 = {full_name_without_group}
-DNS.5 = yb-{node_type}s
-DNS.6 = yb-{node_type}s.{cluster.namespace}
-DNS.7 = yb-{node_type}s.{cluster.namespace}.svc.cluster.local
 """
         )
-
-        if public_address:
-            f.write(f"""DNS.8 = {public_address}
-""")
+        for i, name in enumerate(alt_names, 1):
+            f.write(f"DNS.{i} = {name}\n")
 
     logger.info(f"Created {node_type} #{node_id} configuration file")
 
@@ -171,3 +179,24 @@ def do_generate_nodes(cluster):
     generate_node(cluster, "prometheus", "")
 
     logger.info("All nodes certificates are ready")
+
+
+def do_generate_raft_nodes(cluster):
+    """Generate certificates for all raft nodes"""
+
+    logger.info("Generation of raft nodes certificates")
+
+    if not cluster.is_ready:
+        logger.error("Cluster is not already initialized, unable to continue")
+        sys.exit(1)
+
+    if not cluster.nodes_public_address:
+        logger.error("--nodes-public-address is required for raft nodes")
+        sys.exit(1)
+
+    os.makedirs(cluster.raft_certs_dir, exist_ok=True)
+
+    for node_id in range(0, int(cluster.nodes_count)):
+        generate_node(cluster, "raft", node_id)
+
+    logger.info("All raft nodes certificates are ready")
