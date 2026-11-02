@@ -22,7 +22,7 @@ metadata:
     app: {{$.Release.Name}}-core-service
     name: {{$.Release.Name}}-dss-gateway
   name: {{$.Release.Name}}-dss-gateway
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   {{- include (printf "%s-ingress-spec" $cloudProvider) . | nindent 2 }}
   ports:
