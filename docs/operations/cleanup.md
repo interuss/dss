@@ -167,6 +167,8 @@ When deploying via terrafrom modules, the parameters are configurable with modul
 | `evict_rid_isas`                | `true`           |
 | `evict_rid_subscriptions`       | `true`           |
 
+To change these parameters on an existing deployment, see [Modifying a deployment](modifying-deployment.md).
+
 ## Examples
 
 The examples below assume a DSS running locally via the `run_locally.sh` script.

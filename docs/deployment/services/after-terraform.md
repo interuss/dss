@@ -34,3 +34,5 @@ It contains scripts to operate the cluster and setup the services.
 ## Next steps
 
 Proceed to [support services](./support.md) to set up any permanent or recurring operations necessary to achieve requirements.
+
+To change the configuration of the deployed DSS instance later, see [Modifying a deployment](../../operations/modifying-deployment.md).
