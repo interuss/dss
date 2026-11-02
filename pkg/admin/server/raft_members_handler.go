@@ -40,7 +40,7 @@ func (s *Server) CreateRaftGroup(ctx context.Context, req *restapi.CreateRaftGro
 			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	membership, err := group.Bootstrap()
+	membership, err := group.Bootstrap(ctx)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not create the %s raft group", req.Body.GroupName)
 		switch stacktrace.GetCode(err) {

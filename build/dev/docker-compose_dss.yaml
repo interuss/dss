@@ -112,6 +112,7 @@ services:
       - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
       - $PWD/startup/coverdata:/startup/coverdata:rw  # we will save coverage info here
       - raftdata:/raftdata
+      - adminsocket:/run/dss
     environment:
       COMPOSE_PROFILES: ${COMPOSE_PROFILES}
       # Note: requires the Dockerfile to have been built with "-cover" in the EXTRA_GO_INSTALL_FLAGS var
@@ -149,6 +150,36 @@ services:
       start_period: 30s
       start_interval: 5s
     profiles: ["", "with-yugabyte", "with-monitoring", "with-raft"]
+
+  # Initializes the Raft groups of the core service, which waits for them on its first start and only becomes healthy
+  # once they are initialized. It shares the directory of the Unix socket on which the core service serves its admin
+  # API.
+  local-dss-raft-bootstrapper:
+    image: interuss-local/dss
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        # The admin API is served as soon as the core service runs, retry until then.
+        for _ in $$(seq 1 120); do
+          if nodes=$$(dssctl raft node 2>/dev/null); then
+            # The groups the core service is already a member of, e.g. after a restart, are not bootstrapped again.
+            waiting=$$(echo "$$nodes" | awk '$$2 == "waiting" {sub(":", "", $$1); print $$1}' | paste -s -d, -)
+            if [ -n "$$waiting" ]; then
+              exec dssctl raft bootstrap --groups "$$waiting"
+            fi
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Error: the admin API of the core service is not reachable." >&2
+        exit 1
+    volumes:
+      - adminsocket:/run/dss
+    depends_on:
+      local-dss-core-service:
+        condition: service_started
+    profiles: ["with-raft"]
 
   local-dss-dummy-oauth:
     build:
@@ -218,3 +249,4 @@ networks:
 volumes:
   local-dss-data:
   raftdata:
+  adminsocket:
