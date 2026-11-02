@@ -433,6 +433,12 @@ Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>prometheus.dss.example.com</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>psp_role_ref (<code>string</code>)</td>
+                <td><p>Name of the ClusterRole bound to all the service accounts of the namespace, for Pod Security Policies.
+No RoleBinding is created when empty.</p>
+<p>Example: <code>psp:privileged</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>should_init (<code>bool</code>)</td>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,
