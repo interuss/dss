@@ -63,6 +63,7 @@ module "terraform-commons-dss" {
   yugabyte_internal_tservers_nodes     = module.terraform-google-kubernetes.yugabyte_tservers_nodes
   ip_gateway                           = module.terraform-google-kubernetes.ip_gateway
   ssl_policy                           = module.terraform-google-kubernetes.ssl_policy
+  google_preshared_cert                = var.google_preshared_cert
   kubernetes_cloud_provider_name       = module.terraform-google-kubernetes.kubernetes_cloud_provider_name
   kubernetes_context_name              = module.terraform-google-kubernetes.kubernetes_context_name
   kubernetes_get_credentials_cmd       = module.terraform-google-kubernetes.kubernetes_get_credentials_cmd

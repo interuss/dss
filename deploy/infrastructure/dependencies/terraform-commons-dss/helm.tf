@@ -60,10 +60,11 @@ resource "local_file" "helm_chart_values" {
       ]
 
       dssGateway = {
-        ip        = var.ip_gateway
-        subnet    = var.workload_subnet
-        certName  = var.gateway_cert_name
-        sslPolicy = var.ssl_policy
+        ip            = var.ip_gateway
+        subnet        = var.workload_subnet
+        certName      = var.gateway_cert_name
+        sslPolicy     = var.ssl_policy
+        preSharedCert = var.google_preshared_cert
       }
     }
 

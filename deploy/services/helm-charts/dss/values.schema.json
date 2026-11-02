@@ -227,6 +227,10 @@
             "sslPolicy": {
               "description": "For Google only: If provided, this SSL Policy is applied to the DSS Gateway Ingress",
               "type": "string"
+            },
+            "preSharedCert": {
+              "description": "For Google only: If provided, this pre-shared certificate is used by the DSS Gateway Ingress instead of a Google-managed certificate",
+              "type": "string"
             }
           },
           "required": [

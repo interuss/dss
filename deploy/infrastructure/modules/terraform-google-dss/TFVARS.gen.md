@@ -340,6 +340,12 @@ See https://docs.cloud.google.com/compute/docs/machine-resource for more details
 <p>Example: <code>n2-standard-4</code> for production, <code>e2-medium</code> for development.</p>
 </td>
             </tr><tr>
+                <td>google_preshared_cert (<code>string</code>)</td>
+                <td><p>Name of a pre-shared SSL certificate of the Google Cloud project, used by the DSS gateway
+instead of a Google-managed certificate. A Google-managed certificate is used when empty.</p>
+<p>Example: <code>dss-certificate</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>google_project_name (<code>string</code>)</td>
                 <td><p>Name of the GCP project hosting the future cluster</p>
 </td>
