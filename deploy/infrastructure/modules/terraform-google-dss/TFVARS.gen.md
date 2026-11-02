@@ -408,7 +408,7 @@ Currently, only single node or three nodes deployments are supported.</p>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,
 and prevent you from joining an existing pool.</p>
-<p>Only used for CockroachDB with Tanka</p>
+<p>Only used for CockroachDB</p>
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>none</code></td>
             </tr><tr>

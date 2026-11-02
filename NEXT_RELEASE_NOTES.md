@@ -70,6 +70,7 @@ The release notes should contain at least the following sections:
 * [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
+* [terraform/helm] `should_init` is now taken into account by Helm: when `false`, the CockroachDB cluster initialization job of the chart is no longer run. Setting `should_init` to `true` with a non-empty `crdb_external_nodes` is now rejected by terraform.
 
 ## Minimal database schema version
 
