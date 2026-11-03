@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	adminserver "github.com/interuss/dss/pkg/admin/server"
 	"github.com/interuss/dss/pkg/api"
 	apiauxv1 "github.com/interuss/dss/pkg/api/auxv1"
 	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
@@ -22,15 +23,19 @@ import (
 	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
+	auxrepos "github.com/interuss/dss/pkg/aux_/repos"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore"
+	"github.com/interuss/dss/pkg/raftstore/consensus"
+	ridrepos "github.com/interuss/dss/pkg/rid/repos"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
+	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -62,6 +67,7 @@ var (
 	enableMetrics           = flag.Bool("enable_metrics", false, "Enable metric endpoint")
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
+	adminSocket             = flag.String("admin_socket", "/run/dss/admin.sock", "Path of the Unix socket on which the admin API (used by dssctl) is served, when the core-service uses the raft store. Its directory is created if needed.")
 
 	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -408,6 +414,27 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
+	}
+
+	if params.GetStoreParameters().StoreType == params.RaftStoreType {
+		raftGroups := map[string]*consensus.Consensus{
+			"aux": auxStore.(*raftstore.Store[auxrepos.Repository]).Consensus,
+		}
+		if *enableRID {
+			raftGroups["rid"] = ridStore.(*raftstore.Store[ridrepos.Repository]).Consensus
+		}
+		if *enableSCD {
+			raftGroups["scd"] = scdStore.(*raftstore.Store[scdrepos.Repository]).Consensus
+		}
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, raftGroups)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to start the admin server")
+		}
+		defer func() {
+			if err := adminServer.Shutdown(context.Background()); err != nil {
+				logger.Warn("failed to shut down admin server", zap.Error(err))
+			}
+		}()
 	}
 
 	// the middlewares are wrapped and, therefore, executed in the opposite order
