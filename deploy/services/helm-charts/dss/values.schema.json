@@ -381,7 +381,7 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
                     },
                     "batchSize": {
                       "type": "integer",
