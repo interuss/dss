@@ -1,0 +1,32 @@
+digraph federation {
+  rankdir=LR;
+  node [shape=box, colorscheme=paired8];
+  graph [dpi = 300];
+
+  global  [label="Global Prometheus", shape=cylinder];
+  grafana [label="Global Grafana"];
+
+  subgraph cluster_uss1 {
+    label="USS 1";
+    style=filled;
+    fillcolor="#eef";
+    prom1  [label="Prometheus", shape=cylinder];
+    void1 [shape=plaintext, label="(...)"];
+    prom1 -> void1 [label="scrape", style=dashed];
+  }
+
+  subgraph cluster_uss2 {
+    label="USS 2";
+    style=filled;
+    fillcolor="#efe";
+    prom2  [label="Prometheus", shape=cylinder];
+    void2 [shape=plaintext, label="(...)"];
+    prom2 -> void2 [label="scrape", style=dashed];
+  }
+
+
+  global -> prom1 [label="/federate"];
+  global -> prom2 [label="/federate"];
+
+  grafana -> global [label="query"];
+}
