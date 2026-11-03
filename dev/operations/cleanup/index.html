@@ -2188,7 +2188,7 @@
 <ul>
 <li>Run the cleanup during low-intensity periods (e.g. at night).</li>
 <li>Clean up iteratively, starting with a lower TTL and progressively increasing it.</li>
-<li>Use <code>--rid_limit</code>/<code>--scd_limit</code> to bound the size of each deletion if a batch still causes performance issues.</li>
+<li>Use <code>--rid_batch_size</code>/<code>--scd_batch_size</code> to split the deletion into smaller batches, and/or <code>--rid_limit</code>/<code>--scd_limit</code> to bound the total number of entities deleted per run.</li>
 </ul>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">¶</a></h2>
 <p>Extracted from <code>db-manager evict --help</code>:</p>
@@ -2219,39 +2219,44 @@
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>List and evict expired entities
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>List and evict expired entities
 <a id="__codelineno-0-2" name="__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3"></a>Usage:
 <a id="__codelineno-0-4" name="__codelineno-0-4"></a>  db-manager evict [flags]
 <a id="__codelineno-0-5" name="__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6"></a>Flags:
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a>      --delete             set this flag to true to delete the expired entities
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a>  -h, --help               help for evict
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a>      --rid_isa            set this flag to true to check for expired RID ISAs (default true)
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a>      --rid_limit int      maximum number of RID entities deleted, defaults to unlimited
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>      --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>      --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>      --scd_limit int      maximum number of SCD entities deleted, defaults to unlimited
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>      --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>      --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>      --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>      --timeout duration   Timeout for the command (default 5m0s)
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>Global Flags:
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>      --datastore_application_name string   application name for tagging the connection to the database (default "dss")
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>      --datastore_host string               database host to connect to
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>      --datastore_max_conn_idle_secs int    maximum amount of time in seconds a connection may be idle, default is 30 seconds (default 30)
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>      --datastore_max_open_conns int        maximum number of open connections to the database, default is 4 (default 4)
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>      --datastore_max_retries int           maximum number of attempts to retry a query in case of contention, default is 100 (default 100)
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>      --datastore_port int                  database port to connect to (default 26257)
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>      --datastore_ssl_dir string            directory to ssl certificates. Must contain files: ca.crt, client.&lt;user&gt;.crt, client.&lt;user&gt;.key
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>      --datastore_ssl_mode string           database sslmode (default "disable")
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>      --datastore_user string               database user to authenticate as (default "root")
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>      --delete               set this flag to true to delete the expired entities
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>  -h, --help                 help for evict
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>      --rid_batch_size int   number of RID entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>      --rid_isa              set this flag to true to check for expired RID ISAs (default true)
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>      --rid_limit int        maximum number of RID entities deleted per entity type (may be exceeded by up to rid_batch_size - 1 when rid_batch_size is set), defaults to unlimited
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>      --rid_sub              set this flag to true to check for expired RID subscriptions (default true)
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>      --rid_ttl duration     time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>      --scd_batch_size int   number of SCD entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>      --scd_limit int        maximum number of SCD entities deleted per entity type (may be exceeded by up to scd_batch_size - 1 when scd_batch_size is set), defaults to unlimited
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>      --scd_oir              set this flag to true to check for expired SCD operational intents (default true)
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>      --scd_sub              set this flag to true to check for expired SCD subscriptions (default true)
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>      --scd_ttl duration     time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>      --timeout duration     Timeout for the command (default 5m0s)
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>Global Flags:
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>      --datastore_application_name string   application name for tagging the connection to the database (default "dss")
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>      --datastore_host string               database host to connect to
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>      --datastore_max_conn_idle_secs int    maximum amount of time in seconds a connection may be idle, default is 30 seconds (default 30)
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>      --datastore_max_open_conns int        maximum number of open connections to the database, default is 4 (default 4)
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>      --datastore_max_retries int           maximum number of attempts to retry a query in case of contention, default is 100 (default 100)
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>      --datastore_port int                  database port to connect to (default 26257)
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>      --datastore_ssl_dir string            directory to ssl certificates. Must contain files: ca.crt, client.&lt;user&gt;.crt, client.&lt;user&gt;.key
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>      --datastore_ssl_mode string           database sslmode (default "disable")
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>      --datastore_user string               database user to authenticate as (default "root")
 </code></pre></div></td></tr></tbody></table></div>
 <p>Notes:</p>
 <ul>
 <li>By default, expired entities are only listed - <code>--delete</code> is required to actually remove them.</li>
 <li><code>--rid_limit</code>/<code>--scd_limit</code> can only be used together with <code>--delete</code> and bound the number of entities deleted by a run, per entity type (e.g. <code>--scd_limit=1000</code> deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without <code>--delete</code> always lists all expired entities.</li>
+<li><code>--rid_batch_size</code>/<code>--scd_batch_size</code> can only be used together with <code>--delete</code> and split the deletion of expired entities into multiple queries of at most the specified batch size, per entity type (e.g. <code>--rid_batch_size=100</code> deletes expired ISAs in batches of 100 and expired RID subscriptions in batches of 100). When set to <code>0</code> (the default), expired entities are deleted in a single query per entity type. When used together with <code>--rid_limit</code>/<code>--scd_limit</code>, the limit is not strictly enforced and the actual number of deleted entities per entity type may exceed the limit by up to <code>batch_size - 1</code>.</li>
 <li><code>--locality</code> is deprecated and has no effect: RID cleanup considers the expired ISAs and subscriptions of all the DSS instances of the pool.</li>
 <li><code>--rid_ttl</code> and <code>--scd_ttl</code> accept durations formatted as <a href="https://pkg.go.dev/time#ParseDuration">Go <code>time.Duration</code> strings</a>, e.g. <code>24h</code>.</li>
 <li><code>--timeout</code> accepts the same duration format and bounds the total execution time of the command.</li>
@@ -2432,7 +2437,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 7, 2026 12:25:26 UTC">October 7, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 11:09:56 UTC">November 3, 2026</span>
   </span>
 
     
