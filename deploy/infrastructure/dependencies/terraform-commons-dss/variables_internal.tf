@@ -78,6 +78,12 @@ variable "workload_subnet" {
   default     = ""
 }
 
+variable "public_subnet" {
+  type        = string
+  description = "Only required for AWS cloud provider. Subnet where the public traffic is deployed. For AWS, provide the name or the id of the public_subnet"
+  default     = ""
+}
+
 variable "ssl_policy" {
   type        = string
   description = "Only required for Google cloud provider. Name of the SSL policy created for the DSS Gateway Ingress."
