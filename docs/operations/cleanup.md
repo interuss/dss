@@ -45,7 +45,7 @@ To mitigate contention:
 
 - Run the cleanup during low-intensity periods (e.g. at night).
 - Clean up iteratively, starting with a lower TTL and progressively increasing it.
-- Use `--rid_limit`/`--scd_limit` to bound the size of each deletion if a batch still causes performance issues.
+- Use `--rid_batch_size`/`--scd_batch_size` to split the deletion into smaller batches, and/or `--rid_limit`/`--scd_limit` to bound the total number of entities deleted per run.
 
 ## Usage
 
@@ -58,17 +58,19 @@ Usage:
   db-manager evict [flags]
 
 Flags:
-      --delete             set this flag to true to delete the expired entities
-  -h, --help               help for evict
-      --rid_isa            set this flag to true to check for expired RID ISAs (default true)
-      --rid_limit int      maximum number of RID entities deleted, defaults to unlimited
-      --rid_sub            set this flag to true to check for expired RID subscriptions (default true)
-      --rid_ttl duration   time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
-      --scd_limit int      maximum number of SCD entities deleted, defaults to unlimited
-      --scd_oir            set this flag to true to check for expired SCD operational intents (default true)
-      --scd_sub            set this flag to true to check for expired SCD subscriptions (default true)
-      --scd_ttl duration   time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
-      --timeout duration   Timeout for the command (default 5m0s)
+      --delete               set this flag to true to delete the expired entities
+  -h, --help                 help for evict
+      --rid_batch_size int   number of RID entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)
+      --rid_isa              set this flag to true to check for expired RID ISAs (default true)
+      --rid_limit int        maximum number of RID entities deleted per entity type (may be exceeded by up to rid_batch_size - 1 when rid_batch_size is set), defaults to unlimited
+      --rid_sub              set this flag to true to check for expired RID subscriptions (default true)
+      --rid_ttl duration     time-to-live duration used for determining RID entries expiration, defaults to 30 minutes (default 30m0s)
+      --scd_batch_size int   number of SCD entities deleted per batch query (per entity type), defaults to 0 (single query for deleting entities of a type)
+      --scd_limit int        maximum number of SCD entities deleted per entity type (may be exceeded by up to scd_batch_size - 1 when scd_batch_size is set), defaults to unlimited
+      --scd_oir              set this flag to true to check for expired SCD operational intents (default true)
+      --scd_sub              set this flag to true to check for expired SCD subscriptions (default true)
+      --scd_ttl duration     time-to-live duration used for determining SCD entries expiration, defaults to 2*56 days (default 2688h0m0s)
+      --timeout duration     Timeout for the command (default 5m0s)
 
 Global Flags:
       --datastore_application_name string   application name for tagging the connection to the database (default "dss")
@@ -86,6 +88,7 @@ Notes:
 
 - By default, expired entities are only listed - `--delete` is required to actually remove them.
 - `--rid_limit`/`--scd_limit` can only be used together with `--delete` and bound the number of entities deleted by a run, per entity type (e.g. `--scd_limit=1000` deletes up to 1000 operational intents and up to 1000 SCD subscriptions). Which expired entities are deleted first is unspecified. Run the command again to delete the remaining ones. A run without `--delete` always lists all expired entities.
+- `--rid_batch_size`/`--scd_batch_size` can only be used together with `--delete` and split the deletion of expired entities into multiple queries of at most the specified batch size, per entity type (e.g. `--rid_batch_size=100` deletes expired ISAs in batches of 100 and expired RID subscriptions in batches of 100). When set to `0` (the default), expired entities are deleted in a single query per entity type. When used together with `--rid_limit`/`--scd_limit`, the limit is not strictly enforced and the actual number of deleted entities per entity type may exceed the limit by up to `batch_size - 1`.
 - `--locality` is deprecated and has no effect: RID cleanup considers the expired ISAs and subscriptions of all the DSS instances of the pool.
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.

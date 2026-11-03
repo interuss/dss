@@ -12,6 +12,7 @@ dss:
           ttl: 2688h
           timeout: ""
           limit: 0
+          batchSize: 0
           operationalIntents: true
           subscriptions: true
       rid:
@@ -20,6 +21,7 @@ dss:
           ttl: 30m
           timeout: ""
           limit: 0
+          batchSize: 0
           ISAs: true
           subscriptions: true
   schemaManager:

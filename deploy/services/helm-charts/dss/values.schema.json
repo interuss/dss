@@ -381,7 +381,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "operationalIntents": {
                       "type": "boolean"
@@ -413,7 +418,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                        "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "ISAs": {
                       "type": "boolean"
