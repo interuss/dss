@@ -34,7 +34,7 @@ It supports cleanup of the following entity types: SCD operational intents, SCD 
 Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
 All cleanups are global operations that remove expired entities across all DSS instances in the pool, regardless of which instance created them.
 
-The usage of this tool is preferably automated by scheduling regular cleanups via a Kubernetes `CronJob`. But if necessary, it can be invoked manually.
+The usage of this tool is preferably automated by specifying appropriate values in Terraform deployment variables to schedule regular cleanups via a Kubernetes `CronJob`. But if necessary, it can be invoked manually.
 
 ### Automated regular cleanup via Kubernetes `CronJob`
 
