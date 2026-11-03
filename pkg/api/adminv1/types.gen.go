@@ -14,10 +14,7 @@ type RaftNode struct {
 	// Identifier for the node within the Raft group.
 	Id string `json:"id"`
 
-	// Name of the node, identical across all Raft groups.
-	Name string `json:"name"`
-
-	// URL at which the other members of the Raft group send Raft messages to the node. Served by the Raft communication listener.
+	// URL at which the other members of the Raft group send Raft messages to the node. Served by the Raft communication listener. It identifies the DSS node within the cluster and across all Raft groups.
 	Url string `json:"url"`
 
 	// State of the node in the Raft group.
@@ -34,7 +31,7 @@ type RaftNode struct {
 type CreateRaftGroupMemberParameters struct {
 	Node RaftNode `json:"node"`
 
-	// ID of a node with the same name and in the `member` state that the node replaces, e.g. after it lost its data directory. Without it, adding a node whose name is already used by a member is rejected. The replaced member is not removed by this request: it must be removed once the node is added.
+	// ID of a node with the same URL and in the `member` state that the node replaces, e.g. after it lost its data directory. Without it, adding a node whose URL is already used by a member is rejected. The replaced member is not removed by this request: it must be removed once the node is added.
 	Replaces *string `json:"replaces,omitempty"`
 }
 
