@@ -31,6 +31,8 @@ const (
 
 	defaultMaxSizePerMsg   = 1024 * 1024
 	defaultMaxInflightMsgs = 4096 / 8
+
+	defaultPeerRequestTimeout = 5 * time.Second
 )
 
 type (
@@ -55,6 +57,9 @@ type (
 
 		MaxSizePerMsg   uint64
 		MaxInflightMsgs int
+
+		// PeerRequestTimeout bounds the requests sent to other nodes outside of the Raft transport.
+		PeerRequestTimeout time.Duration
 
 		// TLSCertFile, TLSKeyFile and TLSCAFile configure mutual TLS between Raft nodes. They are required unless Insecure is set.
 		TLSCertFile string
@@ -152,6 +157,7 @@ func init() {
 		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
+	flag.DurationVar(&connectParameters.PeerRequestTimeout, "raft_peer_request_timeout", defaultPeerRequestTimeout, "Timeout of the requests sent to other nodes outside of the Raft transport, e.g. to read the ID of a node being added to a Raft group. Higher values tolerate slower networks but delay reporting that a node cannot be reached.")
 
 	flag.StringVar(&connectParameters.TLSCertFile, "raft_tls_cert_file", "", "PEM certificate of this node, presented to the other Raft nodes. Required with --raft_tls_key_file and --raft_tls_ca_file for mutual TLS between Raft nodes, unless --raft_insecure is set. Peer URLs must then use https.")
 	flag.StringVar(&connectParameters.TLSKeyFile, "raft_tls_key_file", "", "PEM private key of --raft_tls_cert_file.")
