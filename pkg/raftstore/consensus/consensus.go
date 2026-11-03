@@ -16,12 +16,14 @@ import (
 	"github.com/interuss/dss/pkg/logging"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
+	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 // errSelfRemoved is returned by the raft updates consumer when this node applies its own removal from the group.
@@ -47,7 +49,7 @@ type Consensus struct {
 	readTracker *readIndexTracker
 
 	membership membership
-	confState  raftpb.ConfState
+	confState  *raftpb.ConfState
 
 	snapshotIndex uint64
 	appliedIndex  uint64
@@ -103,7 +105,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		},
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers)
+	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, peers, NewTLSInfo(connectParams, logger))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -113,9 +115,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to get snapshot from storage")
 	}
 
-	consensus.confState = snap.Metadata.ConfState
-	consensus.snapshotIndex = snap.Metadata.Index
-	consensus.appliedIndex = snap.Metadata.Index
+	consensus.confState = snap.GetMetadata().GetConfState()
+	consensus.snapshotIndex = snap.GetMetadata().GetIndex()
+	consensus.appliedIndex = snap.GetMetadata().GetIndex()
 
 	if len(snap.Data) > 0 {
 		initSnapshot, err := decodeSnapshot(snap.Data)
@@ -264,8 +266,11 @@ func peersList(peers map[uint64]*url.URL) ([]raft.Peer, error) {
 	return result, nil
 }
 
-func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, peers map[uint64]*url.URL, tlsInfo etcdtransport.TLSInfo) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
+	if tlsInfo.Empty() {
+		c.logger.Warn("--raft_insecure is set: Raft nodes do not authenticate each other and connection is not encrypted. Don't use this node in production environments.")
+	}
 
 	nodeURL, ok := peers[nodeID]
 	if !ok {
@@ -284,7 +289,8 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		LeaderStats: v2stats.NewLeaderStats(c.logger, nodeIDStr),
 		// ErrorC is buffered to make sure rafthttp can send errors even if the raft updates consumer is not listening yet.
 		// The buffer size of 1 is sufficient because the transport will only send one error before stopping.
-		ErrorC: make(chan error, 1),
+		ErrorC:  make(chan error, 1),
+		TLSInfo: tlsInfo,
 	}
 
 	err := transport.Start()
@@ -338,13 +344,13 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 				}
 
 				if !raft.IsEmptySnap(raftUpdate.Snapshot) {
-					if raftUpdate.Snapshot.Metadata.Index <= c.appliedIndex {
+					if raftUpdate.Snapshot.GetMetadata().GetIndex() <= c.appliedIndex {
 						c.logger.Error("snapshot index shall be greater than current applied index",
-							zap.Uint64("snapshotIndex", raftUpdate.Snapshot.Metadata.Index), zap.Uint64("appliedIndex", c.appliedIndex))
+							zap.Uint64("snapshotIndex", raftUpdate.Snapshot.GetMetadata().GetIndex()), zap.Uint64("appliedIndex", c.appliedIndex))
 						return
 					}
 
-					env, err := decodeSnapshot(raftUpdate.Snapshot.Data)
+					env, err := decodeSnapshot(raftUpdate.Snapshot.GetData())
 					if err != nil {
 						c.logger.Error("failed to decode received snapshot", zap.Error(err))
 						return
@@ -357,9 +363,9 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					}
 					c.commitC <- EntryCommit{SnapshotData: env.AppData}
 
-					c.confState = raftUpdate.Snapshot.Metadata.ConfState
-					c.snapshotIndex = raftUpdate.Snapshot.Metadata.Index
-					c.appliedIndex = raftUpdate.Snapshot.Metadata.Index
+					c.confState = raftUpdate.Snapshot.GetMetadata().GetConfState()
+					c.snapshotIndex = raftUpdate.Snapshot.GetMetadata().GetIndex()
+					c.appliedIndex = raftUpdate.Snapshot.GetMetadata().GetIndex()
 				}
 
 				c.updateSnapshotConfState(raftUpdate.Messages)
@@ -397,28 +403,28 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 	}()
 }
 
-func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint64) error {
+func (c *Consensus) publishEntries(entries []*raftpb.Entry, snapshotInterval uint64) error {
 	if len(entries) == 0 {
 		return nil
 	}
 
-	c.logger.Debug("publishing entries", zap.Int("numEntries", len(entries)), zap.Uint64("firstIndex", entries[0].Index), zap.Uint64("lastIndex", entries[len(entries)-1].Index))
+	c.logger.Debug("publishing entries", zap.Int("numEntries", len(entries)), zap.Uint64("firstIndex", entries[0].GetIndex()), zap.Uint64("lastIndex", entries[len(entries)-1].GetIndex()))
 
 	var wg sync.WaitGroup
 	for _, entry := range entries {
-		switch entry.Type {
+		switch entry.GetType() {
 		case raftpb.EntryNormal:
-			err := c.submitNormalEntryToStorage(entry.Data, &wg)
+			err := c.submitNormalEntryToStorage(entry.GetData(), &wg)
 			if err != nil {
 				return stacktrace.Propagate(err, "failed to process normal entry")
 			}
 		case raftpb.EntryConfChange:
-			err := c.applyConfigChange(entry.Data)
+			err := c.applyConfigChange(entry.GetData())
 			if err != nil {
 				return stacktrace.Propagate(err, "failed to process config change entry")
 			}
 		case raftpb.EntryConfChangeV2:
-			err := c.applyConfigChangeV2(entry.Data)
+			err := c.applyConfigChangeV2(entry.GetData())
 			if err != nil {
 				return stacktrace.Propagate(err, "failed to process config change v2 entry")
 			}
@@ -427,7 +433,7 @@ func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint
 
 	// wait for all entries to be applied before updating the applied index and potentially triggering a snapshot
 	wg.Wait()
-	c.appliedIndex = entries[len(entries)-1].Index
+	c.appliedIndex = entries[len(entries)-1].GetIndex()
 
 	if c.appliedIndex-c.snapshotIndex >= snapshotInterval {
 		data, err := c.encodeSnapshot()
@@ -435,7 +441,7 @@ func (c *Consensus) publishEntries(entries []raftpb.Entry, snapshotInterval uint
 			return stacktrace.Propagate(err, "failed to encode snapshot")
 		}
 
-		err = c.storage.triggerSnapshot(c.appliedIndex, &c.confState, data)
+		err = c.storage.triggerSnapshot(c.appliedIndex, c.confState, data)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to trigger snapshot")
 		}
@@ -471,33 +477,33 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 // raftpb.ConfChange is still used internally by Raft to bootstrap the group, we just need to apply the change to the node
 // and record the URL of the bootstrap members. Changes requested by clients are processed by applyConfigChangeV2.
 func (c *Consensus) applyConfigChange(data []byte) error {
-	var cc raftpb.ConfChange
-	err := cc.Unmarshal(data)
+	cc := &raftpb.ConfChange{}
+	err := proto.Unmarshal(data, cc)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to unmarshal config change data")
 	}
 
-	c.confState = *c.node.ApplyConfChange(cc)
+	c.confState = c.node.ApplyConfChange(cc)
 
-	if cc.Type == raftpb.ConfChangeAddNode {
+	if cc.GetType() == raftpb.ConfChangeAddNode {
 		var m member
-		err = json.Unmarshal(cc.Context, &m)
+		err = json.Unmarshal(cc.GetContext(), &m)
 		if err != nil {
-			return stacktrace.Propagate(err, "failed to unmarshal context of config change adding node %d", cc.NodeID)
+			return stacktrace.Propagate(err, "failed to unmarshal context of config change adding node %d", cc.GetNodeId())
 		}
-		c.membership.addNode(cc.NodeID, m)
+		c.membership.addNode(cc.GetNodeId(), m)
 	}
 	return nil
 }
 
-func (c *Consensus) entriesToApply(entries []raftpb.Entry) ([]raftpb.Entry, error) {
+func (c *Consensus) entriesToApply(entries []*raftpb.Entry) ([]*raftpb.Entry, error) {
 	if len(entries) == 0 {
 		return entries, nil
 	}
 
-	result := make([]raftpb.Entry, 0)
+	result := make([]*raftpb.Entry, 0)
 
-	firstIdx := entries[0].Index
+	firstIdx := entries[0].GetIndex()
 	if firstIdx > c.appliedIndex+1 {
 		return nil, stacktrace.NewError("unexpected gap: first committed entry index %d > applied index %d + 1", firstIdx, c.appliedIndex)
 	}
@@ -521,19 +527,19 @@ type confChangeContext struct {
 // AddNode proposes adding nodeID, reachable by its peers at peerURL, as a voter of the Raft group.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) error {
-	return c.proposeConfChange(ctx, raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode, NodeID: nodeID}, peerURL)
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, peerURL)
 }
 
 // RemoveNode proposes removing nodeID from the Raft group. Its ID is retired and can never be reused.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
-	return c.proposeConfChange(ctx, raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode, NodeID: nodeID}, "")
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, "")
 }
 
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
 // Note that Raft only allows one config change in flight: a change proposed while another one is pending
 // is silently dropped by the leader, in which case this blocks until ctx is cancelled.
-func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfChangeSingle, peerURL string) error {
+func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, peerURL string) error {
 	err := c.membership.validateConfChange(change, peerURL)
 	if err != nil {
 		return err
@@ -549,8 +555,8 @@ func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfCha
 		return stacktrace.Propagate(err, "failed to marshal config change context")
 	}
 
-	cc := raftpb.ConfChangeV2{
-		Changes: []raftpb.ConfChangeSingle{change},
+	cc := &raftpb.ConfChangeV2{
+		Changes: []*raftpb.ConfChangeSingle{change},
 		Context: ctxBuf,
 	}
 
@@ -576,23 +582,23 @@ func (c *Consensus) proposeConfChange(ctx context.Context, change raftpb.ConfCha
 // Invalid changes are rejected and leave the configuration unchanged.
 // It returns errSelfRemoved if this node was removed from the group.
 func (c *Consensus) applyConfigChangeV2(data []byte) error {
-	var cc raftpb.ConfChangeV2
-	err := cc.Unmarshal(data)
+	cc := &raftpb.ConfChangeV2{}
+	err := proto.Unmarshal(data, cc)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to unmarshal config change data")
 	}
 
 	var cctx confChangeContext
-	if len(cc.Context) > 0 {
-		if err := json.Unmarshal(cc.Context, &cctx); err != nil {
+	if len(cc.GetContext()) > 0 {
+		if err := json.Unmarshal(cc.GetContext(), &cctx); err != nil {
 			return stacktrace.Propagate(err, "failed to unmarshal config change context")
 		}
 	}
 
-	if len(cc.Changes) != 1 {
-		err = stacktrace.NewErrorWithCode(dsserr.BadRequest, "expected exactly one change, got %d", len(cc.Changes))
+	if len(cc.GetChanges()) != 1 {
+		err = stacktrace.NewErrorWithCode(dsserr.BadRequest, "expected exactly one change, got %d", len(cc.GetChanges()))
 	} else {
-		err = c.membership.validateConfChange(cc.Changes[0], cctx.URL)
+		err = c.membership.validateConfChange(cc.GetChanges()[0], cctx.URL)
 	}
 	if err != nil {
 		c.logger.Warn("rejecting config change", zap.String("id", cctx.ID), zap.Error(err))
@@ -601,20 +607,20 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 		return nil
 	}
 
-	change := cc.Changes[0]
-	c.confState = *c.node.ApplyConfChange(cc)
+	change := cc.GetChanges()[0]
+	c.confState = c.node.ApplyConfChange(cc)
 
 	selfRemoved := false
-	switch change.Type {
+	switch change.GetType() {
 	case raftpb.ConfChangeAddNode:
-		c.membership.addNode(change.NodeID, cctx.member)
+		c.membership.addNode(change.GetNodeId(), cctx.member)
 
 	case raftpb.ConfChangeRemoveNode:
-		c.membership.removeNode(change.NodeID)
-		selfRemoved = change.NodeID == c.nodeID
+		c.membership.removeNode(change.GetNodeId())
+		selfRemoved = change.GetNodeId() == c.nodeID
 	}
 
-	c.logger.Info("applied config change", zap.String("id", cctx.ID), zap.Stringer("type", change.Type), zap.Uint64("nodeID", change.NodeID))
+	c.logger.Info("applied config change", zap.String("id", cctx.ID), zap.Stringer("type", change.GetType()), zap.Uint64("nodeID", change.GetNodeId()))
 	c.tracker.untrack(cctx.ID, ProposalResult{})
 
 	if selfRemoved {
@@ -624,9 +630,9 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 }
 
 // updateSnapshotConfState replaces the ConfState of the snapshots sent to followers with the current one.
-func (c *Consensus) updateSnapshotConfState(msgs []raftpb.Message) {
+func (c *Consensus) updateSnapshotConfState(msgs []*raftpb.Message) {
 	for i := range msgs {
-		if msgs[i].Type == raftpb.MsgSnap {
+		if msgs[i].GetType() == raftpb.MsgSnap {
 			msgs[i].Snapshot.Metadata.ConfState = c.confState
 		}
 	}
@@ -677,7 +683,7 @@ func decodeSnapshot(data []byte) (snapshot, error) {
 }
 
 // Process implements the rafthttp.Raft interface.
-func (c *Consensus) Process(ctx context.Context, m raftpb.Message) error {
+func (c *Consensus) Process(ctx context.Context, m *raftpb.Message) error {
 	return c.node.Step(ctx, m)
 }
 

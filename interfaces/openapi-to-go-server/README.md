@@ -2,9 +2,9 @@
 
 ## Overview
 
-This folder contains a tool to automatically generate Go code for the types and endpoints (interface & server) defined in one or more OpenAPI YAML files, as well as an example of a complete, executable webserver application generated almost entirely automatically.
+This folder contains a tool to automatically generate Go code for the types and endpoints (interface & server, and optionally client) defined in one or more OpenAPI YAML files, as well as an example of a complete, executable webserver application generated almost entirely automatically.
 
-The automatically-generated Go server uses only the built-in `net/http` and `encoding/json` libraries to implement the webserver (no third-party dependencies).
+The automatically-generated Go server and client use only the built-in `net/http` and `encoding/json` libraries (no third-party dependencies).
 
 ## Usage
 
@@ -12,9 +12,11 @@ The primary entrypoint to the generation tool is `generate.py`, and a complete g
 
 The script `generate_example.sh` demonstrates the usage of this tool to generate a nearly-complete Go server from the ASTM SCD & RID APIs; run it from the working directory containing it.  See the [example](./example) folder for more information.
 
+A client is only generated for the APIs specified with `--client`, by the name of their package (e.g. `--client adminv1`).
+
 ## openapi-to-go-server architecture
 
-The generate.py entrypoint first parses all specified APIs into the forms recognized by openapi-to-go-server using the routines in apis.py.  The two primary components in APIs are data types, which are parsed with the tools in data_types.py, and operations (endpoints) which are parsed with the tools in operations.py (both incidentally using small utilities in formatting.py).  Once the APIs have been parsed into openapi-to-go-server's preferred representations, rendering.py then produces Go code to form an api library including all specified APIs, as well as an example entrypoint and dummy implementation.
+The generate.py entrypoint first parses all specified APIs into the forms recognized by openapi-to-go-server using the routines in apis.py.  The two primary components in APIs are data types, which are parsed with the tools in data_types.py, and operations (endpoints) which are parsed with the tools in operations.py (both incidentally using small utilities in formatting.py).  Once the APIs have been parsed into openapi-to-go-server's preferred representations, rendering.py then produces Go code to form an api library including all specified APIs, clients for the APIs requested, as well as an example entrypoint and dummy implementation.
 
 ## Generated architecture
 
@@ -33,6 +35,10 @@ An API's implementation is abstracted from the HTTP server with the interface de
 ### server.gen.go
 
 All boilerplate code for handling generic incoming HTTP requests using an instance of the implementation interface defined above (and an Authorizer that evaluates security requirements) is located in server.gen.go.  An API-specific APIRouter object is defined, and each operation defined in the API is added as a method.  Near the end of the file, a function is included that creates an APIRouter instance including regex-based routes to each method.  The APIRouter's Handle method nearly matches the handler method required by http.Server, but it returns a boolean indicating whether the request was handled.  This enables multiple APIRouters to be used in a single HTTP server using the shared MultiRouter.
+
+### client.gen.go
+
+For the APIs specified with `--client`, a Client calling the operations of the API is defined in client.gen.go, configured with the base URL of the server and, optionally, the `http.Client` sending the requests.  The Client has a method for each operation defined in the API, taking the path parameters, query parameters and request body of the operation as arguments.  Each method returns the same Response object as the one populated by an implementation on the server side (see interface.gen.go above), with the field matching the status code of the response populated.  An error is returned instead if the request could not be performed, or if the status code of the response is not defined by the API.
 
 ### main.gen.go
 

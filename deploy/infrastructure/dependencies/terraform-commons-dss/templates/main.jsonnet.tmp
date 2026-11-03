@@ -14,6 +14,7 @@ local metadata = metadataBase {
   enableScdGlobalLock: ${VAR_ENABLE_SCD_GLOBAL_LOCK}, // <-- This boolean value is VAR_ENABLE_SCD_GLOBAL_LOCK
   enableTimeBasedNotificationIndex: ${VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX}, // <-- This boolean value is VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX
   enableDssMetrics: ${VAR_ENABLE_DSS_METRICS}, // <-- This boolean value is VAR_ENABLE_DSS_METRICS
+  enableMonitoring: ${VAR_ENABLE_MONITORING}, // <-- This boolean value is VAR_ENABLE_MONITORING
   datastore: '${VAR_DATASTORE}',
   datastoreMaxOpenConns: ${VAR_DATASTORE_MAX_OPEN_CONNS},
   locality: '${VAR_LOCALITY}',
@@ -74,12 +75,13 @@ local metadata = metadataBase {
     jwksKeyTtl: '${VAR_JWKS_KEY_TTL}',
     hostname: '${VAR_APP_HOSTNAME}',
     publicEndpoint: 'https://${VAR_APP_HOSTNAME}',
-    dumpRequests: false,
+    dumpRequests: ${VAR_DUMP_REQUESTS},
     sslPolicy: '${VAR_SSL_POLICY}',
     cpuRequest: '${VAR_CORE_SERVICE_CPU_REQUEST}',
     memoryRequest: '${VAR_CORE_SERVICE_MEMORY_REQUEST}',
     cpuLimit: '${VAR_CORE_SERVICE_CPU_LIMIT}',
     memoryLimit: '${VAR_CORE_SERVICE_MEMORY_LIMIT}',
+    prof_grpc_name: '${VAR_GCP_PROF_SERVICE_NAME}',
     env: {
       %{~ for k, v in VAR_CORE_SERVICE_ENV ~}
       '${k}': '${v}',
@@ -100,6 +102,7 @@ local metadata = metadataBase {
       ttl: "${VAR_EVICT_SCD_TTL}",
       timeout: "${VAR_EVICT_SCD_TIMEOUT}",
       limit: ${VAR_EVICT_SCD_LIMIT},
+      batch_size: ${VAR_EVICT_SCD_BATCH_SIZE},
       operational_intents: ${VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS},
       subscriptions: ${VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS},
     },
@@ -109,6 +112,7 @@ local metadata = metadataBase {
       ttl: "${VAR_EVICT_RID_TTL}",
       timeout: "${VAR_EVICT_RID_TIMEOUT}",
       limit: ${VAR_EVICT_RID_LIMIT},
+      batch_size: ${VAR_EVICT_RID_BATCH_SIZE},
       ISAs: ${VAR_EVICT_RID_ENABLE_ISAS},
       subscriptions: ${VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS},
     },

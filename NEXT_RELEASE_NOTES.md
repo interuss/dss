@@ -45,10 +45,13 @@ The release notes should contain at least the following sections:
 
 ## Mandatory migration tasks
 
+* [terraform/tanka] `enable_monitoring` (default `false`) now also applies to Tanka. To keep Prometheus and Grafana managed by Tanka, set `enable_monitoring = true`. Otherwise, they are no longer rendered by Tanka; `tk apply` does not delete them, remove them manually if needed.
+
 ## Optional migration tasks
 
 ## Important information
 
+* [terraform/aws] EKS node auto repair is now enabled on the managed node group by default (new variable `aws_enable_node_auto_repair`, default `true`). EKS will automatically replace worker nodes that become unhealthy (e.g. stuck in `NotReady`), one node at a time, which matches the default behavior of GKE node pools. This requires AWS Terraform provider 6.20.0 or later (run `terraform init -upgrade` if an older version is locked). Applying this change updates the node group in place and does not replace nodes. Set `aws_enable_node_auto_repair = false` to keep the previous behavior.
 * [terraform/aws] The EKS node monitoring agent add-on (`eks-node-monitoring-agent`) can now be installed by setting the new variable `aws_enable_node_monitoring_agent` to `true` (default `false`). It reports additional node health conditions (container runtime, kernel, networking, storage) which EKS node auto repair, when enabled on the node group, uses to detect unhealthy nodes. It runs as a privileged DaemonSet, so review it against your security requirements before enabling it. Enabling it on an existing cluster only adds the DaemonSet and does not restart nodes or workloads. If the agent was already installed manually (e.g. with Helm), uninstall it before enabling the variable.
 * [terraform/aws] The Kubernetes Metrics Server is now installed as an EKS add-on (`metrics-server`), which makes `kubectl top` and the Metrics API available, as on GKE clusters. If metrics-server was already installed manually in the cluster (e.g. with Helm or `kubectl apply`), uninstall it before applying to avoid conflicts during the creation of the add-on.
 * [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-Res-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 (aligning with the Google deployment) and restricts TLS 1.2 to AEAD (GCM/ChaCha20) cipher suites. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1, or to CBC cipher suites, will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
@@ -56,6 +59,22 @@ The release notes should contain at least the following sections:
 * [deploy] CPU and memory requests and limits, additional environment variables (e.g. `GOGC`, `GOMAXPROCS`) and the CockroachDB `--cache` and `--max-sql-memory` flags of the CockroachDB and core-service containers can now be configured with Terraform, Tanka and Helm. See [CPU and memory allocation](docs/operations/performance.md#cpu-and-memory-allocation).
 * [deploy] Some users reported issues with CockroachDB under load in [#1732](https://github.com/interuss/dss/issues/1732). Please review it and consider using the new options `crdb_enable_liveness_probe` and `crdb_enable_readiness_probe` (Terraform), or `cockroach.enableLivenessProbe` and `cockroach.enableReadinessProbe` (Tanka), to disable the CockroachDB probes. For Helm, see the chart's README.
 * [terraform] The variables `desired_rid_db_version`, `desired_scd_db_version`, `desired_aux_db_version` and `aws_create_storage_class` were previously ignored by the `terraform-aws-dss` and `terraform-google-dss` modules and are now taken into account. Review your `terraform.tfvars` carefully before applying.
+* [helm] A secret to pull the DSS image from a private registry can now be set with `dss.imagePullSecret`. Terraform now pass `image_pull_secret` to Helm.
+* [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
+* [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
+* [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
+* [terraform] `kubernetes_namespace` now accepts namespaces other than `default`.
+* [tanka] The subject of the `cockroachdb` ClusterRoleBinding now uses the namespace of the deployment instead of `default`.
+* [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
+* [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
+* [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
+* [tanka] When `enableScd` is `false`, the core-service no longer waits for the SCD schema and the SCD evict CronJob is no longer deployed: the core-service could not start on a new database in that case.
+* [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
+* [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
+* [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
+* [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
+* [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
 
 ## Minimal database schema version
 

@@ -76,13 +76,13 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 	}
 
 	// open the wal at the given snapshot and get all subsequent entries
-	w, err = wal.Open(logger, walPath, walpb.Snapshot{
-		Index:     snapshot.Metadata.Index,
-		Term:      snapshot.Metadata.Term,
-		ConfState: &snapshot.Metadata.ConfState,
+	w, err = wal.Open(logger, walPath, &walpb.Snapshot{
+		Index:     new(snapshot.GetMetadata().GetIndex()),
+		Term:      new(snapshot.GetMetadata().GetTerm()),
+		ConfState: snapshot.GetMetadata().GetConfState(),
 	})
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "failed to open wal with index %d, term %d and confstate %v at: %s", snapshot.Metadata.Index, snapshot.Metadata.Term, snapshot.Metadata.ConfState, walPath)
+		return nil, false, stacktrace.Propagate(err, "failed to open wal with index %d, term %d and confstate %v at: %s", snapshot.GetMetadata().GetIndex(), snapshot.GetMetadata().GetTerm(), snapshot.GetMetadata().GetConfState(), walPath)
 	}
 
 	_, state, entries, err := w.ReadAll()
@@ -92,8 +92,8 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, nodeID 
 
 	// initialize the raft memory storage with the loaded snapshot and wal entries
 	raftMemoryStorage := raft.NewMemoryStorage()
-	if !raft.IsEmptySnap(*snapshot) {
-		err = raftMemoryStorage.ApplySnapshot(*snapshot)
+	if !raft.IsEmptySnap(snapshot) {
+		err = raftMemoryStorage.ApplySnapshot(snapshot)
 		if err != nil {
 			return nil, false, stacktrace.Propagate(err, "failed to apply snapshot to raft memory storage")
 		}
@@ -139,21 +139,21 @@ func loadSnapshot(logger *zap.Logger, walPath string, snapshotter *snap.Snapshot
 		return nil, stacktrace.Propagate(err, "failed to load newest available snapshot")
 	}
 
-	logger.Info("Loaded snapshot", zap.Uint64("index", snapshot.Metadata.Index), zap.Uint64("term", snapshot.Metadata.Term))
+	logger.Info("Loaded snapshot", zap.Uint64("index", snapshot.GetMetadata().GetIndex()), zap.Uint64("term", snapshot.GetMetadata().GetTerm()))
 	return snapshot, nil
 }
 
 // save saves the given snapshot to the snapshotter and the wal.
-func (s *storage) save(snapshot raftpb.Snapshot) error {
+func (s *storage) save(snapshot *raftpb.Snapshot) error {
 	err := s.snapper.SaveSnap(snapshot)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot")
 	}
 
-	err = s.wal.SaveSnapshot(walpb.Snapshot{
-		Index:     snapshot.Metadata.Index,
-		Term:      snapshot.Metadata.Term,
-		ConfState: &snapshot.Metadata.ConfState,
+	err = s.wal.SaveSnapshot(&walpb.Snapshot{
+		Index:     new(snapshot.GetMetadata().GetIndex()),
+		Term:      new(snapshot.GetMetadata().GetTerm()),
+		ConfState: snapshot.GetMetadata().GetConfState(),
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot to wal")
@@ -168,7 +168,7 @@ func (s *storage) save(snapshot raftpb.Snapshot) error {
 	// by a background cleanup goroutine which we do not have yet.
 	//
 	// TODO: add a separate goroutine to cleanup old files
-	return s.wal.ReleaseLockTo(snapshot.Metadata.Index)
+	return s.wal.ReleaseLockTo(snapshot.GetMetadata().GetIndex())
 }
 
 // triggerSnapshot creates a snapshot holding data at appliedIndex, persists it and compacts the log.
@@ -206,7 +206,7 @@ func (s *storage) compactLog(compactIndex uint64) error {
 	return nil
 }
 
-func (s *storage) handleReceivedState(snapshot raftpb.Snapshot, hardState raftpb.HardState, entries []raftpb.Entry) error {
+func (s *storage) handleReceivedState(snapshot *raftpb.Snapshot, hardState *raftpb.HardState, entries []*raftpb.Entry) error {
 	if !raft.IsEmptySnap(snapshot) {
 		err := s.save(snapshot)
 		if err != nil {

@@ -49,6 +49,9 @@ theme:
     # https://squidfunk.github.io/mkdocs-material/reference/content-tabs/#anchor-links--or-even-me
     - content.tabs.link
 
+    # https://squidfunk.github.io/mkdocs-material/reference/code-blocks/#code-copy-button
+    - content.code.copy # adds copy button to code blocks
+
     # https://squidfunk.github.io/mkdocs-material/reference/admonitions/
     - admonition
     - pymdownx.details
@@ -106,3 +109,7 @@ markdown_extensions:
 
 extra_javascript:
   - assets/checkbox.js
+  - assets/copy-inline-code.js
+
+extra_css:
+  - assets/copy-inline-code.css

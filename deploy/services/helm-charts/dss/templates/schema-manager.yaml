@@ -5,12 +5,17 @@
 {{- $jobVersion := .Release.Revision -}} {{/* Jobs template definition is immutable, using the revision in the name forces the job to be recreated at each helm upgrade. */}}
 
 {{- $waitForDatastore := include "init-container-wait-for-http" (dict "serviceName" "cockroachdb" "url" (printf "http://%s:8080/health" $datastoreHost)) -}}
-{{- $schemas := dict "rid" "4.1.0" "scd" "3.4.1" "aux_" "1.1.0" }}
+{{- $schemaManager := .Values.dss.schemaManager }}
+{{- $schemas := dict "rid" ($schemaManager.desiredRidDbVersion | default "4.1.0") "scd" ($schemaManager.desiredScdDbVersion | default "3.4.1") "aux_" ($schemaManager.desiredAuxDbVersion | default "1.1.0") }}
 
 {{- if .Values.yugabyte.enabled }}
 {{- $waitForDatastore = include "init-container-wait-for-http" (dict "serviceName" "yb-tserver" "url" (printf "http://%s:9000/status" $datastoreHost)) -}}
-{{- $schemas = dict "rid" "1.0.1" "scd" "1.1.1" "aux_" "1.1.0" }}
+{{- $schemas = dict "rid" ($schemaManager.desiredRidDbVersion | default "1.0.1") "scd" ($schemaManager.desiredScdDbVersion | default "1.1.1") "aux_" ($schemaManager.desiredAuxDbVersion | default "1.1.0") }}
 {{- end -}}
+
+{{- if not .Values.dss.conf.enableScd }}
+{{- $schemas = omit $schemas "scd" }}
+{{- end }}
 
 {{- range $service, $schemaVersion := $schemas }}
 {{- $serviceClean := $service | replace "_" "" }}
@@ -21,7 +26,7 @@ metadata:
   labels:
     name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
   name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   completions: 1
   parallelism: 1
@@ -60,7 +65,10 @@ spec:
           volumeMounts:
             {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
-      imagePullSecrets: []
+      {{- with $.Values.dss.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 30
       volumes:

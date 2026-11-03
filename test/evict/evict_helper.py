@@ -18,6 +18,8 @@ class EvictHelper:
         rid_ttl: str | None = None,
         scd_limit: int | None = None,
         rid_limit: int | None = None,
+        scd_batch_size: int | None = None,
+        rid_batch_size: int | None = None,
         delete: bool = False,
     ):
         db_hostname = os.environ.get("DB_HOSTNAME", "local-dss-crdb")
@@ -69,6 +71,18 @@ class EvictHelper:
                 str(rid_limit),
             ]
 
+        if scd_batch_size is not None:
+            command += [
+                "--scd_batch_size",
+                str(scd_batch_size),
+            ]
+
+        if rid_batch_size is not None:
+            command += [
+                "--rid_batch_size",
+                str(rid_batch_size),
+            ]
+
         process = subprocess.run(
             " ".join(command), shell=True, capture_output=True, timeout=5
         )
@@ -80,25 +94,61 @@ class EvictHelper:
             sys.exit(1)
 
     def evict_scd_operational_intents(
-        self, ttl: str, delete: bool, limit: int | None = None
+        self,
+        ttl: str,
+        delete: bool,
+        limit: int | None = None,
+        batch_size: int | None = None,
     ):
-        self.run_evict(scd_oir=True, delete=delete, scd_ttl=ttl, scd_limit=limit)
+        self.run_evict(
+            scd_oir=True,
+            delete=delete,
+            scd_ttl=ttl,
+            scd_limit=limit,
+            scd_batch_size=batch_size,
+        )
 
-    def evict_scd_subscriptions(self, ttl: str, delete: bool, limit: int | None = None):
-        self.run_evict(scd_sub=True, delete=delete, scd_ttl=ttl, scd_limit=limit)
+    def evict_scd_subscriptions(
+        self,
+        ttl: str,
+        delete: bool,
+        limit: int | None = None,
+        batch_size: int | None = None,
+    ):
+        self.run_evict(
+            scd_sub=True,
+            delete=delete,
+            scd_ttl=ttl,
+            scd_limit=limit,
+            scd_batch_size=batch_size,
+        )
 
     def evict_rid_ISAs(
         self,
         ttl: str,
         delete: bool,
         limit: int | None = None,
+        batch_size: int | None = None,
     ):
-        self.run_evict(rid_isa=True, delete=delete, rid_ttl=ttl, rid_limit=limit)
+        self.run_evict(
+            rid_isa=True,
+            delete=delete,
+            rid_ttl=ttl,
+            rid_limit=limit,
+            rid_batch_size=batch_size,
+        )
 
     def evict_rid_subscriptions(
         self,
         ttl: str,
         delete: bool,
         limit: int | None = None,
+        batch_size: int | None = None,
     ):
-        self.run_evict(rid_sub=True, delete=delete, rid_ttl=ttl, rid_limit=limit)
+        self.run_evict(
+            rid_sub=True,
+            delete=delete,
+            rid_ttl=ttl,
+            rid_limit=limit,
+            rid_batch_size=batch_size,
+        )

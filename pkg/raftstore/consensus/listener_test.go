@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	"go.uber.org/zap"
@@ -61,8 +62,8 @@ func TestListenerLifecycle(t *testing.T) {
 	_, err := getListener()
 	require.Error(t, err, "not started")
 
-	require.NoError(t, StartListener(t.Context(), zap.NewNop(), "127.0.0.1:0", func(error) {}))
-	require.Error(t, StartListener(t.Context(), zap.NewNop(), "127.0.0.1:0", func(error) {}), "already started")
+	require.NoError(t, StartListener(t.Context(), zap.NewNop(), "127.0.0.1:0", etcdtransport.TLSInfo{}, func(error) {}))
+	require.Error(t, StartListener(t.Context(), zap.NewNop(), "127.0.0.1:0", etcdtransport.TLSInfo{}, func(error) {}), "already started")
 
 	l, err := getListener()
 	require.NoError(t, err)

@@ -67,6 +67,29 @@ variable "aws_create_storage_class" {
 }
 
 
+variable "aws_enable_node_auto_repair" {
+  type        = bool
+  description = <<-EOT
+  Enable EKS node auto repair on the managed node group.
+
+  When enabled, EKS monitors the health of the worker nodes and automatically replaces nodes
+  which become unhealthy (for instance, nodes stuck in `NotReady`).
+  This is particularly important for datastores, since a datastore pod cannot be rescheduled on
+  another node already hosting a datastore pod.
+  Nodes are repaired one at a time so that a majority of the datastore nodes stays available.
+
+  This matches the default behavior of GKE node pools, where auto repair is enabled by default
+  (see https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-repair).
+
+  See https://docs.aws.amazon.com/eks/latest/userguide/node-health.html for more details.
+
+  Example: `true`
+  EOT
+
+  default = true
+}
+
+
 variable "aws_enable_node_monitoring_agent" {
   type        = bool
   description = <<-EOT
@@ -356,6 +379,18 @@ variable "enable_time_based_notification_index" {
 }
 
 
+variable "dump_requests" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Set to true to log full HTTP requests and responses of the core-service.
+  It dumps sensitive information to logs; intended only for debugging and/or development.
+
+  Example: `false`
+  EOT
+}
+
+
 variable "should_init" {
   type        = bool
   description = <<-EOT
@@ -601,6 +636,17 @@ variable "core_service_env" {
 }
 
 
+variable "gcp_prof_service_name" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Service name for the Go profiler of the core-service. The profiler is disabled when empty.
+
+  Example: `dss-core-service`
+  EOT
+}
+
+
 variable "locality" {
   type        = string
   description = <<-EOT
@@ -637,18 +683,12 @@ variable "crdb_external_nodes" {
 variable "kubernetes_namespace" {
   type        = string
   description = <<-EOT
-  Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
+  Namespace where to deploy Kubernetes resources.
 
   Example: `default`
   EOT
 
   default = "default"
-
-  # TODO: Adapt current deployment scripts in /build/deploy to support default is supported for the moment.
-  validation {
-    condition     = var.kubernetes_namespace == "default"
-    error_message = "Only default namespace is supported at the moment"
-  }
 }
 
 variable "yugabyte_cloud" {
@@ -775,6 +815,24 @@ variable "evict_scd_limit" {
 }
 
 
+variable "evict_scd_batch_size" {
+  type        = number
+  description = <<-EOT
+  Number of entities deleted per batch query (per type) by each run of the SCD eviction command.
+  Set to 0 to delete all expired entities in a single query (per type).
+
+  Example: `100`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_scd_batch_size >= 0
+    error_message = "evict_scd_batch_size must be equal to or greater than 0."
+  }
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -858,6 +916,24 @@ variable "evict_rid_limit" {
   validation {
     condition     = var.evict_rid_limit >= 0
     error_message = "evict_rid_limit must be equal to or greater than 0."
+  }
+}
+
+
+variable "evict_rid_batch_size" {
+  type        = number
+  description = <<-EOT
+  Number of entities deleted per batch query (per type) by each run of the RID eviction command.
+  Set to 0 to delete all expired entities in a single query (per type).
+
+  Example: `100`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_rid_batch_size >= 0
+    error_message = "evict_rid_batch_size must be equal to or greater than 0."
   }
 }
 

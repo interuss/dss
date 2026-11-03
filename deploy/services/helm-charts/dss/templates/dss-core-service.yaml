@@ -45,7 +45,9 @@ spec:
       initContainers:
         {{- $waitForDatastore | nindent 8 }}
         {{- $waitForRIDSchema | nindent 8 }}
+        {{- if $dss.conf.enableScd }}
         {{- $waitForSCDSchema | nindent 8 }}
+        {{- end }}
       containers:
         - args:
             - --accepted_jwt_audiences={{$dss.conf.hostname}}
@@ -65,7 +67,7 @@ spec:
             - --datastore_ssl_dir=/opt/yugabyte-certs
             - --datastore_ssl_mode=verify-full
 {{ end }}
-            - --dump_requests=true
+            - --dump_requests={{$dss.conf.dumpRequests}}
             - --enable_scd={{$dss.conf.enableScd}}
             - --enable_scd_global_lock={{$dss.conf.enableScdGlobalLock | default false}}
 {{ if $dss.conf.enableTimeBasedNotificationIndex }}
@@ -74,7 +76,7 @@ spec:
 {{ if $dss.conf.enableDssMetrics }}
             - --enable_metrics=true
 {{ end }}
-            - --gcp_prof_service_name=
+            - --gcp_prof_service_name={{ $dss.conf.gcpProfServiceName | default "" }}
             {{- if $dss.conf.jwksEndpoint }}
             - --jwks_endpoint={{ $dss.conf.jwksEndpoint }}
             {{- end }}
@@ -137,7 +139,10 @@ spec:
             {{- include "ca-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
-      imagePullSecrets: []
+      {{- with $.Values.dss.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
       terminationGracePeriodSeconds: 30
       volumes:
         {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 8 }}

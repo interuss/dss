@@ -9,6 +9,7 @@ and prevent downtime.
 For a Pooled deployment, one of the DSS Instance must take the role of the upgrade "Leader" and coordinate the
 upgrade with other "Followers" DSS instances.
 In general a CockroachDB upgrade consists of:
+
 1. Upgrade preparation: Verify that the cluster is in a nominal state ready for upgrade.
 1. Decide how the upgrade will be finalized (for major upgrades only): Like CockroachDB, we recommend disabling auto-finalization.
 1. Perform the rolling upgrade: This step should be performed first by the Leader and as quickly as possible by the Followers **one after the other**. Note that during this period, the performance of the cluster may be impacted since, as documented by CockroachDB, "a query that is sent to an upgraded node can be distributed only among other upgraded nodes. Data accesses that would otherwise be local may become remote, and the performance of these queries can suffer."

@@ -4,6 +4,7 @@ dss:
   env: []
   conf:
     enableScd: true
+    dumpRequests: true
     evict:
       scd:
           enableCron: false
@@ -11,6 +12,7 @@ dss:
           ttl: 2688h
           timeout: ""
           limit: 0
+          batchSize: 0
           operationalIntents: true
           subscriptions: true
       rid:
@@ -19,8 +21,13 @@ dss:
           ttl: 30m
           timeout: ""
           limit: 0
+          batchSize: 0
           ISAs: true
           subscriptions: true
+  schemaManager:
+    desiredRidDbVersion: ""
+    desiredScdDbVersion: ""
+    desiredAuxDbVersion: ""
 
 
 cockroachdb:
@@ -50,7 +57,7 @@ yugabyte:
 
   isMultiAz: true
 
-  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+  masterAddresses: "yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"
 
   tls:
     enabled: true

@@ -242,6 +242,10 @@
           "type": "string",
           "description": "Image of the DSS. Please note that the usage of the `latest` tag is discouraged to prevent accidental upgrades in case of restart. Example: `docker.io/interuss/dss:v0.15.0`. Official image releases: https://hub.docker.com/r/interuss/dss/tags"
         },
+        "imagePullSecret": {
+          "type": "string",
+          "description": "Optional: Name of the secret holding the credentials to pull the DSS image. Example: `private-registry-credentials`"
+        },
         "cpuRequest": {
           "type": "string",
           "description": "Kubernetes CPU request of the core-service containers. Not set if empty. Example: `0.5`"
@@ -274,6 +278,24 @@
             "required": ["name", "value"]
           }
         },
+        "schemaManager": {
+          "description": "Schema manager jobs configuration",
+          "type": "object",
+          "properties": {
+            "desiredRidDbVersion": {
+              "type": "string",
+              "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
+            },
+            "desiredScdDbVersion": {
+              "type": "string",
+              "description": "Desired SCD DB schema version. When empty, the latest version for the datastore is used. Example: `3.4.1`"
+            },
+            "desiredAuxDbVersion": {
+              "type": "string",
+              "description": "Desired AUX DB schema version. When empty, the latest version for the datastore is used. Example: `1.1.0`"
+            }
+          }
+        },
         "conf": {
           "type": "object",
           "properties": {
@@ -301,6 +323,10 @@
             "enableScd": {
               "type": "boolean"
             },
+            "dumpRequests": {
+              "type": "boolean",
+              "description": "Log full HTTP request and response. Intended only for debugging and/or development."
+            },
             "enableScdGlobalLock": {
               "type": "boolean"
             },
@@ -324,6 +350,10 @@
             },
             "datastoreMaxOpenConns": {
               "type": "integer"
+            },
+            "gcpProfServiceName": {
+              "type": "string",
+              "description": "Optional: Service name for the Go profiler."
             },
             "evict": {
               "description": "Evict jobs configuration",
@@ -351,7 +381,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "operationalIntents": {
                       "type": "boolean"
@@ -383,7 +418,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                        "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "ISAs": {
                       "type": "boolean"

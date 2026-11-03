@@ -6,7 +6,7 @@ local util = import 'util.libsonnet';
 {
   all(metadata): {
     local defaultMinute = util.stringToInt(metadata.locality, 60),
-    SCDEvict: base.CronJob(metadata, 'dss-scd-evict') {
+    SCDEvict: if metadata.enableScd then base.CronJob(metadata, 'dss-scd-evict') {
       spec+: {
         schedule: if metadata.evict.scd.schedule != "" then metadata.evict.scd.schedule else "%d 2 * * *" % defaultMinute,
         suspend: !metadata.evict.scd.enable_cron,
@@ -34,6 +34,7 @@ local util = import 'util.libsonnet';
                       delete: true,
                   } + (if metadata.evict.scd.timeout != "" then { timeout: metadata.evict.scd.timeout } else {})
                     + (if metadata.evict.scd.limit > 0 then { scd_limit: metadata.evict.scd.limit } else {})
+                    + (if metadata.evict.scd.batch_size > 0 then { scd_batch_size: metadata.evict.scd.batch_size } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
@@ -71,6 +72,7 @@ local util = import 'util.libsonnet';
                       delete: true,
                   } + (if metadata.evict.rid.timeout != "" then { timeout: metadata.evict.rid.timeout } else {})
                     + (if metadata.evict.rid.limit > 0 then { rid_limit: metadata.evict.rid.limit } else {})
+                    + (if metadata.evict.rid.batch_size > 0 then { rid_batch_size: metadata.evict.rid.batch_size } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
