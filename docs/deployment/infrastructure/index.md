@@ -13,7 +13,7 @@ Before beginning infrastructure deployment, follow the following steps:
     - Note that kubectl can alternatively be installed via the Google Cloud SDK
      `gcloud` shell if using Google Cloud.
 
-- Review the [database cleanup documentation](../../operations/cleanup.md) and decide on the eviction parameters to use.
+- Review the [database cleanup documentation](../../operations/cleanup.md) to decide on the eviction parameters to use.
 
 ## Deployment Options
 
