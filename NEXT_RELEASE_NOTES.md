@@ -79,6 +79,8 @@ The release notes should contain at least the following sections:
 * [terraform] New variable `schema_manager_enabled` (default `true`), passed to Helm and Tanka.
 * [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
 * [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
+* [helm] The image of the schema manager and evict jobs can now be set with `dss.schemaManager.image` (defaults to `dss.image`).
+* [terraform] New variable `schema_manager_image` (defaults to `image`), passed to Helm and Tanka.
 
 ## Minimal database schema version
 

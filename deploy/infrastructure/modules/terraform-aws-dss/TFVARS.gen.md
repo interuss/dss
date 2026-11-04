@@ -464,6 +464,11 @@ With Tanka, the schema manager jobs are always deployed when <code>should_init</
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
+                <td>schema_manager_image (<code>string</code>)</td>
+                <td><p>Image used by the schema manager and evict jobs. When empty, <code>image</code> is used.</p>
+<p>Example: <code>docker.io/interuss/dss:v0.15.0</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>should_init (<code>bool</code>)</td>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,

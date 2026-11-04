@@ -286,6 +286,10 @@
               "type": "boolean",
               "description": "Deploy the schema manager jobs."
             },
+            "image": {
+              "type": "string",
+              "description": "Optional: Image used by the schema manager and evict jobs. Defaults to `dss.image`."
+            },
             "desiredRidDbVersion": {
               "type": "string",
               "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
