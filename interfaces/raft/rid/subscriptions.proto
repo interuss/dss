@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package rid;
+
+import "models.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/ridpb";
+
+message Subscription {
+    bytes id = 1;
+    string url = 2;
+    string owner = 3;
+    string writer = 4;
+    models.CellsVolume4D volume = 5;
+}
+
+// Operations
+
+message CreateSubscriptionOperation {
+    Subscription subscription = 1;
+}
+
+message UpdateSubscriptionOperation {
+    Subscription subscription = 1;
+    string version = 2;
+}
+
+message DeleteSubscriptionOperation {
+    bytes id = 1;
+    string owner = 2;
+    string version = 3;
+}
+
+// Repository requests
+
+message GetSubscriptionRepoCall {
+    bytes id = 1;
+}
+
+message InsertSubscriptionRepoCall {
+    Subscription subscription = 1;
+}
+
+message UpdateSubscriptionRepoCall {
+    Subscription subscription = 1;
+    string version = 2;
+}
+
+message DeleteSubscriptionRepoCall {
+    bytes id = 1;
+    string version = 2;
+}
+
+message SearchSubscriptionsRepoCall {
+    repeated uint64 cells = 1;
+}
+
+message SearchSubscriptionsByOwnerRepoCall {
+    repeated uint64 cells = 1;
+    string owner = 2;
+}
+
+message UpdateNotificationIdxsInCellsRepoCall {
+    repeated uint64 cells = 1;
+}
+
+message MaxSubscriptionCountInCellsByOwnerRepoCall {
+    repeated uint64 cells = 1;
+    string owner = 2;
+}
+
+message CountSubscriptionsRepoCall {}
