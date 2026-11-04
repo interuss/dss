@@ -168,6 +168,12 @@ func (c *Client) CreateRaftGroupMember(ctx context.Context, groupName RaftGroupN
 	case 404:
 		response.Response404 = new(ErrorResponse)
 		err = json.NewDecoder(resp.Body).Decode(response.Response404)
+	case 409:
+		response.Response409 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response409)
+	case 503:
+		response.Response503 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response503)
 	case 500:
 		response.Response500 = new(api.InternalServerErrorBody)
 		err = json.NewDecoder(resp.Body).Decode(response.Response500)
