@@ -53,3 +53,36 @@ yugabyte
     - "ysqlsh --host {{.datastoreHost}} --port \"{{.datastorePort}}\" \"sslmode=require sslcert=/opt/yugabyte-certs/client.yugabyte.crt sslkey=/opt/yugabyte-certs/client.yugabyte.key sslrootcert=/opt/yugabyte-certs/ca.crt\" -c \"SELECT datname FROM pg_database where datname = '{{.schemaName}}';\" | grep {{.schemaName}}"
 {{ end }}
 {{- end -}}
+
+{{/* Common core-service CLI params of the SQL and Raft deployments. */}}
+{{- define "core-service-args" -}}
+{{- $conf := .Values.dss.conf -}}
+{{- $params := list
+  (dict "--accepted_jwt_audiences" $conf.hostname)
+  (dict "--addr" ":8080")
+  (dict "--public_endpoint" (ternary $conf.publicEndpoint nil (not (empty $conf.publicEndpoint))))
+  (dict "--locality" $conf.locality)
+  (dict "--enable_scd" ($conf.enableScd | default false | toString))
+  (dict "--enable_scd_global_lock" ($conf.enableScdGlobalLock | default false | toString))
+  (dict "--enable_time_based_notification_index" (ternary "true" nil ($conf.enableTimeBasedNotificationIndex | default false)))
+  (dict "--enable_metrics" (ternary "true" nil ($conf.enableDssMetrics | default false)))
+  (dict "--gcp_prof_service_name" ($conf.gcpProfServiceName | default ""))
+  (dict "--jwks_endpoint" (ternary $conf.jwksEndpoint nil (not (empty $conf.jwksEndpoint))))
+  (dict "--jwks_key_ids" (ternary ($conf.jwksKeyIds | join ",") nil (not (empty $conf.jwksKeyIds))))
+  (dict "--jwks_refresh_interval" (ternary $conf.jwksRefreshInterval nil (not (empty $conf.jwksRefreshInterval))))
+  (dict "--jwks_key_ttl" (ternary $conf.jwksKeyTtl nil (not (empty $conf.jwksKeyTtl))))
+  (dict "--public_key_files" (ternary ($conf.pubKeys | join ",") nil (not (empty $conf.pubKeys))))
+-}}
+{{- $lines := list -}}
+{{- range $params -}}
+{{- range $flag, $value := . -}}
+{{- if not (kindIs "invalid" $value) -}}
+{{- $lines = append $lines (printf "%s=%s" $flag (toString $value)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if not $lines -}}
+{{- fail "core-service-args: at least one parameter must have a non-null value" -}}
+{{- end -}}
+{{- join "\n" $lines -}}
+{{- end -}}
