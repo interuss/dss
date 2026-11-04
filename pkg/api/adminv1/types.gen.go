@@ -27,12 +27,10 @@ type RaftNode struct {
 	State string `json:"state"`
 }
 
-// Request to add another DSS node to a Raft group. This request is sent to a member of the group, which does not know the node to add yet: the client passes it as `node`, as returned by `GET /admin/v1/raft/groups/{group_name}/this_node` on the node to add.
+// Request to add another DSS node to a Raft group. This request is sent to a member of the group, which reads the ID of the node to add from the node itself, at its URL.
 type CreateRaftGroupMemberParameters struct {
-	Node RaftNode `json:"node"`
-
-	// ID of a node with the same URL and in the `member` state that the node replaces, e.g. after it lost its data directory. Without it, adding a node whose URL is already used by a member is rejected. The replaced member is not removed by this request: it must be removed once the node is added.
-	Replaces *string `json:"replaces,omitempty"`
+	// URL at which the members of the Raft group send Raft messages to the node to add.
+	Url string `json:"url"`
 }
 
 // Request to create a Raft group with this DSS node as its only member. Used for bootstrapping a new Raft group, which is then joined by the other nodes one at a time.
