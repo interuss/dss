@@ -63,7 +63,7 @@ components:
         url:
           description: URL at which the members of the Raft group send Raft messages to the node to add.
           type: string
-          example: http://uss2.instance1.example.com:9500
+          example: https://0.db.interuss.example.com:9500
 
     CreateRaftGroupParameters:
       description: >-
