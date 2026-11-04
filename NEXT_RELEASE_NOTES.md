@@ -73,6 +73,8 @@ The release notes should contain at least the following sections:
 * [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
+* [helm] The schema manager jobs can now be disabled with `dss.schemaManager.enabled: false` (default `true`).
+* [terraform] New variable `schema_manager_enabled` (default `true`), passed to Helm and Tanka.
 * [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
 * [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
 

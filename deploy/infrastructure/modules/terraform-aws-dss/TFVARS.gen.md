@@ -452,6 +452,12 @@ Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>prometheus.dss.example.com</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>schema_manager_enabled (<code>bool</code>)</td>
+                <td><p>Set to false to not deploy the schema manager jobs.
+With Tanka, the schema manager jobs are always deployed when <code>should_init</code> is true.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>should_init (<code>bool</code>)</td>
                 <td><p>Set to false if joining an existing pool, true if creating the first DSS instance
 for a pool. When set true, this can initialize the data directories on your cluster,

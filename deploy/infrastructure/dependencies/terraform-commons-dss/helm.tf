@@ -120,6 +120,7 @@ resource "local_file" "helm_chart_values" {
       }
 
       schemaManager = {
+        enabled             = var.schema_manager_enabled
         desiredRidDbVersion = local.rid_db_schema
         desiredScdDbVersion = local.scd_db_schema
         desiredAuxDbVersion = local.aux_db_schema
