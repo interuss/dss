@@ -22,7 +22,6 @@ components:
       type: object
       required:
         - id
-        - name
         - url
         - state
       properties:
@@ -30,14 +29,11 @@ components:
           description: Identifier for the node within the Raft group.
           type: string
           example: "2213958870532660157"
-        name:
-          description: Name of the node, identical across all Raft groups.
-          type: string
-          example: uss2.instance1
         url:
           description: >-
             URL at which the other members of the Raft group send Raft messages to the node.
             Served by the Raft communication listener.
+            It identifies the DSS node within the cluster and across all Raft groups.
           type: string
           example: http://uss2.instance1.example.com:9500
         state:
@@ -69,8 +65,8 @@ components:
           $ref: '#/components/schemas/RaftNode'
         replaces:
           description: >-
-            ID of a node with the same name and in the `member` state that the node replaces, e.g. after it lost its data directory.
-            Without it, adding a node whose name is already used by a member is rejected.
+            ID of a node with the same URL and in the `member` state that the node replaces, e.g. after it lost its data directory.
+            Without it, adding a node whose URL is already used by a member is rejected.
             The replaced member is not removed by this request: it must be removed once the node is added.
           type: string
           example: "5740029381146209443"

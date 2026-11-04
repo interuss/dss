@@ -27,6 +27,7 @@ resource "local_file" "tanka_config_main" {
     VAR_CORE_SERVICE_CPU_LIMIT               = var.core_service_cpu_limit
     VAR_CORE_SERVICE_MEMORY_LIMIT            = var.core_service_memory_limit
     VAR_CORE_SERVICE_ENV                     = var.core_service_env
+    VAR_GCP_PROF_SERVICE_NAME                = var.gcp_prof_service_name
     VAR_CRDB_DOCKER_IMAGE_NAME               = "cockroachdb/cockroach:${var.crdb_image_tag}"
     VAR_CRDB_CLUSTER_NAME                    = var.crdb_cluster_name
     VAR_CRDB_CACHE                           = var.crdb_cache
@@ -57,6 +58,7 @@ resource "local_file" "tanka_config_main" {
     VAR_DESIRED_RID_DB_VERSION               = local.rid_db_schema
     VAR_DESIRED_SCD_DB_VERSION               = local.scd_db_schema
     VAR_DESIRED_AUX_DB_VERSION               = local.aux_db_schema
+    VAR_SCHEMA_MANAGER_ENABLED               = var.schema_manager_enabled
     VAR_SHOULD_INIT                          = var.should_init
     VAR_DOCKER_IMAGE_PULL_SECRET             = var.image_pull_secret != null ? var.image_pull_secret : ""
     VAR_CLOUD_PROVIDER                       = var.kubernetes_cloud_provider_name
@@ -64,17 +66,19 @@ resource "local_file" "tanka_config_main" {
     VAR_SUBNET                               = var.workload_subnet
     VAR_SSL_POLICY                           = var.ssl_policy
     VAR_EVICT_ENABLE_SCD_CRON                = var.evict_enable_scd_cron
-    VAR_EVICT_SCD_SCHEDULE                   = var.evict_scd_schedule
+    VAR_EVICT_SCD_SCHEDULE                   = local.evict_scd_schedule
     VAR_EVICT_SCD_TTL                        = var.evict_scd_ttl
     VAR_EVICT_SCD_TIMEOUT                    = var.evict_scd_timeout
     VAR_EVICT_SCD_LIMIT                      = var.evict_scd_limit
+    VAR_EVICT_SCD_BATCH_SIZE                 = var.evict_scd_batch_size
     VAR_EVICT_SCD_ENABLE_OPERATIONAL_INTENTS = var.evict_scd_operational_intents
     VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS       = var.evict_scd_subscriptions
     VAR_EVICT_ENABLE_RID_CRON                = var.evict_enable_rid_cron
-    VAR_EVICT_RID_SCHEDULE                   = var.evict_rid_schedule
+    VAR_EVICT_RID_SCHEDULE                   = local.evict_rid_schedule
     VAR_EVICT_RID_TTL                        = var.evict_rid_ttl
     VAR_EVICT_RID_TIMEOUT                    = var.evict_rid_timeout
     VAR_EVICT_RID_LIMIT                      = var.evict_rid_limit
+    VAR_EVICT_RID_BATCH_SIZE                 = var.evict_rid_batch_size
     VAR_EVICT_RID_ENABLE_ISAS                = var.evict_rid_isas
     VAR_EVICT_RID_ENABLE_SUBSCRIPTIONS       = var.evict_rid_subscriptions
     VAR_PROMETHEUS_EXPOSE_EXTERNAL           = var.prometheus_hostname != ""

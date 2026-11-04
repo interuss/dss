@@ -8,8 +8,10 @@ from typing import Any
 from evict_helper import EvictHelper
 from query_helper import QueryHelper
 
-ENTITY_COUNT = 3
+ENTITY_COUNT = 9
 LIMIT = 2
+BATCH_LIMIT = 3
+BATCH_SIZE = 2
 
 
 def check_limit(
@@ -41,15 +43,32 @@ def check_limit(
     logger.debug(f"Evicting {name} older than 1s with a limit of {LIMIT}")
     evict("1s", delete=True, limit=LIMIT)
 
+    expected_remaining = ENTITY_COUNT - LIMIT
     remaining = [i for i in ids if get(i)]
-    if len(remaining) != ENTITY_COUNT - LIMIT:
+    if len(remaining) != expected_remaining:
         logger.error(
-            f"❌ Expected {ENTITY_COUNT - LIMIT} {name} to remain after evicting with a limit of {LIMIT}, got {remaining}"
+            f"❌ Expected {expected_remaining} {name} to remain after evicting with a limit of {LIMIT}, got {remaining}"
         )
         sys.exit(1)
 
-    logger.debug(f"Evicting {name} older than 1s without limit")
-    evict("1s", delete=True, limit=0)
+    logger.debug(
+        f"Evicting {name} older than 1s with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}"
+    )
+    evict("1s", delete=True, limit=BATCH_LIMIT, batch_size=BATCH_SIZE)
+
+    # With limit=3 and batch_size=2, 2 batches of 2 are deleted (4 entities total)
+    expected_remaining -= 2 * BATCH_SIZE
+    remaining = [i for i in ids if get(i)]
+    if len(remaining) != expected_remaining:
+        logger.error(
+            f"❌ Expected {expected_remaining} {name} to remain after evicting with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}, got {remaining}"
+        )
+        sys.exit(1)
+
+    logger.debug(
+        f"Evicting remaining {name} older than 1s without limit and with batch size of {BATCH_SIZE}"
+    )
+    evict("1s", delete=True, limit=0, batch_size=BATCH_SIZE)
 
     remaining = [i for i in ids if get(i)]
     if remaining:
@@ -81,7 +100,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
     )
 
     # Operational intents are spread apart so they don't conflict with each other
-    op_intent_lngs = iter(56 + 0.01 * i for i in range(ENTITY_COUNT))
+    op_intent_lngs = iter(56 + 0.05 * i for i in range(ENTITY_COUNT))
     check_limit(
         logger,
         "SCD operational intents",

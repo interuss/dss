@@ -43,6 +43,7 @@ module "terraform-commons-dss" {
   core_service_cpu_limit               = var.core_service_cpu_limit
   core_service_memory_limit            = var.core_service_memory_limit
   core_service_env                     = var.core_service_env
+  gcp_prof_service_name                = var.gcp_prof_service_name
   db_hostname_suffix                   = var.db_hostname_suffix
   datastore_type                       = var.datastore_type
   datastore_max_open_conns             = var.datastore_max_open_conns
@@ -51,6 +52,7 @@ module "terraform-commons-dss" {
   desired_rid_db_version               = var.desired_rid_db_version
   desired_scd_db_version               = var.desired_scd_db_version
   desired_aux_db_version               = var.desired_aux_db_version
+  schema_manager_enabled               = var.schema_manager_enabled
   authorization                        = var.authorization
   locality                             = var.locality
   crdb_external_nodes                  = var.crdb_external_nodes
@@ -75,6 +77,7 @@ module "terraform-commons-dss" {
   evict_scd_ttl                        = var.evict_scd_ttl
   evict_scd_timeout                    = var.evict_scd_timeout
   evict_scd_limit                      = var.evict_scd_limit
+  evict_scd_batch_size                 = var.evict_scd_batch_size
   evict_scd_operational_intents        = var.evict_scd_operational_intents
   evict_scd_subscriptions              = var.evict_scd_subscriptions
   evict_enable_rid_cron                = var.evict_enable_rid_cron
@@ -82,6 +85,7 @@ module "terraform-commons-dss" {
   evict_rid_ttl                        = var.evict_rid_ttl
   evict_rid_timeout                    = var.evict_rid_timeout
   evict_rid_limit                      = var.evict_rid_limit
+  evict_rid_batch_size                 = var.evict_rid_batch_size
   evict_rid_isas                       = var.evict_rid_isas
   evict_rid_subscriptions              = var.evict_rid_subscriptions
   enable_monitoring                    = var.enable_monitoring

@@ -282,6 +282,10 @@
           "description": "Schema manager jobs configuration",
           "type": "object",
           "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Deploy the schema manager jobs."
+            },
             "desiredRidDbVersion": {
               "type": "string",
               "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
@@ -351,6 +355,10 @@
             "datastoreMaxOpenConns": {
               "type": "integer"
             },
+            "gcpProfServiceName": {
+              "type": "string",
+              "description": "Optional: Service name for the Go profiler."
+            },
             "evict": {
               "description": "Evict jobs configuration",
               "type": "object",
@@ -364,7 +372,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run daily at 2 AM at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",
@@ -377,7 +385,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "operationalIntents": {
                       "type": "boolean"
@@ -396,7 +409,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run hourly at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",
@@ -409,7 +422,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                        "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "ISAs": {
                       "type": "boolean"

@@ -12,4 +12,9 @@
       [if requests != {} then 'requests']: requests,
       [if limits != {} then 'limits']: limits,
     },
+  // deterministically derive an int from a string
+  stringToInt(str, mod):
+    local hash = std.md5(str);
+    local int = std.parseHex(hash[0:8]); // parse first 8 hex characters (32 bits) to integer
+    std.mod(int, mod)
 }

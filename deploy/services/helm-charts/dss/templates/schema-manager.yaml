@@ -17,6 +17,10 @@
 {{- $schemas = omit $schemas "scd" }}
 {{- end }}
 
+{{- if not .Values.dss.schemaManager.enabled }}
+{{- $schemas = omit $schemas "rid" "scd" "aux_" }}
+{{- end }}
+
 {{- range $service, $schemaVersion := $schemas }}
 {{- $serviceClean := $service | replace "_" "" }}
 ---
@@ -26,7 +30,7 @@ metadata:
   labels:
     name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
   name: {{ $serviceClean }}-schema-manager-{{$jobVersion}}
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   completions: 1
   parallelism: 1

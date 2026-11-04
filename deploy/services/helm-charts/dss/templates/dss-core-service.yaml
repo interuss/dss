@@ -76,7 +76,7 @@ spec:
 {{ if $dss.conf.enableDssMetrics }}
             - --enable_metrics=true
 {{ end }}
-            - --gcp_prof_service_name=
+            - --gcp_prof_service_name={{ $dss.conf.gcpProfServiceName | default "" }}
             {{- if $dss.conf.jwksEndpoint }}
             - --jwks_endpoint={{ $dss.conf.jwksEndpoint }}
             {{- end }}

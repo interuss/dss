@@ -63,6 +63,9 @@ The release notes should contain at least the following sections:
 * [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
 * [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
 * [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
+* [terraform] `kubernetes_namespace` now accepts namespaces other than `default`.
+* [tanka] The subject of the `cockroachdb` ClusterRoleBinding now uses the namespace of the deployment instead of `default`.
 * [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
 * [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
 * [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
@@ -72,6 +75,10 @@ The release notes should contain at least the following sections:
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
 * [tanka] The image pull policy of the core-service can now be set with `backend.imagePullPolicy`. The default is unchanged.
 * [terraform] New variable `core_service_image_pull_policy` (default empty, keeps the current behavior), passed to Helm and Tanka.
+* [helm] The schema manager jobs can now be disabled with `dss.schemaManager.enabled: false` (default `true`).
+* [terraform] New variable `schema_manager_enabled` (default `true`), passed to Helm and Tanka.
+* [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
+* [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
 
 ## Minimal database schema version
 
