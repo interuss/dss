@@ -23,7 +23,7 @@ Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subs
 To mitigate contention:
 
 - Run the cleanup during low-intensity periods (e.g. at night).
-- Clean up iteratively, starting with a lower TTL and progressively increasing it.
+- Clean up iteratively, starting with a higher TTL and progressively decreasing it (higher TTL = fewer entities to clean up, lower TTL = more entities to clean up).
 - Use `--rid_batch_size`/`--scd_batch_size` to split the deletion into smaller batches, and/or `--rid_limit`/`--scd_limit` to bound the total number of entities deleted per run.
 - Within a DSS pool, offset the cleanup schedules of the different instances to avoid having them running concurrently.
 
