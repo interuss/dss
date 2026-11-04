@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package scd;
 
-import "google/protobuf/timestamp.proto";
 import "models.proto";
 import "scd/availability.proto";
 import "scd/ovn.proto";
@@ -17,35 +16,21 @@ enum OperationalIntentState {
     OPERATIONAL_INTENT_STATE_CONTINGENT = 4;
 }
 
-message OperationalIntent {
-    bytes id = 1;
-    string manager = 2;
-    UssAvailabilityState uss_availability = 3;
-    int32 version = 4;
-    OperationalIntentState state = 5;
-    OVN ovn = 6;
-    repeated OVN past_ovns = 7;
-    string uss_base_url = 8;
-    optional bytes subscription_id = 9;
-    optional models.CellsVolume4D volume = 10;
-}
-
 message OperationalIntentParams {
-  message ImplicitSubscription {
-      bytes id = 1;
-      string base_url = 2;
-      bool for_constraints = 3;
-  }
-  
+    message ImplicitSubscription {
+        bytes id = 1;
+        string base_url = 2;
+        bool for_constraints = 3;
+    }
+
     bytes id = 1;
-    OVN ovn = 2;
-    OVN new_ovn = 3;
-    OperationalIntentState state = 4;
-    models.CellsVolume4D volume = 5;
-    bytes subscription_id = 6;
-    string uss_base_url = 7;
-    ImplicitSubscription implicit_subscription = 8;
-    repeated OVN key = 9;
+    optional OVN new_ovn = 2;
+    OperationalIntentState state = 3;
+    models.CellsVolume4D volume = 4;
+    optional bytes subscription_id = 5;
+    string uss_base_url = 6;
+    optional ImplicitSubscription implicit_subscription = 7;
+    repeated OVN key = 8;
 }
 
 // Operations
@@ -62,7 +47,8 @@ message CreateOperationalIntentReferenceOperation {
 
 message UpdateOperationalIntentReferenceOperation {
     string manager = 1;
-    OperationalIntentParams params = 2;
+    OVN ovn = 2;
+    OperationalIntentParams params = 3;
 }
 
 message DeleteOperationalIntentReferenceOperation {
@@ -87,6 +73,19 @@ message DeleteOperationalIntentRepoCall {
 }
 
 message UpsertOperationalIntentRepoCall {
+    message OperationalIntent {
+        bytes id = 1;
+        string manager = 2;
+        UssAvailabilityState uss_availability = 3;
+        int32 version = 4;
+        OperationalIntentState state = 5;
+        optional OVN new_ovn = 6;
+        repeated OVN past_ovns = 7;
+        string uss_base_url = 8;
+        optional bytes subscription_id = 9;
+        models.CellsVolume4D volume = 10;
+    }
+
     OperationalIntent operational_intent = 1;
 }
 
@@ -96,10 +95,6 @@ message SearchOperationalIntentsRepoCall {
 
 message GetDependentOperationalIntentsRepoCall {
     bytes subscription_id = 1;
-}
-
-message ListExpiredOperationalIntentsRepoCall {
-    google.protobuf.Timestamp threshold = 1;
 }
 
 message CountOperationalIntentsRepoCall {}
