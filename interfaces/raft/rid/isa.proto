@@ -11,9 +11,8 @@ message IdentificationServiceArea {
     bytes id = 1;
     string url = 2;
     string owner = 3;
-    optional string version = 4;
-    string writer = 5;
-    models.CellsVolume4D volume = 6;
+    string writer = 4;
+    models.CellsVolume4D volume = 5;
 }
 
 // Operations
@@ -24,12 +23,13 @@ message CreateIdentificationServiceAreaOperation {
 
 message UpdateIdentificationServiceAreaOperation {
     IdentificationServiceArea isa = 1;
+    string version = 2;
 }
 
 message DeleteIdentificationServiceAreaOperation {
     bytes id = 1;
     string owner = 2;
-    optional string version = 3;
+    string version = 3;
 }
 
 // Repository requests
@@ -44,20 +44,18 @@ message InsertISARepoCall {
 
 message UpdateISARepoCall {
     IdentificationServiceArea isa = 1;
+    string version = 2;
 }
 
 message DeleteISARepoCall {
-    IdentificationServiceArea isa = 1;
+    bytes id = 1;
+    string version = 2;
 }
 
 message SearchISAsRepoCall {
-    repeated fixed64 cells = 1;
+    repeated uint64 cells = 1;
     google.protobuf.Timestamp earliest = 2;
     google.protobuf.Timestamp latest = 3;
-}
-
-message ListExpiredISAsRepoCall {
-    google.protobuf.Timestamp threshold = 1;
 }
 
 message CountISAsRepoCall {}
