@@ -12,10 +12,8 @@ message Constraint {
     bytes id = 1;
     string manager = 2;
     UssAvailabilityState uss_availability = 3;
-    int32 version = 4;
-    OVN ovn = 5;
-    string uss_base_url = 6;
-    models.CellsVolume4D volume = 7;
+    string uss_base_url = 4;
+    models.CellsVolume4D volume = 5;
 }
 
 // Operations
@@ -31,6 +29,7 @@ message CreateConstraintReferenceOperation {
 
 message UpdateConstraintReferenceOperation {
     Constraint constraint = 1;
+    OVN ovn = 2;
 }
 
 message DeleteConstraintReferenceOperation {
@@ -56,6 +55,7 @@ message GetConstraintRepoCall {
 
 message UpsertConstraintRepoCall {
     Constraint constraint = 1;
+    int32 version = 2;
 }
 
 message DeleteConstraintRepoCall {
