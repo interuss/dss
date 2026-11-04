@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package scd;
+
+import "models.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb";
+
+message Subscription {
+    bytes id = 1;
+    string manager = 2;
+    string uss_base_url = 3;
+    bool notify_for_operational_intents = 4;
+    bool notify_for_constraints = 5;
+    bool implicit_subscription = 6;
+    models.CellsVolume4D volume = 7;
+}
+
+// Operations
+
+message GetSubscriptionOperation {
+    bytes id = 1;
+    string manager = 2;
+}
+
+message CreateSubscriptionOperation {
+    Subscription subscription = 1;
+}
+
+message UpdateSubscriptionOperation {
+    Subscription subscription = 1;
+    string version = 2;
+}
+
+message DeleteSubscriptionOperation {
+    bytes id = 1;
+    string manager = 2;
+    string version = 3;
+}
+
+message QuerySubscriptionsOperation {
+    models.CellsVolume4D area_of_interest = 1;
+    string manager = 2;
+}
+
+// Repository requests
+
+message SearchSubscriptionsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message GetSubscriptionRepoCall {
+    bytes id = 1;
+}
+
+message UpsertSubscriptionRepoCall {
+    Subscription subscription = 1;
+    int32 notification_index = 2;
+}
+
+message DeleteSubscriptionRepoCall {
+    bytes id = 1;
+}
+
+message IncrementNotificationIndicesForOperationalIntentsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message IncrementNotificationIndicesForConstraintsRepoCall {
+    models.CellsVolume4D volume = 1;
+}
+
+message CountSubscriptionsRepoCall {}
