@@ -144,7 +144,7 @@ local cockroachLB(metadata, name, ip) =
         {
           kind: 'ServiceAccount',
           name: 'cockroachdb',
-          namespace: 'default',
+          namespace: metadata.namespace,
         },
       ],
     },

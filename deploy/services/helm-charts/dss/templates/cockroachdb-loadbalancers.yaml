@@ -22,7 +22,7 @@ metadata:
     app: cockroachdb
     name: cockroach-db-external-node-{{$i}}
   name: cockroach-db-external-node-{{$i}}
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
   {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $lb.ip) | nindent 2}}
   ports:

@@ -115,19 +115,21 @@
   evict: {
     scd: {
       enable_cron: false,
-      schedule: "0 2 * * *",
+      schedule: "",
       ttl: "2688h",
       timeout: "",
       limit: 0,
+      batch_size: 0,
       operational_intents: true,
       subscriptions: true,
     },
     rid: {
       enable_cron: true,
-      schedule: "*/30 * * * *",
+      schedule: "",
       ttl: "30m",
       timeout: "",
       limit: 0,
+      batch_size: 0,
       ISAs: true,
       subscriptions: true,
     },

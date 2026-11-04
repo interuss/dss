@@ -8,18 +8,20 @@ dss:
     evict:
       scd:
           enableCron: false
-          schedule: "0 2 * * *"
+          schedule: ""
           ttl: 2688h
           timeout: ""
           limit: 0
+          batchSize: 0
           operationalIntents: true
           subscriptions: true
       rid:
           enableCron: true
-          schedule: "*/30 * * * *"
+          schedule: ""
           ttl: 30m
           timeout: ""
           limit: 0
+          batchSize: 0
           ISAs: true
           subscriptions: true
   schemaManager:
@@ -56,7 +58,7 @@ yugabyte:
 
   isMultiAz: true
 
-  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+  masterAddresses: "yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"
 
   tls:
     enabled: true

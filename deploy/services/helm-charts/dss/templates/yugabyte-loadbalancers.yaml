@@ -40,14 +40,14 @@ data:
       default_backend master-grpc-b
 
     backend master-grpc-b
-      server yb-master-{{$i}} yb-master-{{$i}}.yb-masters.default.svc.cluster.local:7100 check resolvers dns
+      server yb-master-{{$i}} yb-master-{{$i}}.yb-masters.{{ $.Release.Namespace }}.svc.cluster.local:7100 check resolvers dns
 
     frontend tserver-grpc-f
       bind :9100
       default_backend tserver-grpc-b
 
     backend tserver-grpc-b
-      server yb-tserver-{{$i}} yb-tserver-{{$i}}.yb-tservers.default.svc.cluster.local:9100 check resolvers dns
+      server yb-tserver-{{$i}} yb-tserver-{{$i}}.yb-tservers.{{ $.Release.Namespace }}.svc.cluster.local:9100 check resolvers dns
 
 ---
 apiVersion: apps/v1
