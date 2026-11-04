@@ -1,0 +1,8 @@
+{{/* Renders nothing; must stay: chart-level datastore validation runs here on every install/upgrade. */}}
+{{- $enabled := 0 -}}
+{{- if .Values.cockroachdb.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if .Values.yugabyte.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if .Values.raft.enabled -}}{{- $enabled = add1 $enabled -}}{{- end -}}
+{{- if ne $enabled 1 -}}
+{{- fail (printf "Exactly one datastore backend must be enabled: set exactly one of cockroachdb.enabled, yugabyte.enabled and raft.enabled to true (got %d enabled)" $enabled) -}}
+{{- end -}}

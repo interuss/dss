@@ -1,3 +1,5 @@
+{{/* Eviction on the Raft store is not implemented yet. */}}
+{{- if not .Values.raft.enabled }}
 {{- $image := .Values.dss.schemaManager.image | default .Values.dss.image }}
 
 {{- $datastoreImage := (include "datastoreImage" .) -}}
@@ -150,3 +152,4 @@ spec:
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+{{- end }}
