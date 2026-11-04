@@ -66,6 +66,7 @@
     ipName: error 'must supply ip name', // For AWS, use the elastic ip allocation id.
     port: 8080,
     image: error 'must specify image',
+    imagePullPolicy: '',
     prof_grpc_name: '',
     pubKeys: [''],
     jwksEndpoint: '',

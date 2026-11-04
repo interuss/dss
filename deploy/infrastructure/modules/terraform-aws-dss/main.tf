@@ -23,6 +23,7 @@ module "terraform-commons-dss" {
   cluster_name                         = var.cluster_name
   image                                = var.image
   image_pull_secret                    = var.image_pull_secret
+  core_service_image_pull_policy       = var.core_service_image_pull_policy
   kubernetes_namespace                 = var.kubernetes_namespace
   kubernetes_storage_class             = var.aws_kubernetes_storage_class
   app_hostname                         = var.app_hostname

@@ -52,6 +52,7 @@ module "terraform-commons-dss" {
   authorization                        = var.authorization
   locality                             = var.locality
   image_pull_secret                    = var.image_pull_secret
+  core_service_image_pull_policy       = var.core_service_image_pull_policy
   crdb_external_nodes                  = var.crdb_external_nodes
   yugabyte_cloud                       = var.yugabyte_cloud
   yugabyte_region                      = var.yugabyte_region

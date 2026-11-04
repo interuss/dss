@@ -120,7 +120,7 @@ local minikubeLoadBalancer(metadata) = base.Service(metadata, 'gateway') {
             ] + if metadata.enableScd then [base.WaitForSchema(metadata, "scd")] else [],
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
-              imagePullPolicy: if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
+              imagePullPolicy: if metadata.backend.imagePullPolicy != '' then metadata.backend.imagePullPolicy else if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',
               ports: [
                 {
                   containerPort: metadata.backend.port,
