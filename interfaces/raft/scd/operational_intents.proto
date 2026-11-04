@@ -30,13 +30,13 @@ message OperationalIntent {
     optional models.CellsVolume4D volume = 10;
 }
 
-message ImplicitSubscription {
-    bytes id = 1;
-    string base_url = 2;
-    bool for_constraints = 3;
-}
-
 message OperationalIntentParams {
+  message ImplicitSubscription {
+      bytes id = 1;
+      string base_url = 2;
+      bool for_constraints = 3;
+  }
+  
     bytes id = 1;
     OVN ovn = 2;
     OVN new_ovn = 3;
