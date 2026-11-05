@@ -16,7 +16,7 @@ func TestCircleOverlappingIntentIsDiscoverable(t *testing.T) {
 	b, err := secondary.CalculateCovering()
 	require.NoError(t, err)
 	op := sampleOperationalIntent()
-	op.CellsVolume4D.Cells = a
+	op.Cells = a
 	_, err = repo.UpsertOperationalIntent(ctx, op)
 	require.NoError(t, err)
 	found, err := repo.SearchOperationalIntents(ctx, cellsVolume4D(b, &startTime, &endTime, &altLow, &altHigh))
