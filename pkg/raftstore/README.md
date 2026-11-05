@@ -64,7 +64,7 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 
 ## Membership
 
-The members of a Raft group are bootstrapped from the `--raft_peers` flag on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
+The members of a Raft group are bootstrapped from the `--raft_peers` flag on the group's very first start. Afterwards, nodes are added to and removed from a running group one at a time, through the [admin API](../../interfaces/admin/admin.yaml) served by the core-service on the Unix socket at `--admin_socket`, with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node is added to or removed from each of its groups with one configuration change per group.
 
 - **Joining:** Starting a node that joins a running group is not supported yet, see [#1802](https://github.com/interuss/dss/issues/1802).
 - **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
