@@ -64,15 +64,9 @@ yugabyte:
 raft:
   enabled: false
   # The nodes deployed by this release.
-  # One load balancer per node is created and pinned to the node's endpoint address.
   nodes:
     - id: 1
       endpoint: "endpoint1:30211"
-      ip: "10.0.0.11"
-  # AWS only: the node's load balancer must carry this Elastic IP
-  #     awsLB:
-  #       eipAllocationId: eipalloc-0123456789abcdef0
-  #       subnet: subnet-0123456789abcdef0
 
   # The other nodes of the pool, deployed by other releases (e.g. on other clusters).
   peers:
@@ -84,6 +78,10 @@ raft:
   tlsSecret: dss-raft-tls 
 
 loadBalancers:
+  # One entry per raft.nodes entry, matched by index (first entry = first node).
+  raft:
+    - ip: 192.168.0.41
+#      subnet: subnet-xxx # for aws only
   cockroachdbNodes:
     - ip: 192.168.0.21
 #      subnet: subnet-xxx # for aws only

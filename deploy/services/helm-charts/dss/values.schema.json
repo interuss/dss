@@ -170,25 +170,7 @@
               },
               "endpoint": {
                 "type": "string",
-                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to it."
-              },
-              "ip": {
-                "type": "string",
-                "description": "Public address the node's load balancer is pinned to so the node's endpoint resolves to it. Ignored on AWS: set awsLB.eipAllocationId there instead."
-              },
-              "awsLB": {
-                "type": "object",
-                "description": "AWS only: pinning of the node's load balancer, which must carry the address of this node's endpoint.",
-                "properties": {
-                  "eipAllocationId": {
-                    "type": "string",
-                    "description": "EIP allocation ID (eipalloc-...) of the Elastic IP the node's load balancer must carry. Required on AWS."
-                  },
-                  "subnet": {
-                    "type": "string",
-                    "description": "Optional: subnet of the Elastic IP (AWS only)."
-                  }
-                }
+                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to the address of the matching loadBalancers.raft entry."
               }
             },
             "required": [
@@ -291,6 +273,25 @@
         },
         "yugabyteTserverNodes": {
           "type": "array",
+          "items": {
+            "properties": {
+              "ip": {
+                "description": "Public ip or cloud resource name.",
+                "type": "string"
+              },
+              "subnet": {
+                "description": "Optional: Subnet of the public ip for AWS only",
+                "type": "string"
+              }
+            },
+            "required": [
+              "ip"
+            ]
+          }
+        },
+        "raft": {
+          "type": "array",
+          "description": "Load balancers of the Raft nodes deployed by this release: exactly one entry per raft.nodes entry, matched by index (the first entry matches the first node).",
           "items": {
             "properties": {
               "ip": {

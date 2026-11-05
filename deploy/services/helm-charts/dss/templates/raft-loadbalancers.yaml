@@ -3,22 +3,14 @@
 {{- if $.Values.raft.enabled }}
 {{- $raft := .Values.raft -}}
 {{- $nodes := $raft.nodes | default list -}}
-{{- /* On AWS the pinning handle is the EIP allocation ID, not the endpoint address. */}}
-{{- if eq $cloudProvider "aws" -}}
-{{- range $i, $node := $nodes -}}
-  {{- $aws := $node.awsLB | default dict -}}
-  {{- if not $aws.eipAllocationId -}}
-    {{- fail (printf "raft.nodes[%d] (id %d): awsLB.eipAllocationId is required on AWS: the EIP allocation ID of the address the node's endpoint %q resolves to" $i (int $node.id) $node.endpoint) -}}
-  {{- end -}}
-{{- end -}}
+{{- $lbs := $.Values.loadBalancers.raft | default list -}}
+{{- if ne (len $lbs) (len $nodes) -}}
+  {{- fail (printf "loadBalancers.raft must list exactly one load balancer per raft.nodes entry, matched by index: got %d entries for %d nodes" (len $lbs) (len $nodes)) -}}
 {{- end -}}
 
 {{- range $i, $node := $nodes }}
-  {{- $aws := $node.awsLB | default dict -}}
-  {{- $ip := $node.ip -}}
-  {{- if eq $cloudProvider "aws" -}}
-    {{- $ip = $aws.eipAllocationId -}}
-  {{- end }}
+  {{- $lb := index $lbs $i -}}
+  {{- $ip := $lb.ip -}}
   {{- $port := index (splitList ":" $node.endpoint) 1 -}}
 ---
 apiVersion: v1
@@ -30,7 +22,7 @@ metadata:
       (dict
         "name" (printf "%s-%s" "raft-external-node" ( $i | toString) )
         "ip" $ip
-        "subnet" ($aws.subnet | default "")
+        "subnet" ($lb.subnet | default "")
         "cloudProvider" $cloudProvider
       ) | nindent 4
     }}
