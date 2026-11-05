@@ -1,0 +1,45 @@
+{{- $cloudProvider := $.Values.global.cloudProvider}}
+
+{{- if $.Values.raft.enabled }}
+{{- $raft := .Values.raft -}}
+{{- $nodes := $raft.nodes | default list -}}
+{{- $lbs := $.Values.loadBalancers.raft | default list -}}
+{{- if ne (len $lbs) (len $nodes) -}}
+  {{- fail (printf "loadBalancers.raft must list exactly one load balancer per raft.nodes entry, matched by index: got %d entries for %d nodes" (len $lbs) (len $nodes)) -}}
+{{- end -}}
+
+{{- range $i, $node := $nodes }}
+  {{- $lb := index $lbs $i -}}
+  {{- $ip := $lb.ip -}}
+  {{- $port := index (splitList ":" $node.endpoint) 1 -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- include (printf "%s-lb-crdb-annotations" $cloudProvider)
+      (dict
+        "name" (printf "%s-%s" "raft-external-node" ( $i | toString) )
+        "ip" $ip
+        "subnet" ($lb.subnet | default "")
+        "cloudProvider" $cloudProvider
+      ) | nindent 4
+    }}
+  labels:
+    app: {{$.Release.Name}}-core-service
+    name: {{$.Release.Name}}-raft-external-node-{{$i}}
+  name: {{$.Release.Name}}-raft-external-node-{{$i}}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- include (printf "%s-lb-spec" $cloudProvider) (dict "ip" $ip) | nindent 2}}
+  ports:
+    - name: {{$.Release.Name}}-raft-external-node-{{$i}}
+      port: {{ $port }}
+      targetPort: {{ $port }}
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: {{$.Release.Name}}-core-service-{{$i}}
+  type: LoadBalancer
+{{ end }}
+{{- end }}

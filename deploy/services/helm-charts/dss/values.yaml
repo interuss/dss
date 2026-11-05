@@ -81,6 +81,19 @@ yugabyte:
       use_client_to_server_encryption: true
       ysql_hba_conf_csv: 'hostssl all all 0.0.0.0/0 cert'
 
+raft:
+  enabled: false
+  # The DSS nodes deployed by this release
+  nodes: []
+  # The other nodes of the pool, deployed by other releases
+  peers: []
+  clusterID: 1
+  # Secret with the mutual TLS material of the Raft listeners
+  tlsSecret: ""
+  storage:
+    size: 100Gi
+    storageClass: ""
+
 monitoring:
   enabled: false
   externalService:

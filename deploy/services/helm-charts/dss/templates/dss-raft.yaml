@@ -1,0 +1,176 @@
+{{- if .Values.raft.enabled }}
+{{- $dss := .Values.dss -}}
+{{- $raft := .Values.raft -}}
+{{- $datadir := "/raft_data" -}}
+{{- $nodes := $raft.nodes | default list -}}
+{{- $peers := $raft.peers | default list -}}
+{{- $all := concat $nodes $peers -}}
+{{- if not $nodes -}}
+  {{- fail "raft.nodes must list at least one node" -}}
+{{- end -}}
+{{- if not $raft.tlsSecret -}}
+  {{- fail "raft.tlsSecret is required: the Raft listeners authenticate with mutual TLS" -}}
+{{- end -}}
+
+{{- $allIDs := list -}}
+{{- range $all -}}
+  {{- if contains "://" .endpoint -}}
+    {{- fail (printf "raft node id %d: endpoint %q must not include a scheme" (int .id) .endpoint) -}}
+  {{- end -}}
+  {{- if ne (len (splitList ":" .endpoint)) 2 -}}
+    {{- fail (printf "raft node id %d: endpoint %q must be host:port" (int .id) .endpoint) -}}
+  {{- end -}}
+  {{- $allIDs = append $allIDs .id -}}
+{{- end -}}
+
+{{- if ne (len $allIDs) (len (uniq $allIDs)) -}}
+  {{- fail "duplicate Raft node IDs in raft.nodes / raft.peers" -}}
+{{- end -}}
+
+{{- $ids := list -}}
+{{- $ports := list -}}
+{{- range $nodes -}}
+  {{- $port := index (splitList ":" .endpoint) 1 -}}
+  {{- $ids = append $ids (int .id) -}}
+  {{- $ports = append $ports ($port | int) -}}
+{{- end -}}
+
+{{- $peerList := list -}}
+{{- range $all -}}
+  {{- $peerList = append $peerList (printf "%d=https://%s" (int .id) .endpoint) -}}
+{{- end -}}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    name: {{.Release.Name}}-core-service
+  name: {{.Release.Name}}-core-service
+  namespace: {{ $.Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  minReadySeconds: 30
+  replicas: {{ len $nodes }}
+  selector:
+    matchLabels:
+      app: {{.Release.Name}}-core-service
+  template:
+    metadata:
+      labels:
+        app: {{.Release.Name}}-core-service
+      {{ if $dss.conf.enableDssMetrics }}
+      annotations:
+        prometheus.io/path: metrics
+        prometheus.io/port: '8079'
+        prometheus.io/scrape: 'true'
+      {{ end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: {{.Release.Name}}-core-service
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: core-service
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              # Raft node IDs of this release's nodes, in pod-ordinal order.
+              ids="{{ join " " $ids }}"
+              ordinal=$(( ${HOSTNAME##*-} + 1 ))
+              exec core-service \
+            {{- range splitList "\n" (include "core-service-args" $) }}
+                {{ . | squote }} \
+            {{- end }}
+                --store_type=raft \
+                --raft_node_id=$(printf '%s\n' $ids | sed -n "${ordinal}p") \
+                --raft_cluster_id={{ $raft.clusterID }} \
+                --raft_datadir={{ $datadir }} \
+                --raft_peers='{{ join "," $peerList }}' \
+                --raft_tls_cert_file=/raft-tls/tls.crt \
+                --raft_tls_key_file=/raft-tls/tls.key \
+                --raft_tls_ca_file=/raft-tls/ca-bundle.crt \
+          image: {{ $dss.image }}
+          imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
+          {{- with $dss.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 8080
+              name: http
+            {{ if $dss.conf.enableDssMetrics }}
+            - containerPort: 8079
+              name: metrics
+            {{ end }}
+            {{- range ($ports | uniq) }}
+            - containerPort: {{ . }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthy
+              port: 8080
+          {{- if or $dss.cpuRequest $dss.memoryRequest $dss.cpuLimit $dss.memoryLimit }}
+          resources:
+            {{- if or $dss.cpuRequest $dss.memoryRequest }}
+            requests:
+              {{- with $dss.cpuRequest }}
+              cpu: {{ . | quote }}
+              {{- end }}
+              {{- with $dss.memoryRequest }}
+              memory: {{ . | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if or $dss.cpuLimit $dss.memoryLimit }}
+            limits:
+              {{- with $dss.cpuLimit }}
+              cpu: {{ . | quote }}
+              {{- end }}
+              {{- with $dss.memoryLimit }}
+              memory: {{ . | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          stdin: false
+          tty: false
+          volumeMounts:
+            - mountPath: {{ $datadir }}
+              name: raft-data
+            - mountPath: /raft-tls
+              name: raft-tls
+              readOnly: true
+            {{- if $dss.conf.pubKeys }}
+            {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" false) | nindent 12 }}
+            {{- end }}
+      {{- with $.Values.dss.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: raft-tls
+          secret:
+            secretName: {{ $raft.tlsSecret }}
+        {{- if $dss.conf.pubKeys }}
+        {{- include "public-certs:volume" (dict "cockroachdbEnabled" false) | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: raft-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if $raft.storage.storageClass }}
+        storageClassName: {{ $raft.storage.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $raft.storage.size }}
+{{- end }}
