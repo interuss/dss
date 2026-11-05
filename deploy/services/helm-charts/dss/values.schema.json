@@ -172,6 +172,10 @@
                 "type": "string",
                 "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to it."
               },
+              "ip": {
+                "type": "string",
+                "description": "Public address the node's load balancer is pinned to so the node's endpoint resolves to it. Ignored on AWS: set awsLB.eipAllocationId there instead."
+              },
               "awsLB": {
                 "type": "object",
                 "description": "AWS only: pinning of the node's load balancer, which must carry the address of this node's endpoint.",

@@ -65,7 +65,6 @@ spec:
             - --datastore_ssl_dir=/opt/yugabyte-certs
             - --datastore_ssl_mode=verify-full
 {{ end }}
-            - --dump_requests={{$dss.conf.dumpRequests}}
           command:
             - core-service
           {{- with $dss.env }}

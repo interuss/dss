@@ -72,17 +72,15 @@ yugabyte
   (dict "--jwks_refresh_interval" (ternary $conf.jwksRefreshInterval nil (not (empty $conf.jwksRefreshInterval))))
   (dict "--jwks_key_ttl" (ternary $conf.jwksKeyTtl nil (not (empty $conf.jwksKeyTtl))))
   (dict "--public_key_files" (ternary ($conf.pubKeys | join ",") nil (not (empty $conf.pubKeys))))
+  (dict "--dump_requests" $conf.dumpRequests)
 -}}
 {{- $lines := list -}}
 {{- range $params -}}
-{{- range $flag, $value := . -}}
-{{- if not (kindIs "invalid" $value) -}}
-{{- $lines = append $lines (printf "%s=%s" $flag (toString $value)) -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- if not $lines -}}
-{{- fail "core-service-args: at least one parameter must have a non-null value" -}}
+  {{- range $flag, $value := . -}}
+    {{- if not (kindIs "invalid" $value) -}}
+      {{- $lines = append $lines (printf "%s=%s" $flag (toString $value)) -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 {{- join "\n" $lines -}}
 {{- end -}}

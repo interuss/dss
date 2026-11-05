@@ -87,7 +87,7 @@ spec:
               ordinal=$(( ${HOSTNAME##*-} + 1 ))
               exec core-service \
             {{- range splitList "\n" (include "core-service-args" $) }}
-                {{ . }} \
+                {{ . | squote }} \
             {{- end }}
                 --store_type=raft \
                 --raft_node_id=$(printf '%s\n' $ids | sed -n "${ordinal}p") \
