@@ -36,6 +36,11 @@ jobs:
         git diff --exit-code -- '*.gen.go'  # Should not have been changed by previous steps
         make apis
         git diff --exit-code -- '*.gen.go'  # Should not have been changed my make apis
+    - name: Ensure files don't change when generating protos
+      run: |
+        git diff --exit-code -- '*.pb.go'  # Should not have been changed by previous steps
+        make protos
+        git diff --exit-code -- '*.pb.go'  # Should not have been changed by make protos
     - name: Ensure files don't change when running hygiene
       run: |
         git diff --exit-code

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package rid;
+
+import "rid/isa.proto";
+import "rid/subscriptions.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/ridpb";
+
+message Payload {
+    oneof payload {
+        // ISA operations
+        CreateIdentificationServiceAreaOperation create_identification_service_area_operation = 20;
+        UpdateIdentificationServiceAreaOperation update_identification_service_area_operation = 21;
+        DeleteIdentificationServiceAreaOperation delete_identification_service_area_operation = 22;
+
+        // ISA repository requests
+        GetISARepoCall get_isa_repo_call = 40;
+        InsertISARepoCall insert_isa_repo_call = 41;
+        UpdateISARepoCall update_isa_repo_call = 42;
+        DeleteISARepoCall delete_isa_repo_call = 43;
+        SearchISAsRepoCall search_isas_repo_call = 44;
+        CountISAsRepoCall count_isas_repo_call = 45;
+
+        // Subscription operations
+        CreateSubscriptionOperation create_subscription_operation = 60;
+        UpdateSubscriptionOperation update_subscription_operation = 61;
+        DeleteSubscriptionOperation delete_subscription_operation = 62;
+
+        // Subscription repository requests
+        GetSubscriptionRepoCall get_subscription_repo_call = 80;
+        InsertSubscriptionRepoCall insert_subscription_repo_call = 81;
+        UpdateSubscriptionRepoCall update_subscription_repo_call = 82;
+        DeleteSubscriptionRepoCall delete_subscription_repo_call = 83;
+        SearchSubscriptionsRepoCall search_subscriptions_repo_call = 84;
+        SearchSubscriptionsByOwnerRepoCall search_subscriptions_by_owner_repo_call = 85;
+        UpdateNotificationIdxsInCellsRepoCall update_notification_idxs_in_cells_repo_call = 86;
+        MaxSubscriptionCountInCellsByOwnerRepoCall max_subscription_count_in_cells_by_owner_repo_call = 87;
+        CountSubscriptionsRepoCall count_subscriptions_repo_call = 88;
+    }
+}
