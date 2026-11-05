@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	params "github.com/interuss/dss/pkg/raftstore/params"
@@ -18,7 +19,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // NewTLSInfo returns the mutual TLS settings between Raft nodes, empty when mutual TLS is disabled.
@@ -52,17 +52,28 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create the raft_peer_tls_handshake_failures metric")
 	}
-	// A peer retries many times per second, so each reason is logged at most once per minute. The metric counts all.
-	rejections := logger.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core { return zapcore.NewSamplerWithOptions(c, time.Minute, 1, 0) }))
+	// A peer retries many times per second, so each reason is logged at most once every 5 seconds, with the number of
+	// failures removed since. The metric counts all.
+	var mu sync.Mutex
+	lastLogged := map[string]time.Time{}
+	removed := map[string]int{}
 	tlsInfo.HandshakeFailure = func(conn *tls.Conn, err error) {
 		reason := handshakeFailureReason(err)
 		failures.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
-		fields := []zap.Field{zap.String("peer_address", conn.RemoteAddr().String()), zap.Error(err)}
+		mu.Lock()
+		defer mu.Unlock()
+		if time.Since(lastLogged[reason]) < 5*time.Second {
+			removed[reason]++
+			return
+		}
+		lastLogged[reason] = time.Now()
+		fields := []zap.Field{zap.Int("duplicates_removed_for_"+reason, removed[reason]), zap.String("peer_address", conn.RemoteAddr().String()), zap.Error(err)}
+		removed[reason] = 0
 		if e, ok := errors.AsType[*tls.CertificateVerificationError](err); ok && len(e.UnverifiedCertificates) > 0 {
 			peer := e.UnverifiedCertificates[0]
 			fields = append(fields, zap.String("peer_subject", peer.Subject.String()), zap.String("peer_issuer", peer.Issuer.String()), zap.Time("peer_not_after", peer.NotAfter))
 		}
-		rejections.Warn("rejected a raft connection: "+reason, fields...)
+		logger.Warn("raft: tls handshake failure: "+reason, fields...)
 	}
 	return etcdtransport.NewListenerWithOpts(addr, "https", etcdtransport.WithTLSInfo(&tlsInfo))
 }
@@ -78,7 +89,7 @@ func handshakeFailureReason(err error) string {
 		return "unknown_authority"
 	}
 	if e, ok := errors.AsType[x509.CertificateInvalidError](err); ok && e.Reason == x509.Expired {
-		return "expired"
+		return "invalid_date"
 	}
 	if _, ok := errors.AsType[*tls.CertificateVerificationError](err); ok {
 		return "bad_certificate"
@@ -87,14 +98,14 @@ func handshakeFailureReason(err error) string {
 }
 
 // checkCertificates fails when the certificate of this node cannot be loaded or has expired, or when no CA of the CA
-// file is left that has not expired. It logs the certificate of this node and each CA, as a warning when it has expired.
+// file is left that has not expired. It warns about each expired CA.
 func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error {
 	now := time.Now()
 	cert, err := tls.LoadX509KeyPair(tlsInfo.CertFile, tlsInfo.KeyFile)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to load the certificate of this node from %s and %s", tlsInfo.CertFile, tlsInfo.KeyFile)
 	}
-	logger.Info("the certificate of this node", zap.String("subject", cert.Leaf.Subject.String()), zap.String("issuer", cert.Leaf.Issuer.String()), zap.Time("not_after", cert.Leaf.NotAfter))
+	logger.Debug("raft: node certificate:", zap.String("subject", cert.Leaf.Subject.String()), zap.String("issuer", cert.Leaf.Issuer.String()), zap.Time("not_after", cert.Leaf.NotAfter))
 	if now.After(cert.Leaf.NotAfter) {
 		return stacktrace.NewError("the certificate of this node in %s expired on %s", tlsInfo.CertFile, cert.Leaf.NotAfter)
 	}
@@ -107,9 +118,9 @@ func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error 
 	for _, ca := range cas {
 		fields := []zap.Field{zap.String("subject", ca.Subject.String()), zap.Time("not_after", ca.NotAfter)}
 		if now.After(ca.NotAfter) {
-			logger.Warn("a CA of --raft_tls_ca_file has expired", fields...)
+			logger.Warn("raft: a CA of --raft_tls_ca_file has expired", fields...)
 		} else {
-			logger.Info("a CA of --raft_tls_ca_file", fields...)
+			logger.Debug("raft: CA certificate:", fields...)
 			unexpired++
 		}
 	}
