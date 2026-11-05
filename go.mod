@@ -3,7 +3,7 @@ module github.com/interuss/dss
 go 1.27.3
 
 require (
-	cloud.google.com/go/profiler v0.7.0
+	cloud.google.com/go/profiler v0.7.1
 	github.com/cockroachdb/cockroach-go/v2 v2.4.3
 	github.com/coreos/go-semver v0.3.1
 	github.com/exaring/otelpgx v0.13.0
