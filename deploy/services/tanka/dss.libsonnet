@@ -30,7 +30,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 
 {
   all(metadata): {
-
     default_namespace: base.Namespace(metadata, metadata.namespace) {
 
     },
