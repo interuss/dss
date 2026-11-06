@@ -164,10 +164,10 @@ func circleCellsFromSCDRest(c *restapi.Circle) (s2.CellUnion, error) {
 		return nil, geo.ErrRadiusMustBeLargerThan0
 	}
 
-	return geo.RegionCoverer.Covering(s2.RegularLoop(
+	// Cover the whole circle, including its boundary.
+	return geo.RegionCoverer.Covering(s2.CapFromCenterAngle(
 		s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lng)),
 		geo.DistanceMetersToAngle(float64(c.Radius.Value)),
-		20,
 	)), nil
 }
 
