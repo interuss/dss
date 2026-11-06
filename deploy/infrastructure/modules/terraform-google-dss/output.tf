@@ -10,6 +10,10 @@ output "yugabyte_tservers_addresses" {
   value = module.terraform-google-kubernetes.yugabyte_tservers_addresses
 }
 
+output "raft_addresses" {
+  value = module.terraform-google-kubernetes.raft_addresses
+}
+
 output "gateway_address" {
   value = module.terraform-google-kubernetes.gateway_address
 }

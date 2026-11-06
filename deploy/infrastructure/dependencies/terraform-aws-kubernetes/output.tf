@@ -58,6 +58,18 @@ output "yugabyte_tservers_nodes" {
   ]
 }
 
+output "raft_nodes" {
+  value = [
+    for i in aws_eip.ip_raft : {
+      ip  = i.allocation_id
+      dns = i.tags.ExpectedDNS
+    }
+  ]
+  depends_on = [
+    aws_eip.ip_raft
+  ]
+}
+
 output "crdb_addresses" {
   value = [for i in aws_eip.ip_crdb[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
 }
@@ -68,6 +80,10 @@ output "yugabyte_masters_addresses" {
 
 output "yugabyte_tservers_addresses" {
   value = [for i in aws_eip.ip_yugabyte[*] : { expected_dns : i.tags.ExpectedTServerDNS, address : i.public_ip }]
+}
+
+output "raft_addresses" {
+  value = [for i in aws_eip.ip_raft[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
 }
 
 output "gateway_address" {

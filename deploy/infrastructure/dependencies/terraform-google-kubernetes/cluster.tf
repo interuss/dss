@@ -72,6 +72,16 @@ resource "google_compute_address" "ip_yugabyte" {
   description = format("%s.%%s.%s", count.index, var.db_hostname_suffix)
 }
 
+# Static IP addresses for raft instances
+resource "google_compute_address" "ip_raft" {
+  count  = var.datastore_type == "raft" ? var.node_count : 0
+  name   = format("%s-ip-raft%v", var.cluster_name, count.index)
+  region = local.region
+
+  # Current google terraform provider doesn't allow tags or labels. Description is used to preserve mapping between ips and hostnames.
+  description = format("%s.%s", count.index, var.db_hostname_suffix)
+}
+
 resource "google_compute_address" "ip_prometheus" {
 
   count = var.prometheus_hostname == "" ? 0 : 1

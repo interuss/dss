@@ -12,6 +12,14 @@ locals {
   # This pre command is used below in yugabyte deployments to make the local ip pointing to the public hostname we want to use, until https://github.com/yugabyte/yugabyte-db/issues/27367 is fixed
   yugabyte_precommand_prefix = "sed -E \"/\\.svc\\.cluster\\.local/ s/^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)([[:space:]]+)/\\1 $(echo \"$${HOSTNAMENO}."
   yugabyte_precommand_suffix = ".${var.db_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
+
+  raft_nodes = [
+    for i, n in var.raft_internal_nodes :
+    {
+      id       = var.raft_node_ids[i]
+      endpoint = "${n.dns}:${var.raft_port}"
+    }
+  ]
 }
 
 resource "local_file" "helm_chart_values" {
@@ -126,6 +134,110 @@ resource "local_file" "helm_chart_values" {
         desiredRidDbVersion = local.rid_db_schema
         desiredScdDbVersion = local.scd_db_schema
         desiredAuxDbVersion = local.aux_db_schema
+      }
+    }
+
+    global = {
+      cloudProvider = var.kubernetes_cloud_provider_name
+    }
+
+    monitoring = {
+      enabled = var.enable_monitoring
+      externalService = var.prometheus_hostname != "" ? {
+        enabled = var.enable_monitoring
+        ip      = var.ip_prometheus
+        subnet  = var.workload_subnet
+        } : {
+        enabled = false
+        ip      = null
+        subnet  = null
+      }
+    },
+
+    prometheus = {
+      server = {
+        persistentVolume = {
+          storageClass = var.kubernetes_storage_class
+        }
+
+        global = {
+          external_labels = {
+            environment = "dev"
+            k8s_cluster = var.cluster_name
+          }
+        }
+      }
+    }
+
+    grafana = {
+      persistence = {
+        storageClassName = var.kubernetes_storage_class
+      }
+    }
+
+    }) : var.datastore_type == "raft" ? yamlencode({
+    cockroachdb = {
+      enabled = false
+    }
+
+    raft = {
+      enabled   = true
+      nodes     = local.raft_nodes
+      peers     = var.raft_peers
+      clusterID = var.raft_cluster_id
+      tlsSecret = var.raft_tls_secret
+      storage = {
+        size         = var.raft_storage_size
+        storageClass = var.kubernetes_storage_class
+      }
+    }
+
+    loadBalancers = {
+      cockroachdbNodes = []
+
+      raft = [
+        for ip in var.raft_internal_nodes[*].ip :
+        {
+          ip     = ip
+          subnet = var.workload_subnet
+        }
+      ]
+
+      dssGateway = {
+        ip        = var.ip_gateway
+        subnet    = var.workload_subnet
+        certName  = var.gateway_cert_name
+        sslPolicy = var.ssl_policy
+      }
+    }
+
+    dss = {
+      image           = var.image
+      imagePullSecret = var.image_pull_secret != null ? var.image_pull_secret : ""
+      imagePullPolicy = var.core_service_image_pull_policy
+      cpuRequest      = var.core_service_cpu_request
+      memoryRequest   = var.core_service_memory_request
+      cpuLimit        = var.core_service_cpu_limit
+      memoryLimit     = var.core_service_memory_limit
+      env             = [for k, v in var.core_service_env : { name = k, value = v }]
+
+      conf = {
+        pubKeys = [
+          for p in [var.authorization.public_key_pem_path] : p if p != null
+        ]
+        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
+        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
+        jwksRefreshInterval              = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
+        jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
+        hostname                         = var.app_hostname
+        publicEndpoint                   = "https://${var.app_hostname}"
+        gcpProfServiceName               = var.gcp_prof_service_name
+        enableScd                        = var.enable_scd
+        enableScdGlobalLock              = var.enable_scd_global_lock
+        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
+        enableDssMetrics                 = var.enable_dss_metrics
+        locality                         = "zone=${var.locality}"
+        dumpRequests                     = var.dump_requests
       }
     }
 

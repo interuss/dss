@@ -3,12 +3,12 @@ variable "datastore_type" {
   description = <<-EOT
   Type of datastore used
 
-  Supported technologies: cockroachdb, yugabyte
+  Supported technologies: cockroachdb, yugabyte, raft
   EOT
 
   validation {
-    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
-    error_message = "Supported technologies: cockroachdb, yugabyte"
+    condition     = contains(["cockroachdb", "yugabyte", "raft"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte, raft"
   }
 
   default = "cockroachdb"
