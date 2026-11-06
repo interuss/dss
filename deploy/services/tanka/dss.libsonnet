@@ -30,7 +30,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 
 {
   all(metadata): {
-    // Exactly one datastore backend per instance (VAR_* case is here for the minimum case and "make evaluate-tanka").
 
     default_namespace: base.Namespace(metadata, metadata.namespace) {
 
