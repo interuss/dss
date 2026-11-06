@@ -5,8 +5,8 @@ import os
 
 import apis
 import formatting
+import references
 import rendering
-import yaml
 
 
 def _parse_args():
@@ -220,8 +220,7 @@ def main():
         else:
             tags = set()
 
-        with open(input_yaml) as f:
-            spec = yaml.full_load(f)
+        spec = references.load_spec(input_yaml)
 
         api = apis.make_api(package, api_path, spec)
         if tags:
