@@ -3,3 +3,6 @@ build/workspace
 **/.terraform
 **/coverdata
 !build/dev/startup/coverdata/.gitkeep
+release/uss_qualifier_output
+release/output
+raft_data
