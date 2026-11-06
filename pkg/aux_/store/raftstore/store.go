@@ -2,23 +2,18 @@ package raftstore
 
 import (
 	"context"
-	"encoding/json"
 
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	"github.com/interuss/dss/pkg/aux_/repos"
 	auxmemstore "github.com/interuss/dss/pkg/aux_/store/memstore"
 	"github.com/interuss/dss/pkg/memstore"
+	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/auxpb"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
-)
-
-const (
-	saveOwnMetadata consensus.RequestType[any]                      = "saveOwnMetadata"
-	getDSSMetadata  consensus.RequestType[[]*auxmodels.DSSMetadata] = "getDSSMetadata"
-	recordHeartbeat consensus.RequestType[any]                      = "recordHeartbeat"
 )
 
 // repo is a full implementation of aux_.repos.Repository for Raft-based storage.
@@ -52,27 +47,25 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
-	switch proposal.RequestType {
-	case string(saveOwnMetadata):
-		var payload saveOwnMetadataPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", saveOwnMetadata)
-		}
+	switch req := proposal.Payload.GetAuxPayload().GetPayload().(type) {
+	case *auxpb.Payload_SaveOwnMetadata:
+		metadata := req.SaveOwnMetadata
+		return nil, r.Store.GetRepo().SaveOwnMetadata(ctx, metadata.GetLocality(), metadata.GetPublicEndpoint())
 
-		return nil, r.Store.GetRepo().SaveOwnMetadata(ctx, payload.Locality, payload.PublicEndpoint)
-
-	case string(getDSSMetadata):
+	case *auxpb.Payload_GetDssMetadata:
 		return r.Store.GetRepo().GetDSSMetadata(ctx)
 
-	case string(recordHeartbeat):
-		var heartbeat auxmodels.Heartbeat
-		if err := json.Unmarshal(proposal.Value, &heartbeat); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", recordHeartbeat)
-		}
-
-		return nil, r.Store.GetRepo().RecordHeartbeat(ctx, heartbeat)
+	case *auxpb.Payload_RecordHeartbeat:
+		heartbeat := req.RecordHeartbeat
+		return nil, r.Store.GetRepo().RecordHeartbeat(ctx, auxmodels.Heartbeat{
+			Locality:                    heartbeat.GetLocality(),
+			Source:                      heartbeat.GetSource(),
+			Timestamp:                   dssmodels.TimeFromProto(heartbeat.GetTimestamp()),
+			NextHeartbeatExpectedBefore: dssmodels.TimeFromProto(heartbeat.GetNextHeartbeatExpectedBefore()),
+			Reporter:                    heartbeat.GetReporter(),
+		})
 
 	default:
-		return nil, stacktrace.NewError("unknown request type: %q", proposal.RequestType)
+		return nil, stacktrace.NewError("unknown request: %q", proposal.Name())
 	}
 }
