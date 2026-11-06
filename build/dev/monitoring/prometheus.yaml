@@ -7,3 +7,5 @@ scrape_configs:
     static_configs:
       - targets:
           - local-dss-core-service:8079
+          - local-dss-core-service-2:8079
+          - local-dss-core-service-3:8079
