@@ -15,6 +15,7 @@ import (
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	proposalpb "github.com/interuss/dss/pkg/pb/raftpb"
 	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
 	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
@@ -39,6 +40,8 @@ type Consensus struct {
 	nodeID uint64
 	group  string
 	node   raft.Node
+
+	proposalCompressionThreshold uint64
 
 	transport *rafthttp.Transport
 	listener  *listener
@@ -103,6 +106,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		storage:        storage,
 		getAppSnapshot: provider,
 		commitC:        commitC,
+
+		proposalCompressionThreshold: connectParams.ProposalCompressionThreshold,
 
 		stopC: make(chan struct{}),
 
@@ -173,19 +178,30 @@ func (c *Consensus) Stop(ctx context.Context) {
 }
 
 // RequestType identifies a kind of client request and the concrete type its result is expected to have
+// TODO: remove once all the requests are carried by a payload.
 type RequestType[Result any] string
 
-// HandleReadRequest blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
+// HandleReadRequest serves a read-only request identified by requestType, see HandleReadPayload.
+// TODO: remove once all the requests are carried by a payload.
+func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
+	proposal := c.newProposal(ctx, nil)
+	proposal.RequestType, proposal.Value = string(requestType), value
+	return read[Result](ctx, c, proposal)
+}
+
+// HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
 // ReadIndex confirms (via a quorum-backed leader check) the current commit index, waits for this
 // node's own appliedIndex to catch up to it, and only then executes the read against local state.
 // This gives the same linearizability guarantee as proposing through the log, without writing an
 // entry that every node would otherwise have to persist and replicate.
-func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
+func (c *Consensus) HandleReadPayload[Result any](ctx context.Context, payload *proposalpb.Payload) (Result, error) {
+	return read[Result](ctx, c, c.newProposal(ctx, payload))
+}
+
+func read[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Result, error) {
 	defer c.recordProposalDuration(ctx, time.Now(), "read")
 
 	var zero Result
-
-	proposal := c.newProposal(ctx, string(requestType), value, true)
 
 	ready := c.readTracker.track(proposal.ID)
 
@@ -204,7 +220,7 @@ func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestTy
 
 	applyDoneC := make(chan ProposalResult, 1)
 	select {
-	case c.commitC <- EntryCommit{Prop: proposal, Done: applyDoneC}:
+	case c.commitC <- EntryCommit{Prop: proposal, ReadOnly: true, Done: applyDoneC}:
 	case <-ctx.Done():
 		return zero, ctx.Err()
 	}
@@ -219,7 +235,7 @@ func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestTy
 		}
 		result, ok := res.Result.(Result)
 		if !ok {
-			return zero, stacktrace.NewError("unexpected result type for %q: got %T", requestType, res.Result)
+			return zero, stacktrace.NewError("unexpected result type for %q: got %T", proposal.Name(), res.Result)
 		}
 		return result, nil
 
@@ -228,17 +244,27 @@ func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestTy
 	}
 }
 
-// HandleWriteRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
+// HandleWriteRequest serves a request identified by requestType, see HandleWritePayload.
+// TODO: remove once all the requests are carried by a payload.
 func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
+	proposal := c.newProposal(ctx, nil)
+	proposal.RequestType, proposal.Value = string(requestType), value
+	return write[Result](ctx, c, proposal)
+}
+
+// HandleWritePayload blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
+func (c *Consensus) HandleWritePayload[Result any](ctx context.Context, payload *proposalpb.Payload) (Result, error) {
+	return write[Result](ctx, c, c.newProposal(ctx, payload))
+}
+
+func write[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Result, error) {
 	defer c.recordProposalDuration(ctx, time.Now(), "write")
 
 	var zero Result
 
-	proposal := c.newProposal(ctx, string(requestType), value, false)
-
-	buf, err := json.Marshal(proposal)
+	buf, err := proposal.encode(c.proposalCompressionThreshold)
 	if err != nil {
-		return zero, stacktrace.Propagate(err, "failed to marshal proposal")
+		return zero, stacktrace.Propagate(err, "failed to encode proposal")
 	}
 
 	applied := c.tracker.track(proposal.ID)
@@ -259,7 +285,7 @@ func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestT
 		}
 		result, ok := res.Result.(Result)
 		if !ok {
-			return zero, stacktrace.NewError("unexpected result type for %q: got %T", requestType, res.Result)
+			return zero, stacktrace.NewError("unexpected result type for %q: got %T", proposal.Name(), res.Result)
 		}
 		return result, nil
 
@@ -634,10 +660,9 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 		return nil
 	}
 
-	var proposal Proposal
-	err := json.Unmarshal(data, &proposal)
+	proposal, err := decodeProposal(data)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal committed proposal")
+		return stacktrace.Propagate(err, "failed to decode committed proposal")
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)

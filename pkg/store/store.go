@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/stacktrace"
 )
 
@@ -26,10 +27,14 @@ type OperationRequest interface {
 
 // OperationHandler holds the logic for the encoding and execution of a registered operation
 type OperationHandler[R any] struct {
-	Encode     func(req OperationRequest) ([]byte, error)
-	Decode     func(buf []byte) (OperationRequest, error)
-	Execute    func(ctx context.Context, repo R, request OperationRequest) (any, error)
-	IsReadOnly bool
+	Encode func(req OperationRequest) ([]byte, error)
+	Decode func(buf []byte) (OperationRequest, error)
+	// EncodePayload and DecodePayload take precedence over Encode and Decode when set.
+	// TODO: replace Encode and Decode once all the operations are carried by a payload.
+	EncodePayload func(req OperationRequest) (*raftpb.Payload, error)
+	DecodePayload func(payload *raftpb.Payload) (OperationRequest, error)
+	Execute       func(ctx context.Context, repo R, request OperationRequest) (any, error)
+	IsReadOnly    bool
 }
 
 // EncodeJSON is a general-purpose OperationHandler.Encode that marshals the request as JSON.
@@ -51,6 +56,21 @@ func DecodeJSON[T OperationRequest](buf []byte) (OperationRequest, error) {
 		return nil, stacktrace.Propagate(err, "failed to unmarshal request")
 	}
 	return *req, nil
+}
+
+// ExecutePayload decodes the payload with the handler registered for operationID and executes the resulting request.
+func ExecutePayload[R any](ctx context.Context, registry map[string]OperationHandler[R], operationID string, repo R, payload *raftpb.Payload) (any, error) {
+	handler, ok := registry[operationID]
+	if !ok {
+		return nil, stacktrace.NewError("no handler registered for operation %q", operationID)
+	}
+
+	request, err := handler.DecodePayload(payload)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode op %q", operationID)
+	}
+
+	return handler.Execute(ctx, repo, request)
 }
 
 // TransactWithResult wraps Store.Transact and casts the result to ResultType, avoiding a cast at every call site.
