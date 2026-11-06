@@ -58,7 +58,6 @@
       zone: error 'must specify placement zone',
     },
   },
-  // Raft-based datastore (datastore: 'raft'): this instance's nodes plus the rest of the pool.
   raft: {
     // The DSS nodes deployed by this release: {id, endpoint, ip}
     nodes: error 'must supply the raft nodes of this instance',
