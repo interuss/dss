@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 
 	"github.com/golang/geo/s2"
+	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/ridpb"
 	"github.com/interuss/dss/pkg/raftstore"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	raftparams "github.com/interuss/dss/pkg/raftstore/params"
@@ -14,6 +16,7 @@ import (
 	"github.com/interuss/dss/pkg/rid/operations"
 	"github.com/interuss/dss/pkg/rid/repos"
 	ridmemstore "github.com/interuss/dss/pkg/rid/store/memstore"
+	dssstore "github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -49,55 +52,71 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 func (r *repo) GetRepo() repos.Repository { return r }
 
 func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, error) {
-	switch proposal.RequestType {
-	// ISA
-	case string(getISA):
+	switch payload := proposal.Payload.GetRidPayload().GetPayload().(type) {
+	// ISA operations
+	case *ridpb.Payload_CreateIdentificationServiceAreaOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.CreateIdentificationServiceAreaOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *ridpb.Payload_UpdateIdentificationServiceAreaOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.UpdateIdentificationServiceAreaOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *ridpb.Payload_DeleteIdentificationServiceAreaOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.DeleteIdentificationServiceAreaOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	// ISA repository requests
+	case *ridpb.Payload_GetIsaRepoCall:
 		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getISA)
+		if err := id.FromProto(payload.GetIsaRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid ISA ID")
 		}
 		return r.Store.GetRepo().GetISA(ctx, id, false)
 
-	case string(deleteISA):
-		var isa ridmodels.IdentificationServiceArea
-		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteISA)
+	case *ridpb.Payload_DeleteIsaRepoCall:
+		req := payload.DeleteIsaRepoCall
+		isa := &ridmodels.IdentificationServiceArea{Version: new(dssmodels.Version)}
+		if err := isa.ID.FromProto(req.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid ISA ID")
 		}
-		return r.Store.GetRepo().DeleteISA(ctx, &isa)
-
-	case string(insertISA):
-		var isa ridmodels.IdentificationServiceArea
-		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", insertISA)
+		if err := isa.Version.FromProto(req.GetVersion()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid ISA version")
 		}
-		return r.Store.GetRepo().InsertISA(ctx, &isa)
+		return r.Store.GetRepo().DeleteISA(ctx, isa)
 
-	case string(updateISA):
-		var isa ridmodels.IdentificationServiceArea
-		if err := json.Unmarshal(proposal.Value, &isa); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateISA)
+	case *ridpb.Payload_InsertIsaRepoCall:
+		isa := new(ridmodels.IdentificationServiceArea)
+		if err := isa.FromProto(payload.InsertIsaRepoCall.GetIsa()); err != nil {
+			return nil, err
 		}
-		return r.Store.GetRepo().UpdateISA(ctx, &isa)
+		return r.Store.GetRepo().InsertISA(ctx, isa)
 
-	case string(searchISAs):
-		var payload searchISAsPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchISAs)
+	case *ridpb.Payload_UpdateIsaRepoCall:
+		req := payload.UpdateIsaRepoCall
+		isa := new(ridmodels.IdentificationServiceArea)
+		if err := isa.FromProto(req.GetIsa()); err != nil {
+			return nil, err
 		}
-		return r.Store.GetRepo().SearchISAs(ctx, payload.Cells, payload.Earliest, payload.Latest)
-
-	case string(listExpiredISAs):
-		var payload expiredPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredISAs)
+		isa.Version = new(dssmodels.Version)
+		if err := isa.Version.FromProto(req.GetVersion()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid ISA version")
 		}
-		return r.Store.GetRepo().ListExpiredISAs(ctx, payload.Threshold)
+		return r.Store.GetRepo().UpdateISA(ctx, isa)
 
-	case string(countISAs):
+	case *ridpb.Payload_SearchIsasRepoCall:
+		req := payload.SearchIsasRepoCall
+		return r.Store.GetRepo().SearchISAs(ctx, dssmodels.CellUnionFromProto(req.GetCells()), dssmodels.TimeFromProto(req.GetEarliest()), dssmodels.TimeFromProto(req.GetLatest()))
+
+	case *ridpb.Payload_CountIsasRepoCall:
 		return r.Store.GetRepo().CountISAs(ctx)
 
-	// Subscriptions
+	default:
+		return r.applyLegacy(ctx, proposal)
+	}
+}
 
+// applyLegacy applies the proposals carrying a JSON encoded request.
+// TODO: remove once all the requests are carried by a payload.
+func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (any, error) {
+	switch proposal.RequestType {
 	case string(getSubscription):
 		var id dssmodels.ID
 		if err := json.Unmarshal(proposal.Value, &id); err != nil {

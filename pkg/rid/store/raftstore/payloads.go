@@ -13,14 +13,7 @@ type cellsByOwnerPayload struct {
 	Owner dssmodels.Owner `json:"owner"`
 }
 
-// expiredPayload carries the arguments common to ListExpiredISAs/ListExpiredSubscriptions.
+// expiredPayload carries the arguments of ListExpiredSubscriptions.
 type expiredPayload struct {
 	Threshold time.Time `json:"threshold"`
-}
-
-// searchISAsPayload carries the arguments of SearchISAs.
-type searchISAsPayload struct {
-	Cells    s2.CellUnion `json:"cells"`
-	Earliest *time.Time   `json:"earliest,omitempty"`
-	Latest   *time.Time   `json:"latest,omitempty"`
 }
