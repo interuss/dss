@@ -1,8 +1,11 @@
 package consensus
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 	"uuid"
@@ -62,7 +65,7 @@ func (p Proposal) Name() string {
 	}
 }
 
-func (p Proposal) encode() ([]byte, error) {
+func (p Proposal) encode(compressionThreshold uint64) ([]byte, error) {
 	id, err := uuid.Parse(p.ID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid proposal ID %q", p.ID)
@@ -75,14 +78,24 @@ func (p Proposal) encode() ([]byte, error) {
 		return nil, stacktrace.Propagate(err, "invalid timestamp %s", p.Timestamp)
 	}
 
-	buf, err := proto.Marshal(&raftpb.Proposal{
+	pb := &raftpb.Proposal{
 		Id:          id[:],
 		NodeId:      p.NodeID,
 		Timestamp:   ts,
 		RequestType: p.RequestType,
 		Value:       p.Value,
-		Payload:     p.Payload,
-	})
+	}
+	compressedPayload, err := compressPayload(p.Payload, compressionThreshold)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to compress proposal payload")
+	}
+	if compressedPayload != nil {
+		pb.CompressedPayload = compressedPayload
+	} else {
+		pb.Payload = p.Payload
+	}
+
+	buf, err := proto.Marshal(pb)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
 	}
@@ -98,7 +111,18 @@ func decodeProposal(data []byte) (Proposal, error) {
 	if len(pb.GetId()) != len(uuid.UUID{}) {
 		return Proposal{}, stacktrace.NewError("invalid proposal ID length %d", len(pb.GetId()))
 	}
-	if (pb.GetRequestType() == "") == (pb.GetPayload().GetPayload() == nil) {
+	payload := pb.GetPayload()
+	if compressedPayload := pb.GetCompressedPayload(); compressedPayload != nil {
+		if payload != nil {
+			return Proposal{}, stacktrace.NewError("payload and compressed payload are both set")
+		}
+		var err error
+		payload, err = decompressPayload(compressedPayload)
+		if err != nil {
+			return Proposal{}, stacktrace.Propagate(err, "failed to decompress proposal payload")
+		}
+	}
+	if (pb.GetRequestType() == "") == (payload.GetPayload() == nil) {
 		return Proposal{}, stacktrace.NewError("exactly one of request type and payload must be set")
 	}
 	if err := pb.GetTimestamp().CheckValid(); err != nil {
@@ -111,8 +135,91 @@ func decodeProposal(data []byte) (Proposal, error) {
 		Timestamp:   pb.GetTimestamp().AsTime(),
 		RequestType: pb.GetRequestType(),
 		Value:       pb.GetValue(),
-		Payload:     pb.GetPayload(),
+		Payload:     payload,
 	}, nil
+}
+
+// compressPayload returns the gzip-compressed encoding of payload
+// or nil if:
+// - there is no payload
+// - the payload is smaller than compressionThreshold
+// - compression is disabled (compressionThreshold is 0)
+// - it would not be smaller.
+func compressPayload(payload *raftpb.Payload, compressionThreshold uint64) ([]byte, error) {
+	if compressionThreshold == 0 || payload.GetPayload() == nil {
+		return nil, nil
+	}
+	buf, err := proto.Marshal(payload)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	}
+	if uint64(len(buf)) < compressionThreshold {
+		return nil, nil
+	}
+	compressed, err := compress(buf)
+	if err != nil {
+		return nil, err
+	}
+	if len(compressed) >= len(buf) {
+		return nil, nil
+	}
+	return compressed, nil
+}
+
+func decompressPayload(compressedPayload []byte) (*raftpb.Payload, error) {
+	buf, err := decompress(compressedPayload)
+	if err != nil {
+		return nil, err
+	}
+	var pb raftpb.Payload
+	if err := proto.Unmarshal(buf, &pb); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to unmarshal payload")
+	}
+	if pb.GetPayload() == nil {
+		return nil, stacktrace.NewError("missing payload in compressed payload")
+	}
+	return &pb, nil
+}
+
+var gzipWriters = sync.Pool{
+	New: func() any {
+		return gzip.NewWriter(nil)
+	},
+}
+
+var gzipReaders = sync.Pool{
+	New: func() any {
+		return new(gzip.Reader)
+	},
+}
+
+func compress(src []byte) ([]byte, error) {
+	w := gzipWriters.Get().(*gzip.Writer)
+	defer gzipWriters.Put(w)
+
+	var buf bytes.Buffer
+	w.Reset(&buf)
+	if _, err := w.Write(src); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to write compressed data")
+	}
+	if err := w.Close(); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to flush compressed data")
+	}
+	return buf.Bytes(), nil
+}
+
+func decompress(src []byte) ([]byte, error) {
+	r := gzipReaders.Get().(*gzip.Reader)
+	defer gzipReaders.Put(r)
+
+	if err := r.Reset(bytes.NewReader(src)); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to reset decompressor")
+	}
+	value, err := io.ReadAll(r)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to read decompressed data")
+	}
+	return value, nil
 }
 
 type ProposalResult struct {

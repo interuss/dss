@@ -26,4 +26,7 @@ message Proposal {
     // TODO: remove request_type and value once all the requests are carried by payload.
     string request_type = 5;
     bytes value = 6;
+
+    // Gzip-compressed encoding of the payload, set instead of payload when it is smaller.
+    bytes compressed_payload = 7;
 }
