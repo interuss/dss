@@ -42,6 +42,8 @@ type (
 		// DataDir is the join between the base data directory provided by the user and a subfolder for the specific group (aux, rid, scd).
 		DataDir   string
 		ClusterID uint64
+		// Group is the name of the group (aux, rid, scd).
+		Group string
 		// GroupClusterID identifies the group (aux, rid, scd) within the cluster.
 		// It is derived from ClusterID and is used by the transport since the groups share a listener (see consensus/listener.go).
 		GroupClusterID uint64
@@ -175,6 +177,7 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 		return ConnectParameters{}, stacktrace.NewError("--raft_tls_cert_file, --raft_tls_key_file and --raft_tls_ca_file are required unless --raft_insecure is set")
 	}
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)
+	p.Group = subfolder
 	groupID, err := groupClusterID(connectParameters.ClusterID, subfolder)
 	if err != nil {
 		return ConnectParameters{}, stacktrace.Propagate(err, "failed to derive the cluster ID of the %s group", subfolder)
