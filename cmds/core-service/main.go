@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	adminserver "github.com/interuss/dss/pkg/admin/server"
 	"github.com/interuss/dss/pkg/api"
 	apiauxv1 "github.com/interuss/dss/pkg/api/auxv1"
 	apiridv1 "github.com/interuss/dss/pkg/api/ridv1"
@@ -21,15 +23,19 @@ import (
 	apiversioningv1 "github.com/interuss/dss/pkg/api/versioningv1"
 	"github.com/interuss/dss/pkg/auth"
 	aux "github.com/interuss/dss/pkg/aux_"
+	auxrepos "github.com/interuss/dss/pkg/aux_/repos"
 	auxs "github.com/interuss/dss/pkg/aux_/store"
 	"github.com/interuss/dss/pkg/build"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore"
+	"github.com/interuss/dss/pkg/raftstore/consensus"
+	ridrepos "github.com/interuss/dss/pkg/rid/repos"
 	rid_v1 "github.com/interuss/dss/pkg/rid/server/v1"
 	rid_v2 "github.com/interuss/dss/pkg/rid/server/v2"
 	rids "github.com/interuss/dss/pkg/rid/store"
 	"github.com/interuss/dss/pkg/scd"
+	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store/params"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -60,6 +66,7 @@ var (
 	enableMetrics           = flag.Bool("enable_metrics", false, "Enable metric endpoint")
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
+	adminSocket             = flag.String("admin_socket", "/run/dss/admin.sock", "Path of the Unix socket on which the admin API (used by dssctl) is served, when the core-service uses the raft store. Its directory is created if needed.")
 
 	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -91,23 +98,10 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context, locality string, publicEndpoint string, opts params.Options, logger *zap.Logger) (*aux.Server, error) {
-	if locality == "" {
-		return nil, stacktrace.NewError("Locality not set")
-	}
-
-	if publicEndpoint == "" {
-		return nil, stacktrace.NewError("Public endpoint not set")
-	}
-
-	auxStore, err := auxs.Init(ctx, logger, true)
-	if err != nil {
-		return nil, err
-	}
-
+func saveOwnMetadata(ctx context.Context, auxStore auxs.Store, locality string, publicEndpoint string) error {
 	repo, err := auxStore.Interact(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+		return stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
 	ctx = timestamp.NewContext(ctx, time.Now())
@@ -115,20 +109,15 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
+		return stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore, Locality: locality, Options: opts}, nil
+	return nil
 }
 
-func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+func createRIDServers(ctx context.Context, ridStore rids.Store, locality string) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_, err = ridStore.Interact(ctx)
+	_, err := ridStore.Interact(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
@@ -152,15 +141,10 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}, nil
 }
 
-func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
-
-	scdStore, err := scds.Init(ctx, logger, true)
-	if err != nil {
-		return nil, err
-	}
+func createSCDServer(scdStore scds.Store, logger *zap.Logger) (*scd.Server, error) {
 
 	if *enableMetrics {
-		err = registerSCDMetrics(scdStore)
+		err := registerSCDMetrics(scdStore)
 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -304,14 +288,86 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, storeOptions, logger)
+	if locality == "" {
+		return stacktrace.NewError("Locality not set")
+	}
+
+	if *publicEndpoint == "" {
+		return stacktrace.NewError("Public endpoint not set")
+	}
+
+	// Initialize the stores
+	auxStore, err := auxs.Init(ctx, logger, true)
 	if err != nil {
+		return stacktrace.Propagate(err, "Failed to initialize aux store")
+	}
+	ridStore, err := rids.Init(ctx, logger, true)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to initialize rid store")
+	}
+	var scdStore scds.Store
+	if *enableSCD {
+		scdStore, err = scds.Init(ctx, logger, true)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to initialize scd store")
+		}
+	}
+
+	raftGroups := map[string]*consensus.Consensus{}
+	if params.GetStoreParameters().StoreType == params.RaftStoreType {
+		raftGroups["aux"] = auxStore.(*raftstore.Store[auxrepos.Repository]).Consensus
+		raftGroups["rid"] = ridStore.(*raftstore.Store[ridrepos.Repository]).Consensus
+		if *enableSCD {
+			raftGroups["scd"] = scdStore.(*raftstore.Store[scdrepos.Repository]).Consensus
+		}
+	}
+
+	// The stores are closed when this function returns, so that a new attempt after a dsserr.Unavailable error starts them again.
+	stores := []io.Closer{auxStore, ridStore}
+	if *enableSCD {
+		stores = append(stores, scdStore)
+	}
+	defer func() {
+		for _, store := range stores {
+			if err := store.Close(); err != nil {
+				logger.Warn("Failed to close the store", zap.Error(err))
+			}
+		}
+	}()
+
+	// Initialize aux
+	auxV1Server = &aux.Server{Store: auxStore, Locality: locality, Options: storeOptions}
+
+	// The metadata is written through the aux store, whose Raft group may not be ready yet.
+	if auxGroup, ok := raftGroups["aux"]; ok {
+		go func() {
+			if err := auxGroup.WaitReady(ctx); err != nil {
+				logger.Warn("Not storing current metadata", zap.Error(err))
+				return
+			}
+			for {
+				err := saveOwnMetadata(ctx, auxStore, locality, *publicEndpoint)
+				if err == nil {
+					return
+				}
+				if !auxGroup.Ready() {
+					logger.Warn("Not storing current metadata, the aux Raft group is stopped", zap.Error(err))
+					return
+				}
+				logger.Error("Failed to store current metadata, retrying", zap.Error(err))
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(5 * time.Second):
+				}
+			}
+		}()
+	} else if err := saveOwnMetadata(ctx, auxStore, locality, *publicEndpoint); err != nil {
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
 
 	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+	ridV1Server, ridV2Server, err = createRIDServers(ctx, ridStore, locality)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create remote ID server")
 	}
@@ -351,7 +407,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
+		scdV1Server, err = createSCDServer(scdStore, logger)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
@@ -360,8 +416,20 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
 	}
 
+	if params.GetStoreParameters().StoreType == params.RaftStoreType {
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, raftGroups)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to start the admin server")
+		}
+		defer func() {
+			if err := adminServer.Shutdown(context.Background()); err != nil {
+				logger.Warn("failed to shut down admin server", zap.Error(err))
+			}
+		}()
+	}
+
 	// the middlewares are wrapped and, therefore, executed in the opposite order
-	handler := healthyEndpointMiddleware(logger, &multiRouter)
+	handler := healthyEndpointMiddleware(logger, raftGroups, &multiRouter)
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
@@ -412,9 +480,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 }
 
 // healthyEndpointMiddleware intercepts a request and responds with an "ok" message at the endpoint "/healthy".
-func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handler {
+func healthyEndpointMiddleware(logger *zap.Logger, raftGroups map[string]*consensus.Consensus, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
+			for name, group := range raftGroups {
+				if !group.Ready() {
+					http.Error(w, fmt.Sprintf("the %s Raft group is not ready", name), http.StatusServiceUnavailable)
+					return
+				}
+			}
 			if _, err := w.Write([]byte("ok")); err != nil {
 				logger.Error("Error writing to /healthy")
 			}

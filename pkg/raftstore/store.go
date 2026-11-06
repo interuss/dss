@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/memstore"
@@ -31,7 +32,7 @@ type Store[R any] struct {
 	cancel   context.CancelFunc
 	registry map[string]store.OperationHandler[R]
 
-	Consensus *consensus.Consensus
+	*consensus.Consensus
 
 	done chan struct{}
 }
@@ -75,14 +76,9 @@ func StartListener(ctx context.Context, logger *zap.Logger, onError func(error))
 		return stacktrace.Propagate(err, "failed to get raft parameters")
 	}
 
-	peers, err := params.PeerMap()
+	nodeURL, err := url.Parse(params.URL)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to parse peer map")
-	}
-
-	nodeURL, ok := peers[params.NodeID]
-	if !ok {
-		return stacktrace.NewError("node ID %d not found in peers map", params.NodeID)
+		return stacktrace.Propagate(err, "failed to parse the URL of the node")
 	}
 
 	err = consensus.StartListener(ctx, logger.With(zap.String("component", "listener")), fmt.Sprintf(":%s", nodeURL.Port()), consensus.NewTLSInfo(params, logger), onError)
@@ -119,9 +115,9 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 	}
 	if handler.IsReadOnly {
-		return s.Consensus.HandleReadRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+		return s.HandleReadRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
 	}
-	return s.Consensus.HandleWriteRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+	return s.HandleWriteRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
 }
 
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
@@ -132,7 +128,7 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 // Close shuts down the consensus instance and processCommits loop.
 // TODO: pass a context to Stop then to consensus.Stop (see issue: https://github.com/interuss/dss/issues/1610).
 func (s *Store[R]) Close() error {
-	s.Consensus.Stop(context.Background())
+	s.Stop(context.Background())
 	s.cancel()
 	s.logger.Info("waiting for commit processing goroutine to exit")
 	<-s.done
