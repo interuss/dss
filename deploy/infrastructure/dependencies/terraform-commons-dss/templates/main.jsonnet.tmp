@@ -62,6 +62,24 @@ local metadata = metadataBase {
     fix_27367_issue: true,
     light_resources: ${VAR_YUGABYTE_LIGHT_RESOURCES},
   },
+  raft+: {
+    nodes: [
+      %{~ for n in VAR_RAFT_NODES ~}
+      { id: ${n.id}, endpoint: '${n.endpoint}', ip: '${n.ip}' },
+      %{~ endfor ~}
+    ],
+    peers: [
+      %{~ for p in VAR_RAFT_PEERS ~}
+      { id: ${p.id}, endpoint: '${p.endpoint}' },
+      %{~ endfor ~}
+    ],
+    clusterID: ${VAR_RAFT_CLUSTER_ID},
+    tlsSecret: '${VAR_RAFT_TLS_SECRET}',
+    storage+: {
+      size: '${VAR_RAFT_STORAGE_SIZE}',
+      storageClass: '${VAR_STORAGE_CLASS}',
+    },
+  },
   backend+: {
     ipName: '${VAR_INGRESS_NAME}',
     %{if VAR_CLOUD_PROVIDER == "aws"}

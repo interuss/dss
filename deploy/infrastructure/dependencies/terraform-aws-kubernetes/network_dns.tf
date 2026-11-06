@@ -3,6 +3,7 @@ locals {
   crdb_hostnames             = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_crdb[*] : i.tags.ExpectedDNS => i.public_ip }
   yugabyte_master_hostnames  = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte[*] : i.tags.ExpectedMasterDNS => i.public_ip }
   yugabyte_tserver_hostnames = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_yugabyte[*] : i.tags.ExpectedTServerDNS => i.public_ip }
+  raft_hostnames             = var.aws_route53_zone_id == "" ? {} : { for i in aws_eip.ip_raft[*] : i.tags.ExpectedDNS => i.public_ip }
 }
 
 
@@ -54,6 +55,17 @@ resource "aws_route53_record" "yugabyte_master_hostnames" {
 # Yugabyte tserver nodes DNS
 resource "aws_route53_record" "yugabyte_tserver_hostnames" {
   for_each = local.yugabyte_tserver_hostnames
+
+  zone_id = var.aws_route53_zone_id
+  name    = each.key
+  type    = "A"
+  ttl     = 300
+  records = [each.value]
+}
+
+# Raft nodes DNS
+resource "aws_route53_record" "raft_hostnames" {
+  for_each = local.raft_hostnames
 
   zone_id = var.aws_route53_zone_id
   name    = each.key

@@ -10,6 +10,10 @@ output "yugabyte_tservers_addresses" {
   value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "tserver"), address : a.address }]
 }
 
+output "raft_addresses" {
+  value = [for a in google_compute_address.ip_raft[*] : { expected_dns : a.description, address : a.address }]
+}
+
 output "gateway_address" {
   value = {
     expected_dns : google_compute_global_address.ip_gateway.description,
@@ -64,6 +68,15 @@ output "yugabyte_tservers_nodes" {
     for i in google_compute_address.ip_yugabyte : {
       ip  = i.address
       dns = format(i.description, "tserver")
+    }
+  ]
+}
+
+output "raft_nodes" {
+  value = [
+    for i in google_compute_address.ip_raft : {
+      ip  = i.address
+      dns = i.description
     }
   ]
 }

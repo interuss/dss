@@ -45,6 +45,14 @@ variable "yugabyte_internal_tservers_nodes" {
   description = "List of the IP addresses and related dns for the Yugabyte DB tserver nodes"
 }
 
+variable "raft_internal_nodes" {
+  type = list(object({
+    dns = string
+    ip  = string
+  }))
+  description = "List of the IP addresses and related dns for the Raft nodes"
+}
+
 variable "ip_gateway" {
   type        = string
   description = "IP of the gateway used by the DSS service"
