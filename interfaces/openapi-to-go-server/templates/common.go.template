@@ -42,6 +42,11 @@ type Authorizer interface {
 // --- Utilities ---
 
 func WriteJSON(w http.ResponseWriter, code int, obj interface{}) {
+    // A 204 response has no body
+    if code == http.StatusNoContent {
+        w.WriteHeader(code)
+        return
+    }
     w.Header().Set("Content-Type", "application/json; charset=utf-8")
     w.WriteHeader(code)
     if err := json.NewEncoder(w).Encode(obj); err != nil {

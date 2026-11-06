@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"slices"
 	"sync"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -26,15 +25,16 @@ type membership struct {
 
 	// members maps the ID of every member of the group to its description.
 	members map[uint64]member
-	// removedIDs are the IDs of the nodes removed from the group
-	// removed IDs can never be reused.
-	removedIDs []uint64
+	// removed maps the ID of every node removed from the group to its description when it was removed.
+	// Removed IDs can never be reused.
+	removed map[uint64]member
 }
 
 func (m *membership) isIDRemoved(id uint64) bool {
 	m.RLock()
 	defer m.RUnlock()
-	return slices.Contains(m.removedIDs, id)
+	_, ok := m.removed[id]
+	return ok
 }
 
 // addNode records nodeID as a member described by mem and adds it as a peer of the transport.
@@ -48,11 +48,12 @@ func (m *membership) addNode(nodeID uint64, mem member) {
 	}
 }
 
-// removeNode removes nodeID from the members, retires its ID and removes it from the peers of the transport.
+// removeNode moves nodeID from the members to the removed nodes, which retires its ID, and removes it from the peers
+// of the transport.
 func (m *membership) removeNode(nodeID uint64) {
 	m.Lock()
+	m.removed[nodeID] = m.members[nodeID]
 	delete(m.members, nodeID)
-	m.removedIDs = append(m.removedIDs, nodeID)
 	m.Unlock()
 
 	if nodeID != m.nodeID {
@@ -60,9 +61,9 @@ func (m *membership) removeNode(nodeID uint64) {
 	}
 }
 
-// restore replaces the members and the removed IDs and updates the transport peers accordingly.
-func (m *membership) restore(members map[uint64]member, removedIDs []uint64) error {
-	for _, id := range removedIDs {
+// restore replaces the members and the removed nodes and updates the transport peers accordingly.
+func (m *membership) restore(members map[uint64]member, removed map[uint64]member) error {
+	for id := range removed {
 		if _, ok := members[id]; ok {
 			return stacktrace.NewError("removed ID %d is still present in the members map", id)
 		}
@@ -70,16 +71,19 @@ func (m *membership) restore(members map[uint64]member, removedIDs []uint64) err
 	if members == nil {
 		members = map[uint64]member{}
 	}
+	if removed == nil {
+		removed = map[uint64]member{}
+	}
 
 	m.Lock()
 	m.members = members
-	m.removedIDs = removedIDs
+	m.removed = removed
 	m.Unlock()
 
 	// It is safe to do this outside the lock because the transport methods as well as addNode and removeNode
 	// are only called by the consumer goroutine. So all transport updates happen one at a time. The lock only protects
 	// the readers on other goroutine (isIDRemoved, validateConfChange etc.) who never call the transport methods.
-	for _, id := range removedIDs {
+	for id := range removed {
 		m.transport.RemovePeer(types.ID(id))
 	}
 	for id, mem := range members {
@@ -91,11 +95,13 @@ func (m *membership) restore(members map[uint64]member, removedIDs []uint64) err
 }
 
 // validateConfChange checks that applying change keeps the membership valid.
+// When adding a node, mem describes it.
 // NB: This method must remain deterministic as it is called by every node when the change is applied.
 // It uses members and not the ConfState, which can be more recent than the members after restoring
 // a snapshot received from the leader (see Consensus.updateSnapshotConfState).
-// A rejected change is reported as a dsserr.BadRequest error.
-func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, peerURL string) error {
+// A rejected change is reported as a dsserr.BadRequest error, or a dsserr.AlreadyExists error if the URL of the node
+// is already used by a member.
+func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, mem member) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -103,7 +109,7 @@ func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, peerURL
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d is invalid", change.GetNodeId())
 	}
 
-	if slices.Contains(m.removedIDs, change.GetNodeId()) {
+	if _, ok := m.removed[change.GetNodeId()]; ok {
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d was removed from the group and cannot be reused", change.GetNodeId())
 	}
 
@@ -113,8 +119,13 @@ func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, peerURL
 		if isMember {
 			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is already a member of the group", change.GetNodeId())
 		}
-		if _, err := types.NewURLs([]string{peerURL}); err != nil {
-			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "invalid URL %q for node %d: %v", peerURL, change.GetNodeId(), err)
+		if _, err := types.NewURLs([]string{mem.URL}); err != nil {
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "invalid URL %q for node %d: %v", mem.URL, change.GetNodeId(), err)
+		}
+		for id, other := range m.members {
+			if other.URL == mem.URL {
+				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the URL %q of node %d is already used by member %d", mem.URL, change.GetNodeId(), id)
+			}
 		}
 
 	case raftpb.ConfChangeRemoveNode:

@@ -4,24 +4,28 @@ dss:
   env: []
   conf:
     enableScd: true
+    dumpRequests: true
     evict:
       scd:
           enableCron: false
-          schedule: "0 2 * * *"
+          schedule: ""
           ttl: 2688h
           timeout: ""
           limit: 0
+          batchSize: 0
           operationalIntents: true
           subscriptions: true
       rid:
           enableCron: true
-          schedule: "*/30 * * * *"
+          schedule: ""
           ttl: 30m
           timeout: ""
           limit: 0
+          batchSize: 0
           ISAs: true
           subscriptions: true
   schemaManager:
+    enabled: true
     desiredRidDbVersion: ""
     desiredScdDbVersion: ""
     desiredAuxDbVersion: ""
@@ -54,7 +58,7 @@ yugabyte:
 
   isMultiAz: true
 
-  masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+  masterAddresses: "yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"
 
   tls:
     enabled: true
@@ -76,6 +80,19 @@ yugabyte:
       placement_zone: "zone-1"
       use_client_to_server_encryption: true
       ysql_hba_conf_csv: 'hostssl all all 0.0.0.0/0 cert'
+
+raft:
+  enabled: false
+  # The DSS nodes deployed by this release
+  nodes: []
+  # The other nodes of the pool, deployed by other releases
+  peers: []
+  clusterID: 1
+  # Secret with the mutual TLS material of the Raft listeners
+  tlsSecret: ""
+  storage:
+    size: 100Gi
+    storageClass: ""
 
 monitoring:
   enabled: false

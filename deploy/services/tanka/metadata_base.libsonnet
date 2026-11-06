@@ -58,6 +58,19 @@
       zone: error 'must specify placement zone',
     },
   },
+  raft: {
+    // The DSS nodes deployed by this release: {id, endpoint, ip}
+    nodes: error 'must supply the raft nodes of this instance',
+    // The other nodes of the pool, deployed by other releases: {id, endpoint}
+    peers: [],
+    clusterID: error 'must supply the raft cluster ID',
+    // Secret with the mutual TLS material of the Raft listeners
+    tlsSecret: error 'must supply the name of the raft mutual TLS secret',
+    storage: {
+      size: '100Gi',
+      storageClass: '',
+    },
+  },
   PSP: {
     roleRef: '',
     roleBinding: false,
@@ -66,6 +79,7 @@
     ipName: error 'must supply ip name', // For AWS, use the elastic ip allocation id.
     port: 8080,
     image: error 'must specify image',
+    imagePullPolicy: '',
     prof_grpc_name: '',
     pubKeys: [''],
     jwksEndpoint: '',
@@ -115,19 +129,21 @@
   evict: {
     scd: {
       enable_cron: false,
-      schedule: "0 2 * * *",
+      schedule: "",
       ttl: "2688h",
       timeout: "",
       limit: 0,
+      batch_size: 0,
       operational_intents: true,
       subscriptions: true,
     },
     rid: {
       enable_cron: true,
-      schedule: "*/30 * * * *",
+      schedule: "",
       ttl: "30m",
       timeout: "",
       limit: 0,
+      batch_size: 0,
       ISAs: true,
       subscriptions: true,
     },

@@ -70,6 +70,7 @@ resource "local_file" "helm_chart_values" {
     dss = {
       image           = var.image
       imagePullSecret = var.image_pull_secret != null ? var.image_pull_secret : ""
+      imagePullPolicy = var.core_service_image_pull_policy
       cpuRequest      = var.core_service_cpu_request
       memoryRequest   = var.core_service_memory_request
       cpuLimit        = var.core_service_cpu_limit
@@ -86,29 +87,33 @@ resource "local_file" "helm_chart_values" {
         jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
+        gcpProfServiceName               = var.gcp_prof_service_name
         enableScd                        = var.enable_scd
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
         locality                         = "zone=${var.locality}"
         datastoreMaxOpenConns            = var.datastore_max_open_conns
+        dumpRequests                     = var.dump_requests
 
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
-            schedule   = var.evict_scd_schedule
+            schedule   = local.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
+            batchSize : var.evict_scd_batch_size
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
           rid = {
             enableCron = var.evict_enable_rid_cron
-            schedule   = var.evict_rid_schedule
+            schedule   = local.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
+            batchSize : var.evict_rid_batch_size
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }
@@ -116,6 +121,8 @@ resource "local_file" "helm_chart_values" {
       }
 
       schemaManager = {
+        enabled             = var.schema_manager_enabled
+        image               = var.schema_manager_image
         desiredRidDbVersion = local.rid_db_schema
         desiredScdDbVersion = local.scd_db_schema
         desiredAuxDbVersion = local.aux_db_schema
@@ -322,19 +329,21 @@ resource "local_file" "helm_chart_values" {
         evict = {
           scd = {
             enableCron = var.evict_enable_scd_cron
-            schedule   = var.evict_scd_schedule
+            schedule   = local.evict_scd_schedule
             ttl : var.evict_scd_ttl
             timeout : var.evict_scd_timeout
             limit : var.evict_scd_limit
+            batchSize : var.evict_scd_batch_size
             operationalIntents : var.evict_scd_operational_intents
             subscriptions : var.evict_scd_subscriptions
           }
           rid = {
             enableCron = var.evict_enable_rid_cron
-            schedule   = var.evict_rid_schedule
+            schedule   = local.evict_rid_schedule
             ttl : var.evict_rid_ttl
             timeout : var.evict_rid_timeout
             limit : var.evict_rid_limit
+            batchSize : var.evict_rid_batch_size
             ISAs : var.evict_rid_isas
             subscriptions : var.evict_rid_subscriptions
           }

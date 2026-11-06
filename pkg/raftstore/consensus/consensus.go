@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 	"uuid"
 
@@ -22,6 +23,9 @@ import (
 	v2stats "go.etcd.io/etcd/server/v3/etcdserver/api/v2stats"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,6 +37,7 @@ type Consensus struct {
 	logger *zap.Logger
 
 	nodeID uint64
+	group  string
 	node   raft.Node
 
 	transport *rafthttp.Transport
@@ -51,8 +56,12 @@ type Consensus struct {
 	membership membership
 	confState  *raftpb.ConfState
 
-	snapshotIndex uint64
+	snapshotIndex atomic.Uint64
 	appliedIndex  uint64
+
+	metricsRegistration metric.Registration
+	proposalDuration    metric.Float64Histogram
+	snapshotDuration    metric.Float64Histogram
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
@@ -89,6 +98,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		logger: logging.WithValuesFromContext(ctx, logger),
 
 		nodeID:         connectParams.NodeID,
+		group:          connectParams.Group,
 		node:           node,
 		storage:        storage,
 		getAppSnapshot: provider,
@@ -102,6 +112,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		membership: membership{
 			nodeID:  connectParams.NodeID,
 			members: map[uint64]member{},
+			removed: map[uint64]member{},
 		},
 	}
 
@@ -116,7 +127,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	}
 
 	consensus.confState = snap.GetMetadata().GetConfState()
-	consensus.snapshotIndex = snap.GetMetadata().GetIndex()
+	consensus.snapshotIndex.Store(snap.GetMetadata().GetIndex())
 	consensus.appliedIndex = snap.GetMetadata().GetIndex()
 
 	if len(snap.Data) > 0 {
@@ -124,11 +135,16 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to decode snapshot")
 		}
-		err = consensus.membership.restore(initSnapshot.Members, initSnapshot.RemovedIDs)
+		err = consensus.membership.restore(initSnapshot.Members, initSnapshot.Removed)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
 		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
+	}
+
+	err = consensus.registerMetrics()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to register raft metrics")
 	}
 
 	consensus.startRaftUpdatesConsumer(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
@@ -141,6 +157,9 @@ func (c *Consensus) Stop(ctx context.Context) {
 	// TODO: remove once (see issue: https://github.com/interuss/dss/issues/1610)
 	c.once.Do(func() {
 		c.logger.Info("stopping consensus")
+		if err := c.metricsRegistration.Unregister(); err != nil {
+			c.logger.Error("failed to unregister raft metrics", zap.Error(err))
+		}
 		close(c.stopC)
 
 		c.listener.unregister(c.transport.ClusterID)
@@ -162,6 +181,8 @@ type RequestType[Result any] string
 // This gives the same linearizability guarantee as proposing through the log, without writing an
 // entry that every node would otherwise have to persist and replicate.
 func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
+	defer c.recordProposalDuration(ctx, time.Now(), "read")
+
 	var zero Result
 
 	proposal := c.newProposal(ctx, string(requestType), value, true)
@@ -209,6 +230,8 @@ func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestTy
 
 // HandleWriteRequest blocks until the proposal is committed and applied / dropped or until ctx is cancelled.
 func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
+	defer c.recordProposalDuration(ctx, time.Now(), "write")
+
 	var zero Result
 
 	proposal := c.newProposal(ctx, string(requestType), value, false)
@@ -315,6 +338,157 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 	return nil
 }
 
+var durationBuckets = []float64{0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10}
+
+func (c *Consensus) metricAttributes(extra ...attribute.KeyValue) []attribute.KeyValue {
+	return append([]attribute.KeyValue{
+		attribute.String("group", c.group),
+		attribute.String("node_id", types.ID(c.nodeID).String()),
+	}, extra...)
+}
+
+func (c *Consensus) recordProposalDuration(ctx context.Context, start time.Time, proposalType string) {
+	c.proposalDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(c.metricAttributes(attribute.String("type", proposalType))...))
+}
+
+// registerMetrics exposes the Raft status of this node as OpenTelemetry instruments.
+// Peer metrics are only reported by the leader.
+func (c *Consensus) registerMetrics() error {
+	meter := otel.Meter("raftstore")
+
+	var err error
+	c.proposalDuration, err = meter.Float64Histogram("raft_proposal_duration_seconds", metric.WithExplicitBucketBoundaries(durationBuckets...))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create histogram")
+	}
+	c.snapshotDuration, err = meter.Float64Histogram("raft_snapshot_duration_seconds", metric.WithExplicitBucketBoundaries(durationBuckets...))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create histogram")
+	}
+
+	gauges := map[string]metric.Int64ObservableGauge{}
+	for _, name := range []string{
+		"raft_term", "raft_commit_index", "raft_applied_index", "raft_leader_id", "raft_is_leader", "raft_state",
+		"raft_snapshot_index", "raft_log_entries", "raft_proposals_pending", "raft_follower_lag_entries",
+	} {
+		gauges[name], err = meter.Int64ObservableGauge(name)
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to create gauge %s", name)
+		}
+	}
+	latencies := map[string]metric.Float64ObservableGauge{}
+	for _, name := range []string{
+		"raft_peer_latency_seconds", "raft_peer_latency_average_seconds", "raft_peer_latency_stddev_seconds",
+		"raft_peer_latency_min_seconds", "raft_peer_latency_max_seconds",
+	} {
+		latencies[name], err = meter.Float64ObservableGauge(name)
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to create gauge %s", name)
+		}
+	}
+	sendSuccess, err := meter.Int64ObservableCounter("raft_peer_send_success_total")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create counter")
+	}
+	sendFail, err := meter.Int64ObservableCounter("raft_peer_send_fail_total")
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create counter")
+	}
+
+	instruments := []metric.Observable{sendSuccess, sendFail}
+	for _, g := range gauges {
+		instruments = append(instruments, g)
+	}
+	for _, g := range latencies {
+		instruments = append(instruments, g)
+	}
+
+	c.metricsRegistration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		status := c.node.Status()
+		attrs := metric.WithAttributes(c.metricAttributes()...)
+
+		o.ObserveInt64(gauges["raft_term"], int64(status.GetTerm()), attrs)
+		o.ObserveInt64(gauges["raft_commit_index"], int64(status.GetCommit()), attrs)
+		o.ObserveInt64(gauges["raft_applied_index"], int64(status.Applied), attrs)
+		o.ObserveInt64(gauges["raft_leader_id"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("leader_id", types.ID(status.Lead).String()))...))
+
+		isLeader := int64(0)
+		if status.RaftState == raft.StateLeader {
+			isLeader = 1
+		}
+		o.ObserveInt64(gauges["raft_is_leader"], isLeader, attrs)
+		o.ObserveInt64(gauges["raft_state"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("state", status.RaftState.String()))...))
+
+		o.ObserveInt64(gauges["raft_snapshot_index"], int64(c.snapshotIndex.Load()), attrs)
+
+		firstIndex, err := c.storage.FirstIndex()
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to get first index")
+		}
+		lastIndex, err := c.storage.LastIndex()
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to get last index")
+		}
+		o.ObserveInt64(gauges["raft_log_entries"], int64(lastIndex+1-firstIndex), attrs)
+
+		c.tracker.Lock()
+		pendingWrites := len(c.tracker.pending)
+		c.tracker.Unlock()
+		c.readTracker.Lock()
+		pendingReads := len(c.readTracker.pending)
+		c.readTracker.Unlock()
+		o.ObserveInt64(gauges["raft_proposals_pending"], int64(pendingWrites), metric.WithAttributes(c.metricAttributes(attribute.String("type", "write"))...))
+		o.ObserveInt64(gauges["raft_proposals_pending"], int64(pendingReads), metric.WithAttributes(c.metricAttributes(attribute.String("type", "read"))...))
+
+		if status.RaftState != raft.StateLeader {
+			return nil
+		}
+
+		for id, pr := range status.Progress {
+			if id == c.nodeID {
+				continue
+			}
+			lag := uint64(0)
+			if status.GetCommit() > pr.Match {
+				lag = status.GetCommit() - pr.Match
+			}
+			o.ObserveInt64(gauges["raft_follower_lag_entries"], int64(lag), metric.WithAttributes(c.metricAttributes(attribute.String("peer_id", types.ID(id).String()))...))
+		}
+
+		type peerStats struct {
+			latency v2stats.LatencyStats
+			counts  v2stats.CountsStats
+		}
+		stats := c.transport.LeaderStats
+		stats.Lock()
+		followers := make(map[string]peerStats, len(stats.Followers))
+		for peerID, fs := range stats.Followers {
+			fs.Lock()
+			followers[peerID] = peerStats{latency: fs.Latency, counts: fs.Counts}
+			fs.Unlock()
+		}
+		stats.Unlock()
+
+		const msToSeconds = 1.0 / 1000.0
+		for peerID, fs := range followers {
+			peerAttrs := metric.WithAttributes(c.metricAttributes(attribute.String("peer_id", peerID))...)
+			o.ObserveFloat64(latencies["raft_peer_latency_seconds"], fs.latency.Current*msToSeconds, peerAttrs)
+			o.ObserveFloat64(latencies["raft_peer_latency_average_seconds"], fs.latency.Average*msToSeconds, peerAttrs)
+			o.ObserveFloat64(latencies["raft_peer_latency_stddev_seconds"], fs.latency.StandardDeviation*msToSeconds, peerAttrs)
+			o.ObserveFloat64(latencies["raft_peer_latency_min_seconds"], fs.latency.Minimum*msToSeconds, peerAttrs)
+			o.ObserveFloat64(latencies["raft_peer_latency_max_seconds"], fs.latency.Maximum*msToSeconds, peerAttrs)
+			o.ObserveInt64(sendSuccess, int64(fs.counts.Success), peerAttrs)
+			o.ObserveInt64(sendFail, int64(fs.counts.Fail), peerAttrs)
+		}
+		return nil
+	}, instruments...)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to register callback")
+	}
+
+	return nil
+}
+
 // startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	go func() {
@@ -356,7 +530,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						return
 					}
 
-					err = c.membership.restore(env.Members, env.RemovedIDs)
+					err = c.membership.restore(env.Members, env.Removed)
 					if err != nil {
 						c.logger.Error("failed to restore membership", zap.Error(err))
 						return
@@ -364,7 +538,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					c.commitC <- EntryCommit{SnapshotData: env.AppData}
 
 					c.confState = raftUpdate.Snapshot.GetMetadata().GetConfState()
-					c.snapshotIndex = raftUpdate.Snapshot.GetMetadata().GetIndex()
+					c.snapshotIndex.Store(raftUpdate.Snapshot.GetMetadata().GetIndex())
 					c.appliedIndex = raftUpdate.Snapshot.GetMetadata().GetIndex()
 				}
 
@@ -435,7 +609,8 @@ func (c *Consensus) publishEntries(entries []*raftpb.Entry, snapshotInterval uin
 	wg.Wait()
 	c.appliedIndex = entries[len(entries)-1].GetIndex()
 
-	if c.appliedIndex-c.snapshotIndex >= snapshotInterval {
+	if c.appliedIndex-c.snapshotIndex.Load() >= snapshotInterval {
+		start := time.Now()
 		data, err := c.encodeSnapshot()
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to encode snapshot")
@@ -446,7 +621,8 @@ func (c *Consensus) publishEntries(entries []*raftpb.Entry, snapshotInterval uin
 			return stacktrace.Propagate(err, "failed to trigger snapshot")
 		}
 
-		c.snapshotIndex = c.appliedIndex
+		c.snapshotDuration.Record(context.Background(), time.Since(start).Seconds(), metric.WithAttributes(c.metricAttributes()...))
+		c.snapshotIndex.Store(c.appliedIndex)
 	}
 
 	return nil
@@ -527,28 +703,25 @@ type confChangeContext struct {
 // AddNode proposes adding nodeID, reachable by its peers at peerURL, as a voter of the Raft group.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) error {
-	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, peerURL)
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, confChangeContext{member: member{URL: peerURL}})
 }
 
 // RemoveNode proposes removing nodeID from the Raft group. Its ID is retired and can never be reused.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
-	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, "")
+	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, confChangeContext{})
 }
 
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
 // Note that Raft only allows one config change in flight: a change proposed while another one is pending
 // is silently dropped by the leader, in which case this blocks until ctx is cancelled.
-func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, peerURL string) error {
-	err := c.membership.validateConfChange(change, peerURL)
+func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, cctx confChangeContext) error {
+	err := c.membership.validateConfChange(change, cctx.member)
 	if err != nil {
 		return err
 	}
 
-	cctx := confChangeContext{
-		ID:  uuid.New().String(),
-		URL: peerURL,
-	}
+	cctx.ID = uuid.New().String()
 
 	ctxBuf, err := json.Marshal(cctx)
 	if err != nil {
@@ -598,7 +771,7 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 	if len(cc.GetChanges()) != 1 {
 		err = stacktrace.NewErrorWithCode(dsserr.BadRequest, "expected exactly one change, got %d", len(cc.GetChanges()))
 	} else {
-		err = c.membership.validateConfChange(cc.GetChanges()[0], cctx.URL)
+		err = c.membership.validateConfChange(cc.GetChanges()[0], cctx.member)
 	}
 	if err != nil {
 		c.logger.Warn("rejecting config change", zap.String("id", cctx.ID), zap.Error(err))
@@ -642,10 +815,10 @@ func (c *Consensus) updateSnapshotConfState(msgs []*raftpb.Message) {
 // so that a node catching up via a snapshot fully recovers it, including which IDs must never be reused.
 // TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
 type snapshot struct {
-	// Members maps the ID of every member of the group to its description.
+	// Members maps the ID of every member of the group to its membership properties.
 	Members map[uint64]member
-	// RemovedIDs are the IDs of the nodes permanently removed from the group.
-	RemovedIDs []uint64
+	// Removed maps the ID of every node permanently removed from the group to its membership properties when it was removed.
+	Removed map[uint64]member
 	// AppData is the application snapshot data.
 	AppData []byte
 }
@@ -659,8 +832,8 @@ func (c *Consensus) encodeSnapshot() ([]byte, error) {
 	}
 
 	env := snapshot{
-		Members:    c.membership.members,
-		RemovedIDs: c.membership.removedIDs,
+		Members: c.membership.members,
+		Removed: c.membership.removed,
 		// TODO: Avoid encoding the data twice (to be addressed as part of https://github.com/interuss/dss/pull/1765)
 		AppData: appData,
 	}

@@ -292,6 +292,18 @@ variable "image_pull_secret" {
   default     = ""
 }
 
+variable "core_service_image_pull_policy" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Kubernetes image pull policy of the core-service containers.
+  When empty, `Always` is used (`IfNotPresent` on minikube with Tanka).
+
+  Example: `IfNotPresent`
+  EOT
+}
+
+
 variable "authorization" {
   type = object({
     public_key_pem_path = optional(string)
@@ -379,6 +391,18 @@ variable "enable_time_based_notification_index" {
 }
 
 
+variable "dump_requests" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Set to true to log full HTTP requests and responses of the core-service.
+  It dumps sensitive information to logs; intended only for debugging and/or development.
+
+  Example: `false`
+  EOT
+}
+
+
 variable "should_init" {
   type        = bool
   description = <<-EOT
@@ -427,6 +451,29 @@ variable "desired_aux_db_version" {
   EOT
 
   default = "latest"
+}
+
+
+variable "schema_manager_enabled" {
+  type        = bool
+  default     = true
+  description = <<-EOT
+  Set to false to not deploy the schema manager jobs.
+  With Tanka, the schema manager jobs are always deployed when `should_init` is true.
+
+  Example: `true`
+  EOT
+}
+
+
+variable "schema_manager_image" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Image used by the schema manager and evict jobs. When empty, `image` is used.
+
+  Example: `docker.io/interuss/dss:v0.15.0`
+  EOT
 }
 
 
@@ -624,6 +671,17 @@ variable "core_service_env" {
 }
 
 
+variable "gcp_prof_service_name" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+  Service name for the Go profiler of the core-service. The profiler is disabled when empty.
+
+  Example: `dss-core-service`
+  EOT
+}
+
+
 variable "locality" {
   type        = string
   description = <<-EOT
@@ -660,18 +718,12 @@ variable "crdb_external_nodes" {
 variable "kubernetes_namespace" {
   type        = string
   description = <<-EOT
-  Namespace where to deploy Kubernetes resources. Only default is supported at the moment.
+  Namespace where to deploy Kubernetes resources.
 
   Example: `default`
   EOT
 
   default = "default"
-
-  # TODO: Adapt current deployment scripts in /build/deploy to support default is supported for the moment.
-  validation {
-    condition     = var.kubernetes_namespace == "default"
-    error_message = "Only default namespace is supported at the moment"
-  }
 }
 
 variable "yugabyte_cloud" {
@@ -748,10 +800,11 @@ variable "evict_scd_schedule" {
   type        = string
   description = <<-EOT
   When the SCD cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+  Leave empty to run daily at 2 AM at a minute deterministically derived from the locality.
 
   EOT
 
-  default = "0 2 * * *"
+  default = ""
 }
 
 
@@ -797,6 +850,24 @@ variable "evict_scd_limit" {
 }
 
 
+variable "evict_scd_batch_size" {
+  type        = number
+  description = <<-EOT
+  Number of entities deleted per batch query (per type) by each run of the SCD eviction command.
+  Set to 0 to delete all expired entities in a single query (per type).
+
+  Example: `100`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_scd_batch_size >= 0
+    error_message = "evict_scd_batch_size must be equal to or greater than 0."
+  }
+}
+
+
 variable "evict_scd_operational_intents" {
   type        = bool
   description = <<-EOT
@@ -834,10 +905,11 @@ variable "evict_rid_schedule" {
   type        = string
   description = <<-EOT
   When the RID cleanup job shall be performed; expressed in cron format (https://crontab.guru/).
+  Leave empty to run hourly at a minute deterministically derived from the locality.
 
   EOT
 
-  default = "*/30 * * * *"
+  default = ""
 }
 
 
@@ -879,6 +951,24 @@ variable "evict_rid_limit" {
   validation {
     condition     = var.evict_rid_limit >= 0
     error_message = "evict_rid_limit must be equal to or greater than 0."
+  }
+}
+
+
+variable "evict_rid_batch_size" {
+  type        = number
+  description = <<-EOT
+  Number of entities deleted per batch query (per type) by each run of the RID eviction command.
+  Set to 0 to delete all expired entities in a single query (per type).
+
+  Example: `100`
+  EOT
+
+  default = 0
+
+  validation {
+    condition     = var.evict_rid_batch_size >= 0
+    error_message = "evict_rid_batch_size must be equal to or greater than 0."
   }
 }
 

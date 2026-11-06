@@ -13,7 +13,7 @@ import (
 
 func TestValidateConfChange(t *testing.T) {
 	voters := []uint64{1, 2, 3, 4}
-	removed := []uint64{5}
+	removed := map[uint64]member{5: {URL: "http://node5:9011"}}
 	add := func(id uint64) *raftpb.ConfChangeSingle {
 		return &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(id)}
 	}
@@ -21,19 +21,24 @@ func TestValidateConfChange(t *testing.T) {
 		return &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(id)}
 	}
 
+	node6 := member{URL: "http://node6:9011"}
+
 	tests := []struct {
-		name    string
-		change  *raftpb.ConfChangeSingle
-		url     string
-		voters  []uint64
-		wantErr bool
+		name     string
+		change   *raftpb.ConfChangeSingle
+		node     member
+		voters   []uint64
+		wantErr  bool
+		wantCode stacktrace.ErrorCode
 	}{
-		{name: "add new node", change: add(6), url: "http://node6:9011", voters: voters},
-		{name: "add invalid ID", change: add(raft.None), url: "http://node6:9011", voters: voters, wantErr: true},
-		{name: "add removed ID", change: add(5), url: "http://node5:9011", voters: voters, wantErr: true},
-		{name: "add existing member", change: add(2), url: "http://node2:9011", voters: voters, wantErr: true},
-		{name: "add without URL", change: add(6), voters: voters, wantErr: true},
-		{name: "add with URL without port", change: add(6), url: "http://node6", voters: voters, wantErr: true},
+		{name: "add new node", change: add(6), node: node6, voters: voters},
+		{name: "add invalid ID", change: add(raft.None), node: node6, voters: voters, wantErr: true},
+		{name: "add removed ID", change: add(5), node: member{URL: "http://node5:9011"}, voters: voters, wantErr: true},
+		{name: "add existing member", change: add(2), node: member{URL: "http://node2:9011"}, voters: voters, wantErr: true},
+		{name: "add without URL", change: add(6), node: member{}, voters: voters, wantErr: true},
+		{name: "add with URL without port", change: add(6), node: member{URL: "http://node6"}, voters: voters, wantErr: true},
+		{name: "add with the URL of a member", change: add(6), node: member{URL: "http://node2:9011"}, voters: voters, wantErr: true, wantCode: dsserr.AlreadyExists},
+		{name: "add with the URL of a removed node", change: add(6), node: member{URL: "http://node5:9011"}, voters: voters},
 		{name: "remove member", change: remove(4), voters: voters},
 		{name: "remove removed ID", change: remove(5), voters: voters, wantErr: true},
 		{name: "remove non member", change: remove(6), voters: voters, wantErr: true},
@@ -46,13 +51,17 @@ func TestValidateConfChange(t *testing.T) {
 			for _, id := range tt.voters {
 				members[id] = member{URL: fmt.Sprintf("http://node%d:9011", id)}
 			}
-			m := &membership{members: members, removedIDs: removed}
-			err := m.validateConfChange(tt.change, tt.url)
+			m := &membership{members: members, removed: removed}
+			err := m.validateConfChange(tt.change, tt.node)
 			if !tt.wantErr {
 				require.NoError(t, err)
 				return
 			}
-			require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+			wantCode := dsserr.BadRequest
+			if tt.wantCode != 0 {
+				wantCode = tt.wantCode
+			}
+			require.Equal(t, wantCode, stacktrace.GetCode(err))
 		})
 	}
 }

@@ -59,9 +59,29 @@ yugabyte:
       placement_zone: "zone-1"
 
   # If you join a yugabyte cluster, set the masterAddresses there
-  # masterAddresses: "yb-master-0.yb-masters.default.svc.cluster.local:7100,yb-master-1.yb-masters.default.svc.cluster.local:7100,yb-master-2.yb-masters.default.svc.cluster.local:7100"
+  # masterAddresses: "yb-master-0.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-1.yb-masters.${NAMESPACE}.svc.cluster.local:7100,yb-master-2.yb-masters.${NAMESPACE}.svc.cluster.local:7100"
+
+raft:
+  enabled: false
+  # The nodes deployed by this release.
+  nodes:
+    - id: 1
+      endpoint: "endpoint1:30211"
+
+  # The other nodes of the pool, deployed by other releases (e.g. on other clusters).
+  peers:
+    - id: 4
+      endpoint: "endpoint4:30211"
+  # Same on every node of the pool
+  clusterID: 1
+  # Required: mutual TLS material of the Raft listeners
+  tlsSecret: dss-raft-tls 
 
 loadBalancers:
+  # One entry per raft.nodes entry, matched by index (first entry = first node).
+  raft:
+    - ip: 192.168.0.41
+#      subnet: subnet-xxx # for aws only
   cockroachdbNodes:
     - ip: 192.168.0.21
 #      subnet: subnet-xxx # for aws only

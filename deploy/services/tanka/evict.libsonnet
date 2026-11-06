@@ -1,12 +1,14 @@
 local base = import 'base.libsonnet';
 local volumes = import 'volumes.libsonnet';
 local datastoreparameters = import 'datastoreparameters.libsonnet';
+local util = import 'util.libsonnet';
 
 {
   all(metadata): {
-    SCDEvict: base.CronJob(metadata, 'dss-scd-evict') {
+    local defaultMinute = util.stringToInt(metadata.locality, 60),
+    SCDEvict: if metadata.enableScd then base.CronJob(metadata, 'dss-scd-evict') {
       spec+: {
-        schedule: metadata.evict.scd.schedule,
+        schedule: if metadata.evict.scd.schedule != "" then metadata.evict.scd.schedule else "%d 2 * * *" % defaultMinute,
         suspend: !metadata.evict.scd.enable_cron,
         concurrencyPolicy: "Forbid",
         jobTemplate: {
@@ -32,6 +34,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       delete: true,
                   } + (if metadata.evict.scd.timeout != "" then { timeout: metadata.evict.scd.timeout } else {})
                     + (if metadata.evict.scd.limit > 0 then { scd_limit: metadata.evict.scd.limit } else {})
+                    + (if metadata.evict.scd.batch_size > 0 then { scd_batch_size: metadata.evict.scd.batch_size } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],
@@ -43,7 +46,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
     },
     RIDEvict: base.CronJob(metadata, 'dss-rid-evict') {
       spec+: {
-        schedule: metadata.evict.rid.schedule,
+        schedule: if metadata.evict.rid.schedule != "" then metadata.evict.rid.schedule else "%d * * * *" % defaultMinute,
         suspend: !metadata.evict.rid.enable_cron,
         concurrencyPolicy: "Forbid",
         jobTemplate: {
@@ -69,6 +72,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
                       delete: true,
                   } + (if metadata.evict.rid.timeout != "" then { timeout: metadata.evict.rid.timeout } else {})
                     + (if metadata.evict.rid.limit > 0 then { rid_limit: metadata.evict.rid.limit } else {})
+                    + (if metadata.evict.rid.batch_size > 0 then { rid_batch_size: metadata.evict.rid.batch_size } else {})
                     + datastoreparameters.all(metadata),
                   volumeMounts: volumes.all(metadata).backendMounts,
                 }],

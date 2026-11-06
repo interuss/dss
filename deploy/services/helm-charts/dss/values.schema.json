@@ -7,7 +7,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable CockroachDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+          "description": "Enable CockroachDB. Exactly one of CockroachDB, YugabyteDB and Raft should be enabled (only one at a time)."
         },
         "image": {
           "type": "object",
@@ -83,7 +83,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable YugabyteDB. YugabyteDB xor CockroachDB should be enabled (only one at at time, at least one)."
+          "description": "Enable YugabyteDB. Exactly one of CockroachDB, YugabyteDB and Raft should be enabled (only one at a time)."
         },
         "gflags": {
           "type": "object",
@@ -151,6 +151,86 @@
       ],
       "additionalItems": true
     },
+    "raft": {
+      "description": "Raft-based datastore related configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the Raft-based datastore. Exactly one of raft, cockroachdb or yugabyte should be enabled (only one at a time)."
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Raft node ID. Must be unique within the pool and never reused: do not change it once the pool has been bootstrapped."
+              },
+              "endpoint": {
+                "type": "string",
+                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to the address of the matching loadBalancers.raft entry."
+              }
+            },
+            "required": [
+              "id",
+              "endpoint"
+            ]
+          },
+          "description": "The DSS nodes (Raft voters) deployed by this release. Do not reorder or insert entries once the pool has been bootstrapped: the pod's persistent volume is bound to its position in the list."
+        },
+        "peers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Raft node ID. Must match the ID of the node in the release that deploys it."
+              },
+              "endpoint": {
+                "type": "string",
+                "description": "Address (host:port, no scheme) of the node, reachable from this cluster."
+              }
+            },
+            "required": [
+              "id",
+              "endpoint"
+            ]
+          },
+          "description": "The other nodes of the Raft pool, deployed by other releases (e.g. on other clusters). The generated --raft_peers list is nodes + peers (self included)."
+        },
+        "clusterID": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Raft cluster ID. Must be identical on all nodes of the pool."
+        },
+        "tlsSecret": {
+          "type": "string",
+          "description": "Name of the Secret (in the release namespace) holding the mutual TLS material of the Raft listeners: tls.crt/tls.key is the certificate of the nodes of this release, ca-bundle.crt is the PEM bundle of the CAs of every participant of the pool, including its own."
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "string",
+              "description": "PVC size for the Raft data."
+            },
+            "storageClass": {
+              "type": "string",
+              "description": "Storage class depending on your cloud provider. Empty for the cluster default."
+            }
+          },
+          "required": [
+            "size"
+          ]
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
     "loadBalancers": {
       "description": "Load balancers configuration",
       "type": "object",
@@ -193,6 +273,25 @@
         },
         "yugabyteTserverNodes": {
           "type": "array",
+          "items": {
+            "properties": {
+              "ip": {
+                "description": "Public ip or cloud resource name.",
+                "type": "string"
+              },
+              "subnet": {
+                "description": "Optional: Subnet of the public ip for AWS only",
+                "type": "string"
+              }
+            },
+            "required": [
+              "ip"
+            ]
+          }
+        },
+        "raft": {
+          "type": "array",
+          "description": "Load balancers of the Raft nodes deployed by this release: exactly one entry per raft.nodes entry, matched by index (the first entry matches the first node).",
           "items": {
             "properties": {
               "ip": {
@@ -282,6 +381,14 @@
           "description": "Schema manager jobs configuration",
           "type": "object",
           "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Deploy the schema manager jobs."
+            },
+            "image": {
+              "type": "string",
+              "description": "Optional: Image used by the schema manager and evict jobs. Defaults to `dss.image`."
+            },
             "desiredRidDbVersion": {
               "type": "string",
               "description": "Desired RID DB schema version. When empty, the latest version for the datastore is used. Example: `4.1.0`"
@@ -323,6 +430,10 @@
             "enableScd": {
               "type": "boolean"
             },
+            "dumpRequests": {
+              "type": "boolean",
+              "description": "Log full HTTP request and response. Intended only for debugging and/or development."
+            },
             "enableScdGlobalLock": {
               "type": "boolean"
             },
@@ -347,6 +458,10 @@
             "datastoreMaxOpenConns": {
               "type": "integer"
             },
+            "gcpProfServiceName": {
+              "type": "string",
+              "description": "Optional: Service name for the Go profiler."
+            },
             "evict": {
               "description": "Evict jobs configuration",
               "type": "object",
@@ -360,7 +475,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run daily at 2 AM at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",
@@ -373,7 +488,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "operationalIntents": {
                       "type": "boolean"
@@ -392,7 +512,7 @@
                     },
                     "schedule": {
                       "type": "string",
-                      "description": "In cron format (https://crontab.guru/)"
+                      "description": "In cron format (https://crontab.guru/). Leave empty to run hourly at a minute deterministically derived from the locality."
                     },
                     "ttl": {
                       "type": "string",
@@ -405,7 +525,12 @@
                     "limit": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Maximum number of entities deleted per run. 0 means unlimited."
+                      "description": "Maximum number of entities deleted (per type) per run. 0 means unlimited."
+                    },
+                    "batchSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                        "description": "Number of entities deleted per batch query (per type) by each run Set to 0 to delete all expired entities in a single query (per type)."
                     },
                     "ISAs": {
                       "type": "boolean"

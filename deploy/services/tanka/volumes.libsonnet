@@ -79,6 +79,44 @@ local util = import 'util.libsonnet';
       cockroachMounts: std.flattenArrays(util.mapToList(util.exclude(self.mounts, std.set(['publicCert'])))),
       backendMounts: std.flattenArrays(util.mapToList(util.exclude(self.mounts, std.set(['datadir', 'nodeCert'])))),
       schemaMounts: std.flattenArrays(util.mapToList(util.exclude(self.mounts, std.set(['datadir', 'nodeCert', 'publicCert'])))),
+    } else if metadata.datastore == "raft" then {
+      // The raft-data volume is not listed: the StatefulSet volumeClaimTemplate
+      // auto-injects it into the pod spec.
+      volumes: {
+        raft_tls: {
+          name: 'raft-tls',
+          secret: {
+              secretName: metadata.raft.tlsSecret,
+              defaultMode: 256,
+          },
+        },
+        public_certs: {
+          name: 'public-certs',
+          secret: {
+              secretName: 'dss.public.certs',
+              defaultMode: 256,
+          },
+        },
+      },
+      backendVolumes: util.mapToList(self.volumes),
+      schemaVolumes: [],
+
+      mounts: {
+        datadir: [{
+          name: 'raft-data',
+          mountPath: '/raft_data',
+        }],
+        tls: [{
+          name: 'raft-tls',
+          mountPath: '/raft-tls',
+        }],
+        publicCert: [{
+          name: 'public-certs',
+          mountPath: '/public-certs',
+        }],
+      },
+      backendMounts: std.flattenArrays(util.mapToList(self.mounts)),
+      schemaMounts: [],
     } else {
       volumes: {
         ca_certs: {

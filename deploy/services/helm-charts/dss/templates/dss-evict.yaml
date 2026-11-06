@@ -1,4 +1,6 @@
-{{- $image := .Values.dss.image }}
+{{/* Eviction on the Raft store is not implemented yet. */}}
+{{- if not .Values.raft.enabled }}
+{{- $image := .Values.dss.schemaManager.image | default .Values.dss.image }}
 
 {{- $datastoreImage := (include "datastoreImage" .) -}}
 {{- $datastoreHost := (include "datastoreHost" .) -}}
@@ -13,6 +15,9 @@
 {{- $waitForRIDSchema := include "init-container-wait-for-schema" (dict "schemaName" "rid" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 {{- $waitForSCDSchema := include "init-container-wait-for-schema" (dict "schemaName" "scd" "datastoreImage" $datastoreImage "datastorePort" $datastorePort "datastoreHost" $datastoreHost "cockroachdbEnabled" .Values.cockroachdb.enabled ) -}}
 
+{{- $evictMinute := mod (int64 (printf "0x%s" (substr 0 8 (sha256sum $.Values.dss.conf.locality)))) 60 -}}
+
+{{- if $.Values.dss.conf.enableScd }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -20,9 +25,9 @@ metadata:
   labels:
     name: dss-scd-evict
   name: dss-scd-evict
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
-  schedule: "{{ $.Values.dss.conf.evict.scd.schedule }}"
+  schedule: "{{ $.Values.dss.conf.evict.scd.schedule | default (printf "%d 2 * * *" $evictMinute) }}"
   suspend: {{ not $.Values.dss.conf.evict.scd.enableCron }}
   concurrencyPolicy: Forbid
   jobTemplate:
@@ -44,6 +49,9 @@ spec:
   {{- end }}
   {{- if $.Values.dss.conf.evict.scd.limit }}
                 - --scd_limit={{ $.Values.dss.conf.evict.scd.limit }}
+  {{- end }}
+  {{- if $.Values.dss.conf.evict.scd.batchSize }}
+                - --scd_batch_size={{ $.Values.dss.conf.evict.scd.batchSize }}
   {{- end }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
@@ -76,6 +84,7 @@ spec:
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+{{- end }}
 
 ---
 apiVersion: batch/v1
@@ -84,9 +93,9 @@ metadata:
   labels:
     name: dss-rid-evict
   name: dss-rid-evict
-  namespace: default
+  namespace: {{ $.Release.Namespace }}
 spec:
-  schedule: "{{ $.Values.dss.conf.evict.rid.schedule }}"
+  schedule: "{{ $.Values.dss.conf.evict.rid.schedule | default (printf "%d * * * *" $evictMinute) }}"
   suspend: {{ not $.Values.dss.conf.evict.rid.enableCron }}
   concurrencyPolicy: Forbid
   jobTemplate:
@@ -108,6 +117,9 @@ spec:
   {{- end }}
   {{- if $.Values.dss.conf.evict.rid.limit }}
                 - --rid_limit={{ $.Values.dss.conf.evict.rid.limit }}
+  {{- end }}
+  {{- if $.Values.dss.conf.evict.rid.batchSize }}
+                - --rid_batch_size={{ $.Values.dss.conf.evict.rid.batchSize }}
   {{- end }}
                 - --delete=true
                 - --datastore_host={{ $datastoreHost }}
@@ -140,3 +152,4 @@ spec:
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+{{- end }}

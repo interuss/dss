@@ -122,6 +122,12 @@ type CreateRaftGroupMemberResponseSet struct {
 	// This DSS node has no Raft group with this name, e.g. `scd` when it runs without `--enable_scd`.
 	Response404 *ErrorResponse
 
+	// The node at this URL is not waiting or does not run this Raft group in this cluster, or the URL is already used by another member of the group.
+	Response409 *ErrorResponse
+
+	// The node cannot be reached at this URL, or this DSS node is not a member of the Raft group.
+	Response503 *ErrorResponse
+
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody
 }
@@ -173,7 +179,7 @@ type Implementation interface {
 
 	// Add a node to a Raft group, as a voter
 	// ---
-	// The request must be sent to a member of the group, and the node to add is another DSS node, which must be running and waiting: as soon as it is added, it counts in the quorum of the group. A node started with an empty data directory waits to be added. The request returns once the change is adopted by the group.
+	// The request must be sent to a member of the group, and the node to add is another DSS node, which must be running and waiting: this member reads the ID of the node from the node itself, then adds it. A node started with an empty data directory waits to be added. The request returns once the change is adopted by the group.
 	CreateRaftGroupMember(ctx context.Context, req *CreateRaftGroupMemberRequest) CreateRaftGroupMemberResponseSet
 
 	// Remove a node from a Raft group

@@ -68,11 +68,11 @@ The members of a Raft group are bootstrapped from the `--raft_peers` flag on the
 
 - **Joining:** Starting a node that joins a running group is not supported yet, see [#1802](https://github.com/interuss/dss/issues/1802).
 - **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
-  - adding a node that is already a member or with an invalid peer URL.
+  - adding a node that is already a member, with an invalid peer URL, or with the peer URL of another member.
   - removing a node that is not a member, or a voter if the group would be left with fewer than 3 voters.
   - adding or removing a node ID that was previously removed from the group.
 - **Removal:** A node stops when it applies its own removal.
-- **Persistence:** The peer URLs of the members and the removed node IDs are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
+- **Persistence:** The peer URLs of the members and of the removed nodes are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
 
 ## Future Work
 

@@ -176,6 +176,14 @@ func (s *APIRouter) CreateRaftGroupMember(exp *regexp.Regexp, w http.ResponseWri
 		api.WriteJSON(w, 404, response.Response404)
 		return
 	}
+	if response.Response409 != nil {
+		api.WriteJSON(w, 409, response.Response409)
+		return
+	}
+	if response.Response503 != nil {
+		api.WriteJSON(w, 503, response.Response503)
+		return
+	}
 	if response.Response500 != nil {
 		api.WriteJSON(w, 500, response.Response500)
 		return

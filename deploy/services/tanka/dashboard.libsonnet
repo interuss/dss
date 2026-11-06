@@ -6,6 +6,7 @@ local crdbStorageDash = import 'grafana_dashboards/crdb-storage-grafana.json';
 local promOverview = import 'grafana_dashboards/prometheus-overview.json';
 local kubeOverview = import 'grafana_dashboards/kubernetes-overview.json';
 local dssDash = import 'grafana_dashboards/dss.json';
+local raftDash = import 'grafana_dashboards/raft.json';
 local util = import 'util.libsonnet';
 {
     all(metadata): {
@@ -43,6 +44,7 @@ local util = import 'util.libsonnet';
       grafDss: base.ConfigMap(metadata, 'grafana-dss') {
         data: {
           'dss.json': std.toString(dssDash),
+          'raft.json': std.toString(raftDash),
         },
       },
     },
