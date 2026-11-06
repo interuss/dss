@@ -9,14 +9,21 @@ import "scd/payload.proto";
 
 option go_package = "github.com/interuss/dss/pkg/pb/raftpb";
 
+message Payload {
+    oneof payload {
+        aux.Payload aux_payload = 1;
+        rid.Payload rid_payload = 2;
+        scd.Payload scd_payload = 3;
+    }
+}
+
 message Proposal {
     bytes id = 1;
     uint64 node_id = 2;
     google.protobuf.Timestamp timestamp = 3;
+    Payload payload = 4;
 
-    oneof payload {
-        aux.Payload aux_payload = 4;
-        rid.Payload rid_payload = 5;
-        scd.Payload scd_payload = 6;
-    }
+    // TODO: remove request_type and value once all the requests are carried by payload.
+    string request_type = 5;
+    bytes value = 6;
 }

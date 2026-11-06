@@ -2,42 +2,117 @@ package consensus
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 	"uuid"
 
+	"github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type EntryCommit struct {
 	Prop Proposal
-	Done chan ProposalResult
+	// ReadOnly proposals are served ReadIndex. They are not replicated in the Raft log.
+	// This flag must not be set for proposals that modify state, as it would break linearizability.
+	ReadOnly bool
+	Done     chan ProposalResult
 
 	SnapshotData []byte
 }
 
 type Proposal struct {
-	ID          string    `json:"id"`
-	NodeID      uint64    `json:"node_id"`
-	Timestamp   time.Time `json:"timestamp"`
-	RequestType string    `json:"request_type"`
-	Value       []byte    `json:"value"`
-	// ReadOnly proposals are served ReadIndex. They are not replicated in the Raft log.
-	// This flag must not be set for proposals that modify state, as it would break linearizability.
-	ReadOnly bool `json:"read_only"`
+	ID     string
+	NodeID uint64
+	// Timestamp is always in UTC so that it is identical on all the nodes.
+	// It is encoded as a protobuf Timestamp and decoding always yields a UTC time.
+	Timestamp time.Time
+	// Exactly one of RequestType (with Value) or Payload is set.
+	// TODO: remove RequestType and Value once all the requests are carried by Payload.
+	RequestType string
+	Value       []byte
+	Payload     *raftpb.Payload
 }
 
-func (c *Consensus) newProposal(ctx context.Context, requestType string, value []byte, readOnly bool) Proposal {
+func (c *Consensus) newProposal(ctx context.Context, payload *raftpb.Payload) Proposal {
 	timestamp := timestamp.MustFromContext(ctx)
 
 	return Proposal{
-		ID:          uuid.New().String(),
-		NodeID:      c.nodeID,
-		Timestamp:   timestamp.UTC(),
-		RequestType: requestType,
-		Value:       value,
-		ReadOnly:    readOnly,
+		ID:        uuid.New().String(),
+		NodeID:    c.nodeID,
+		Timestamp: timestamp.UTC(),
+		Payload:   payload,
 	}
+}
+
+// Name identifies the kind of request carried by the proposal, for logging purposes.
+func (p Proposal) Name() string {
+	switch payload := p.Payload.GetPayload().(type) {
+	case *raftpb.Payload_AuxPayload:
+		return fmt.Sprintf("%T", payload.AuxPayload.GetPayload())
+	case *raftpb.Payload_RidPayload:
+		return fmt.Sprintf("%T", payload.RidPayload.GetPayload())
+	case *raftpb.Payload_ScdPayload:
+		return fmt.Sprintf("%T", payload.ScdPayload.GetPayload())
+	default:
+		return p.RequestType
+	}
+}
+
+func (p Proposal) encode() ([]byte, error) {
+	id, err := uuid.Parse(p.ID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid proposal ID %q", p.ID)
+	}
+	if (p.RequestType == "") == (p.Payload.GetPayload() == nil) {
+		return nil, stacktrace.NewError("exactly one of request type and payload must be set")
+	}
+	ts := timestamppb.New(p.Timestamp)
+	if err := ts.CheckValid(); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid timestamp %s", p.Timestamp)
+	}
+
+	buf, err := proto.Marshal(&raftpb.Proposal{
+		Id:          id[:],
+		NodeId:      p.NodeID,
+		Timestamp:   ts,
+		RequestType: p.RequestType,
+		Value:       p.Value,
+		Payload:     p.Payload,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
+	}
+	return buf, nil
+}
+
+func decodeProposal(data []byte) (Proposal, error) {
+	var pb raftpb.Proposal
+	if err := proto.Unmarshal(data, &pb); err != nil {
+		return Proposal{}, stacktrace.Propagate(err, "failed to unmarshal proposal")
+	}
+
+	if len(pb.GetId()) != len(uuid.UUID{}) {
+		return Proposal{}, stacktrace.NewError("invalid proposal ID length %d", len(pb.GetId()))
+	}
+	if (pb.GetRequestType() == "") == (pb.GetPayload().GetPayload() == nil) {
+		return Proposal{}, stacktrace.NewError("exactly one of request type and payload must be set")
+	}
+	if err := pb.GetTimestamp().CheckValid(); err != nil {
+		return Proposal{}, stacktrace.Propagate(err, "invalid proposal timestamp")
+	}
+
+	return Proposal{
+		ID:          uuid.UUID(pb.GetId()).String(),
+		NodeID:      pb.GetNodeId(),
+		Timestamp:   pb.GetTimestamp().AsTime(),
+		RequestType: pb.GetRequestType(),
+		Value:       pb.GetValue(),
+		Payload:     pb.GetPayload(),
+	}, nil
 }
 
 type ProposalResult struct {

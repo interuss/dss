@@ -8,6 +8,8 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/ridpb"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -104,20 +106,109 @@ func newISA(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, v
 
 func init() {
 	Registry[ridv2.DeleteIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteISAPayload],
-		Execute: executeDeleteISA,
+		EncodePayload: encodeDeleteISA,
+		DecodePayload: decodeDeleteISA,
+		Execute:       executeDeleteISA,
 	}
 	Registry[ridv2.CreateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*insertISAPayload],
-		Execute: executeInsertISA,
+		EncodePayload: encodeInsertISA,
+		DecodePayload: decodeInsertISA,
+		Execute:       executeInsertISA,
 	}
 	Registry[ridv2.UpdateIdentificationServiceAreaOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateISAPayload],
-		Execute: executeUpdateISA,
+		EncodePayload: encodeUpdateISA,
+		DecodePayload: decodeUpdateISA,
+		Execute:       executeUpdateISA,
 	}
+}
+
+func encodeDeleteISA(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*deleteISAPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.DeleteIdentificationServiceAreaOperationID)
+	}
+	id, err := dssmodels.IDToProto(payload.ID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid ISA ID")
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_DeleteIdentificationServiceAreaOperation{
+		DeleteIdentificationServiceAreaOperation: &ridpb.DeleteIdentificationServiceAreaOperation{
+			Id:      id,
+			Owner:   payload.Owner.String(),
+			Version: dssmodels.VersionToProto(payload.Version),
+		},
+	}}), nil
+}
+
+func decodeDeleteISA(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetDeleteIdentificationServiceAreaOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.DeleteIdentificationServiceAreaOperationID)
+	}
+	id, err := dssmodels.IDFromProto(req.GetId())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid ISA ID")
+	}
+	version, err := dssmodels.VersionFromProto(req.GetVersion())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid ISA version")
+	}
+	return &deleteISAPayload{ID: id, Owner: dssmodels.Owner(req.GetOwner()), Version: version}, nil
+}
+
+func encodeInsertISA(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*insertISAPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.CreateIdentificationServiceAreaOperationID)
+	}
+	isa, err := ridmodels.ISAToProto(payload.ISA)
+	if err != nil {
+		return nil, err
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_CreateIdentificationServiceAreaOperation{
+		CreateIdentificationServiceAreaOperation: &ridpb.CreateIdentificationServiceAreaOperation{Isa: isa},
+	}}), nil
+}
+
+func decodeInsertISA(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetCreateIdentificationServiceAreaOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.CreateIdentificationServiceAreaOperationID)
+	}
+	isa, err := ridmodels.ISAFromProto(req.GetIsa(), "")
+	if err != nil {
+		return nil, err
+	}
+	return &insertISAPayload{ISA: isa}, nil
+}
+
+func encodeUpdateISA(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*updateISAPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateIdentificationServiceAreaOperationID)
+	}
+	isa, err := ridmodels.ISAToProto(payload.ISA)
+	if err != nil {
+		return nil, err
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_UpdateIdentificationServiceAreaOperation{
+		UpdateIdentificationServiceAreaOperation: &ridpb.UpdateIdentificationServiceAreaOperation{
+			Isa:     isa,
+			Version: dssmodels.VersionToProto(payload.ISA.Version),
+		},
+	}}), nil
+}
+
+func decodeUpdateISA(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetUpdateIdentificationServiceAreaOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.UpdateIdentificationServiceAreaOperationID)
+	}
+	isa, err := ridmodels.ISAFromProto(req.GetIsa(), req.GetVersion())
+	if err != nil {
+		return nil, err
+	}
+	return &updateISAPayload{ISA: isa}, nil
 }
 
 func executeDeleteISA(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
