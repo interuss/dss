@@ -199,6 +199,7 @@ services:
       - $PWD/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - $PWD/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - $PWD/../../deploy/services/tanka/grafana_dashboards/dss.json:/var/lib/grafana/dashboards/dss.json:ro
+      - $PWD/../../deploy/services/tanka/grafana_dashboards/raft.json:/var/lib/grafana/dashboards/raft.json:ro
     environment:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/dss.json
       GF_SECURITY_ADMIN_USER: admin
