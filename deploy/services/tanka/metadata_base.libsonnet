@@ -58,6 +58,19 @@
       zone: error 'must specify placement zone',
     },
   },
+  raft: {
+    // The DSS nodes deployed by this release: {id, endpoint, ip}
+    nodes: error 'must supply the raft nodes of this instance',
+    // The other nodes of the pool, deployed by other releases: {id, endpoint}
+    peers: [],
+    clusterID: error 'must supply the raft cluster ID',
+    // Secret with the mutual TLS material of the Raft listeners
+    tlsSecret: error 'must supply the name of the raft mutual TLS secret',
+    storage: {
+      size: '100Gi',
+      storageClass: '',
+    },
+  },
   PSP: {
     roleRef: '',
     roleBinding: false,

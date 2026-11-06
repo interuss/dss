@@ -3,6 +3,9 @@ local cockroachdb = import 'cockroachdb.libsonnet';
 local yugabyteAuxiliary = import 'yugabyte-auxiliary.libsonnet';
 local yugabyte = import 'yugabyte.libsonnet';
 local backend = import 'core-service.libsonnet';
+local raft = import 'raft.libsonnet';
+local raftAuxiliary = import 'raft-auxiliary.libsonnet';
+local ingress = import 'ingress.libsonnet';
 local base = import 'base.libsonnet';
 local prometheus = import 'prometheus.libsonnet';
 local grafana = import 'grafana.libsonnet';
@@ -41,11 +44,14 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
     crdb_auxiliary: cockroachAuxiliary.all(metadata),
     yugabyte_sset: yugabyte.all(metadata),
     yugabyte_auxiliary: yugabyteAuxiliary.all(metadata),
-    backend: backend.all(metadata),
+    backend: if metadata.datastore == 'raft' then {} else backend.all(metadata),
+    raft: if metadata.datastore == 'raft' then raft.all(metadata) else {},
+    raft_auxiliary: if metadata.datastore == 'raft' then raftAuxiliary.all(metadata) else {},
+    ingress: ingress.all(metadata),
     prometheus: if metadata.enableMonitoring then prometheus.all(metadata),
     grafana: if metadata.enableMonitoring then grafana.all(metadata),
     alertmanager: if metadata.alert.enable == true then alertmanager.all(metadata),
-    schema_manager: if metadata.cockroach.shouldInit == true || metadata.schema_manager.enable then schema_manager.all(metadata) else {},
-    evict: evict.all(metadata),
+    schema_manager: if metadata.datastore != 'raft' && (metadata.cockroach.shouldInit == true || metadata.schema_manager.enable) then schema_manager.all(metadata) else {},
+    evict: if metadata.datastore != 'raft' then evict.all(metadata) else {},
   },
 }
