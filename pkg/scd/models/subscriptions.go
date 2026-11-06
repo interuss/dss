@@ -140,7 +140,8 @@ func (s *Subscription) ValidateDependentOp(operationalIntent *OperationalIntent)
 		return stacktrace.NewError("Subscription does not cover dependent operation 2d area, %s", operationalIntent.ID)
 	}
 	// validate altitudes
-	if *operationalIntent.AltitudeLo < *s.AltitudeLo || *operationalIntent.AltitudeHi > *s.AltitudeHi {
+	if (s.AltitudeLo != nil && *operationalIntent.AltitudeLo < *s.AltitudeLo) ||
+		(s.AltitudeHi != nil && *operationalIntent.AltitudeHi > *s.AltitudeHi) {
 		return stacktrace.NewError("Subscription does not cover dependent operation altitude, %s", operationalIntent.ID)
 	}
 	// validate time range
