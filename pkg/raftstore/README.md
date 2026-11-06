@@ -28,6 +28,21 @@ Raft nodes authenticate each other with mutual TLS, configured by these three fl
 - Restart the node after replacing its certificate or the CA bundle.
 - For local development and tests only, you can use `--raft_insecure` to disable TLS.
 
+### Logs and metrics
+
+With `--log_level debug`, a node logs its certificate and every CA of the bundle when it starts, with their expiry. A warning is logged if any of the CAs in the bundle has already expired. Each connection rejected during the TLS handshake is logged as the warning `raft: tls handshake failure: <reason>`, with the peer address, the error and, when the peer presented a certificate, its subject, issuer and expiry. A peer retries many times per second, so each reason is logged at most once every 5 seconds, with `duplicates_removed`: the number of failures not logged since for this specific reason. The metric below counts every rejection.
+
+| Reason              | Meaning                                                  |
+| ------------------- | -------------------------------------------------------- |
+| `not_tls`           | The peer does not use TLS                                |
+| `closed`            | The peer closed the connection during the handshake      |
+| `unknown_authority` | The peer certificate is not signed by a CA of the bundle |
+| `invalid_date`      | The peer certificate has expired or is not valid yet     |
+| `bad_certificate`   | Any other invalid peer certificate                       |
+| `other`             | Any other failure                                        |
+
+With `--enable_metrics`, a node exports `raft_peer_tls_handshake_failures_total{reason}`: the connections rejected during the TLS handshake, by the reasons above.
+
 ## Terminology
 
 Most of the concepts defined below come from the Raft consensus algorithm itself, described in ["In Search of an Understandable Consensus Algorithm" by D. Ongaro and J. Ousterhout](https://raft.github.io/raft.pdf). Please refer to the original paper for more details on how the Raft protocol works although the definitions in this documentation aim to be self-contained.
