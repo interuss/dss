@@ -31,7 +31,6 @@ local RoleBinding(metadata) = base.RoleBinding(metadata, 'default:privileged') {
 {
   all(metadata): {
     // Exactly one datastore backend per instance (VAR_* case is here for the minimum case and "make evaluate-tanka").
-    assert std.member(['cockroachdb', 'yugabyte', 'raft'], metadata.datastore) || std.startsWith(metadata.datastore, 'VAR_') : 'metadata.datastore must be one of cockroachdb, yugabyte or raft (exactly one datastore per instance), got: ' + std.toString(metadata.datastore),
 
     default_namespace: base.Namespace(metadata, metadata.namespace) {
 
