@@ -30,7 +30,7 @@ components:
 
 Relative paths are resolved from the file containing each reference, including references inside imported files.  Fragments use JSON Pointer syntax.  Remote URLs and named anchors are not supported.  When using Docker, mount the referenced files as well, preserving their relative directory structure.
 
-Referenced schemas and their dependencies are generated in the same Go package as the API.  Only referenced schemas are imported from other files. Shared and recursive schema references are preserved.  Root schema names are retained; imported schemas use the final pointer segment (or filename without its extension for an entire-file reference).  Distinct schemas with the same name cause an error identifying both sources, even if their definitions are identical.
+Referenced schemas and their dependencies are generated in the same Go package as the API.  Only referenced schemas are imported from other files. Shared and recursive schema references are preserved.  Root schema names are retained; imported schemas use the final pointer segment.  For an entire-file reference, the filename without its extension is converted to PascalCase (`./base-schemas.yaml` becomes `BaseSchemas`), with a `Schema` prefix when needed to form a valid Go identifier.  Distinct schemas with the same resulting name cause an error identifying both sources, even if their definitions are identical.
 
 ## openapi-to-go-server architecture
 

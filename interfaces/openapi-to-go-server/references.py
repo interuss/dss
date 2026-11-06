@@ -3,6 +3,7 @@
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+import formatting
 import yaml
 
 
@@ -62,7 +63,12 @@ class _Resolver:
 
     def _import_schema(self, path: Path, parts: tuple[str, ...], schema: dict) -> str:
         key = (path, parts)
-        name = parts[-1] if parts else path.stem
+        if parts:
+            name = parts[-1]
+        else:
+            name = formatting.string_to_pascal_case(path.stem)
+            if not name or name[0].isdigit():
+                name = "Schema" + name
         if name in self.sources and self.sources[name] != key:
             other_path, other_parts = self.sources[name]
             raise ValueError(
