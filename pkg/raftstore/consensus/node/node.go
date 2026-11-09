@@ -30,40 +30,54 @@ type Info struct {
 type NodeState struct {
 	mu    sync.RWMutex
 	state State
-	node  raft.Node
+	// node is nil until this node is a member of the group. Once set, it never changes.
+	node raft.Node
 }
 
-// NewNodeState returns the NodeState of a node that is a member of the group.
-func NewNodeState(node raft.Node) *NodeState {
-	return &NodeState{state: Member, node: node}
+// NewNodeState returns the NodeState of a node that is waiting to bootstrap or join the group.
+func NewNodeState() *NodeState {
+	return &NodeState{state: Waiting}
 }
 
-// get returns the raft node and the state of this node.
-func (t *NodeState) get() (raft.Node, State) {
+// Get returns the raft node, nil until this node is a member of the group, and the state of this node.
+func (t *NodeState) Get() (raft.Node, State) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.node, t.state
 }
 
-// RaftNode returns the raft node.
+// RaftNode returns the raft node, nil until this node is a member of the group.
 func (t *NodeState) RaftNode() raft.Node {
-	node, _ := t.get()
+	node, _ := t.Get()
 	return node
 }
 
 // Current returns the state of this node.
 func (t *NodeState) Current() State {
-	_, state := t.get()
+	_, state := t.Get()
 	return state
 }
 
 // Member returns the raft node, or a dsserr.Unavailable error if this node is not a member of the group.
 func (t *NodeState) Member() (raft.Node, error) {
-	node, state := t.get()
+	node, state := t.Get()
 	if state != Member {
 		return nil, stacktrace.NewErrorWithCode(dsserr.Unavailable, "this node is not a member of the Raft group, its state is %s", state)
 	}
 	return node, nil
+}
+
+// Start makes this node a member of the group with the raft node returned by newNode, if this node is waiting.
+// It returns whether the raft node was started, and the state of this node.
+func (t *NodeState) Start(newNode func() raft.Node) (bool, State) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.state != Waiting {
+		return false, t.state
+	}
+	t.node = newNode()
+	t.state = Member
+	return true, t.state
 }
 
 // SetRemoved records that this node was removed from the group.
