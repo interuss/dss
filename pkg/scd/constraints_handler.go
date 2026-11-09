@@ -67,7 +67,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetConstraintReferenceRequest,
 ) restapi.GetConstraintReferenceResponseSet {
 
-	_, err := dssmodels.IDFromString(string(req.Entityid))
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.GetConstraintReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -78,7 +78,9 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetConstraintReferenceResponse](ctx, a.Store, req)
+	payload := operations.NewGetConstraintPayload(id, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetConstraintReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get constraint")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -185,13 +187,15 @@ func (a *Server) QueryConstraintReferences(ctx context.Context, req *restapi.Que
 	}
 
 	// Parse area of interest to a cells-native volume
-	_, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
+	cellsVol4, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryConstraintReferencesResponse](ctx, a.Store, req)
+	payload := operations.NewQueryConstraintsPayload(cellsVol4, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryConstraintReferencesResponse](ctx, a.Store, payload)
 	if err != nil {
 		return restapi.QueryConstraintReferencesResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Got an unexpected error"))}}

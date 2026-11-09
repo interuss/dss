@@ -2,59 +2,60 @@ package raftstore
 
 import (
 	"context"
-	"encoding/json"
 
 	dssmodels "github.com/interuss/dss/pkg/models"
-	"github.com/interuss/dss/pkg/raftstore/consensus"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/stacktrace"
 )
 
-const (
-	searchConstraints consensus.RequestType[[]*scdmodels.Constraint] = "searchConstraints"
-	getConstraint     consensus.RequestType[*scdmodels.Constraint]   = "getConstraint"
-	upsertConstraint  consensus.RequestType[*scdmodels.Constraint]   = "upsertConstraint"
-	deleteConstraint  consensus.RequestType[any]                     = "deleteConstraint"
-	countConstraints  consensus.RequestType[int64]                   = "countConstraints"
-)
-
 func (r *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
-	buf, err := json.Marshal(cellsVolume)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	if cellsVolume == nil {
+		return nil, stacktrace.NewError("missing volume")
 	}
 
-	return r.consensus.HandleReadRequest(ctx, searchConstraints, buf)
+	return r.consensus.HandleReadPayload[[]*scdmodels.Constraint](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SearchConstraintsRepoCall{
+		SearchConstraintsRepoCall: &scdpb.SearchConstraintsRepoCall{Volume: cellsVolume.ToProto()},
+	}}))
 }
 
 func (r *repo) GetConstraint(ctx context.Context, id dssmodels.ID) (*scdmodels.Constraint, error) {
-	buf, err := json.Marshal(id)
+	pbID, err := id.ToProto()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
 	}
 
-	return r.consensus.HandleReadRequest(ctx, getConstraint, buf)
+	return r.consensus.HandleReadPayload[*scdmodels.Constraint](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetConstraintRepoCall{
+		GetConstraintRepoCall: &scdpb.GetConstraintRepoCall{Id: pbID},
+	}}))
 }
 
 func (r *repo) UpsertConstraint(ctx context.Context, constraint *scdmodels.Constraint) (*scdmodels.Constraint, error) {
-	buf, err := json.Marshal(constraint)
+	pbConstraint, err := constraint.ToProto()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+		return nil, stacktrace.Propagate(err, "failed to encode Constraint")
 	}
 
-	return r.consensus.HandleWriteRequest(ctx, upsertConstraint, buf)
+	return r.consensus.HandleWritePayload[*scdmodels.Constraint](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_UpsertConstraintRepoCall{
+		UpsertConstraintRepoCall: &scdpb.UpsertConstraintRepoCall{Constraint: pbConstraint, Version: int32(constraint.Version)},
+	}}))
 }
 
 func (r *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
-	buf, err := json.Marshal(id)
+	pbID, err := id.ToProto()
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to marshal payload")
+		return stacktrace.Propagate(err, "invalid Constraint ID")
 	}
 
-	_, err = r.consensus.HandleWriteRequest(ctx, deleteConstraint, buf)
+	_, err = r.consensus.HandleWritePayload[any](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_DeleteConstraintRepoCall{
+		DeleteConstraintRepoCall: &scdpb.DeleteConstraintRepoCall{Id: pbID},
+	}}))
 	return err
 }
 
 func (r *repo) CountConstraints(ctx context.Context) (int64, error) {
-	return r.consensus.HandleReadRequest(ctx, countConstraints, nil)
+	return r.consensus.HandleReadPayload[int64](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_CountConstraintsRepoCall{
+		CountConstraintsRepoCall: &scdpb.CountConstraintsRepoCall{},
+	}}))
 }
