@@ -127,6 +127,22 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case *scdpb.Payload_CountConstraintsRepoCall:
 		return r.Store.GetRepo().CountConstraints(ctx)
 
+	// Operational intent operations
+	case *scdpb.Payload_GetOperationalIntentReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.GetOperationalIntentReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_CreateOperationalIntentReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.CreateOperationalIntentReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_UpdateOperationalIntentReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.UpdateOperationalIntentReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_DeleteOperationalIntentReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.DeleteOperationalIntentReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_QueryOperationalIntentReferencesOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.QueryOperationalIntentReferencesOperationID, r.Store.GetRepo(), proposal.Payload)
+
 	// Operational intent repository requests
 	case *scdpb.Payload_GetOperationalIntentRepoCall:
 		var id dssmodels.ID
