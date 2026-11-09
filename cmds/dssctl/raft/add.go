@@ -21,7 +21,7 @@ counts in the quorum of the group. The DSS node reads its ID in each group from 
 )
 
 func init() {
-	addCmd.Flags().StringVar(&addURL, "url", "", "URL of the node to add, i.e. its --raft_url (required)")
+	addCmd.Flags().StringVar(&addURL, "url", "", "URL of the node to add, i.e. its --raft_peer_url (required)")
 	cobra.CheckErr(addCmd.MarkFlagRequired("url"))
 }
 

@@ -56,17 +56,6 @@ if [[ "$DC_COMMAND" == up* ]]; then
 fi
 
 if [[ "$DC_COMMAND" == up* ]]; then
-  RAFT_NODES=""
-  for ((i=1; i<=NUM_USS; i++)); do
-    for ((j=1; j<=NUM_NODES; j++)); do
-      NODE_IDX=$(( (i-1) * NUM_NODES + j ))
-      PADDED_NODE_IDX=$(printf "%02d" "$NODE_IDX")
-      NODE_IP="172.27.${i}.${j}"
-      RAFT_NODES="${RAFT_NODES},${NODE_IDX}=http://${NODE_IP}:95${PADDED_NODE_IDX}"
-    done
-  done
-  export RAFT_NODES=${RAFT_NODES#,}
-
   echo "=== Local DSS pool configuration ==="
   echo "NUM_USS=${NUM_USS}"
   echo "NUM_NODES=${NUM_NODES}"
@@ -154,6 +143,44 @@ if [[ "$DC_COMMAND" == up* ]]; then
 
   check_and_connect "ci_infra_1-1-oauth-1" "interop_ecosystem_network"
   echo "Network verification complete."
+
+  # Form the Raft groups: the first node bootstraps them, then the other nodes are added to them one at a time.
+  # This is done before waiting for the containers to be healthy since a node is only healthy once it is ready in all
+  # of its Raft groups.
+  first_node="ci_infra_1-1-dss-1"
+  for ((i=1; i<=NUM_USS; i++)); do
+    for ((j=1; j<=NUM_NODES; j++)); do
+      container="ci_infra_${i}-${j}-dss-1"
+      # The admin API is started as soon as the node runs, retry until then.
+      nodes=""
+      for _ in $(seq 1 60); do
+        if nodes=$(docker exec "${container}" dssctl raft node 2>/dev/null); then
+          break
+        fi
+        nodes=""
+        sleep 2
+      done
+      if [[ -z "${nodes}" ]]; then
+        echo "Error: the admin API of ${container} is not available."
+        exit 1
+      fi
+      # The comma-separated Raft groups in which the node is waiting. A node that is not waiting in any group is
+      # already a member, e.g. if the pool was already up.
+      groups=$(echo "${nodes}" | awk '$2 == "waiting" {sub(":", "", $1); print $1}' | paste -s -d, -)
+      if [[ -z "${groups}" ]]; then
+        continue
+      fi
+      if [[ "${container}" == "${first_node}" ]]; then
+        echo "Bootstrapping the ${groups} Raft groups on ${container}..."
+        docker exec "${first_node}" dssctl raft bootstrap --groups "${groups}"
+      else
+        echo "Adding ${container} to the ${groups} Raft groups..."
+        padded_node_idx=$(printf "%02d" "$(( (i-1) * NUM_NODES + j ))")
+        docker exec "${first_node}" dssctl raft add --url "http://172.27.${i}.${j}:95${padded_node_idx}" --groups "${groups}"
+      fi
+    done
+  done
+  echo "Raft groups formed."
 
   echo "Waiting for all containers to become healthy..."
   timeout=240
