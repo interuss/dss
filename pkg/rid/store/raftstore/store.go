@@ -2,9 +2,7 @@ package raftstore
 
 import (
 	"context"
-	"encoding/json"
 
-	"github.com/golang/geo/s2"
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
@@ -108,92 +106,72 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case *ridpb.Payload_CountIsasRepoCall:
 		return r.Store.GetRepo().CountISAs(ctx)
 
-	default:
-		return r.applyLegacy(ctx, proposal)
-	}
-}
+	// Subscription operations
+	case *ridpb.Payload_CreateSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.CreateSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
 
-// applyLegacy applies the proposals carrying a JSON encoded request.
-// TODO: remove once all the requests are carried by a payload.
-func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (any, error) {
-	switch proposal.RequestType {
-	case string(getSubscription):
+	case *ridpb.Payload_UpdateSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.UpdateSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *ridpb.Payload_DeleteSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, ridv2.DeleteSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	// Subscription repository requests
+	case *ridpb.Payload_GetSubscriptionRepoCall:
 		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getSubscription)
+		if err := id.FromProto(payload.GetSubscriptionRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 		}
 		return r.Store.GetRepo().GetSubscription(ctx, id)
 
-	case string(deleteSubscription):
-		var sub ridmodels.Subscription
-		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteSubscription)
+	case *ridpb.Payload_DeleteSubscriptionRepoCall:
+		req := payload.DeleteSubscriptionRepoCall
+		sub := &ridmodels.Subscription{Version: new(dssmodels.Version)}
+		if err := sub.ID.FromProto(req.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 		}
-		return r.Store.GetRepo().DeleteSubscription(ctx, &sub)
-
-	case string(insertSubscription):
-		var sub ridmodels.Subscription
-		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", insertSubscription)
+		if err := sub.Version.FromProto(req.GetVersion()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription version")
 		}
-		return r.Store.GetRepo().InsertSubscription(ctx, &sub)
+		return r.Store.GetRepo().DeleteSubscription(ctx, sub)
 
-	case string(updateSubscription):
-		var sub ridmodels.Subscription
-		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateSubscription)
+	case *ridpb.Payload_InsertSubscriptionRepoCall:
+		sub := new(ridmodels.Subscription)
+		if err := sub.FromProto(payload.InsertSubscriptionRepoCall.GetSubscription()); err != nil {
+			return nil, err
 		}
-		return r.Store.GetRepo().UpdateSubscription(ctx, &sub)
+		return r.Store.GetRepo().InsertSubscription(ctx, sub)
 
-	case string(searchSubscriptions):
-		var cells s2.CellUnion
-		if err := json.Unmarshal(proposal.Value, &cells); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptions)
+	case *ridpb.Payload_UpdateSubscriptionRepoCall:
+		req := payload.UpdateSubscriptionRepoCall
+		sub := new(ridmodels.Subscription)
+		if err := sub.FromProto(req.GetSubscription()); err != nil {
+			return nil, err
 		}
-		return r.Store.GetRepo().SearchSubscriptions(ctx, cells)
-
-	case string(searchSubscriptionsByOwner):
-		var payload cellsByOwnerPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptionsByOwner)
+		sub.Version = new(dssmodels.Version)
+		if err := sub.Version.FromProto(req.GetVersion()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription version")
 		}
-		return r.Store.GetRepo().SearchSubscriptionsByOwner(ctx, payload.Cells, payload.Owner)
+		return r.Store.GetRepo().UpdateSubscription(ctx, sub)
 
-	case string(updateNotificationIdxsInCells):
-		var cells s2.CellUnion
-		if err := json.Unmarshal(proposal.Value, &cells); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", updateNotificationIdxsInCells)
-		}
-		return r.Store.GetRepo().UpdateNotificationIdxsInCells(ctx, cells)
+	case *ridpb.Payload_SearchSubscriptionsRepoCall:
+		return r.Store.GetRepo().SearchSubscriptions(ctx, dssmodels.CellUnionFromProto(payload.SearchSubscriptionsRepoCall.GetCells()))
 
-	case string(maxSubscriptionCountInCellsByOwner):
-		var payload cellsByOwnerPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", maxSubscriptionCountInCellsByOwner)
-		}
-		return r.Store.GetRepo().MaxSubscriptionCountInCellsByOwner(ctx, payload.Cells, payload.Owner)
+	case *ridpb.Payload_SearchSubscriptionsByOwnerRepoCall:
+		req := payload.SearchSubscriptionsByOwnerRepoCall
+		return r.Store.GetRepo().SearchSubscriptionsByOwner(ctx, dssmodels.CellUnionFromProto(req.GetCells()), dssmodels.Owner(req.GetOwner()))
 
-	case string(listExpiredSubscriptions):
-		var payload expiredPayload
-		if err := json.Unmarshal(proposal.Value, &payload); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
-		}
-		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, payload.Threshold)
+	case *ridpb.Payload_UpdateNotificationIdxsInCellsRepoCall:
+		return r.Store.GetRepo().UpdateNotificationIdxsInCells(ctx, dssmodels.CellUnionFromProto(payload.UpdateNotificationIdxsInCellsRepoCall.GetCells()))
 
-	case string(countSubscriptions):
+	case *ridpb.Payload_MaxSubscriptionCountInCellsByOwnerRepoCall:
+		req := payload.MaxSubscriptionCountInCellsByOwnerRepoCall
+		return r.Store.GetRepo().MaxSubscriptionCountInCellsByOwner(ctx, dssmodels.CellUnionFromProto(req.GetCells()), dssmodels.Owner(req.GetOwner()))
+
+	case *ridpb.Payload_CountSubscriptionsRepoCall:
 		return r.Store.GetRepo().CountSubscriptions(ctx)
 
 	default:
-		handler, ok := operations.Registry[proposal.RequestType]
-		if !ok {
-			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
-		}
-
-		request, err := handler.Decode(proposal.Value)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to decode %s payload", proposal.RequestType)
-		}
-
-		return handler.Execute(ctx, r.Store.GetRepo(), request)
+		return nil, stacktrace.NewError("unknown request: %q", proposal.Name())
 	}
 }
