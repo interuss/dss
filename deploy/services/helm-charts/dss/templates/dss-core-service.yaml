@@ -45,7 +45,9 @@ spec:
     spec:
       initContainers:
         {{- $waitForDatastore | nindent 8 }}
+        {{- if ne (toString $dss.conf.enableRid) "false" }}
         {{- $waitForRIDSchema | nindent 8 }}
+        {{- end }}
         {{- if $dss.conf.enableScd }}
         {{- $waitForSCDSchema | nindent 8 }}
         {{- end }}

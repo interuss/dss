@@ -6,6 +6,7 @@ resource "local_file" "tanka_config_main" {
   content = templatefile("${path.module}/templates/main.jsonnet.tmp", {
     VAR_NAMESPACE                            = var.kubernetes_namespace
     VAR_CLUSTER_CONTEXT                      = var.kubernetes_context_name
+    VAR_ENABLE_RID                           = var.enable_rid
     VAR_ENABLE_SCD                           = var.enable_scd
     VAR_ENABLE_SCD_GLOBAL_LOCK               = var.enable_scd_global_lock
     VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX = var.enable_time_based_notification_index

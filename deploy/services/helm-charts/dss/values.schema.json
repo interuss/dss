@@ -427,6 +427,9 @@
             "jwksKeyTtl": {
               "type": "string"
             },
+            "enableRid": {
+              "type": "boolean"
+            },
             "enableScd": {
               "type": "boolean"
             },

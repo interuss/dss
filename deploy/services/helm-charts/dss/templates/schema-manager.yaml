@@ -14,6 +14,10 @@
 {{- $schemas = dict "rid" ($schemaManager.desiredRidDbVersion | default "1.0.1") "scd" ($schemaManager.desiredScdDbVersion | default "1.1.1") "aux_" ($schemaManager.desiredAuxDbVersion | default "1.1.0") }}
 {{- end -}}
 
+{{- if eq (toString .Values.dss.conf.enableRid) "false" }}
+{{- $schemas = omit $schemas "rid" }}
+{{- end }}
+
 {{- if not .Values.dss.conf.enableScd }}
 {{- $schemas = omit $schemas "scd" }}
 {{- end }}

@@ -62,6 +62,7 @@ yugabyte
   (dict "--addr" ":8080")
   (dict "--public_endpoint" (ternary $conf.publicEndpoint nil (not (empty $conf.publicEndpoint))))
   (dict "--locality" $conf.locality)
+  (dict "--enable_rid" (ternary "false" "true" (eq (toString $conf.enableRid) "false")))
   (dict "--enable_scd" ($conf.enableScd | default false | toString))
   (dict "--enable_scd_global_lock" ($conf.enableScdGlobalLock | default false | toString))
   (dict "--enable_time_based_notification_index" (ternary "true" nil ($conf.enableTimeBasedNotificationIndex | default false)))

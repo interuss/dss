@@ -309,6 +309,10 @@ It dumps sensitive information to logs; intended only for debugging and/or devel
 <p>Example: <code>true</code></p>
 <br/>Default value: <code>false</code></td>
             </tr><tr>
+                <td>enable_rid (<code>bool</code>)</td>
+                <td><p>Set this boolean true to enable ASTM remote ID functionality</p>
+<br/>Default value: <code>true</code></td>
+            </tr><tr>
                 <td>enable_scd (<code>bool</code>)</td>
                 <td><p>Set this boolean true to enable ASTM strategic conflict detection functionality</p>
 <br/>Default value: <code>true</code></td>

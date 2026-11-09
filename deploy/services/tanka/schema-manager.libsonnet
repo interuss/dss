@@ -6,7 +6,7 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
   all(metadata): {
     local schema_dir = if metadata.datastore == "cockroachdb" then '/db-schemas' else '/db-schemas/yugabyte',
 
-    RIDSchemaManager: if metadata.cockroach.shouldInit || metadata.schema_manager.enable then base.Job(metadata, 'rid-schema-manager') {
+    RIDSchemaManager: if (metadata.cockroach.shouldInit || metadata.schema_manager.enable) && metadata.enableRid then base.Job(metadata, 'rid-schema-manager') {
       spec+: {
         template+: {
           spec+: {

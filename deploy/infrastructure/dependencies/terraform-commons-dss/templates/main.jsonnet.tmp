@@ -10,6 +10,7 @@ local metadata = metadataBase {
   namespace: '${VAR_NAMESPACE}',
   clusterName: '${VAR_CLUSTER_CONTEXT}',
   single_cluster: false,
+  enableRid: ${VAR_ENABLE_RID}, // <-- This boolean value is VAR_ENABLE_RID
   enableScd: ${VAR_ENABLE_SCD}, // <-- This boolean value is VAR_ENABLE_SCD
   enableScdGlobalLock: ${VAR_ENABLE_SCD_GLOBAL_LOCK}, // <-- This boolean value is VAR_ENABLE_SCD_GLOBAL_LOCK
   enableTimeBasedNotificationIndex: ${VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX}, // <-- This boolean value is VAR_ENABLE_TIME_BASED_NOTIFICATION_INDEX

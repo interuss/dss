@@ -13,6 +13,7 @@ dss:
     jwksKeyTtl: ''
     hostname: dss.example.com
     publicEndpoint: https://dss.example.com
+    enableRid: true
     enableScd: true
     enableScdGlobalLock: false
     enableTimeBasedNotificationIndex: false
