@@ -31,7 +31,7 @@ type Store[R any] struct {
 	cancel   context.CancelFunc
 	registry map[string]store.OperationHandler[R]
 
-	Consensus *consensus.Consensus
+	*consensus.Consensus
 
 	done chan struct{}
 }
@@ -119,9 +119,9 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 	}
 	if handler.IsReadOnly {
-		return s.Consensus.HandleReadRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+		return s.HandleReadRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
 	}
-	return s.Consensus.HandleWriteRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+	return s.HandleWriteRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
 }
 
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
@@ -132,7 +132,7 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 // Close shuts down the consensus instance and processCommits loop.
 // TODO: pass a context to Stop then to consensus.Stop (see issue: https://github.com/interuss/dss/issues/1610).
 func (s *Store[R]) Close() error {
-	s.Consensus.Stop(context.Background())
+	s.Stop(context.Background())
 	s.cancel()
 	s.logger.Info("waiting for commit processing goroutine to exit")
 	<-s.done

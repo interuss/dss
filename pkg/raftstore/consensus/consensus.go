@@ -36,12 +36,14 @@ var errSelfRemoved = stacktrace.NewError("this node was removed from the Raft gr
 type Consensus struct {
 	logger *zap.Logger
 
-	nodeID uint64
-	group  string
-	node   raft.Node
+	nodeID    uint64
+	group     string
+	publicURL string
+	node      raft.Node
 
 	transport *rafthttp.Transport
 	listener  *listener
+	endpoint  *peerEndpoint
 
 	storage        *storage
 	getAppSnapshot func() ([]byte, error)
@@ -99,6 +101,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 		nodeID:         connectParams.NodeID,
 		group:          connectParams.Group,
+		publicURL:      nodeUrl.String(),
 		node:           node,
 		storage:        storage,
 		getAppSnapshot: provider,
@@ -167,6 +170,7 @@ func (c *Consensus) Stop(ctx context.Context) {
 
 		c.transport.Stop()
 		c.logger.Info("transport stopped")
+		c.endpoint.close()
 		c.node.Stop()
 		c.logger.Info("raft node stopped")
 	})
@@ -325,11 +329,16 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 	c.transport = transport
 	c.membership.transport = transport
 
+	c.endpoint, err = newPeerEndpoint(c.logger, transport.ClusterID, tlsInfo, c.Node)
+	if err != nil {
+		return err
+	}
+
 	l, err := getListener()
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to get the listener")
 	}
-	err = l.register(transport.ClusterID, transport.Handler())
+	err = l.register(transport.ClusterID, c.endpoint.handler(transport.Handler()))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to register the transport to the listener")
 	}
@@ -700,16 +709,78 @@ type confChangeContext struct {
 	member
 }
 
-// AddNode proposes adding nodeID, reachable by its peers at peerURL, as a voter of the Raft group.
-// It blocks until the change is applied or ctx is cancelled.
-func (c *Consensus) AddNode(ctx context.Context, nodeID uint64, peerURL string) error {
-	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(nodeID)}, confChangeContext{member: member{URL: peerURL}})
+// AddNode proposes adding the node reachable by its peers at peerURL as a voter of the Raft group.
+// The ID of the node is read from the node itself, which must be waiting.
+// It blocks until the change is applied or ctx is cancelled, and returns the added node as a member of the group.
+// It returns a dsserr.AlreadyExists error if the node is not waiting or does not run this group in this cluster, or
+// if peerURL is already used by another member, and a dsserr.Unavailable error if the node cannot be reached or this
+// node is not a member of the group.
+func (c *Consensus) AddNode(ctx context.Context, peerURL string) (Node, error) {
+	node, err := c.endpoint.fetch(ctx, peerURL)
+	if err != nil {
+		return Node{}, stacktrace.Propagate(err, "failed to fetch node at %s", peerURL)
+	}
+	if node.URL != peerURL {
+		return Node{}, stacktrace.NewErrorWithCode(dsserr.BadRequest, "the node at %s describes itself as being at %s", peerURL, node.URL)
+	}
+	if node.State != NodeWaiting {
+		return Node{}, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the node at %s is %s, only a waiting node can be added", peerURL, node.State)
+	}
+
+	err = c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(node.ID)}, confChangeContext{member: member{URL: peerURL}})
+	if err != nil {
+		return Node{}, err
+	}
+	return Node{ID: node.ID, URL: peerURL, State: NodeMember}, nil
 }
 
 // RemoveNode proposes removing nodeID from the Raft group. Its ID is retired and can never be reused.
 // It blocks until the change is applied or ctx is cancelled.
 func (c *Consensus) RemoveNode(ctx context.Context, nodeID uint64) error {
 	return c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeRemoveNode.Enum(), NodeId: new(nodeID)}, confChangeContext{})
+}
+
+// Members returns the membership of the Raft group as currently known by this node.
+func (c *Consensus) Members() (Membership, error) {
+	c.membership.RLock()
+	nodes := make(map[uint64]Node, len(c.membership.members)+len(c.membership.removed))
+	for id, m := range c.membership.members {
+		nodes[id] = Node{ID: id, URL: m.URL, State: NodeMember}
+	}
+	for id, m := range c.membership.removed {
+		nodes[id] = Node{ID: id, URL: m.URL, State: NodeRemoved}
+	}
+	c.membership.RUnlock()
+
+	return Membership{
+		ClusterID: uint64(c.transport.ClusterID),
+		LeaderID:  c.node.Status().Lead,
+		Nodes:     nodes,
+	}, nil
+}
+
+// Node describes this node in the Raft group.
+func (c *Consensus) Node() (Node, error) {
+	return Node{
+		ID:    c.nodeID,
+		URL:   c.publicURL,
+		State: c.state(),
+	}, nil
+}
+
+// state returns the state of this node, which is a member of its group from its first start or was removed from it.
+func (c *Consensus) state() NodeState {
+	if c.membership.isIDRemoved(c.nodeID) {
+		return NodeRemoved
+	}
+	return NodeMember
+}
+
+// Bootstrap starts a new Raft group with this node as its only member.
+// TODO: The groups are still formed from --raft_peers: this node is a member of its group from its first start, or
+// was removed from it, so a dsserr.AlreadyExists error is always returned.
+func (c *Consensus) Bootstrap() (Membership, error) {
+	return Membership{}, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the Raft group is formed from --raft_peers, the state of this node is %s", c.state())
 }
 
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
