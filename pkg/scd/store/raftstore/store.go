@@ -184,6 +184,76 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case *scdpb.Payload_CountOperationalIntentsRepoCall:
 		return r.Store.GetRepo().CountOperationalIntents(ctx)
 
+	// Subscription operations
+	case *scdpb.Payload_GetSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.GetSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_CreateSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.CreateSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_UpdateSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.UpdateSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_DeleteSubscriptionOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.DeleteSubscriptionOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_QuerySubscriptionsOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.QuerySubscriptionsOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	// Subscription repository requests
+	case *scdpb.Payload_SearchSubscriptionsRepoCall:
+		volume := payload.SearchSubscriptionsRepoCall.GetVolume()
+		if volume == nil {
+			return nil, stacktrace.NewError("missing volume")
+		}
+		cellsVolume := new(dssmodels.CellsVolume4D)
+		cellsVolume.FromProto(volume)
+		return r.Store.GetRepo().SearchSubscriptions(ctx, cellsVolume)
+
+	case *scdpb.Payload_GetSubscriptionRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.GetSubscriptionRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+		}
+		return r.Store.GetRepo().GetSubscription(ctx, id)
+
+	case *scdpb.Payload_UpsertSubscriptionRepoCall:
+		req := payload.UpsertSubscriptionRepoCall
+		sub := new(scdmodels.Subscription)
+		if err := sub.FromProto(req.GetSubscription()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription")
+		}
+		sub.NotificationIndex = int(req.GetNotificationIndex())
+		return r.Store.GetRepo().UpsertSubscription(ctx, sub)
+
+	case *scdpb.Payload_DeleteSubscriptionRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.DeleteSubscriptionRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+		}
+		return nil, r.Store.GetRepo().DeleteSubscription(ctx, id)
+
+	case *scdpb.Payload_IncrementNotificationIndicesForOperationalIntentsRepoCall:
+		volume := payload.IncrementNotificationIndicesForOperationalIntentsRepoCall.GetVolume()
+		if volume == nil {
+			return nil, stacktrace.NewError("missing volume")
+		}
+		cellsVolume := new(dssmodels.CellsVolume4D)
+		cellsVolume.FromProto(volume)
+		return r.Store.GetRepo().IncrementNotificationIndicesForOperationalIntents(ctx, cellsVolume)
+
+	case *scdpb.Payload_IncrementNotificationIndicesForConstraintsRepoCall:
+		volume := payload.IncrementNotificationIndicesForConstraintsRepoCall.GetVolume()
+		if volume == nil {
+			return nil, stacktrace.NewError("missing volume")
+		}
+		cellsVolume := new(dssmodels.CellsVolume4D)
+		cellsVolume.FromProto(volume)
+		return r.Store.GetRepo().IncrementNotificationIndicesForConstraints(ctx, cellsVolume)
+
+	case *scdpb.Payload_CountSubscriptionsRepoCall:
+		return r.Store.GetRepo().CountSubscriptions(ctx)
+
 	default:
 		return r.applyLegacy(ctx, proposal)
 	}
@@ -196,57 +266,12 @@ func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (an
 
 	// Subscriptions
 
-	case string(searchSubscriptions):
-		var cellsVolume dssmodels.CellsVolume4D
-		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchSubscriptions)
-		}
-		return r.Store.GetRepo().SearchSubscriptions(ctx, &cellsVolume)
-
-	case string(getSubscription):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getSubscription)
-		}
-		return r.Store.GetRepo().GetSubscription(ctx, id)
-
-	case string(upsertSubscription):
-		var sub scdmodels.Subscription
-		if err := json.Unmarshal(proposal.Value, &sub); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertSubscription)
-		}
-		return r.Store.GetRepo().UpsertSubscription(ctx, &sub)
-
-	case string(deleteSubscription):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteSubscription)
-		}
-		return nil, r.Store.GetRepo().DeleteSubscription(ctx, id)
-
-	case string(incrementNotificationIndicesForOperationalIntents):
-		var cellsVolume dssmodels.CellsVolume4D
-		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", incrementNotificationIndicesForOperationalIntents)
-		}
-		return r.Store.GetRepo().IncrementNotificationIndicesForOperationalIntents(ctx, &cellsVolume)
-
-	case string(incrementNotificationIndicesForConstraints):
-		var cellsVolume dssmodels.CellsVolume4D
-		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", incrementNotificationIndicesForConstraints)
-		}
-		return r.Store.GetRepo().IncrementNotificationIndicesForConstraints(ctx, &cellsVolume)
-
 	case string(listExpiredSubscriptions):
 		var threshold time.Time
 		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
 		}
 		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, threshold)
-
-	case string(countSubscriptions):
-		return r.Store.GetRepo().CountSubscriptions(ctx)
 
 	// Operational Intents
 

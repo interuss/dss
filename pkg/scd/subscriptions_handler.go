@@ -120,7 +120,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 ) restapi.GetSubscriptionResponseSet {
 
 	// Retrieve Subscription ID
-	_, err := dssmodels.IDFromString(string(req.Subscriptionid))
+	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
 	if err != nil {
 		return restapi.GetSubscriptionResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Subscriptionid))}}
@@ -132,7 +132,9 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetSubscriptionResponse](ctx, a.Store, req)
+	payload := operations.NewGetSubscriptionPayload(id, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetSubscriptionResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get subscription")
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
@@ -169,7 +171,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 	}
 
 	// Parse area of interest to a cells-native volume
-	_, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
+	cellsVolume, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QuerySubscriptionsResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model"))}}
@@ -181,7 +183,9 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QuerySubscriptionsResponse](ctx, a.Store, req)
+	payload := operations.NewQuerySubscriptionsPayload(cellsVolume, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QuerySubscriptionsResponse](ctx, a.Store, payload)
 	if err != nil {
 
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}

@@ -146,7 +146,7 @@ func encodeInsertSubscription(request dssstore.OperationRequest) (*raftpb.Payloa
 	}
 	sub, err := payload.Subscription.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
 	}
 	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_CreateSubscriptionOperation{
 		CreateSubscriptionOperation: &ridpb.CreateSubscriptionOperation{Subscription: sub},
@@ -160,7 +160,7 @@ func decodeInsertSubscription(payload *raftpb.Payload) (dssstore.OperationReques
 	}
 	sub := new(ridmodels.Subscription)
 	if err := sub.FromProto(req.GetSubscription()); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
 	}
 	return &insertSubscriptionPayload{Subscription: sub}, nil
 }
@@ -172,7 +172,7 @@ func encodeUpdateSubscription(request dssstore.OperationRequest) (*raftpb.Payloa
 	}
 	sub, err := payload.Subscription.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
 	}
 	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_UpdateSubscriptionOperation{
 		UpdateSubscriptionOperation: &ridpb.UpdateSubscriptionOperation{
@@ -189,7 +189,7 @@ func decodeUpdateSubscription(payload *raftpb.Payload) (dssstore.OperationReques
 	}
 	sub := new(ridmodels.Subscription)
 	if err := sub.FromProto(req.GetSubscription()); err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
 	}
 	sub.Version = new(dssmodels.Version)
 	if err := sub.Version.FromProto(req.GetVersion()); err != nil {
