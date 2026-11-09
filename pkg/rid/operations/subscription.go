@@ -6,6 +6,8 @@ import (
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/ridpb"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/rid/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -87,20 +89,113 @@ func NewDeleteSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, versio
 
 func init() {
 	Registry[ridv2.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteSubscriptionPayload],
-		Execute: executeDeleteSubscription,
+		EncodePayload: encodeDeleteSubscription,
+		DecodePayload: decodeDeleteSubscription,
+		Execute:       executeDeleteSubscription,
 	}
 	Registry[ridv2.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*insertSubscriptionPayload],
-		Execute: executeCreateSubscription,
+		EncodePayload: encodeInsertSubscription,
+		DecodePayload: decodeInsertSubscription,
+		Execute:       executeCreateSubscription,
 	}
 	Registry[ridv2.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateSubscriptionPayload],
-		Execute: executeUpdateSubscription,
+		EncodePayload: encodeUpdateSubscription,
+		DecodePayload: decodeUpdateSubscription,
+		Execute:       executeUpdateSubscription,
 	}
+}
+
+func encodeDeleteSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*deleteSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.DeleteSubscriptionOperationID)
+	}
+	id, err := payload.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_DeleteSubscriptionOperation{
+		DeleteSubscriptionOperation: &ridpb.DeleteSubscriptionOperation{
+			Id:      id,
+			Owner:   payload.Owner.String(),
+			Version: payload.Version.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeDeleteSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetDeleteSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.DeleteSubscriptionOperationID)
+	}
+	var id dssmodels.ID
+	if err := id.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+	}
+	version := new(dssmodels.Version)
+	if err := version.FromProto(req.GetVersion()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription version")
+	}
+	return &deleteSubscriptionPayload{ID: id, Owner: dssmodels.Owner(req.GetOwner()), Version: version}, nil
+}
+
+func encodeInsertSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*insertSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.CreateSubscriptionOperationID)
+	}
+	sub, err := payload.Subscription.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_CreateSubscriptionOperation{
+		CreateSubscriptionOperation: &ridpb.CreateSubscriptionOperation{Subscription: sub},
+	}}), nil
+}
+
+func decodeInsertSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetCreateSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.CreateSubscriptionOperationID)
+	}
+	sub := new(ridmodels.Subscription)
+	if err := sub.FromProto(req.GetSubscription()); err != nil {
+		return nil, err
+	}
+	return &insertSubscriptionPayload{Subscription: sub}, nil
+}
+
+func encodeUpdateSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*updateSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, ridv2.UpdateSubscriptionOperationID)
+	}
+	sub, err := payload.Subscription.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_UpdateSubscriptionOperation{
+		UpdateSubscriptionOperation: &ridpb.UpdateSubscriptionOperation{
+			Subscription: sub,
+			Version:      payload.Subscription.Version.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeUpdateSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetRidPayload().GetUpdateSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), ridv2.UpdateSubscriptionOperationID)
+	}
+	sub := new(ridmodels.Subscription)
+	if err := sub.FromProto(req.GetSubscription()); err != nil {
+		return nil, err
+	}
+	sub.Version = new(dssmodels.Version)
+	if err := sub.Version.FromProto(req.GetVersion()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription version")
+	}
+	return &updateSubscriptionPayload{Subscription: sub}, nil
 }
 
 func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
