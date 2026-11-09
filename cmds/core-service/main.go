@@ -44,6 +44,7 @@ import (
 
 var (
 	address           = flag.String("addr", ":8080", "Address and port that the service binds to and listens on for incoming connections")
+	enableRID         = flag.Bool("enable_rid", true, "Enables the Remote ID API")
 	enableSCD         = flag.Bool("enable_scd", false, "Enables the Strategic Conflict Detection API")
 	allowHTTPBaseUrls = flag.Bool("allow_http_base_urls", false, "Enables http scheme for Strategic Conflict Detection API")
 	enableHTTP        = flag.Bool("enable_http", false, "DEPRECATED (replaced by allow_http_base_urls): Enables http scheme for Strategic Conflict Detection API")
@@ -265,6 +266,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	logger := logging.WithValuesFromContext(ctx, logging.Logger).With(zap.String("address", address))
 	logger.Info("version", zap.Any("version", version.Current()))
 	logger.Info("build", zap.Any("description", build.Describe()))
+	logger.Info("config", zap.Bool("rid", *enableRID))
 	logger.Info("config", zap.Bool("scd", *enableSCD))
 	storeOptions := params.GetStoreOptions()
 	logger.Info("config", zap.Bool("scdGlobalLock", storeOptions.GlobalLock))
@@ -310,12 +312,6 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.Propagate(err, "Failed to create aux server")
 	}
 
-	// Initialize remote ID
-	ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create remote ID server")
-	}
-
 	// Initialize access token validation
 	keyResolver, err := createKeyResolver()
 	switch {
@@ -339,15 +335,23 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
 	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
-	ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
-	ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
 	multiRouter := api.MultiRouter{
 		Routers: []api.PartialRouter{
 			&auxV1Router,
 			&versioningV1Router,
-			&ridV1Router,
-			&ridV2Router,
 		}}
+
+	// Initialize remote ID
+	if *enableRID {
+		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to create remote ID server")
+		}
+
+		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
+		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
+		multiRouter.Routers = append(multiRouter.Routers, &ridV1Router, &ridV2Router)
+	}
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
