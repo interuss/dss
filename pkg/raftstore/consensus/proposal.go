@@ -30,11 +30,7 @@ type Proposal struct {
 	// Timestamp is always in UTC so that it is identical on all the nodes.
 	// It is encoded as a protobuf Timestamp and decoding always yields a UTC time.
 	Timestamp time.Time
-	// Exactly one of RequestType (with Value) or Payload is set.
-	// TODO: remove RequestType and Value once all the requests are carried by Payload.
-	RequestType string
-	Value       []byte
-	Payload     *raftpb.Payload
+	Payload   *raftpb.Payload
 }
 
 func (c *Consensus) newProposal(ctx context.Context, payload *raftpb.Payload) Proposal {
@@ -58,7 +54,7 @@ func (p Proposal) Name() string {
 	case *raftpb.Payload_ScdPayload:
 		return fmt.Sprintf("%T", payload.ScdPayload.GetPayload())
 	default:
-		return p.RequestType
+		return fmt.Sprintf("%T", payload)
 	}
 }
 
@@ -67,8 +63,8 @@ func (p Proposal) encode() ([]byte, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid proposal ID %q", p.ID)
 	}
-	if (p.RequestType == "") == (p.Payload.GetPayload() == nil) {
-		return nil, stacktrace.NewError("exactly one of request type and payload must be set")
+	if p.Payload.GetPayload() == nil {
+		return nil, stacktrace.NewError("missing payload")
 	}
 	ts := timestamppb.New(p.Timestamp)
 	if err := ts.CheckValid(); err != nil {
@@ -76,12 +72,10 @@ func (p Proposal) encode() ([]byte, error) {
 	}
 
 	buf, err := proto.Marshal(&raftpb.Proposal{
-		Id:          id[:],
-		NodeId:      p.NodeID,
-		Timestamp:   ts,
-		RequestType: p.RequestType,
-		Value:       p.Value,
-		Payload:     p.Payload,
+		Id:        id[:],
+		NodeId:    p.NodeID,
+		Timestamp: ts,
+		Payload:   p.Payload,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to marshal proposal")
@@ -98,20 +92,18 @@ func decodeProposal(data []byte) (Proposal, error) {
 	if len(pb.GetId()) != len(uuid.UUID{}) {
 		return Proposal{}, stacktrace.NewError("invalid proposal ID length %d", len(pb.GetId()))
 	}
-	if (pb.GetRequestType() == "") == (pb.GetPayload().GetPayload() == nil) {
-		return Proposal{}, stacktrace.NewError("exactly one of request type and payload must be set")
+	if pb.GetPayload().GetPayload() == nil {
+		return Proposal{}, stacktrace.NewError("missing payload")
 	}
 	if err := pb.GetTimestamp().CheckValid(); err != nil {
 		return Proposal{}, stacktrace.Propagate(err, "invalid proposal timestamp")
 	}
 
 	return Proposal{
-		ID:          uuid.UUID(pb.GetId()).String(),
-		NodeID:      pb.GetNodeId(),
-		Timestamp:   pb.GetTimestamp().AsTime(),
-		RequestType: pb.GetRequestType(),
-		Value:       pb.GetValue(),
-		Payload:     pb.GetPayload(),
+		ID:        uuid.UUID(pb.GetId()).String(),
+		NodeID:    pb.GetNodeId(),
+		Timestamp: pb.GetTimestamp().AsTime(),
+		Payload:   pb.GetPayload(),
 	}, nil
 }
 

@@ -187,18 +187,6 @@ func (c *Consensus) Stop(ctx context.Context) {
 	})
 }
 
-// RequestType identifies a kind of client request and the concrete type its result is expected to have
-// TODO: remove once all the requests are carried by a payload.
-type RequestType[Result any] string
-
-// HandleReadRequest serves a read-only request identified by requestType, see HandleReadPayload.
-// TODO: remove once all the requests are carried by a payload.
-func (c *Consensus) HandleReadRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
-	proposal := c.newProposal(ctx, nil)
-	proposal.RequestType, proposal.Value = string(requestType), value
-	return read[Result](ctx, c, proposal)
-}
-
 // HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
 // ReadIndex confirms (via a quorum-backed leader check) the current commit index, waits for this
 // node's own appliedIndex to catch up to it, and only then executes the read against local state.
@@ -257,14 +245,6 @@ func read[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Res
 	case <-ctx.Done():
 		return zero, ctx.Err()
 	}
-}
-
-// HandleWriteRequest serves a request identified by requestType, see HandleWritePayload.
-// TODO: remove once all the requests are carried by a payload.
-func (c *Consensus) HandleWriteRequest[Result any](ctx context.Context, requestType RequestType[Result], value []byte) (Result, error) {
-	proposal := c.newProposal(ctx, nil)
-	proposal.RequestType, proposal.Value = string(requestType), value
-	return write[Result](ctx, c, proposal)
 }
 
 // HandleWritePayload blocks until the proposal is committed and applied / dropped or until ctx is cancelled.

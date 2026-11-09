@@ -2,20 +2,14 @@ package raftstore
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/pb/scdpb"
-	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/stacktrace"
-)
-
-const (
-	listExpiredOperationalIntents consensus.RequestType[[]dssmodels.ID] = "listExpiredOperationalIntents"
 )
 
 func (r *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdmodels.OperationalIntent, error) {
@@ -73,13 +67,8 @@ func (r *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionI
 	}}))
 }
 
-func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
-	buf, err := json.Marshal(threshold)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
-	}
-
-	return r.consensus.HandleReadRequest(ctx, listExpiredOperationalIntents, buf)
+func (r *repo) ListExpiredOperationalIntents(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
+	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "ListExpiredOperationalIntents not implemented for raftstore")
 }
 
 func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {

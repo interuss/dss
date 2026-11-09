@@ -22,8 +22,4 @@ message Proposal {
     uint64 node_id = 2;
     google.protobuf.Timestamp timestamp = 3;
     Payload payload = 4;
-
-    // TODO: remove request_type and value once all the requests are carried by payload.
-    string request_type = 5;
-    bytes value = 6;
 }

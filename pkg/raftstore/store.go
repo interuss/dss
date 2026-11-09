@@ -114,24 +114,14 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	if !ok {
 		return nil, stacktrace.NewError("no handler registered for operation %q", request.OperationID())
 	}
-	if handler.EncodePayload != nil {
-		payload, err := handler.EncodePayload(request)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
-		}
-		if handler.IsReadOnly {
-			return s.HandleReadPayload[any](ctx, payload)
-		}
-		return s.HandleWritePayload[any](ctx, payload)
-	}
-	payload, err := handler.Encode(request)
+	payload, err := handler.EncodePayload(request)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
 	}
 	if handler.IsReadOnly {
-		return s.HandleReadRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+		return s.HandleReadPayload[any](ctx, payload)
 	}
-	return s.HandleWriteRequest(ctx, consensus.RequestType[any](request.OperationID()), payload)
+	return s.HandleWritePayload[any](ctx, payload)
 }
 
 // Interact returns the underlying Raft repo which, for every operation, will propose it to Raft and return the results.
