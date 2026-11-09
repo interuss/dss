@@ -102,16 +102,6 @@ func evict(cmd *cobra.Command, _ []string) error {
 
 	logger := logging.WithValuesFromContext(ctx, logging.Logger)
 
-	scdStore, err := scds.Init(ctx, logger, false)
-	if err != nil {
-		return err
-	}
-
-	ridStore, err := rids.Init(ctx, logger, false)
-	if err != nil {
-		return err
-	}
-
 	var (
 		expiredOpIntents []dssmodels.ID
 		scdExpiredSub    []dssmodels.ID
@@ -119,68 +109,85 @@ func evict(cmd *cobra.Command, _ []string) error {
 		ridExpiredSub    []dssmodels.ID
 		delErr           error
 	)
-	scdRepo, err := scdStore.Interact(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to interact with SCD store: %w", err)
-	}
 
-	if *checkScdOirs {
-		if *deleteExpired {
-			expiredOpIntents, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredOperationalIntents, scdThreshold, scdLimit, scdBatchSize)
-			if err != nil {
-				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired operational intents: %w", err))
+	if *checkScdOirs || *checkScdSubs {
+
+		scdStore, err := scds.Init(ctx, logger, false)
+		if err != nil {
+			return err
+		}
+
+		scdRepo, err := scdStore.Interact(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to interact with SCD store: %w", err)
+		}
+
+		if *checkScdOirs {
+			if *deleteExpired {
+				expiredOpIntents, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredOperationalIntents, scdThreshold, scdLimit, scdBatchSize)
+				if err != nil {
+					delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired operational intents: %w", err))
+				}
+			} else {
+				expiredOpIntents, err = scdRepo.ListExpiredOperationalIntents(ctx, scdThreshold)
+				if err != nil {
+					return fmt.Errorf("failed to list expired operational intents: %w", err)
+				}
 			}
-		} else {
-			expiredOpIntents, err = scdRepo.ListExpiredOperationalIntents(ctx, scdThreshold)
-			if err != nil {
-				return fmt.Errorf("failed to list expired operational intents: %w", err)
+		}
+
+		if *checkScdSubs {
+			if *deleteExpired {
+				scdExpiredSub, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredSubscriptions, scdThreshold, scdLimit, scdBatchSize)
+				if err != nil {
+					delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired SCD subscriptions: %w", err))
+				}
+			} else {
+				scdExpiredSub, err = scdRepo.ListExpiredSubscriptions(ctx, scdThreshold)
+				if err != nil {
+					return fmt.Errorf("failed to list expired SCD subscriptions: %w", err)
+				}
 			}
 		}
 	}
 
-	if *checkScdSubs {
-		if *deleteExpired {
-			scdExpiredSub, err = deleteExpiredEntities(ctx, scdRepo.DeleteExpiredSubscriptions, scdThreshold, scdLimit, scdBatchSize)
-			if err != nil {
-				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired SCD subscriptions: %w", err))
-			}
-		} else {
-			scdExpiredSub, err = scdRepo.ListExpiredSubscriptions(ctx, scdThreshold)
-			if err != nil {
-				return fmt.Errorf("failed to list expired SCD subscriptions: %w", err)
+	if *checkRidISAs || *checkRidSubs {
+
+		ridStore, err := rids.Init(ctx, logger, false)
+		if err != nil {
+			return err
+		}
+
+		ridRepo, err := ridStore.Interact(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to interact with RID store: %w", err)
+		}
+
+		if *checkRidISAs {
+			if *deleteExpired {
+				expiredISAs, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredISAs, ridThreshold, ridLimit, ridBatchSize)
+				if err != nil {
+					delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired ISAs: %w", err))
+				}
+			} else {
+				expiredISAs, err = ridRepo.ListExpiredISAs(ctx, ridThreshold)
+				if err != nil {
+					return fmt.Errorf("failed to list expired ISAs: %w", err)
+				}
 			}
 		}
-	}
 
-	ridRepo, err := ridStore.Interact(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to interact with RID store: %w", err)
-	}
-
-	if *checkRidISAs {
-		if *deleteExpired {
-			expiredISAs, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredISAs, ridThreshold, ridLimit, ridBatchSize)
-			if err != nil {
-				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired ISAs: %w", err))
-			}
-		} else {
-			expiredISAs, err = ridRepo.ListExpiredISAs(ctx, ridThreshold)
-			if err != nil {
-				return fmt.Errorf("failed to list expired ISAs: %w", err)
-			}
-		}
-	}
-
-	if *checkRidSubs {
-		if *deleteExpired {
-			ridExpiredSub, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredSubscriptions, ridThreshold, ridLimit, ridBatchSize)
-			if err != nil {
-				delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired RID subscriptions: %w", err))
-			}
-		} else {
-			ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, ridThreshold)
-			if err != nil {
-				return fmt.Errorf("failed to list RID expired subscriptions: %w", err)
+		if *checkRidSubs {
+			if *deleteExpired {
+				ridExpiredSub, err = deleteExpiredEntities(ctx, ridRepo.DeleteExpiredSubscriptions, ridThreshold, ridLimit, ridBatchSize)
+				if err != nil {
+					delErr = multierr.Append(delErr, fmt.Errorf("failed to delete expired RID subscriptions: %w", err))
+				}
+			} else {
+				ridExpiredSub, err = ridRepo.ListExpiredSubscriptions(ctx, ridThreshold)
+				if err != nil {
+					return fmt.Errorf("failed to list RID expired subscriptions: %w", err)
+				}
 			}
 		}
 	}
