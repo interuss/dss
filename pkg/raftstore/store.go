@@ -114,6 +114,16 @@ func (s *Store[R]) Transact(ctx context.Context, request store.OperationRequest)
 	if !ok {
 		return nil, stacktrace.NewError("no handler registered for operation %q", request.OperationID())
 	}
+	if handler.EncodePayload != nil {
+		payload, err := handler.EncodePayload(request)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
+		}
+		if handler.IsReadOnly {
+			return s.Consensus.HandleReadPayload[any](ctx, payload)
+		}
+		return s.Consensus.HandleWritePayload[any](ctx, payload)
+	}
 	payload, err := handler.Encode(request)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to encode op %q", request.OperationID())
@@ -161,13 +171,13 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 
 			proposalCtx := timestamp.NewContext(ctx, commit.Prop.Timestamp)
 			// Read-only proposals don't mutate state so checkpoint and restore are unnecessary.
-			if !commit.Prop.ReadOnly {
+			if !commit.ReadOnly {
 				s.raftRepo.Checkpoint()
 			}
 			result, err := s.raftRepo.Apply(proposalCtx, commit.Prop)
 			if err != nil {
-				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", commit.Prop.RequestType), zap.Error(err))
-				if !commit.Prop.ReadOnly {
+				s.logger.Warn("failed to apply proposal, rolling back", zap.String("proposal_id", commit.Prop.ID), zap.String("proposal_type", commit.Prop.Name()), zap.Error(err))
+				if !commit.ReadOnly {
 					s.raftRepo.Restore()
 				}
 			}
