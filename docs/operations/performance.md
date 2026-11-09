@@ -32,8 +32,6 @@ To set them:
 
         CPU and memory requests and limits left empty are not set on the containers.
 
-        Then run `terraform apply` to regenerate the Tanka and Helm configuration.
-
     === "Tanka"
         Set the following fields of the metadata in your `main.jsonnet`:
 
@@ -91,6 +89,8 @@ To set them:
 
         CockroachDB resources and environment variables are set with `statefulset.resources` and `statefulset.env` of the [official CockroachDB chart](https://github.com/cockroachdb/helm-charts/blob/master/cockroachdb-legacy/values.yaml).
         Core-service CPU and memory requests and limits left empty are not set on the containers.
+
+1. Apply the change as described in [Modifying a deployment](modifying-deployment.md).
 
 ## The SCD global lock option
 
