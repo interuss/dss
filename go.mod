@@ -13,7 +13,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/interuss/stacktrace v1.0.0
-	github.com/jackc/pgx/v5 v5.11.0
+	github.com/jackc/pgx/v5 v5.12.0
 	github.com/jonboulle/clockwork v0.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.25.0
