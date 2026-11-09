@@ -36,6 +36,7 @@ def do_apply(cluster):
         "dss.public.certs",
         "monitoring.grafana.certs",
         "monitoring.prometheus.certs",
+        "dss.raft.certs",
     ]:
         try:
             subprocess.check_call(
@@ -64,11 +65,18 @@ def do_apply(cluster):
         ("monitoring.grafana.certs", cluster.client_certs_dir),
         ("yugabyte-tls-client-cert", cluster.client_certs_dir),
         ("monitoring.prometheus.certs", cluster.prometheus_certs_dir),
+        ("dss.raft.certs", cluster.raft_certs_dir),
         (
             "dss.public.certs",
             os.path.join("..", "..", "..", "build", "jwt-public-certs"),
         ),
     ]:
+        if not os.path.isdir(folder):
+            logger.debug(
+                f"Folder '{folder}' not present, skipping secret '{secret_name}'"
+            )
+            continue
+
         subprocess.check_call(
             [
                 "kubectl",

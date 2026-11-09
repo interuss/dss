@@ -25,9 +25,9 @@ local args = import 'core-service-args.libsonnet';
       raft_cluster_id: raft.clusterID,
       raft_datadir: '/raft_data',
       raft_peers: peersList,
-      raft_tls_cert_file: '/raft-tls/tls.crt',
-      raft_tls_key_file: '/raft-tls/tls.key',
-      raft_tls_ca_file: '/raft-tls/ca-bundle.crt',
+      raft_tls_cert_file: '"/raft-tls/node.raft-${HOSTNAME##*-}.crt"',
+      raft_tls_key_file: '"/raft-tls/node.raft-${HOSTNAME##*-}.key"',
+      raft_tls_ca_file: '/raft-tls/ca.crt',
     },
     local script = std.join('\n', [
       '# Raft node IDs of this instance\'s nodes, in pod-ordinal order.',
@@ -35,7 +35,7 @@ local args = import 'core-service-args.libsonnet';
       'ordinal=$(( ${HOSTNAME##*-} + 1 ))',
       'exec core-service ' + std.join(' \\\n  ',
         std.map(function(kv)
-          if kv[0] == 'raft_node_id' then '--raft_node_id=' + kv[1]
+          if std.member(['raft_node_id', 'raft_tls_cert_file', 'raft_tls_key_file'], kv[0]) then '--%s=%s' % kv
           else '\'' + ('--%s=%s' % kv) + '\'',
           util.objectItems(allArgs))),
     ]),

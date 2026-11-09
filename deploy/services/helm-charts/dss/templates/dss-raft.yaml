@@ -94,9 +94,9 @@ spec:
                 --raft_cluster_id={{ $raft.clusterID }} \
                 --raft_datadir={{ $datadir }} \
                 --raft_peers='{{ join "," $peerList }}' \
-                --raft_tls_cert_file=/raft-tls/tls.crt \
-                --raft_tls_key_file=/raft-tls/tls.key \
-                --raft_tls_ca_file=/raft-tls/ca-bundle.crt \
+                --raft_tls_cert_file="/raft-tls/node.raft-${HOSTNAME##*-}.crt" \
+                --raft_tls_key_file="/raft-tls/node.raft-${HOSTNAME##*-}.key" \
+                --raft_tls_ca_file=/raft-tls/ca.crt \
           image: {{ $dss.image }}
           imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
           {{- with $dss.env }}
