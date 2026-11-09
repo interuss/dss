@@ -53,7 +53,6 @@ func TestGetConnectParametersTLSFlags(t *testing.T) {
 					nodeURL = "http://127.0.0.1:9011"
 				}
 			}
-			setFlag(t, "raft_node_id", "1")
 			setFlag(t, "raft_peer_url", nodeURL)
 			setFlag(t, "raft_tls_cert_file", tc.certFile)
 			setFlag(t, "raft_tls_key_file", tc.keyFile)

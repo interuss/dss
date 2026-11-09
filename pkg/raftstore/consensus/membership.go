@@ -126,9 +126,12 @@ func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, mem mem
 		return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node ID %d was removed from the group and cannot be reused", change.GetNodeId())
 	}
 
-	_, isMember := m.members[change.GetNodeId()]
+	existing, isMember := m.members[change.GetNodeId()]
 	switch change.GetType() {
 	case raftpb.ConfChangeAddNode:
+		if isMember && existing.URL != mem.URL {
+			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "the ID %d of the node at %q is already used by member %q: restart the node with an empty data directory to generate a new ID", change.GetNodeId(), mem.URL, existing.URL)
+		}
 		if isMember {
 			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is already a member of the group", change.GetNodeId())
 		}

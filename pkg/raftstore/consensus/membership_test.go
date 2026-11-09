@@ -35,6 +35,8 @@ func TestValidateConfChange(t *testing.T) {
 		{name: "add invalid ID", change: add(raft.None), node: node6, voters: voters, wantErr: true},
 		{name: "add removed ID", change: add(5), node: member{URL: "http://node5:9011"}, voters: voters, wantErr: true},
 		{name: "add existing member", change: add(2), node: member{URL: "http://node2:9011"}, voters: voters, wantErr: true},
+		{name: "add node whose ID collides with a member", change: add(2), node: node6, voters: voters, wantErr: true},
+		{name: "add node whose ID collides with a removed node", change: add(5), node: node6, voters: voters, wantErr: true},
 		{name: "add without URL", change: add(6), node: member{}, voters: voters, wantErr: true},
 		{name: "add with URL without port", change: add(6), node: member{URL: "http://node6"}, voters: voters, wantErr: true},
 		{name: "add with the URL of a member", change: add(6), node: member{URL: "http://node2:9011"}, voters: voters, wantErr: true, wantCode: dsserr.AlreadyExists},
