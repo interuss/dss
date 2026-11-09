@@ -148,7 +148,43 @@ services:
       interval: 3m
       start_period: 30s
       start_interval: 5s
-    profiles: ["", "with-yugabyte", "with-monitoring", "with-raft"]
+    profiles: ["", "with-yugabyte", "with-monitoring", "with-raft", "with-raft-cluster"]
+
+  local-dss-core-service-2:
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - raftdata2:/raftdata
+    environment:
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+      RAFT_NODE_ID: 2
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
+      CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
+    command: /startup/core_service.sh 0
+    ports:
+      - "8083:8082"
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-raft-cluster"]
+
+  local-dss-core-service-3:
+    image: interuss-local/dss
+    volumes:
+      - $PWD/../test-certs:/var/test-certs:ro
+      - $PWD/startup/core_service.sh:/startup/core_service.sh:ro
+      - raftdata3:/raftdata
+    environment:
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES}
+      RAFT_NODE_ID: 3
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://local-dss-jaeger:4317}
+      CORE_SERVICE_EXTRA_FLAGS: ${CORE_SERVICE_EXTRA_FLAGS-}
+    command: /startup/core_service.sh 0
+    ports:
+      - "8084:8082"
+    networks:
+      - dss_sandbox_default_network
+    profiles: ["with-raft-cluster"]
 
   local-dss-dummy-oauth:
     build:
@@ -219,3 +255,5 @@ networks:
 volumes:
   local-dss-data:
   raftdata:
+  raftdata2:
+  raftdata3:
