@@ -30,7 +30,7 @@ Raft nodes authenticate each other with mutual TLS, configured by these three fl
 
 ### Logs and metrics
 
-With `--log_level debug`, a node logs its certificate and every CA of the bundle when it starts, with their expiry. A warning is logged if any of the CAs in the bundle has already expired. Each connection rejected during the TLS handshake is logged as the warning `raft: tls handshake failure: <reason>`, with the peer address, the error and, when the peer presented a certificate, its subject, issuer and expiry. A peer retries many times per second, so each reason is logged at most once every 5 seconds, with `duplicates_removed`: the number of failures not logged since for this specific reason. The metric below counts every rejection.
+With `--log_level debug`, a node logs its certificate and every CA of the bundle when it starts, with their expiry. A warning is logged if any of the CAs in the bundle has already expired. Each connection rejected during the TLS handshake is logged as the warning `raft: tls handshake failure: <reason>`, with the peer address, the error and, when the peer presented a certificate, its subject, issuer and expiry. A peer retries many times per second, so each reason is logged at most once every 5 seconds, with `duplicates_removed_for_<reason>` set to the number of failures not logged since for this specific reason. The metric below counts every rejection.
 
 | Reason              | Meaning                                                  |
 | ------------------- | -------------------------------------------------------- |
@@ -42,6 +42,8 @@ With `--log_level debug`, a node logs its certificate and every CA of the bundle
 | `other`             | Any other failure                                        |
 
 With `--enable_metrics`, a node exports `raft_peer_tls_handshake_failures_total{reason}`: the connections rejected during the TLS handshake, by the reasons above.
+
+If a peer doesn't trust the certificate of this node, the peer logs it as `unknown_authority` with the subject and issuer of this node's certificate, so that's the first place to look. On this node, it shows up as `other` with the error `remote error: tls: bad certificate`, and etcd also logs the warning `prober detected unhealthy status` every 5 seconds.
 
 ## Terminology
 

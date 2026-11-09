@@ -105,7 +105,7 @@ func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error 
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to load the certificate of this node from %s and %s", tlsInfo.CertFile, tlsInfo.KeyFile)
 	}
-	logger.Debug("raft: node certificate:", zap.String("subject", cert.Leaf.Subject.String()), zap.String("issuer", cert.Leaf.Issuer.String()), zap.Time("not_after", cert.Leaf.NotAfter))
+	logger.Debug("raft: node certificate", zap.String("subject", cert.Leaf.Subject.String()), zap.String("issuer", cert.Leaf.Issuer.String()), zap.Time("not_after", cert.Leaf.NotAfter))
 	if now.After(cert.Leaf.NotAfter) {
 		return stacktrace.NewError("the certificate of this node in %s expired on %s", tlsInfo.CertFile, cert.Leaf.NotAfter)
 	}
@@ -120,7 +120,7 @@ func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error 
 		if now.After(ca.NotAfter) {
 			logger.Warn("raft: a CA of --raft_tls_ca_file has expired", fields...)
 		} else {
-			logger.Debug("raft: CA certificate:", fields...)
+			logger.Debug("raft: CA certificate", fields...)
 			unexpired++
 		}
 	}
