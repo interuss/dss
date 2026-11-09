@@ -15,47 +15,43 @@ func TestIDProtoRoundTrip(t *testing.T) {
 		"uuid": ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			b, err := IDToProto(id)
+			b, err := id.ToProto()
 			require.NoError(t, err)
-			decoded, err := IDFromProto(b)
-			require.NoError(t, err)
+			var decoded ID
+			require.NoError(t, decoded.FromProto(b))
 			require.Equal(t, id, decoded)
 		})
 	}
 }
 
 func TestIDProtoErrors(t *testing.T) {
-	_, err := IDToProto(ID("not-a-uuid"))
+	_, err := ID("not-a-uuid").ToProto()
 	require.Error(t, err)
 
-	_, err = IDToProto(ID(""))
+	_, err = ID("").ToProto()
 	require.Error(t, err)
 
-	_, err = IDFromProto([]byte{1, 2, 3})
-	require.Error(t, err)
-
-	_, err = IDFromProto(nil)
-	require.Error(t, err)
+	var id ID
+	require.Error(t, id.FromProto([]byte{1, 2, 3}))
+	require.Error(t, id.FromProto(nil))
 }
 
 func TestVersionProtoRoundTrip(t *testing.T) {
 	version := VersionFromTime(time.Date(2026, 10, 28, 9, 30, 0, 123456789, time.UTC))
-	decoded, err := VersionFromProto(VersionToProto(version))
-	require.NoError(t, err)
+	var decoded Version
+	require.NoError(t, decoded.FromProto(version.ToProto()))
 	require.Equal(t, version.String(), decoded.String())
 }
 
 func TestVersionProtoEmpty(t *testing.T) {
-	require.Empty(t, VersionToProto(nil))
+	var version *Version
+	require.Empty(t, version.ToProto())
 
-	version, err := VersionFromProto("")
-	require.NoError(t, err)
-	require.Nil(t, version)
+	require.Error(t, new(Version).FromProto(""))
 }
 
 func TestVersionProtoErrors(t *testing.T) {
-	_, err := VersionFromProto("not a version")
-	require.Error(t, err)
+	require.Error(t, new(Version).FromProto("not a version"))
 }
 
 func TestCellsVolume4DProtoRoundTrip(t *testing.T) {
@@ -75,15 +71,20 @@ func TestCellsVolume4DProtoRoundTrip(t *testing.T) {
 		"empty":                  {Cells: s2.CellUnion{}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			buf, err := proto.Marshal(CellsVolume4DToProto(volume))
+			buf, err := proto.Marshal(volume.ToProto())
 			require.NoError(t, err)
 			var pb modelspb.CellsVolume4D
 			require.NoError(t, proto.Unmarshal(buf, &pb))
 
-			require.Equal(t, volume, CellsVolume4DFromProto(&pb))
+			var decoded CellsVolume4D
+			decoded.FromProto(&pb)
+			require.Equal(t, volume, &decoded)
 		})
 	}
 
-	require.Nil(t, CellsVolume4DToProto(nil))
-	require.Nil(t, CellsVolume4DFromProto(nil))
+	var volume *CellsVolume4D
+	require.Nil(t, volume.ToProto())
+	var decoded CellsVolume4D
+	decoded.FromProto(nil)
+	require.Equal(t, CellsVolume4D{}, decoded)
 }

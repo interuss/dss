@@ -28,7 +28,7 @@ func TestOVNProtoRoundTrip(t *testing.T) {
 		"non canonical uuid": {ovn: OVN(strings.ToUpper(string(uuids)))},
 	} {
 		t.Run(name, func(t *testing.T) {
-			pb := OVNToProto(tc.ovn)
+			pb := tc.ovn.ToProto()
 			_, isText := pb.GetValue().(*scdpb.OVN_Text)
 			assert.Equal(t, !tc.packed, isText)
 
@@ -40,15 +40,15 @@ func TestOVNProtoRoundTrip(t *testing.T) {
 			var decodedPb scdpb.OVN
 			require.NoError(t, proto.Unmarshal(buf, &decodedPb))
 
-			decoded, err := OVNFromProto(&decodedPb)
-			require.NoError(t, err)
+			var decoded OVN
+			require.NoError(t, decoded.FromProto(&decodedPb))
 			assert.Equal(t, tc.ovn, decoded)
 		})
 	}
 
-	assert.Nil(t, OVNToProto(""))
-	empty, err := OVNFromProto(nil)
-	require.NoError(t, err)
+	assert.Nil(t, OVN("").ToProto())
+	empty := OVN("previous")
+	require.NoError(t, empty.FromProto(nil))
 	assert.Equal(t, OVN(""), empty)
 }
 
@@ -66,6 +66,6 @@ func TestOVNsProtoRoundTrip(t *testing.T) {
 }
 
 func TestOVNProtoErrors(t *testing.T) {
-	_, err := OVNFromProto(&scdpb.OVN{Value: &scdpb.OVN_Uuids{Uuids: []byte{1, 2, 3}}})
-	assert.Error(t, err)
+	var ovn OVN
+	require.Error(t, ovn.FromProto(&scdpb.OVN{Value: &scdpb.OVN_Uuids{Uuids: []byte{1, 2, 3}}}))
 }

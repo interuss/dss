@@ -23,7 +23,7 @@ func OVNsToProto(ovns []OVN) []*scdpb.OVN {
 	}
 	pbs := make([]*scdpb.OVN, len(ovns))
 	for i, ovn := range ovns {
-		pbs[i] = OVNToProto(ovn)
+		pbs[i] = ovn.ToProto()
 		if pbs[i] == nil {
 			pbs[i] = &scdpb.OVN{}
 		}
@@ -37,19 +37,17 @@ func OVNsFromProto(pbs []*scdpb.OVN) ([]OVN, error) {
 	}
 	ovns := make([]OVN, len(pbs))
 	for i, pb := range pbs {
-		ovn, err := OVNFromProto(pb)
-		if err != nil {
+		if err := ovns[i].FromProto(pb); err != nil {
 			return nil, err
 		}
-		ovns[i] = ovn
 	}
 	return ovns, nil
 }
 
-// OVNToProto packs the OVNs of the form `{uuid}_{uuid}` (73 chars) into their 32 raw bytes.
+// ToProto packs the OVNs of the form `{uuid}_{uuid}` (73 chars) into their 32 raw bytes.
 // Any other OVN is carried verbatim.
 // An empty OVN is encoded as nil.
-func OVNToProto(ovn OVN) *scdpb.OVN {
+func (ovn OVN) ToProto() *scdpb.OVN {
 	if ovn.Empty() {
 		return nil
 	}
@@ -59,21 +57,22 @@ func OVNToProto(ovn OVN) *scdpb.OVN {
 	return &scdpb.OVN{Value: &scdpb.OVN_Text{Text: string(ovn)}}
 }
 
-// OVNFromProto decodes an OVN encoded by OVNToProto.
-func OVNFromProto(pb *scdpb.OVN) (OVN, error) {
+// FromProto decodes an OVN encoded by ToProto. A missing OVN decodes as an empty one.
+func (ovn *OVN) FromProto(pb *scdpb.OVN) error {
 	switch value := pb.GetValue().(type) {
 	case nil:
-		return "", nil
+		*ovn = ""
 	case *scdpb.OVN_Uuids:
 		if len(value.Uuids) != packedOVNLength {
-			return "", stacktrace.NewError("invalid packed OVN length %d", len(value.Uuids))
+			return stacktrace.NewError("invalid packed OVN length %d", len(value.Uuids))
 		}
-		return OVN(uuid.UUID(value.Uuids[:uuidLength]).String() + "_" + uuid.UUID(value.Uuids[uuidLength:]).String()), nil
+		*ovn = OVN(uuid.UUID(value.Uuids[:uuidLength]).String() + "_" + uuid.UUID(value.Uuids[uuidLength:]).String())
 	case *scdpb.OVN_Text:
-		return OVN(value.Text), nil
+		*ovn = OVN(value.Text)
 	default:
-		return "", stacktrace.NewError("unexpected OVN value %T", value)
+		return stacktrace.NewError("unexpected OVN value %T", value)
 	}
+	return nil
 }
 
 // packUUIDsOVN returns the 32 raw bytes of an OVN of the form `{uuid}_{uuid}`.

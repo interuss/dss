@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func IDToProto(id ID) ([]byte, error) {
+func (id ID) ToProto() ([]byte, error) {
 	parsed, err := uuid.Parse(id.String())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid ID %q", id)
@@ -18,25 +18,25 @@ func IDToProto(id ID) ([]byte, error) {
 	return parsed[:], nil
 }
 
-func IDFromProto(b []byte) (ID, error) {
+func (id *ID) FromProto(b []byte) error {
 	if len(b) != len(uuid.UUID{}) {
-		return "", stacktrace.NewError("invalid ID length %d", len(b))
+		return stacktrace.NewError("invalid ID length %d", len(b))
 	}
-	return ID(uuid.UUID(b).String()), nil
+	*id = ID(uuid.UUID(b).String())
+	return nil
 }
 
-func VersionToProto(v *Version) string {
-	if v == nil {
-		return ""
-	}
+func (v *Version) ToProto() string {
 	return v.String()
 }
 
-func VersionFromProto(s string) (*Version, error) {
-	if s == "" {
-		return nil, nil
+func (v *Version) FromProto(s string) error {
+	parsed, err := VersionFromString(s)
+	if err != nil {
+		return stacktrace.Propagate(err, "invalid version %q", s)
 	}
-	return VersionFromString(s)
+	*v = *parsed
+	return nil
 }
 
 func TimeToProto(t *time.Time) *timestamppb.Timestamp {
@@ -70,7 +70,7 @@ func CellUnionFromProto(ids []uint64) s2.CellUnion {
 	return cells
 }
 
-func CellsVolume4DToProto(v *CellsVolume4D) *modelspb.CellsVolume4D {
+func (v *CellsVolume4D) ToProto() *modelspb.CellsVolume4D {
 	if v == nil {
 		return nil
 	}
@@ -83,11 +83,12 @@ func CellsVolume4DToProto(v *CellsVolume4D) *modelspb.CellsVolume4D {
 	}
 }
 
-func CellsVolume4DFromProto(pb *modelspb.CellsVolume4D) *CellsVolume4D {
+func (v *CellsVolume4D) FromProto(pb *modelspb.CellsVolume4D) {
 	if pb == nil {
-		return nil
+		*v = CellsVolume4D{}
+		return
 	}
-	return &CellsVolume4D{
+	*v = CellsVolume4D{
 		Cells:      CellUnionFromProto(pb.GetCells()),
 		StartTime:  TimeFromProto(pb.GetStartTime()),
 		EndTime:    TimeFromProto(pb.GetEndTime()),
