@@ -60,6 +60,10 @@ func (ms *mockStore) Transact(ctx context.Context, request dssstore.OperationReq
 	return args.Get(0), args.Error(1)
 }
 
+func (ms *mockStore) Ready() bool {
+	return true
+}
+
 func (ms *mockStore) Close() error {
 	args := ms.Called()
 	return args.Error(0)

@@ -239,6 +239,12 @@ func isYugabyteRetryable(err error) bool {
 	return false
 }
 
+// Ready always returns true as the store is ready as soon as it is initialized.
+// TODO: implement a health check for the store.
+func (s *Store[R]) Ready() bool {
+	return true
+}
+
 func (s *Store[R]) Close() error {
 	s.Pool.Close()
 	return nil

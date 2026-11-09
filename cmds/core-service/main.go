@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -92,23 +93,10 @@ func createKeyResolver() (auth.KeyResolver, error) {
 	}
 }
 
-func createAuxServer(ctx context.Context, locality string, publicEndpoint string, opts params.Options, logger *zap.Logger) (*aux.Server, error) {
-	if locality == "" {
-		return nil, stacktrace.NewError("Locality not set")
-	}
-
-	if publicEndpoint == "" {
-		return nil, stacktrace.NewError("Public endpoint not set")
-	}
-
-	auxStore, err := auxs.Init(ctx, logger, true)
-	if err != nil {
-		return nil, err
-	}
-
+func saveOwnMetadata(ctx context.Context, auxStore auxs.Store, locality string, publicEndpoint string) error {
 	repo, err := auxStore.Interact(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to interact with store")
+		return stacktrace.Propagate(err, "Unable to interact with store")
 	}
 
 	ctx = timestamp.NewContext(ctx, time.Now())
@@ -116,20 +104,15 @@ func createAuxServer(ctx context.Context, locality string, publicEndpoint string
 	err = repo.SaveOwnMetadata(ctx, locality, publicEndpoint)
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to store current metadata")
+		return stacktrace.Propagate(err, "Unable to store current metadata")
 	}
 
-	return &aux.Server{Store: auxStore, Locality: locality, Options: opts}, nil
+	return nil
 }
 
-func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) (*rid_v1.Server, *rid_v2.Server, error) {
+func createRIDServers(ctx context.Context, ridStore rids.Store, locality string) (*rid_v1.Server, *rid_v2.Server, error) {
 
-	ridStore, err := rids.Init(ctx, logger, true)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_, err = ridStore.Interact(ctx)
+	_, err := ridStore.Interact(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to interact with store")
 	}
@@ -153,15 +136,10 @@ func createRIDServers(ctx context.Context, locality string, logger *zap.Logger) 
 	}, nil
 }
 
-func createSCDServer(ctx context.Context, logger *zap.Logger) (*scd.Server, error) {
-
-	scdStore, err := scds.Init(ctx, logger, true)
-	if err != nil {
-		return nil, err
-	}
+func createSCDServer(scdStore scds.Store, logger *zap.Logger) (*scd.Server, error) {
 
 	if *enableMetrics {
-		err = registerSCDMetrics(scdStore)
+		err := registerSCDMetrics(scdStore)
 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to setup metrics")
@@ -306,11 +284,79 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	ctx, ctxCancel := context.WithCancel(ctx)
 	defer ctxCancel()
 
-	// Initialize aux
-	auxV1Server, err = createAuxServer(ctx, locality, *publicEndpoint, storeOptions, logger)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create aux server")
+	if locality == "" {
+		return stacktrace.NewError("Locality not set")
 	}
+
+	if *publicEndpoint == "" {
+		return stacktrace.NewError("Public endpoint not set")
+	}
+
+	// Initialize the stores
+	auxStore, err := auxs.Init(ctx, logger, true)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to initialize aux store")
+	}
+	var ridStore rids.Store
+	if *enableRID {
+		ridStore, err = rids.Init(ctx, logger, true)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to initialize rid store")
+		}
+	}
+	var scdStore scds.Store
+	if *enableSCD {
+		scdStore, err = scds.Init(ctx, logger, true)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to initialize scd store")
+		}
+	}
+
+	readiness := map[string]interface{ Ready() bool }{"aux": auxStore}
+	if *enableRID {
+		readiness["rid"] = ridStore
+	}
+	if *enableSCD {
+		readiness["scd"] = scdStore
+	}
+
+	// The stores are closed when this function returns, so that a new attempt after a dsserr.Unavailable error starts them again.
+	defer func() {
+		stores := []io.Closer{auxStore}
+		if *enableRID {
+			stores = append(stores, ridStore)
+		}
+		if *enableSCD {
+			stores = append(stores, scdStore)
+		}
+		for _, store := range stores {
+			if err := store.Close(); err != nil {
+				logger.Warn("Failed to close the store", zap.Error(err))
+			}
+		}
+	}()
+
+	// Initialize aux
+	auxV1Server = &aux.Server{Store: auxStore, Locality: locality, Options: storeOptions}
+
+	// The metadata is written through the aux store, which may not be ready yet (e.g. while its Raft group starts).
+	go func() {
+		for {
+			if auxStore.Ready() {
+				err := saveOwnMetadata(ctx, auxStore, locality, *publicEndpoint)
+				if err == nil {
+					return
+				}
+				logger.Error("Failed to store current metadata, retrying", zap.Error(err))
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(2 * time.Second):
+				logger.Info("Trying to store current metadata again")
+			}
+		}
+	}()
 
 	// Initialize access token validation
 	keyResolver, err := createKeyResolver()
@@ -343,7 +389,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize remote ID
 	if *enableRID {
-		ridV1Server, ridV2Server, err = createRIDServers(ctx, locality, logger)
+		ridV1Server, ridV2Server, err = createRIDServers(ctx, ridStore, locality)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create remote ID server")
 		}
@@ -355,7 +401,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize strategic conflict detection
 	if *enableSCD {
-		scdV1Server, err = createSCDServer(ctx, logger)
+		scdV1Server, err = createSCDServer(scdStore, logger)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
@@ -365,7 +411,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}
 
 	// the middlewares are wrapped and, therefore, executed in the opposite order
-	handler := healthyEndpointMiddleware(logger, &multiRouter)
+	handler := healthyEndpointMiddleware(logger, readiness, &multiRouter)
 	handler = authorizer.TokenMiddleware(handler)
 	handler = http.TimeoutHandler(handler, *timeout, "request timeout")
 	handler = logging.HTTPMiddleware(logger, *dumpRequests, handler)
@@ -416,9 +462,15 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 }
 
 // healthyEndpointMiddleware intercepts a request and responds with an "ok" message at the endpoint "/healthy".
-func healthyEndpointMiddleware(logger *zap.Logger, next http.Handler) http.Handler {
+func healthyEndpointMiddleware(logger *zap.Logger, stores map[string]interface{ Ready() bool }, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthy" {
+			for name, store := range stores {
+				if !store.Ready() {
+					http.Error(w, fmt.Sprintf("the %s store is not ready", name), http.StatusServiceUnavailable)
+					return
+				}
+			}
 			if _, err := w.Write([]byte("ok")); err != nil {
 				logger.Error("Error writing to /healthy")
 			}

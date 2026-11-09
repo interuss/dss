@@ -4,12 +4,25 @@ import (
 	"sync"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
+	"github.com/interuss/dss/pkg/raftstore/consensus/node"
 	"github.com/interuss/stacktrace"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 )
+
+// Membership describes a Raft group.
+type Membership struct {
+	// ClusterID identifies the group within the cluster. It is identical on all the members of the group.
+	ClusterID uint64
+	// LeaderID is the ID in Nodes of the leader of the group, 0 if it is unknown.
+	LeaderID uint64
+	// Nodes maps the ID of every node that is or was a member of the group to the node.
+	// A node's state tells whether it is a member or was removed.
+	// Removed IDs can never be reused.
+	Nodes map[uint64]node.Info
+}
 
 // minVoters is the minimum number of voters a Raft group must keep.
 // Below it, the group can no longer tolerate the loss of a single node without losing its quorum.

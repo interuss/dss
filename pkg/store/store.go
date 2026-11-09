@@ -18,6 +18,8 @@ type Store[R any] interface {
 	Interact(context.Context) (R, error)
 	// Apply the operation request to the R Repo atomically.
 	Transact(ctx context.Context, request OperationRequest) (any, error)
+	// Ready reports whether the store can serve requests.
+	Ready() bool
 }
 
 // OperationRequest identifies an operation to be performed on a Store.

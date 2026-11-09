@@ -69,6 +69,11 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.GetRepo(), nil
 }
 
+// Ready always returns true as the store is ready as soon as it is initialized.
+func (s *Store[R]) Ready() bool {
+	return true
+}
+
 func (s *Store[R]) Close() error {
 	return nil
 }
