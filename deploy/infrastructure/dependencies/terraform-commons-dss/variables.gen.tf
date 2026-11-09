@@ -16,7 +16,7 @@ variable "db_hostname_suffix" {
   description = <<-EOT
   The domain name suffix shared by all of your databases nodes.
   For instance, if your database nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
+  1.db.example.com and 2.db.example.com (CockroachDB, Raft) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
   Example: db.example.com
   EOT
 }
@@ -27,12 +27,12 @@ variable "datastore_type" {
   description = <<-EOT
   Type of datastore used
 
-  Supported technologies: cockroachdb, yugabyte
+  Supported technologies: cockroachdb, yugabyte, raft
   EOT
 
   validation {
-    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
-    error_message = "Supported technologies: cockroachdb, yugabyte"
+    condition     = contains(["cockroachdb", "yugabyte", "raft"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte, raft"
   }
 
   default = "cockroachdb"
@@ -49,8 +49,8 @@ variable "node_count" {
   EOT
 
   validation {
-    condition     = (var.datastore_type == "cockroachdb" && contains([1, 3], var.node_count)) || (var.datastore_type == "yugabyte" && var.node_count > 0)
-    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte, you need to have at least one node."
+    condition     = (var.datastore_type == "cockroachdb" && contains([1, 3], var.node_count)) || (contains(["yugabyte", "raft"], var.datastore_type) && var.node_count > 0)
+    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte or Raft, you need to have at least one node."
   }
 }
 
@@ -611,6 +611,107 @@ variable "yugabyte_external_nodes" {
   default     = []
 }
 
+
+
+variable "raft_node_ids" {
+  type        = list(number)
+  description = <<-EOT
+  Raft node IDs of the nodes deployed by this instance, in pod-ordinal order.
+  Must contain exactly `node_count` entries. IDs must be unique within the pool and never reused:
+  do not change or reorder them once the pool has been bootstrapped.
+
+  Only used with the raft datastore.
+
+  Example: `[1, 2, 3]`
+  EOT
+
+  validation {
+    condition     = var.datastore_type != "raft" || length(var.raft_node_ids) == var.node_count
+    error_message = "raft_node_ids must contain exactly node_count entries."
+  }
+
+  default = []
+}
+
+
+variable "raft_peers" {
+  type = list(object({
+    id       = number
+    endpoint = string
+  }))
+  description = <<-EOT
+  The other nodes of the Raft pool, deployed by other instances.
+  `endpoint` is the address (host:port, without scheme) of the node, reachable from this cluster.
+
+  Only used with the raft datastore.
+
+  Example: `[{ id = 4, endpoint = "0.db.dss.example.com:2407" }]`
+  EOT
+  default     = []
+}
+
+
+variable "raft_cluster_id" {
+  type        = number
+  description = <<-EOT
+  Raft cluster ID. Must be identical on all nodes of the pool.
+
+  Only used with the raft datastore.
+
+  Example: `1`
+  EOT
+
+  validation {
+    condition     = var.raft_cluster_id >= 1
+    error_message = "raft_cluster_id must be equal to or greater than 1."
+  }
+
+  default = 1
+}
+
+
+variable "raft_port" {
+  type        = number
+  description = <<-EOT
+  Port of the Raft listener of the nodes of this instance.
+
+  Only used with the raft datastore.
+
+  Example: `2407`
+  EOT
+
+  default = 2407
+}
+
+
+variable "raft_tls_secret" {
+  type        = string
+  description = <<-EOT
+  Name of the Kubernetes secret holding the mutual TLS material of the Raft listeners:
+  `node.raft-<i>.crt`/`node.raft-<i>.key` is the certificate of the pod of ordinal `<i>` of this instance,
+  `ca.crt` is the PEM bundle of the CAs of every participant of the pool, including its own.
+
+  Only used with the raft datastore.
+
+  Example: `dss.raft.certs`
+  EOT
+
+  default = "dss.raft.certs"
+}
+
+
+variable "raft_storage_size" {
+  type        = string
+  description = <<-EOT
+  Size of the persistent volume of each Raft node.
+
+  Only used with the raft datastore.
+
+  Example: `100Gi`
+  EOT
+
+  default = "100Gi"
+}
 
 
 variable "evict_enable_scd_cron" {

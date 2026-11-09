@@ -94,6 +94,18 @@ resource "aws_eip" "ip_yugabyte" {
   }
 }
 
+# Public Elastic IPs for the raft instances
+resource "aws_eip" "ip_raft" {
+  count  = var.datastore_type == "raft" ? var.node_count : 0
+  domain = "vpc"
+
+  tags = {
+    Name = format("%s-ip-raft%v", var.cluster_name, count.index)
+    # Preserve mapping between ips and hostnames
+    ExpectedDNS = format("%s.%s", count.index, var.db_hostname_suffix)
+  }
+}
+
 resource "aws_eip" "ip_prometheus" {
   domain = "vpc"
   count  = var.prometheus_hostname == "" ? 0 : 1

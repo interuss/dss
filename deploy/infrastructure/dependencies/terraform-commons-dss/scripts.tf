@@ -20,12 +20,12 @@ resource "local_file" "apply_certs" {
 }
 
 resource "local_file" "dss_certs" {
-  count = var.datastore_type == "yugabyte" ? 1 : 0
+  count = contains(["yugabyte", "raft"], var.datastore_type) ? 1 : 0
   content = templatefile("${path.module}/templates/dss-certs.sh.tmp", {
-    cluster_context    = var.kubernetes_context_name
-    namespace          = var.kubernetes_namespace
-    db_hostname_suffix = var.db_hostname_suffix
-    node_count         = var.node_count
+    cluster_context = var.kubernetes_context_name
+    namespace       = var.kubernetes_namespace
+    nodes_address   = var.datastore_type == "raft" ? "<ID>.${var.db_hostname_suffix}" : "<ID>.<TYPE>.${var.db_hostname_suffix}"
+    node_count      = var.node_count
   })
   filename = "${local.workspace_location}/dss-certs.sh"
 }

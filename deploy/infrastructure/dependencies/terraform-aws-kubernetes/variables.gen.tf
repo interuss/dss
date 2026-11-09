@@ -126,7 +126,7 @@ variable "db_hostname_suffix" {
   description = <<-EOT
   The domain name suffix shared by all of your databases nodes.
   For instance, if your database nodes were addressable at 0.db.example.com,
-  1.db.example.com and 2.db.example.com (CockroachDB) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
+  1.db.example.com and 2.db.example.com (CockroachDB, Raft) or 0.master.db.example.com, 1.tserver.db.example.com (Yugabyte), then the value would be db.example.com.
   Example: db.example.com
   EOT
 }
@@ -137,12 +137,12 @@ variable "datastore_type" {
   description = <<-EOT
   Type of datastore used
 
-  Supported technologies: cockroachdb, yugabyte
+  Supported technologies: cockroachdb, yugabyte, raft
   EOT
 
   validation {
-    condition     = contains(["cockroachdb", "yugabyte"], var.datastore_type)
-    error_message = "Supported technologies: cockroachdb, yugabyte"
+    condition     = contains(["cockroachdb", "yugabyte", "raft"], var.datastore_type)
+    error_message = "Supported technologies: cockroachdb, yugabyte, raft"
   }
 
   default = "cockroachdb"
@@ -159,8 +159,8 @@ variable "node_count" {
   EOT
 
   validation {
-    condition     = (var.datastore_type == "cockroachdb" && contains([1, 3], var.node_count)) || (var.datastore_type == "yugabyte" && var.node_count > 0)
-    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte, you need to have at least one node."
+    condition     = (var.datastore_type == "cockroachdb" && contains([1, 3], var.node_count)) || (contains(["yugabyte", "raft"], var.datastore_type) && var.node_count > 0)
+    error_message = "Currently, only 1 node or 3 nodes deployments are supported for CockroachDB. If you use Yugabyte or Raft, you need to have at least one node."
   }
 }
 
