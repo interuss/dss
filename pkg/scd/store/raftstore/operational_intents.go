@@ -7,65 +7,70 @@ import (
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/stacktrace"
 )
 
 const (
-	getOperationalIntent           consensus.RequestType[*scdmodels.OperationalIntent]   = "getOperationalIntent"
-	deleteOperationalIntent        consensus.RequestType[any]                            = "deleteOperationalIntent"
-	upsertOperationalIntent        consensus.RequestType[*scdmodels.OperationalIntent]   = "upsertOperationalIntent"
-	searchOperationalIntents       consensus.RequestType[[]*scdmodels.OperationalIntent] = "searchOperationalIntents"
-	getDependentOperationalIntents consensus.RequestType[[]dssmodels.ID]                 = "getDependentOperationalIntents"
-	listExpiredOperationalIntents  consensus.RequestType[[]dssmodels.ID]                 = "listExpiredOperationalIntents"
-	countOperationalIntents        consensus.RequestType[int64]                          = "countOperationalIntents"
+	listExpiredOperationalIntents consensus.RequestType[[]dssmodels.ID] = "listExpiredOperationalIntents"
 )
 
 func (r *repo) GetOperationalIntent(ctx context.Context, id dssmodels.ID) (*scdmodels.OperationalIntent, error) {
-	buf, err := json.Marshal(id)
+	pbID, err := id.ToProto()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
 	}
 
-	return r.consensus.HandleReadRequest(ctx, getOperationalIntent, buf)
+	return r.consensus.HandleReadPayload[*scdmodels.OperationalIntent](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetOperationalIntentRepoCall{
+		GetOperationalIntentRepoCall: &scdpb.GetOperationalIntentRepoCall{Id: pbID},
+	}}))
 }
 
 func (r *repo) DeleteOperationalIntent(ctx context.Context, id dssmodels.ID) error {
-	buf, err := json.Marshal(id)
+	pbID, err := id.ToProto()
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to marshal payload")
+		return stacktrace.Propagate(err, "invalid OperationalIntent ID")
 	}
 
-	_, err = r.consensus.HandleWriteRequest(ctx, deleteOperationalIntent, buf)
+	_, err = r.consensus.HandleWritePayload[any](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_DeleteOperationalIntentRepoCall{
+		DeleteOperationalIntentRepoCall: &scdpb.DeleteOperationalIntentRepoCall{Id: pbID},
+	}}))
 	return err
 }
 
 func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error) {
-	buf, err := json.Marshal(operation)
+	pbOperation, err := operation.ToProto()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+		return nil, stacktrace.Propagate(err, "failed to encode OperationalIntent")
 	}
 
-	return r.consensus.HandleWriteRequest(ctx, upsertOperationalIntent, buf)
+	return r.consensus.HandleWritePayload[*scdmodels.OperationalIntent](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_UpsertOperationalIntentRepoCall{
+		UpsertOperationalIntentRepoCall: &scdpb.UpsertOperationalIntentRepoCall{OperationalIntent: pbOperation},
+	}}))
 }
 
 func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
-	buf, err := json.Marshal(cellsVolume)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+	if cellsVolume == nil {
+		return nil, stacktrace.NewError("missing volume")
 	}
 
-	return r.consensus.HandleReadRequest(ctx, searchOperationalIntents, buf)
+	return r.consensus.HandleReadPayload[[]*scdmodels.OperationalIntent](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SearchOperationalIntentsRepoCall{
+		SearchOperationalIntentsRepoCall: &scdpb.SearchOperationalIntentsRepoCall{Volume: cellsVolume.ToProto()},
+	}}))
 }
 
 func (r *repo) GetDependentOperationalIntents(ctx context.Context, subscriptionID dssmodels.ID) ([]dssmodels.ID, error) {
-	buf, err := json.Marshal(subscriptionID)
+	pbID, err := subscriptionID.ToProto()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to marshal payload")
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 	}
 
-	return r.consensus.HandleReadRequest(ctx, getDependentOperationalIntents, buf)
+	return r.consensus.HandleReadPayload[[]dssmodels.ID](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetDependentOperationalIntentsRepoCall{
+		GetDependentOperationalIntentsRepoCall: &scdpb.GetDependentOperationalIntentsRepoCall{SubscriptionId: pbID},
+	}}))
 }
 
 func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
@@ -82,5 +87,7 @@ func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time
 }
 
 func (r *repo) CountOperationalIntents(ctx context.Context) (int64, error) {
-	return r.consensus.HandleReadRequest(ctx, countOperationalIntents, nil)
+	return r.consensus.HandleReadPayload[int64](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_CountOperationalIntentsRepoCall{
+		CountOperationalIntentsRepoCall: &scdpb.CountOperationalIntentsRepoCall{},
+	}}))
 }

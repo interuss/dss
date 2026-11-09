@@ -127,6 +127,47 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 	case *scdpb.Payload_CountConstraintsRepoCall:
 		return r.Store.GetRepo().CountConstraints(ctx)
 
+	// Operational intent repository requests
+	case *scdpb.Payload_GetOperationalIntentRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.GetOperationalIntentRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+		}
+		return r.Store.GetRepo().GetOperationalIntent(ctx, id)
+
+	case *scdpb.Payload_DeleteOperationalIntentRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.DeleteOperationalIntentRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+		}
+		return nil, r.Store.GetRepo().DeleteOperationalIntent(ctx, id)
+
+	case *scdpb.Payload_UpsertOperationalIntentRepoCall:
+		operation := new(scdmodels.OperationalIntent)
+		if err := operation.FromProto(payload.UpsertOperationalIntentRepoCall.GetOperationalIntent()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid OperationalIntent")
+		}
+		return r.Store.GetRepo().UpsertOperationalIntent(ctx, operation)
+
+	case *scdpb.Payload_SearchOperationalIntentsRepoCall:
+		volume := payload.SearchOperationalIntentsRepoCall.GetVolume()
+		if volume == nil {
+			return nil, stacktrace.NewError("missing volume")
+		}
+		cellsVolume := new(dssmodels.CellsVolume4D)
+		cellsVolume.FromProto(volume)
+		return r.Store.GetRepo().SearchOperationalIntents(ctx, cellsVolume)
+
+	case *scdpb.Payload_GetDependentOperationalIntentsRepoCall:
+		var subscriptionID dssmodels.ID
+		if err := subscriptionID.FromProto(payload.GetDependentOperationalIntentsRepoCall.GetSubscriptionId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+		}
+		return r.Store.GetRepo().GetDependentOperationalIntents(ctx, subscriptionID)
+
+	case *scdpb.Payload_CountOperationalIntentsRepoCall:
+		return r.Store.GetRepo().CountOperationalIntents(ctx)
+
 	default:
 		return r.applyLegacy(ctx, proposal)
 	}
@@ -193,50 +234,12 @@ func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (an
 
 	// Operational Intents
 
-	case string(getOperationalIntent):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getOperationalIntent)
-		}
-		return r.Store.GetRepo().GetOperationalIntent(ctx, id)
-
-	case string(deleteOperationalIntent):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteOperationalIntent)
-		}
-		return nil, r.Store.GetRepo().DeleteOperationalIntent(ctx, id)
-
-	case string(upsertOperationalIntent):
-		var operation scdmodels.OperationalIntent
-		if err := json.Unmarshal(proposal.Value, &operation); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertOperationalIntent)
-		}
-		return r.Store.GetRepo().UpsertOperationalIntent(ctx, &operation)
-
-	case string(searchOperationalIntents):
-		var cellsVolume dssmodels.CellsVolume4D
-		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchOperationalIntents)
-		}
-		return r.Store.GetRepo().SearchOperationalIntents(ctx, &cellsVolume)
-
-	case string(getDependentOperationalIntents):
-		var subscriptionID dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &subscriptionID); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getDependentOperationalIntents)
-		}
-		return r.Store.GetRepo().GetDependentOperationalIntents(ctx, subscriptionID)
-
 	case string(listExpiredOperationalIntents):
 		var threshold time.Time
 		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
 			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredOperationalIntents)
 		}
 		return r.Store.GetRepo().ListExpiredOperationalIntents(ctx, threshold)
-
-	case string(countOperationalIntents):
-		return r.Store.GetRepo().CountOperationalIntents(ctx)
 
 	// Operations registry (transactions)
 	default:
