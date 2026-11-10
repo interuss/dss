@@ -23,6 +23,7 @@ module "terraform-commons-dss" {
   kubernetes_namespace                 = var.kubernetes_namespace
   kubernetes_storage_class             = var.google_kubernetes_storage_class
   app_hostname                         = var.app_hostname
+  psp_role_ref                         = var.psp_role_ref
   crdb_image_tag                       = var.crdb_image_tag
   crdb_cluster_name                    = var.crdb_cluster_name
   crdb_cache                           = var.crdb_cache

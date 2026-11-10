@@ -361,6 +361,19 @@
           "type": "string",
           "description": "Kubernetes memory limit of the core-service containers. Not set if empty. Example: `2Gi`"
         },
+        "psp": {
+          "description": "Optional: Pod Security Policy RoleBinding granting the ClusterRole `roleRef` to all service accounts of the namespace.",
+          "type": "object",
+          "properties": {
+            "roleBinding": {
+              "type": "boolean"
+            },
+            "roleRef": {
+              "type": "string",
+              "description": "Name of the ClusterRole to bind."
+            }
+          }
+        },
         "env": {
           "type": "array",
           "description": "Additional environment variables of the core-service containers. Example: `[{name: GOGC, value: '80'}]`",

@@ -135,6 +135,11 @@ resource "local_file" "helm_chart_values" {
         desiredScdDbVersion = local.scd_db_schema
         desiredAuxDbVersion = local.aux_db_schema
       }
+
+      psp = {
+        roleBinding = var.psp_role_ref != ""
+        roleRef     = var.psp_role_ref
+      }
     }
 
     global = {

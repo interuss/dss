@@ -81,6 +81,8 @@ The release notes should contain at least the following sections:
 * [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
 * [helm] The image of the schema manager and evict jobs can now be set with `dss.schemaManager.image` (defaults to `dss.image`).
 * [terraform] New variable `schema_manager_image` (defaults to `image`), passed to Helm and Tanka.
+* [helm] A Pod Security Policy RoleBinding can now be created with `dss.psp.roleBinding` and `dss.psp.roleRef`.
+* [terraform] New variable `psp_role_ref`: when set, the RoleBinding is created by Helm and Tanka.
 
 ## Minimal database schema version
 

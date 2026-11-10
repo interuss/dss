@@ -458,6 +458,12 @@ Currently, only single node or three nodes deployments are supported.</p>
 <p>Example: <code>prometheus.dss.example.com</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>psp_role_ref (<code>string</code>)</td>
+                <td><p>Name of the ClusterRole bound to all the service accounts of the namespace, for Pod Security Policies.
+No RoleBinding is created when empty.</p>
+<p>Example: <code>psp:privileged</code></p>
+<br/>Default value: <code>""</code></td>
+            </tr><tr>
                 <td>raft_cluster_id (<code>number</code>)</td>
                 <td><p>Raft cluster ID. Must be identical on all nodes of the pool.</p>
 <p>Only used with the raft datastore.</p>
