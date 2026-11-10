@@ -4,6 +4,12 @@
 # container for this image, the desired binary must be specified (either
 # /usr/bin/core-service or /usr/bin/db-manager).
 
+FROM golang:1.27.3-alpine AS dlv
+
+RUN apk add build-base
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
+
+
 FROM golang:1.27.3-alpine AS build
 
 ARG EXTRA_GO_INSTALL_FLAGS=""
@@ -13,9 +19,6 @@ RUN apk add build-base
 RUN apk add git bash make
 RUN mkdir /app
 COPY go.mod go.sum /app/
-# Intend to run delve download outside the go module directory to prevent it
-# from being added as a dependency
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 WORKDIR /app
 
 # Get dependencies - will also be cached if we won't change mod/sum
@@ -31,7 +34,7 @@ FROM alpine:latest
 RUN apk update && apk add ca-certificates curl
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin
-COPY --from=build /go/bin/dlv /usr/bin
+COPY --from=dlv /go/bin/dlv /usr/bin
 COPY build/jwt-public-certs /jwt-public-certs
 COPY build/test-certs /test-certs
 COPY build/db_schemas /db-schemas
