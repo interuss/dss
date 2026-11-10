@@ -21,7 +21,7 @@ type EntryCommit struct {
 	ReadOnly bool
 	Done     chan ProposalResult
 
-	SnapshotData []byte
+	Snapshot *raftpb.Snapshot
 }
 
 type Proposal struct {

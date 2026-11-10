@@ -29,7 +29,7 @@ type state struct {
 	Subscriptions map[dssmodels.ID]*subscriptionRecord
 }
 
-// isaRecord is the gob-serializable representation of an ISA. It intentionally
+// isaRecord is the in-memory representation of an ISA. It intentionally
 // stores only primitive fields: the model's Version is never persisted, it is
 // derived from UpdatedAt on read.
 type isaRecord struct {
@@ -45,7 +45,7 @@ type isaRecord struct {
 	UpdatedAt  time.Time
 }
 
-// subscriptionRecord is the gob-serializable representation of a Subscription.
+// subscriptionRecord is the in-memory representation of a Subscription.
 type subscriptionRecord struct {
 	ID                dssmodels.ID
 	URL               string

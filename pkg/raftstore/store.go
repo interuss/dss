@@ -147,8 +147,8 @@ func (s *Store[R]) processCommits(ctx context.Context, commitCh <-chan consensus
 				return
 			}
 
-			if commit.SnapshotData != nil {
-				if err := s.raftRepo.RestoreFromSnapshot(commit.SnapshotData); err != nil {
+			if commit.Snapshot != nil {
+				if err := s.raftRepo.RestoreFromSnapshot(commit.Snapshot); err != nil {
 					s.logger.Fatal("failed to restore from snapshot", zap.Error(err))
 				}
 				continue

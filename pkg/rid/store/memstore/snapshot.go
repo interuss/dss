@@ -1,43 +1,92 @@
 package memstore
 
 import (
-	"bytes"
-	"encoding/gob"
-
+	"github.com/interuss/dss/pkg/memstore/utils"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/ridpb/snapshotpb"
 	"github.com/interuss/stacktrace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const snapshotVersion = 1
+func (r *repo) GetSnapshot() (*raftpb.Snapshot, error) {
+	snap := &snapshotpb.Snapshot{
+		Isas:          make(map[string]*snapshotpb.ISA, len(r.state.ISAs)),
+		Subscriptions: make(map[string]*snapshotpb.Subscription, len(r.state.Subscriptions)),
+	}
+	for id, rec := range r.state.ISAs {
+		snap.Isas[id.String()] = &snapshotpb.ISA{
+			Url:        rec.URL,
+			Owner:      rec.Owner.String(),
+			Cells:      dssmodels.CellUnionToProto(rec.Cells),
+			StartTime:  timestamppb.New(rec.StartTime),
+			EndTime:    timestamppb.New(rec.EndTime),
+			AltitudeHi: utils.ClonePtr(rec.AltitudeHi),
+			AltitudeLo: utils.ClonePtr(rec.AltitudeLo),
+			Writer:     rec.Writer,
+			UpdatedAt:  timestamppb.New(rec.UpdatedAt),
+		}
+	}
+	for id, rec := range r.state.Subscriptions {
+		snap.Subscriptions[id.String()] = &snapshotpb.Subscription{
+			Url:               rec.URL,
+			NotificationIndex: int32(rec.NotificationIndex),
+			Owner:             rec.Owner.String(),
+			Cells:             dssmodels.CellUnionToProto(rec.Cells),
+			StartTime:         timestamppb.New(rec.StartTime),
+			EndTime:           timestamppb.New(rec.EndTime),
+			AltitudeHi:        utils.ClonePtr(rec.AltitudeHi),
+			AltitudeLo:        utils.ClonePtr(rec.AltitudeLo),
+			Writer:            rec.Writer,
+			UpdatedAt:         timestamppb.New(rec.UpdatedAt),
+		}
+	}
 
-type snapshotEnvelope struct {
-	Version int
-	State   state
+	return &raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_RidSnapshot{RidSnapshot: snap}}, nil
 }
 
-func (r *repo) GetSnapshot() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(snapshotEnvelope{Version: snapshotVersion, State: r.state}); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to encode memstore snapshot")
+func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
+	snap := s.GetRidSnapshot()
+	if snap == nil {
+		return stacktrace.NewError("Expected an RID snapshot, got %T", s.GetAppSnapshot())
 	}
-	return buf.Bytes(), nil
-}
 
-func (r *repo) RestoreFromSnapshot(data []byte) error {
-	var env snapshotEnvelope
-	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&env); err != nil {
-		return stacktrace.Propagate(err, "Failed to decode memstore snapshot")
+	restored := state{
+		ISAs:          make(map[dssmodels.ID]*isaRecord, len(snap.GetIsas())),
+		Subscriptions: make(map[dssmodels.ID]*subscriptionRecord, len(snap.GetSubscriptions())),
 	}
-	if env.Version != snapshotVersion {
-		return stacktrace.NewError("Unsupported memstore snapshot version %d, expected %d", env.Version, snapshotVersion)
+	for key, pb := range snap.GetIsas() {
+		id := dssmodels.ID(key)
+		restored.ISAs[id] = &isaRecord{
+			ID:         id,
+			URL:        pb.GetUrl(),
+			Owner:      dssmodels.Owner(pb.GetOwner()),
+			Cells:      dssmodels.CellUnionFromProto(pb.GetCells()),
+			StartTime:  pb.GetStartTime().AsTime(),
+			EndTime:    pb.GetEndTime().AsTime(),
+			AltitudeHi: utils.ClonePtr(pb.AltitudeHi),
+			AltitudeLo: utils.ClonePtr(pb.AltitudeLo),
+			Writer:     pb.GetWriter(),
+			UpdatedAt:  pb.GetUpdatedAt().AsTime(),
+		}
 	}
-	r.state = env.State
-	// gob decodes an empty map as nil; re-initialize to keep the repo writable.
-	if r.state.ISAs == nil {
-		r.state.ISAs = map[dssmodels.ID]*isaRecord{}
+	for key, pb := range snap.GetSubscriptions() {
+		id := dssmodels.ID(key)
+		restored.Subscriptions[id] = &subscriptionRecord{
+			ID:                id,
+			URL:               pb.GetUrl(),
+			NotificationIndex: int(pb.GetNotificationIndex()),
+			Owner:             dssmodels.Owner(pb.GetOwner()),
+			Cells:             dssmodels.CellUnionFromProto(pb.GetCells()),
+			StartTime:         pb.GetStartTime().AsTime(),
+			EndTime:           pb.GetEndTime().AsTime(),
+			AltitudeHi:        utils.ClonePtr(pb.AltitudeHi),
+			AltitudeLo:        utils.ClonePtr(pb.AltitudeLo),
+			Writer:            pb.GetWriter(),
+			UpdatedAt:         pb.GetUpdatedAt().AsTime(),
+		}
 	}
-	if r.state.Subscriptions == nil {
-		r.state.Subscriptions = map[dssmodels.ID]*subscriptionRecord{}
-	}
+
+	r.state = restored
 	return nil
 }

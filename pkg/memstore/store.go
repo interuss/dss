@@ -6,6 +6,7 @@ import (
 
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	"github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
@@ -13,8 +14,9 @@ import (
 
 type MemRepo[R any] interface {
 	GetRepo() R
-	GetSnapshot() ([]byte, error)
-	RestoreFromSnapshot([]byte) error
+	// GetSnapshot returns a snapshot with only the application snapshot of the repo set.
+	GetSnapshot() (*raftpb.Snapshot, error)
+	RestoreFromSnapshot(*raftpb.Snapshot) error
 
 	// Checkpoint ask the repo to store a quick, internal checkpoint with its current state.
 	// There is at most one check point, any existing checkpoint is overwritten

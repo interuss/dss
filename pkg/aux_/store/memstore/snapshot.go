@@ -1,35 +1,63 @@
 package memstore
 
 import (
-	"bytes"
-	"encoding/gob"
-
+	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/auxpb/snapshotpb"
+	"github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/stacktrace"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const snapshotVersion = 1
+func (r *repo) GetSnapshot() (*raftpb.Snapshot, error) {
+	snap := &snapshotpb.Snapshot{
+		Participants: make([]*snapshotpb.Participant, 0, len(r.state.Participants)),
+		Heartbeats:   make([]*snapshotpb.Heartbeat, 0, len(r.state.Heartbeats)),
+	}
+	for loc, p := range r.state.Participants {
+		snap.Participants = append(snap.Participants, &snapshotpb.Participant{
+			Locality:       string(loc),
+			PublicEndpoint: p.PublicEndpoint,
+			UpdatedAt:      timestamppb.New(p.UpdatedAt),
+		})
+	}
+	for key, hb := range r.state.Heartbeats {
+		snap.Heartbeats = append(snap.Heartbeats, &snapshotpb.Heartbeat{
+			Locality:                    string(key.Locality),
+			Source:                      key.Source,
+			Timestamp:                   dssmodels.TimeToProto(hb.Timestamp),
+			NextHeartbeatExpectedBefore: dssmodels.TimeToProto(hb.NextHeartbeatExpectedBefore),
+			Reporter:                    hb.Reporter,
+		})
+	}
 
-type snapshotEnvelope struct {
-	Version int
-	State   state
+	return &raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_AuxSnapshot{AuxSnapshot: snap}}, nil
 }
 
-func (r *repo) GetSnapshot() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(snapshotEnvelope{Version: snapshotVersion, State: r.state}); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to encode memstore snapshot")
+func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
+	snap := s.GetAuxSnapshot()
+	if snap == nil {
+		return stacktrace.NewError("Expected an aux snapshot, got %T", s.GetAppSnapshot())
 	}
-	return buf.Bytes(), nil
-}
 
-func (r *repo) RestoreFromSnapshot(data []byte) error {
-	var env snapshotEnvelope
-	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&env); err != nil {
-		return stacktrace.Propagate(err, "Failed to decode memstore snapshot")
+	restored := state{
+		Participants: make(map[locality]*participant, len(snap.GetParticipants())),
+		Heartbeats:   make(map[heartbeatKey]*heartbeat, len(snap.GetHeartbeats())),
 	}
-	if env.Version != snapshotVersion {
-		return stacktrace.NewError("Unsupported memstore snapshot version %d, expected %d", env.Version, snapshotVersion)
+	for _, pb := range snap.GetParticipants() {
+		restored.Participants[locality(pb.GetLocality())] = &participant{
+			PublicEndpoint: pb.GetPublicEndpoint(),
+			UpdatedAt:      pb.GetUpdatedAt().AsTime(),
+		}
 	}
-	r.state = env.State
+	for _, pb := range snap.GetHeartbeats() {
+		key := heartbeatKey{Locality: locality(pb.GetLocality()), Source: pb.GetSource()}
+		restored.Heartbeats[key] = &heartbeat{
+			Timestamp:                   dssmodels.TimeFromProto(pb.GetTimestamp()),
+			NextHeartbeatExpectedBefore: dssmodels.TimeFromProto(pb.GetNextHeartbeatExpectedBefore()),
+			Reporter:                    pb.GetReporter(),
+		}
+	}
+
+	r.state = restored
 	return nil
 }
