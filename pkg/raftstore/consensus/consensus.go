@@ -41,7 +41,13 @@ type Consensus struct {
 	nodeID    uint64
 	group     string
 	publicURL string
-	node      *node.NodeState
+	// config is used to start the raft node.
+	config *raft.Config
+
+	tickInterval     time.Duration
+	snapshotInterval uint64
+
+	node *node.NodeState
 
 	transport *rafthttp.Transport
 	listener  *listener
@@ -86,28 +92,26 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	if !ok {
 		return nil, stacktrace.NewError("node ID %d not found in peers map", connectParams.NodeID)
 	}
+	if connectParams.URL != "" && connectParams.URL != nodeUrl.String() {
+		return nil, stacktrace.NewError("--raft_url %s differs from the URL %s of node %d in --raft_peers", connectParams.URL, nodeUrl, connectParams.NodeID)
+	}
 
-	var raftNode raft.Node
-	config := connectParams.RaftConfig(storage)
-	if old {
-		logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
-		raftNode = raft.RestartNode(config)
-	} else {
-		logger.Info("starting new raft node", zap.String("address", nodeUrl.String()))
-		raftPeers, err := peersList(peers)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to build the list of bootstrap peers")
-		}
-		raftNode = raft.StartNode(config, raftPeers)
+	raftPeers, err := peersList(peers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to build the list of bootstrap peers")
 	}
 
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger),
 
-		nodeID:         connectParams.NodeID,
-		group:          connectParams.Group,
-		publicURL:      nodeUrl.String(),
-		node:           node.NewNodeState(raftNode),
+		nodeID:           connectParams.NodeID,
+		group:            connectParams.Group,
+		publicURL:        nodeUrl.String(),
+		config:           connectParams.RaftConfig(storage),
+		tickInterval:     connectParams.TickInterval,
+		snapshotInterval: connectParams.SnapshotIntervalEntries,
+		node:             node.NewNodeState(),
+
 		storage:        storage,
 		getAppSnapshot: provider,
 		commitC:        commitC,
@@ -148,10 +152,6 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
-		// A removal in the log is recorded when it is applied again, but not one that is already in the snapshot.
-		if consensus.membership.isIDRemoved(connectParams.NodeID) {
-			consensus.node.SetRemoved()
-		}
 		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
 	}
 
@@ -160,9 +160,29 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to register raft metrics")
 	}
 
-	consensus.startRaftUpdatesConsumer(connectParams.TickInterval, connectParams.SnapshotIntervalEntries)
+	switch {
+	case consensus.membership.isIDRemoved(connectParams.NodeID):
+		consensus.logger.Warn("this node was removed from the Raft group")
+		consensus.node.SetRemoved()
+	case old:
+		consensus.logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
+		consensus.startNode(func() raft.Node { return raft.RestartNode(consensus.config) })
+	default:
+		consensus.logger.Info("starting new raft node", zap.String("address", nodeUrl.String()))
+		consensus.startNode(func() raft.Node { return raft.StartNode(consensus.config, raftPeers) })
+	}
 
 	return consensus, nil
+}
+
+// startNode makes this node a member of the group with the raft node returned by newNode and starts the consumer of
+// its updates, if this node is waiting. It returns whether the raft node was started, and the state of this node.
+func (c *Consensus) startNode(newNode func() raft.Node) (bool, node.State) {
+	started, state := c.node.Start(newNode)
+	if started {
+		c.startRaftUpdatesConsumer(c.tickInterval, c.snapshotInterval)
+	}
+	return started, state
 }
 
 // TODO: ctx is currently ignored (see issue: https://github.com/interuss/dss/issues/1610)
@@ -181,9 +201,11 @@ func (c *Consensus) Stop(ctx context.Context) {
 		c.transport.Stop()
 		c.logger.Info("transport stopped")
 		c.endpoint.close()
-		raftNode := c.node.RaftNode()
-		raftNode.Stop()
-		c.logger.Info("raft node stopped")
+		// A node found removed at startup has no raft node.
+		if raftNode := c.node.RaftNode(); raftNode != nil {
+			raftNode.Stop()
+			c.logger.Info("raft node stopped")
+		}
 	})
 }
 
@@ -435,20 +457,7 @@ func (c *Consensus) registerMetrics() error {
 	}
 
 	c.metricsRegistration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		status := c.node.RaftNode().Status()
 		attrs := metric.WithAttributes(c.metricAttributes()...)
-
-		o.ObserveInt64(gauges["raft_term"], int64(status.GetTerm()), attrs)
-		o.ObserveInt64(gauges["raft_commit_index"], int64(status.GetCommit()), attrs)
-		o.ObserveInt64(gauges["raft_applied_index"], int64(status.Applied), attrs)
-		o.ObserveInt64(gauges["raft_leader_id"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("leader_id", types.ID(status.Lead).String()))...))
-
-		isLeader := int64(0)
-		if status.RaftState == raft.StateLeader {
-			isLeader = 1
-		}
-		o.ObserveInt64(gauges["raft_is_leader"], isLeader, attrs)
-		o.ObserveInt64(gauges["raft_state"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("state", status.RaftState.String()))...))
 
 		o.ObserveInt64(gauges["raft_snapshot_index"], int64(c.snapshotIndex.Load()), attrs)
 
@@ -470,6 +479,25 @@ func (c *Consensus) registerMetrics() error {
 		c.readTracker.Unlock()
 		o.ObserveInt64(gauges["raft_proposals_pending"], int64(pendingWrites), metric.WithAttributes(c.metricAttributes(attribute.String("type", "write"))...))
 		o.ObserveInt64(gauges["raft_proposals_pending"], int64(pendingReads), metric.WithAttributes(c.metricAttributes(attribute.String("type", "read"))...))
+
+		raftNode := c.node.RaftNode()
+		if raftNode == nil {
+			// A node found removed at startup has no raft node to report the status of.
+			return nil
+		}
+		status := raftNode.Status()
+
+		o.ObserveInt64(gauges["raft_term"], int64(status.GetTerm()), attrs)
+		o.ObserveInt64(gauges["raft_commit_index"], int64(status.GetCommit()), attrs)
+		o.ObserveInt64(gauges["raft_applied_index"], int64(status.Applied), attrs)
+		o.ObserveInt64(gauges["raft_leader_id"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("leader_id", types.ID(status.Lead).String()))...))
+
+		isLeader := int64(0)
+		if status.RaftState == raft.StateLeader {
+			isLeader = 1
+		}
+		o.ObserveInt64(gauges["raft_is_leader"], isLeader, attrs)
+		o.ObserveInt64(gauges["raft_state"], 1, metric.WithAttributes(c.metricAttributes(attribute.String("state", status.RaftState.String()))...))
 
 		if status.RaftState != raft.StateLeader {
 			return nil
@@ -783,9 +811,15 @@ func (c *Consensus) Members() (Membership, error) {
 	}
 	c.membership.RUnlock()
 
+	// A node found removed at startup has no raft node, so it knows no leader.
+	var leaderID uint64
+	if raftNode := c.node.RaftNode(); raftNode != nil {
+		leaderID = raftNode.Status().Lead
+	}
+
 	return Membership{
 		ClusterID: uint64(c.transport.ClusterID),
-		LeaderID:  c.node.RaftNode().Status().Lead,
+		LeaderID:  leaderID,
 		Nodes:     nodes,
 	}, nil
 }
@@ -982,7 +1016,10 @@ func decodeSnapshot(data []byte) (snapshot, error) {
 
 // Process implements the rafthttp.Raft interface.
 func (c *Consensus) Process(ctx context.Context, m *raftpb.Message) error {
-	raftNode := c.node.RaftNode()
+	raftNode, err := c.node.Member()
+	if err != nil {
+		return err
+	}
 	return raftNode.Step(ctx, m)
 }
 
