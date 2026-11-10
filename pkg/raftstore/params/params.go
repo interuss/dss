@@ -6,11 +6,10 @@ import (
 	"hash/fnv"
 	"net/url"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/interuss/stacktrace"
+	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/raft/v3"
 )
 
@@ -37,7 +36,6 @@ type (
 	// ConnectParameters bundles up parameters used for connecting nodes in a raftstore cluster.
 	ConnectParameters struct {
 		NodeID uint64
-		Peers  string
 		// URL is the URL at which the other nodes reach this node.
 		URL string
 
@@ -74,76 +72,19 @@ func (c ConnectParameters) TLSEnabled() bool {
 	return !c.Insecure
 }
 
-// PeerMap parses the Peers string into a map of node ID to peer URL.
-func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
-	peers := make(map[uint64]*url.URL)
-	scheme := "http"
+// URLScheme is the scheme of the URLs at which the Raft nodes reach each other: https with mutual TLS, http otherwise.
+func (c ConnectParameters) URLScheme() string {
 	if c.TLSEnabled() {
-		scheme = "https"
+		return "https"
 	}
-
-	for entry := range strings.SplitSeq(c.Peers, ",") {
-		parts := strings.SplitN(entry, "=", 2)
-		if len(parts) != 2 {
-			return nil, stacktrace.NewError("invalid peer entry %s: must be in format nodeID=peerURL", entry)
-		}
-
-		id, err := strconv.ParseUint(parts[0], 10, 64)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "invalid peer ID %s", parts[0])
-		}
-
-		if id == 0 {
-			return nil, stacktrace.NewError("invalid peer ID 0: peer IDs must be greater than 0")
-		}
-
-		if _, exists := peers[id]; exists {
-			return nil, stacktrace.NewError("duplicate peer ID %d", id)
-		}
-
-		peerURL, err := url.Parse(parts[1])
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "invalid peer URL %s", parts[1])
-		}
-
-		if peerURL.Scheme != scheme {
-			return nil, stacktrace.NewError("invalid peer URL %s: scheme must be %s (https when mutual TLS is enabled, http otherwise)", parts[1], scheme)
-		}
-
-		peers[id] = peerURL
-	}
-
-	return peers, nil
+	return "http"
 }
 
-// RaftPeerUrl returns the URL at which the other nodes reach this node: its entry in --raft_peers if set, which --raft_peer_url
-// must then match if set too, and --raft_peer_url otherwise.
+// RaftPeerUrl returns --raft_peer_url, the URL at which the other nodes reach this node.
 func (c ConnectParameters) RaftPeerUrl() (*url.URL, error) {
-	if c.Peers != "" {
-		peers, err := c.PeerMap()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to parse peer map")
-		}
-		nodeURL, ok := peers[c.NodeID]
-		if !ok {
-			return nil, stacktrace.NewError("node ID %d not found in peers map", c.NodeID)
-		}
-		if c.URL != "" && c.URL != nodeURL.String() {
-			return nil, stacktrace.NewError("--raft_peer_url %s differs from the URL %s of node %d in --raft_peers", c.URL, nodeURL, c.NodeID)
-		}
-		return nodeURL, nil
-	}
-
 	nodeURL, err := url.Parse(c.URL)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid --raft_peer_url %s", c.URL)
-	}
-	scheme := "http"
-	if c.TLSEnabled() {
-		scheme = "https"
-	}
-	if nodeURL.Scheme != scheme {
-		return nil, stacktrace.NewError("invalid --raft_peer_url %s: scheme must be %s (https when mutual TLS is enabled, http otherwise)", c.URL, scheme)
 	}
 	return nodeURL, nil
 }
@@ -171,7 +112,6 @@ var (
 
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
-	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `Comma-separated "nodeID=peerURL" pairs defining all cluster members including this node, e.g. "1=http://node1:9011,2=http://node2:9011,3=http://node3:9011". The Raft groups (aux, rid, scd) of a node share a single listener at its URL.`)
 	flag.StringVar(&connectParameters.URL, "raft_peer_url", "", "URL at which the other DSS nodes of the cluster reach this node, unique within the cluster, e.g. http://node1:9011. The Raft groups (aux, rid, scd) of the node share a single listener on its port.")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.")
@@ -201,8 +141,8 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	if connectParameters.NodeID == 0 {
 		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
 	}
-	if connectParameters.Peers == "" && connectParameters.URL == "" {
-		return ConnectParameters{}, stacktrace.NewError("--raft_peer_url is required when --raft_peers is not set")
+	if _, err := types.NewURLs([]string{connectParameters.URL}); err != nil {
+		return ConnectParameters{}, stacktrace.Propagate(err, "--raft_peer_url is required and must be a valid URL with a port and without a path")
 	}
 	p := connectParameters
 	if p.Insecure && (p.TLSCertFile != "" || p.TLSKeyFile != "" || p.TLSCAFile != "") {
@@ -210,6 +150,9 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	}
 	if !p.Insecure && (p.TLSCertFile == "" || p.TLSKeyFile == "" || p.TLSCAFile == "") {
 		return ConnectParameters{}, stacktrace.NewError("--raft_tls_cert_file, --raft_tls_key_file and --raft_tls_ca_file are required unless --raft_insecure is set")
+	}
+	if nodeURL, err := url.Parse(p.URL); err != nil || nodeURL.Scheme != p.URLScheme() {
+		return ConnectParameters{}, stacktrace.NewError("invalid --raft_peer_url %s: scheme must be %s (https when mutual TLS is enabled, http otherwise)", p.URL, p.URLScheme())
 	}
 	p.DataDir = filepath.Join(connectParameters.DataDir, subfolder)
 	p.Group = subfolder

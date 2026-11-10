@@ -88,20 +88,6 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to get the URL of the node")
 	}
 
-	// Without --raft_peers, the node waits to bootstrap or join its group through the admin API.
-	// TODO: remove --raft_peers once the deployments form the groups through the admin API.
-	var raftPeers []raft.Peer
-	if connectParams.Peers != "" {
-		peers, err := connectParams.PeerMap()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to parse peer map")
-		}
-		raftPeers, err = peersList(peers)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to build the list of bootstrap peers")
-		}
-	}
-
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger),
 
@@ -168,9 +154,6 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	case old:
 		consensus.logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
 		consensus.startNode(func() raft.Node { return raft.RestartNode(consensus.config) })
-	case len(raftPeers) > 0:
-		consensus.logger.Info("starting new raft node", zap.String("address", nodeUrl.String()))
-		consensus.startNode(func() raft.Node { return raft.StartNode(consensus.config, raftPeers) })
 	default:
 		consensus.logger.Info("waiting to be added to a Raft group or to bootstrap one", zap.String("address", nodeUrl.String()))
 	}
@@ -324,20 +307,6 @@ func write[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Re
 // It is passed as the context of the config changes adding a node.
 type member struct {
 	URL string `json:"url,omitempty"`
-}
-
-func peersList(peers map[uint64]*url.URL) ([]raft.Peer, error) {
-	result := make([]raft.Peer, 0, len(peers))
-	for id, peerURL := range peers {
-		peerCtx, err := json.Marshal(member{URL: peerURL.String()})
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to marshal context of peer %d", id)
-		}
-
-		// We pass member as the Context so that we can recover the peer URL when applying a config change.
-		result = append(result, raft.Peer{ID: id, Context: peerCtx})
-	}
-	return result, nil
 }
 
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, nodeURL *url.URL, tlsInfo etcdtransport.TLSInfo) error {
