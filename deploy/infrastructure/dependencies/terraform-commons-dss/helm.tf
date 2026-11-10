@@ -44,13 +44,14 @@ resource "local_file" "helm_chart_values" {
         cluster-name   = var.crdb_cluster_name
         cache          = var.crdb_cache
         max-sql-memory = var.crdb_max_sql_memory
+        locality       = var.locality
         single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
       }
 
       statefulset = {
         replicas = length(var.crdb_internal_nodes)
         args = [
-          "--locality-advertise-addr=zone=${var.locality}@$(hostname -f)",
+          "--locality-advertise-addr=${var.locality}@$(hostname -f)",
           "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
         ]
         resources            = local.helm_crdb_resources
@@ -110,7 +111,7 @@ resource "local_file" "helm_chart_values" {
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
-        locality                         = "zone=${var.locality}"
+        locality                         = var.locality
         datastoreMaxOpenConns            = var.datastore_max_open_conns
         dumpRequests                     = var.dump_requests
 
@@ -451,7 +452,7 @@ resource "local_file" "helm_chart_values" {
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
         enableDssMetrics                 = var.enable_dss_metrics
-        locality                         = "zone=${var.locality}"
+        locality                         = var.locality
         datastoreMaxOpenConns            = var.datastore_max_open_conns
 
         evict = {
