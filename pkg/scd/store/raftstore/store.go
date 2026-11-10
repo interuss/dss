@@ -2,8 +2,6 @@ package raftstore
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/memstore"
@@ -255,45 +253,6 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		return r.Store.GetRepo().CountSubscriptions(ctx)
 
 	default:
-		return r.applyLegacy(ctx, proposal)
-	}
-}
-
-// applyLegacy applies the proposals carrying a JSON encoded request.
-// TODO: remove once all the requests are carried by a payload.
-func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (any, error) {
-	switch proposal.RequestType {
-
-	// Subscriptions
-
-	case string(listExpiredSubscriptions):
-		var threshold time.Time
-		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredSubscriptions)
-		}
-		return r.Store.GetRepo().ListExpiredSubscriptions(ctx, threshold)
-
-	// Operational Intents
-
-	case string(listExpiredOperationalIntents):
-		var threshold time.Time
-		if err := json.Unmarshal(proposal.Value, &threshold); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", listExpiredOperationalIntents)
-		}
-		return r.Store.GetRepo().ListExpiredOperationalIntents(ctx, threshold)
-
-	// Operations registry (transactions)
-	default:
-		handler, ok := operations.Registry[proposal.RequestType]
-		if !ok {
-			return nil, stacktrace.NewError("unrecognized request type: %s", proposal.RequestType)
-		}
-
-		request, err := handler.Decode(proposal.Value)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "failed to decode %s payload", proposal.RequestType)
-		}
-
-		return handler.Execute(ctx, r.Store.GetRepo(), request)
+		return nil, stacktrace.NewError("unknown request: %q", proposal.Name())
 	}
 }

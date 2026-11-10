@@ -124,14 +124,11 @@ func (*Payload_RidPayload) isPayload_Payload() {}
 func (*Payload_ScdPayload) isPayload_Payload() {}
 
 type Proposal struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Id        []byte                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	NodeId    uint64                 `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Payload   *Payload               `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
-	// TODO: remove request_type and value once all the requests are carried by payload.
-	RequestType   string `protobuf:"bytes,5,opt,name=request_type,json=requestType,proto3" json:"request_type,omitempty"`
-	Value         []byte `protobuf:"bytes,6,opt,name=value,proto3" json:"value,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            []byte                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	NodeId        uint64                 `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Payload       *Payload               `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -194,20 +191,6 @@ func (x *Proposal) GetPayload() *Payload {
 	return nil
 }
 
-func (x *Proposal) GetRequestType() string {
-	if x != nil {
-		return x.RequestType
-	}
-	return ""
-}
-
-func (x *Proposal) GetValue() []byte {
-	if x != nil {
-		return x.Value
-	}
-	return nil
-}
-
 var File_proposal_proto protoreflect.FileDescriptor
 
 const file_proposal_proto_rawDesc = "" +
@@ -220,14 +203,12 @@ const file_proposal_proto_rawDesc = "" +
 	"ridPayload\x12/\n" +
 	"\vscd_payload\x18\x03 \x01(\v2\f.scd.PayloadH\x00R\n" +
 	"scdPayloadB\t\n" +
-	"\apayload\"\xe2\x01\n" +
+	"\apayload\"\xa9\x01\n" +
 	"\bProposal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\fR\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x04R\x06nodeId\x128\n" +
 	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12:\n" +
-	"\apayload\x18\x04 \x01(\v2 .dss.raftstore.consensus.PayloadR\apayload\x12!\n" +
-	"\frequest_type\x18\x05 \x01(\tR\vrequestType\x12\x14\n" +
-	"\x05value\x18\x06 \x01(\fR\x05valueB'Z%github.com/interuss/dss/pkg/pb/raftpbb\x06proto3"
+	"\apayload\x18\x04 \x01(\v2 .dss.raftstore.consensus.PayloadR\apayloadB'Z%github.com/interuss/dss/pkg/pb/raftpbb\x06proto3"
 
 var (
 	file_proposal_proto_rawDescOnce sync.Once
