@@ -8,6 +8,8 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -16,44 +18,80 @@ import (
 
 func init() {
 	Registry[restapi.DeleteConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteConstraintPayload],
-		Execute: executeDeleteConstraint,
+		EncodePayload: encodeDeleteConstraint,
+		DecodePayload: decodeDeleteConstraint,
+		Execute:       executeDeleteConstraint,
 	}
 	Registry[restapi.GetConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.GetConstraintReferenceRequest],
-		Execute:    executeGetConstraint,
-		IsReadOnly: true,
+		EncodePayload: encodeGetConstraint,
+		DecodePayload: decodeGetConstraint,
+		Execute:       executeGetConstraint,
+		IsReadOnly:    true,
 	}
 	Registry[restapi.CreateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*createConstraintPayload],
-		Execute: executePutConstraint,
+		EncodePayload: encodeCreateConstraint,
+		DecodePayload: decodeCreateConstraint,
+		Execute:       executePutConstraint,
 	}
 	Registry[restapi.UpdateConstraintReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateConstraintPayload],
-		Execute: executePutConstraint,
+		EncodePayload: encodeUpdateConstraint,
+		DecodePayload: decodeUpdateConstraint,
+		Execute:       executePutConstraint,
 	}
 	Registry[restapi.QueryConstraintReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.QueryConstraintReferencesRequest],
-		Execute:    executeQueryConstraintReferences,
-		IsReadOnly: true,
+		EncodePayload: encodeQueryConstraints,
+		DecodePayload: decodeQueryConstraints,
+		Execute:       executeQueryConstraintReferences,
+		IsReadOnly:    true,
 	}
 }
 
-func executeGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.GetConstraintReferenceRequest)
+type getConstraintPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+}
+
+func (p *getConstraintPayload) OperationID() string {
+	return restapi.GetConstraintReferenceOperationID
+}
+
+// NewGetConstraintPayload builds the payload for a Constraint retrieval request.
+func NewGetConstraintPayload(id dssmodels.ID, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &getConstraintPayload{ID: id, Manager: manager}
+}
+
+func encodeGetConstraint(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*getConstraintPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetConstraintReferenceOperationID)
 	}
-
-	id, err := dssmodels.IDFromString(string(req.Entityid))
+	id, err := payload.ID.ToProto()
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
+		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
 	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetConstraintReferenceOperation{
+		GetConstraintReferenceOperation: &scdpb.GetConstraintReferenceOperation{Id: id, Manager: payload.Manager.String()},
+	}}), nil
+}
+
+func decodeGetConstraint(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetGetConstraintReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.GetConstraintReferenceOperationID)
+	}
+	decoded := &getConstraintPayload{Manager: dssmodels.Manager(req.GetManager())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
+	}
+	return decoded, nil
+}
+
+func executeGetConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(*getConstraintPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetConstraintReferenceOperationID)
+	}
+	id := payload.ID
 
 	constraint, err := repo.GetConstraint(ctx, id)
 	switch {
@@ -63,7 +101,7 @@ func executeGetConstraint(ctx context.Context, repo repos.Repository, request ds
 		return nil, stacktrace.Propagate(err, "Unable to get Constraint from repo")
 	}
 
-	if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+	if constraint.Manager != payload.Manager {
 		constraint.OVN = scdmodels.NoOvnPhrase
 	}
 
@@ -92,6 +130,64 @@ func (p *updateConstraintPayload) OperationID() string {
 }
 
 func (p *updateConstraintPayload) constraint() *scdmodels.Constraint { return p.Constraint }
+
+func encodeCreateConstraint(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*createConstraintPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateConstraintReferenceOperationID)
+	}
+	constraint, err := payload.Constraint.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to encode Constraint for operation %q", restapi.CreateConstraintReferenceOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_CreateConstraintReferenceOperation{
+		CreateConstraintReferenceOperation: &scdpb.CreateConstraintReferenceOperation{Constraint: constraint},
+	}}), nil
+}
+
+func decodeCreateConstraint(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetCreateConstraintReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.CreateConstraintReferenceOperationID)
+	}
+	constraint := new(scdmodels.Constraint)
+	if err := constraint.FromProto(req.GetConstraint()); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode Constraint for operation %q", restapi.CreateConstraintReferenceOperationID)
+	}
+	return &createConstraintPayload{Constraint: constraint}, nil
+}
+
+func encodeUpdateConstraint(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*updateConstraintPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.UpdateConstraintReferenceOperationID)
+	}
+	constraint, err := payload.Constraint.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to encode Constraint for operation %q", restapi.UpdateConstraintReferenceOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_UpdateConstraintReferenceOperation{
+		UpdateConstraintReferenceOperation: &scdpb.UpdateConstraintReferenceOperation{
+			Constraint: constraint,
+			Ovn:        payload.Constraint.OVN.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeUpdateConstraint(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetUpdateConstraintReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.UpdateConstraintReferenceOperationID)
+	}
+	constraint := new(scdmodels.Constraint)
+	if err := constraint.FromProto(req.GetConstraint()); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode Constraint for operation %q", restapi.UpdateConstraintReferenceOperationID)
+	}
+	if err := constraint.OVN.FromProto(req.GetOvn()); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode Constraint OVN for operation %q", restapi.UpdateConstraintReferenceOperationID)
+	}
+	return &updateConstraintPayload{Constraint: constraint}, nil
+}
 
 // constraintPayload is implemented by createConstraintPayload and updateConstraintPayload
 type constraintPayload interface {
@@ -214,26 +310,57 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 	}, nil
 }
 
+type queryConstraintsPayload struct {
+	AreaOfInterest *dssmodels.CellsVolume4D
+	Manager        dssmodels.Manager
+}
+
+func (p *queryConstraintsPayload) OperationID() string {
+	return restapi.QueryConstraintReferencesOperationID
+}
+
+// NewQueryConstraintsPayload builds the payload for a Constraints query.
+func NewQueryConstraintsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &queryConstraintsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
+}
+
+func encodeQueryConstraints(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*queryConstraintsPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
+	}
+	if payload.AreaOfInterest == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QueryConstraintReferencesOperation{
+		QueryConstraintReferencesOperation: &scdpb.QueryConstraintReferencesOperation{
+			AreaOfInterest: payload.AreaOfInterest.ToProto(),
+			Manager:        payload.Manager.String(),
+		},
+	}}), nil
+}
+
+func decodeQueryConstraints(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetQueryConstraintReferencesOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.QueryConstraintReferencesOperationID)
+	}
+	if req.GetAreaOfInterest() == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	decoded := &queryConstraintsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
+	return decoded, nil
+}
+
 func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.QueryConstraintReferencesRequest)
+	payload, ok := request.(*queryConstraintsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
 	}
 
-	// Retrieve the area of interest parameter
-	aoi := req.Body.AreaOfInterest
-	if aoi == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
-	}
-
-	// Parse area of interest to a cells-native volume
-	cellsVol4, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
-	}
-
 	// Perform search query on Store
-	constraints, err := repo.SearchConstraints(ctx, cellsVol4)
+	constraints, err := repo.SearchConstraints(ctx, payload.AreaOfInterest)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +371,7 @@ func executeQueryConstraintReferences(ctx context.Context, repo repos.Repository
 	}
 	for _, constraint := range constraints {
 		p := constraint.ToRest()
-		if constraint.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+		if constraint.Manager != payload.Manager {
 			noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 			p.Ovn = &noOvnPhrase
 		}
@@ -267,6 +394,39 @@ func (p *deleteConstraintPayload) OperationID() string {
 // NewDeleteConstraintPayload builds the payload for a Constraint deletion request.
 func NewDeleteConstraintPayload(id dssmodels.ID, manager dssmodels.Manager, ovn scdmodels.OVN) dssstore.OperationRequest {
 	return &deleteConstraintPayload{ID: id, Manager: manager, OVN: ovn}
+}
+
+func encodeDeleteConstraint(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*deleteConstraintPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteConstraintReferenceOperationID)
+	}
+	id, err := payload.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_DeleteConstraintReferenceOperation{
+		DeleteConstraintReferenceOperation: &scdpb.DeleteConstraintReferenceOperation{
+			Id:      id,
+			Manager: payload.Manager.String(),
+			Ovn:     payload.OVN.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeDeleteConstraint(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetDeleteConstraintReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.DeleteConstraintReferenceOperationID)
+	}
+	decoded := &deleteConstraintPayload{Manager: dssmodels.Manager(req.GetManager())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
+	}
+	if err := decoded.OVN.FromProto(req.GetOvn()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Constraint OVN")
+	}
+	return decoded, nil
 }
 
 func executeDeleteConstraint(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {

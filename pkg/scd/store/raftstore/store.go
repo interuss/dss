@@ -75,6 +75,58 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		}
 		return r.Store.GetRepo().UpsertUssAvailability(ctx, ussa)
 
+	// Constraint operations
+	case *scdpb.Payload_GetConstraintReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.GetConstraintReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_CreateConstraintReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.CreateConstraintReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_UpdateConstraintReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.UpdateConstraintReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_DeleteConstraintReferenceOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.DeleteConstraintReferenceOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	case *scdpb.Payload_QueryConstraintReferencesOperation:
+		return dssstore.ExecutePayload(ctx, operations.Registry, restapi.QueryConstraintReferencesOperationID, r.Store.GetRepo(), proposal.Payload)
+
+	// Constraint repository requests
+	case *scdpb.Payload_SearchConstraintsRepoCall:
+		volume := payload.SearchConstraintsRepoCall.GetVolume()
+		if volume == nil {
+			return nil, stacktrace.NewError("missing volume")
+		}
+		cellsVolume := new(dssmodels.CellsVolume4D)
+		cellsVolume.FromProto(volume)
+		return r.Store.GetRepo().SearchConstraints(ctx, cellsVolume)
+
+	case *scdpb.Payload_GetConstraintRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.GetConstraintRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Constraint ID")
+		}
+		return r.Store.GetRepo().GetConstraint(ctx, id)
+
+	case *scdpb.Payload_UpsertConstraintRepoCall:
+		req := payload.UpsertConstraintRepoCall
+		constraint := new(scdmodels.Constraint)
+		if err := constraint.FromProto(req.GetConstraint()); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to decode Constraint")
+		}
+		constraint.Version = scdmodels.VersionNumber(req.GetVersion())
+		return r.Store.GetRepo().UpsertConstraint(ctx, constraint)
+
+	case *scdpb.Payload_DeleteConstraintRepoCall:
+		var id dssmodels.ID
+		if err := id.FromProto(payload.DeleteConstraintRepoCall.GetId()); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Constraint ID")
+		}
+		return nil, r.Store.GetRepo().DeleteConstraint(ctx, id)
+
+	case *scdpb.Payload_CountConstraintsRepoCall:
+		return r.Store.GetRepo().CountConstraints(ctx)
+
 	default:
 		return r.applyLegacy(ctx, proposal)
 	}
@@ -84,39 +136,6 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 // TODO: remove once all the requests are carried by a payload.
 func (r *repo) applyLegacy(ctx context.Context, proposal consensus.Proposal) (any, error) {
 	switch proposal.RequestType {
-
-	// Constraints
-
-	case string(searchConstraints):
-		var cellsVolume dssmodels.CellsVolume4D
-		if err := json.Unmarshal(proposal.Value, &cellsVolume); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", searchConstraints)
-		}
-		return r.Store.GetRepo().SearchConstraints(ctx, &cellsVolume)
-
-	case string(getConstraint):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", getConstraint)
-		}
-		return r.Store.GetRepo().GetConstraint(ctx, id)
-
-	case string(upsertConstraint):
-		var constraint scdmodels.Constraint
-		if err := json.Unmarshal(proposal.Value, &constraint); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", upsertConstraint)
-		}
-		return r.Store.GetRepo().UpsertConstraint(ctx, &constraint)
-
-	case string(deleteConstraint):
-		var id dssmodels.ID
-		if err := json.Unmarshal(proposal.Value, &id); err != nil {
-			return nil, stacktrace.Propagate(err, "failed to unmarshal %s payload", deleteConstraint)
-		}
-		return nil, r.Store.GetRepo().DeleteConstraint(ctx, id)
-
-	case string(countConstraints):
-		return r.Store.GetRepo().CountConstraints(ctx)
 
 	// Subscriptions
 
