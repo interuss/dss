@@ -43,19 +43,27 @@ local datasourcePrometheus(metadata) = {
   ],
 };
 
-local notifierConfig(metadata) = {
+local alertingConfig(metadata) = {
   apiVersion: 1,
-  notifiers: [
+  contactPoints: [
     {
-      name: 'auto-alertmanager',
-      type: 'prometheus-alertmanager',
-      uid: 'notifier1',
-      org_name: 'Main Org.',
-      is_default: true,
-      send_image: true,
-      settings: {
-        url: 'http://alertmanager-service.' + metadata.namespace + '.svc:9093',
-      },
+      orgId: 1,
+      name: 'alertmanager',
+      receivers: [
+        {
+          uid: 'alertmanager',
+          type: 'prometheus-alertmanager',
+          settings: {
+            url: 'http://alertmanager-service.' + metadata.namespace + '.svc:9093',
+          },
+        },
+      ],
+    },
+  ],
+  policies: [
+    {
+      orgId: 1,
+      receiver: 'alertmanager',
     },
   ],
 };
@@ -73,10 +81,10 @@ local notifierConfig(metadata) = {
       },
     },
     grafDashboards: dashboard.all(metadata).config,
-    notifierConfig: base.ConfigMap(metadata, 'grafana-notifier-provisioning') {
-      data: {
-        'notifiers.yaml': if metadata.alert.enable == true then std.manifestYamlDoc(notifierConfig(metadata)) else "",
-      },
+    alertingConfig: base.ConfigMap(metadata, 'grafana-alerting-provisioning') {
+      data: if metadata.alert.enable == true then {
+        'alerting.yaml': std.manifestYamlDoc(alertingConfig(metadata)),
+      } else {},
     },
 
     deployment: base.Deployment(metadata, 'grafana') {
@@ -93,7 +101,7 @@ local notifierConfig(metadata) = {
               "checksum/datasource": std.native('sha256')(std.manifestJson(datasourcePrometheus(metadata))),
               "checksum/dashboardConfig": std.native('sha256')(std.manifestJson(dashboardConfig)),
               "checksum/dashboard": std.native('sha256')(std.manifestJson(dashboard.all(metadata).config)),
-              "checksum/notifierConfig": if metadata.alert.enable == true then std.native('sha256')(std.manifestJson(notifierConfig(metadata))) else "",
+              "checksum/alertingConfig": if metadata.alert.enable == true then std.native('sha256')(std.manifestJson(alertingConfig(metadata))) else "",
             },
           },
           spec: {
@@ -133,8 +141,8 @@ local notifierConfig(metadata) = {
                     readOnly: false,
                   },
                   {
-                    mountPath: '/etc/grafana/provisioning/notifiers',
-                    name: 'grafana-notifier-provisioning',
+                    mountPath: '/etc/grafana/provisioning/alerting',
+                    name: 'grafana-alerting-provisioning',
                     readOnly: false,
                   },
                   {
@@ -164,10 +172,10 @@ local notifierConfig(metadata) = {
                 },
               },
               {
-                name: 'grafana-notifier-provisioning',
+                name: 'grafana-alerting-provisioning',
                 configMap: {
                   defaultMode: 420,
-                  name: 'grafana-notifier-provisioning',
+                  name: 'grafana-alerting-provisioning',
                 },
               },
               {

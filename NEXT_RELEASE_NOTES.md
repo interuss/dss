@@ -89,6 +89,9 @@ The release notes should contain at least the following sections:
 * [helm] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `loadBalancers.dssGateway.preSharedCert` instead of a Google-managed certificate.
 * [tanka] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `backend.preSharedCert` instead of a Google-managed certificate.
 * [terraform/google] New variable `google_preshared_cert`, passed to Helm and Tanka.
+* [helm] Alerting by email is now available with the Alertmanager of the official Prometheus chart. Set `prometheus.alertmanager.enabled` to `true`, the SMTP parameters in `prometheus.alertmanager.config` and the Grafana contact point and notification policy in `grafana.alerting`. See `values.example.yaml`.
+* [tanka] Grafana now sends its alerts to Alertmanager with a contact point and a notification policy provisioned in `/etc/grafana/provisioning/alerting` (ConfigMap `grafana-alerting-provisioning`), instead of the legacy notifier, ignored since Grafana 11. The `grafana-notifier-provisioning` ConfigMap is not deleted by `tk apply` and can be removed manually.
+* [terraform] New variable `alerting` (SMTP server, email, password and destination), passed to Helm and Tanka.
 
 ## Minimal database schema version
 

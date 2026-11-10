@@ -116,7 +116,33 @@ prometheus:
   server:
     persistentVolume:
       storageClass: standard  # If you need a specfic storage class, set it there
+#  alertmanager:  # Uncomment to enable alerting by email
+#    enabled: true
+#    config:
+#      global:
+#        smtp_smarthost: smtp.example.com:587
+#        smtp_from: dss@example.com
+#        smtp_auth_username: dss@example.com
+#        smtp_auth_password: password
+#      receivers:
+#        - name: dss-team
+#          email_configs:
+#            - to: team@example.com
 
 grafana:
   persistence:
     storageClassName: standard  # If you need a specfic storage class, set it there
+#  alerting:  # Uncomment with prometheus.alertmanager
+#    alerting.yaml:
+#      apiVersion: 1
+#      contactPoints:
+#        - orgId: 1
+#          name: alertmanager
+#          receivers:
+#            - uid: alertmanager
+#              type: prometheus-alertmanager
+#              settings:
+#                url: http://dss-alertmanager:9093
+#      policies:
+#        - orgId: 1
+#          receiver: alertmanager
