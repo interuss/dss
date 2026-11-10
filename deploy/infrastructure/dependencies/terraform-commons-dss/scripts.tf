@@ -4,7 +4,7 @@ resource "local_file" "make_certs" {
   content = templatefile("${path.module}/templates/make-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
-    node_address    = join(" ", var.crdb_internal_nodes[*].dns)
+    node_address    = join(" ", var.crdb_internal_nodes[*].expected_dns)
     joining_pool    = length(var.crdb_external_nodes) > 0
   })
   filename = "${local.workspace_location}/make-certs.sh"

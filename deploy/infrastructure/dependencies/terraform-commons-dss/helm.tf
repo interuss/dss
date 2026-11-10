@@ -17,7 +17,7 @@ locals {
     for i, n in var.raft_internal_nodes :
     {
       id       = var.raft_node_ids[i]
-      endpoint = "${n.dns}:${var.raft_port}"
+      endpoint = "${n.expected_dns}:${var.raft_port}"
     }
   ]
 }
@@ -69,7 +69,7 @@ resource "local_file" "helm_chart_values" {
 
     loadBalancers = {
       cockroachdbNodes = [
-        for ip in var.crdb_internal_nodes[*].ip :
+        for ip in var.crdb_internal_nodes[*].loadbalancer_ip :
         {
           ip     = ip
           subnet = var.workload_subnet
@@ -212,7 +212,7 @@ resource "local_file" "helm_chart_values" {
       cockroachdbNodes = []
 
       raft = [
-        for ip in var.raft_internal_nodes[*].ip :
+        for ip in var.raft_internal_nodes[*].loadbalancer_ip :
         {
           ip     = ip
           subnet = var.workload_subnet
@@ -443,7 +443,7 @@ resource "local_file" "helm_chart_values" {
       cockroachdbNodes = []
 
       yugabyteMasterNodes = [
-        for ip in var.yugabyte_internal_masters_nodes[*].ip :
+        for ip in var.yugabyte_internal_masters_nodes[*].loadbalancer_ip :
         {
           ip     = ip
           subnet = var.workload_subnet
@@ -451,7 +451,7 @@ resource "local_file" "helm_chart_values" {
       ]
 
       yugabyteTserverNodes = [
-        for ip in var.yugabyte_internal_tservers_nodes[*].ip :
+        for ip in var.yugabyte_internal_tservers_nodes[*].loadbalancer_ip :
         {
           ip     = ip
           subnet = var.workload_subnet

@@ -22,68 +22,20 @@ output "ip_prometheus" {
   value = length(aws_eip.ip_prometheus) > 0 ? aws_eip.ip_prometheus[0].id : ""
 }
 
-output "crdb_nodes" {
-  value = [
-    for i in aws_eip.ip_crdb : {
-      ip  = i.allocation_id
-      dns = i.tags.ExpectedDNS
-    }
-  ]
-  depends_on = [
-    aws_eip.ip_crdb
-  ]
-}
-
-output "yugabyte_masters_nodes" {
-  value = [
-    for i in aws_eip.ip_yugabyte : {
-      ip  = i.allocation_id
-      dns = i.tags.ExpectedMasterDNS
-    }
-  ]
-  depends_on = [
-    aws_eip.ip_yugabyte
-  ]
-}
-
-output "yugabyte_tservers_nodes" {
-  value = [
-    for i in aws_eip.ip_yugabyte : {
-      ip  = i.allocation_id
-      dns = i.tags.ExpectedTServerDNS
-    }
-  ]
-  depends_on = [
-    aws_eip.ip_yugabyte
-  ]
-}
-
-output "raft_nodes" {
-  value = [
-    for i in aws_eip.ip_raft : {
-      ip  = i.allocation_id
-      dns = i.tags.ExpectedDNS
-    }
-  ]
-  depends_on = [
-    aws_eip.ip_raft
-  ]
-}
-
 output "crdb_addresses" {
-  value = [for i in aws_eip.ip_crdb[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
+  value = [for i in aws_eip.ip_crdb[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip, loadbalancer_ip : i.allocation_id }]
 }
 
 output "yugabyte_masters_addresses" {
-  value = [for i in aws_eip.ip_yugabyte[*] : { expected_dns : i.tags.ExpectedMasterDNS, address : i.public_ip }]
+  value = [for i in aws_eip.ip_yugabyte[*] : { expected_dns : i.tags.ExpectedMasterDNS, address : i.public_ip, loadbalancer_ip : i.allocation_id }]
 }
 
 output "yugabyte_tservers_addresses" {
-  value = [for i in aws_eip.ip_yugabyte[*] : { expected_dns : i.tags.ExpectedTServerDNS, address : i.public_ip }]
+  value = [for i in aws_eip.ip_yugabyte[*] : { expected_dns : i.tags.ExpectedTServerDNS, address : i.public_ip, loadbalancer_ip : i.allocation_id }]
 }
 
 output "raft_addresses" {
-  value = [for i in aws_eip.ip_raft[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip }]
+  value = [for i in aws_eip.ip_raft[*] : { expected_dns : i.tags.ExpectedDNS, address : i.public_ip, loadbalancer_ip : i.allocation_id }]
 }
 
 output "gateway_address" {

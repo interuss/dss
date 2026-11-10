@@ -1,17 +1,17 @@
 output "crdb_addresses" {
-  value = [for a in google_compute_address.ip_crdb[*] : { expected_dns : a.description, address : a.address }]
+  value = [for a in google_compute_address.ip_crdb[*] : { expected_dns : a.description, address : a.address, loadbalancer_ip : a.address }]
 }
 
 output "yugabyte_masters_addresses" {
-  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "master"), address : a.address }]
+  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "master"), address : a.address, loadbalancer_ip : a.address }]
 }
 
 output "yugabyte_tservers_addresses" {
-  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "tserver"), address : a.address }]
+  value = [for a in google_compute_address.ip_yugabyte[*] : { expected_dns : format(a.description, "tserver"), address : a.address, loadbalancer_ip : a.address }]
 }
 
 output "raft_addresses" {
-  value = [for a in google_compute_address.ip_raft[*] : { expected_dns : a.description, address : a.address }]
+  value = [for a in google_compute_address.ip_raft[*] : { expected_dns : a.description, address : a.address, loadbalancer_ip : a.address }]
 }
 
 output "gateway_address" {
@@ -43,42 +43,6 @@ output "ip_gateway" {
 
 output "ssl_policy" {
   value = google_compute_ssl_policy.secure.name
-}
-
-output "crdb_nodes" {
-  value = [
-    for i in google_compute_address.ip_crdb : {
-      ip  = i.address
-      dns = i.description
-    }
-  ]
-}
-
-output "yugabyte_masters_nodes" {
-  value = [
-    for i in google_compute_address.ip_yugabyte : {
-      ip  = i.address
-      dns = format(i.description, "master")
-    }
-  ]
-}
-
-output "yugabyte_tservers_nodes" {
-  value = [
-    for i in google_compute_address.ip_yugabyte : {
-      ip  = i.address
-      dns = format(i.description, "tserver")
-    }
-  ]
-}
-
-output "raft_nodes" {
-  value = [
-    for i in google_compute_address.ip_raft : {
-      ip  = i.address
-      dns = i.description
-    }
-  ]
 }
 
 output "ip_prometheus" {

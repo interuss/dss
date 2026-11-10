@@ -17,7 +17,7 @@ resource "local_file" "tanka_config_main" {
     VAR_DATASTORE                            = var.datastore_type
     VAR_DATASTORE_MAX_OPEN_CONNS             = var.datastore_max_open_conns
     VAR_DUMP_REQUESTS                        = var.dump_requests
-    VAR_CRDB_NODE_IPS                        = join(",", [for i in var.crdb_internal_nodes[*].ip : "'${i}'"])
+    VAR_CRDB_NODE_IPS                        = join(",", [for i in var.crdb_internal_nodes[*].loadbalancer_ip : "'${i}'"])
     VAR_INGRESS_NAME                         = var.ip_gateway
     VAR_CRDB_EXTERNAL_NODES                  = join(",", [for a in var.crdb_external_nodes : "'${a}'"])
     VAR_STORAGE_CLASS                        = var.kubernetes_storage_class
@@ -43,14 +43,14 @@ resource "local_file" "tanka_config_main" {
     VAR_YUGABYTE_CLOUD                       = var.yugabyte_cloud
     VAR_YUGABYTE_REGION                      = var.yugabyte_region
     VAR_YUGABYTE_ZONE                        = var.yugabyte_zone
-    VAR_YUGABYTE_MASTER_NODE_IPS             = join(",", [for a in var.yugabyte_internal_masters_nodes[*].ip : "'${a}'"])
-    VAR_YUGABYTE_TSERVER_NODE_IPS            = join(",", [for a in var.yugabyte_internal_tservers_nodes[*].ip : "'${a}'"])
+    VAR_YUGABYTE_MASTER_NODE_IPS             = join(",", [for a in var.yugabyte_internal_masters_nodes[*].loadbalancer_ip : "'${a}'"])
+    VAR_YUGABYTE_TSERVER_NODE_IPS            = join(",", [for a in var.yugabyte_internal_tservers_nodes[*].loadbalancer_ip : "'${a}'"])
     VAR_YUGABYTE_MASTER_ADDRESSES            = join(",", [for m in concat([for i in range(var.node_count) : format("%s.master.${var.db_hostname_suffix}", i)], var.yugabyte_external_nodes) : "'${m}'"])
     VAR_YUGABYTE_MASTER_BIND_ADDRESS         = "$${HOSTNAMENO}.master.${var.db_hostname_suffix}"
     VAR_YUGABYTE_TSERVER_BIND_ADDRESS        = "$${HOSTNAMENO}.tserver.${var.db_hostname_suffix}"
     VAR_YUGABYTE_DOCKER_IMAGE_NAME           = "interuss/yugabyte:2025.1.2.1-interuss" // TODO: This should be an option
     VAR_YUGABYTE_LIGHT_RESOURCES             = var.yugabyte_light_resources
-    VAR_RAFT_NODES                           = [for i, n in local.raft_nodes : merge(n, { ip = var.raft_internal_nodes[i].ip })]
+    VAR_RAFT_NODES                           = [for i, n in local.raft_nodes : merge(n, { ip = var.raft_internal_nodes[i].loadbalancer_ip })]
     VAR_RAFT_PEERS                           = var.raft_peers
     VAR_RAFT_CLUSTER_ID                      = var.raft_cluster_id
     VAR_RAFT_TLS_SECRET                      = var.raft_tls_secret
