@@ -68,7 +68,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi.GetOperationalIntentReferenceRequest,
 ) restapi.GetOperationalIntentReferenceResponseSet {
 
-	_, err := dssmodels.IDFromString(string(req.Entityid))
+	id, err := dssmodels.IDFromString(string(req.Entityid))
 	if err != nil {
 		return restapi.GetOperationalIntentReferenceResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid))}}
@@ -79,7 +79,9 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetOperationalIntentReferenceResponse](ctx, a.Store, req)
+	payload := operations.NewGetOIRPayload(id, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.GetOperationalIntentReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not get operational intent")
 		if stacktrace.GetCode(err) == dsserr.NotFound {
@@ -110,7 +112,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 	}
 
 	// Parse area of interest to a cells-native volume
-	_, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
+	cellsVolume4D, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
 	if err != nil {
 		return restapi.QueryOperationalIntentReferencesResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry"))}}
@@ -122,7 +124,9 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
-	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryOperationalIntentReferenceResponse](ctx, a.Store, req)
+	payload := operations.NewQueryOIRsPayload(cellsVolume4D, dssmodels.Manager(*req.Auth.ClientID))
+
+	response, err := dssstore.TransactWithResult[repos.Repository, *restapi.QueryOperationalIntentReferenceResponse](ctx, a.Store, payload)
 	if err != nil {
 		err = stacktrace.Propagate(err, "Could not query operational intent")
 		if stacktrace.GetCode(err) == dsserr.BadRequest {

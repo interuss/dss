@@ -21,13 +21,13 @@ import (
 func init() {
 	Registry[restapi.GetOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.GetOperationalIntentReferenceRequest],
+		Decode:     dssstore.DecodeJSON[*getOIRPayload],
 		Execute:    executeGetOperationalIntentReference,
 		IsReadOnly: true,
 	}
 	Registry[restapi.QueryOperationalIntentReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
 		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.QueryOperationalIntentReferencesRequest],
+		Decode:     dssstore.DecodeJSON[*queryOIRsPayload],
 		Execute:    executeQueryOperationalIntentReferences,
 		IsReadOnly: true,
 	}
@@ -186,16 +186,26 @@ func executeDeleteOperationalIntentReference(ctx context.Context, repo repos.Rep
 	}, nil
 }
 
+type getOIRPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+}
+
+func (p *getOIRPayload) OperationID() string {
+	return restapi.GetOperationalIntentReferenceOperationID
+}
+
+// NewGetOIRPayload builds the payload for an Operational Intent Reference retrieval request.
+func NewGetOIRPayload(id dssmodels.ID, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &getOIRPayload{ID: id, Manager: manager}
+}
+
 func executeGetOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.GetOperationalIntentReferenceRequest)
+	payload, ok := request.(*getOIRPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetOperationalIntentReferenceOperationID)
 	}
-
-	id, err := dssmodels.IDFromString(string(req.Entityid))
-	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Entityid)
-	}
+	id := payload.ID
 
 	op, err := repo.GetOperationalIntent(ctx, id)
 	if err != nil {
@@ -205,7 +215,7 @@ func executeGetOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "OperationalIntent %s not found", id)
 	}
 
-	if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+	if op.Manager != payload.Manager {
 		op.OVN = scdmodels.NoOvnPhrase
 	}
 
@@ -214,26 +224,28 @@ func executeGetOperationalIntentReference(ctx context.Context, repo repos.Reposi
 	}, nil
 }
 
+type queryOIRsPayload struct {
+	AreaOfInterest *dssmodels.CellsVolume4D
+	Manager        dssmodels.Manager
+}
+
+func (p *queryOIRsPayload) OperationID() string {
+	return restapi.QueryOperationalIntentReferencesOperationID
+}
+
+// NewQueryOIRsPayload builds the payload for an Operational Intent References query.
+func NewQueryOIRsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &queryOIRsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
+}
+
 func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.QueryOperationalIntentReferencesRequest)
+	payload, ok := request.(*queryOIRsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryOperationalIntentReferencesOperationID)
 	}
 
-	// Retrieve the area of interest parameter
-	aoi := req.Body.AreaOfInterest
-	if aoi == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
-	}
-
-	// Parse area of interest to a cells-native volume
-	cellsVolume4D, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Error parsing geometry")
-	}
-
 	// Perform search query on Store
-	ops, err := repo.SearchOperationalIntents(ctx, cellsVolume4D)
+	ops, err := repo.SearchOperationalIntents(ctx, payload.AreaOfInterest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to query for OperationalIntents in repo")
 	}
@@ -244,7 +256,7 @@ func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Rep
 	}
 	for _, op := range ops {
 		p := op.ToRest()
-		if op.Manager != dssmodels.Manager(*req.Auth.ClientID) {
+		if op.Manager != payload.Manager {
 			noOvnPhrase := restapi.EntityOVN(scdmodels.NoOvnPhrase)
 			p.Ovn = &noOvnPhrase
 		}
