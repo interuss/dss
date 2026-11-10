@@ -85,6 +85,9 @@ func handshakeFailureReason(err error) string {
 	if errors.Is(err, io.EOF) {
 		return "closed"
 	}
+	if err.Error() == "remote error: tls: bad certificate" {
+		return "remote_rejected"
+	}
 	if _, ok := errors.AsType[x509.UnknownAuthorityError](err); ok {
 		return "unknown_authority"
 	}

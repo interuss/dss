@@ -36,6 +36,7 @@ With `--log_level debug`, a node logs its certificate and every CA of the bundle
 | ------------------- | -------------------------------------------------------- |
 | `not_tls`           | The peer does not use TLS                                |
 | `closed`            | The peer closed the connection during the handshake      |
+| `remote_rejected`   | The peer does not trust the certificate of this node     |
 | `unknown_authority` | The peer certificate is not signed by a CA of the bundle |
 | `invalid_date`      | The peer certificate has expired or is not valid yet     |
 | `bad_certificate`   | Any other invalid peer certificate                       |
@@ -43,7 +44,6 @@ With `--log_level debug`, a node logs its certificate and every CA of the bundle
 
 With `--enable_metrics`, a node exports `raft_peer_tls_handshake_failures_total{reason}`: the connections rejected during the TLS handshake, by the reasons above.
 
-If a peer doesn't trust the certificate of this node, the peer logs it as `unknown_authority` with the subject and issuer of this node's certificate, so that's the first place to look. On this node, it shows up as `other` with the error `remote error: tls: bad certificate`, and etcd also logs the warning `prober detected unhealthy status` every 5 seconds.
 
 ## Terminology
 
