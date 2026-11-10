@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package scd.snapshot;
+
+import "google/protobuf/timestamp.proto";
+import "models.proto";
+import "scd/availability.proto";
+import "scd/operational_intents.proto";
+import "scd/ovn.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/scdpb/snapshotpb";
+
+message Constraint {
+    string manager = 1;
+    int32 version = 2;
+    string uss_base_url = 3;
+    models.CellsVolume4D volume = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
+
+message Subscription {
+    string manager = 1;
+    int64 notification_index = 2;
+    string uss_base_url = 3;
+    bool notify_for_operational_intents = 4;
+    bool notify_for_constraints = 5;
+    bool implicit_subscription = 6;
+    google.protobuf.Timestamp start_time = 7;
+    google.protobuf.Timestamp end_time = 8;
+    repeated uint64 cells = 9;
+    google.protobuf.Timestamp updated_at = 10;
+}
+
+message OperationalIntent {
+    string manager = 1;
+    int32 version = 2;
+    scd.OperationalIntentState state = 3;
+    string uss_base_url = 4;
+    optional string subscription_id = 5;
+    optional scd.OVN uss_requested_ovn = 6;
+    repeated scd.OVN past_ovns = 7;
+    google.protobuf.Timestamp updated_at = 8;
+    models.CellsVolume4D volume = 9;
+}
+
+message Availability {
+    scd.UssAvailabilityState availability = 1;
+    google.protobuf.Timestamp updated_at = 2;
+}
+
+// Snapshot is the state of the SCD memstore.
+message Snapshot {
+    // constraints holds the stored constraints keyed by ID.
+    map<string, Constraint> constraints = 2;
+    // subscriptions holds the stored subscriptions keyed by ID.
+    map<string, Subscription> subscriptions = 3;
+    // operational_intents holds the stored operational intents keyed by ID.
+    map<string, OperationalIntent> operational_intents = 4;
+    // availabilities holds the stored USS availabilities keyed by USS Manager.
+    map<string, Availability> availabilities = 5;
+}

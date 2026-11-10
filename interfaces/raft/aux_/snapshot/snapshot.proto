@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package aux.snapshot;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/auxpb/snapshotpb";
+
+message Participant {
+    string locality = 1;
+    string public_endpoint = 2;
+    google.protobuf.Timestamp updated_at = 3;
+}
+
+message Heartbeat {
+    string locality = 1;
+    string source = 2;
+    optional google.protobuf.Timestamp timestamp = 3;
+    optional google.protobuf.Timestamp next_heartbeat_expected_before = 4;
+    string reporter = 5;
+}
+
+// Snapshot is the state of the aux memstore.
+message Snapshot {
+    repeated Participant participants = 2;
+    repeated Heartbeat heartbeats = 3;
+}

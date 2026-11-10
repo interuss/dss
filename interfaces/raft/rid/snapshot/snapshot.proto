@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package rid.snapshot;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/ridpb/snapshotpb";
+
+message ISA {
+    string url = 1;
+    string owner = 2;
+    repeated uint64 cells = 3;
+    google.protobuf.Timestamp start_time = 4;
+    google.protobuf.Timestamp end_time = 5;
+    optional float altitude_hi = 6;
+    optional float altitude_lo = 7;
+    string writer = 8;
+    google.protobuf.Timestamp updated_at = 9;
+}
+
+message Subscription {
+    string url = 1;
+    int32 notification_index = 2;
+    string owner = 3;
+    repeated uint64 cells = 4;
+    google.protobuf.Timestamp start_time = 5;
+    google.protobuf.Timestamp end_time = 6;
+    optional float altitude_hi = 7;
+    optional float altitude_lo = 8;
+    string writer = 9;
+    google.protobuf.Timestamp updated_at = 10;
+}
+
+// Snapshot is the state of the RID memstore.
+message Snapshot {
+    // isas holds the stored ISAs keyed by ID.
+    map<string, ISA> isas = 2;
+    // subscriptions holds the stored subscriptions keyed by ID.
+    map<string, Subscription> subscriptions = 3;
+}

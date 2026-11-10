@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package dss.raftstore.consensus;
+
+import "aux_/snapshot/snapshot.proto";
+import "rid/snapshot/snapshot.proto";
+import "scd/snapshot/snapshot.proto";
+
+option go_package = "github.com/interuss/dss/pkg/pb/raftpb";
+
+message Member {
+    string peer_url = 1;
+}
+
+// Snapshot wraps the application snapshot with the membership state.
+message Snapshot {
+    map<uint64, Member> members = 1;
+    map<uint64, Member> removed = 2;
+
+    oneof app_snapshot {
+        aux.snapshot.Snapshot aux_snapshot = 3;
+        rid.snapshot.Snapshot rid_snapshot = 4;
+        scd.snapshot.Snapshot scd_snapshot = 5;
+    }
+}
