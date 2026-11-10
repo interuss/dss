@@ -24,6 +24,18 @@ When changing the values in values.dev.yaml, values.yaml, the templates or upgra
 
 1. Run `helm upgrade --kube-context=$KUBE_CONTEXT -f values.dev.yaml $RELEASE_NAME .`
 
+### Form the Raft groups
+
+With `raft.enabled`, each node of `raft.nodes` starts waiting and is not ready until it is a member of the Raft groups (aux, rid, scd) of the pool. The groups are formed once for the whole pool with `dssctl`, which is available in the core-service image and talks to the node on its admin socket:
+
+1. On the very first deployment of the pool only, bootstrap the groups on one node:
+   `kubectl --context=$KUBE_CONTEXT exec $RELEASE_NAME-core-service-0 -- dssctl raft bootstrap`
+2. Add every other node of the pool, from this release or from other participants, one at a time, from any member, with the URL of its endpoint:
+   `kubectl --context=$KUBE_CONTEXT exec $RELEASE_NAME-core-service-0 -- dssctl raft add --url https://<endpoint>`
+3. Check the members: `kubectl --context=$KUBE_CONTEXT exec $RELEASE_NAME-core-service-0 -- dssctl raft list`
+
+A node restarted with its persistent volume rejoins its groups on its own. A node whose volume was lost starts waiting again: remove its old ID with `dssctl raft remove` and add it again.
+
 ### Disable CockroachDB probes
 
 The `cockroachdb` Chart always renders a liveness and a readiness probe. To disable one of them (see https://github.com/interuss/dss/issues/1732 for potential reasons to do so), replace it by a probe that always succeeds in `values.dev.yaml`:

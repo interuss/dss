@@ -7,42 +7,36 @@ local args = import 'core-service-args.libsonnet';
   all(metadata): {
     local raft = metadata.raft,
     local nodes = raft.nodes,
-    local allNodes = nodes + raft.peers,
-    local ids = [n.id for n in allNodes],
-    local badEndpoints = [n.endpoint for n in allNodes
-      if std.length(std.split(n.endpoint, '://')) > 1 || std.length(std.split(n.endpoint, ':')) != 2],
-    local duplicateIds = [i for i in std.set(ids) if std.count(ids, i) > 1],
+    local endpoints = [n.endpoint for n in nodes],
+    local badEndpoints = [e for e in endpoints
+      if std.length(std.split(e, '://')) > 1 || std.length(std.split(e, ':')) != 2],
+    local duplicateEndpoints = [e for e in std.set(endpoints) if std.count(endpoints, e) > 1],
 
-    // Flat values indexed by pod ordinal
-    local idsList = std.join(' ', [std.toString(n.id) for n in nodes]),
-    // The --raft_peers list is nodes + peers (self included), all addressed over https.
-    local peersList = std.join(',', [std.toString(n.id) + '=https://' + n.endpoint for n in allNodes]),
-    local ports = std.set([std.parseInt(std.split(n.endpoint, ':')[1]) for n in nodes]),
+    local ports = std.set([std.parseInt(std.split(e, ':')[1]) for e in endpoints]),
 
     local allArgs = args.all(metadata) + {
       store_type: 'raft',
-      raft_node_id: '$(printf \'%s\\n\' $ids | sed -n "${ordinal}p")',
+      raft_peer_url: '"https://$(printf \'%s\\n\' $endpoints | sed -n "${ordinal}p")"',
       raft_cluster_id: raft.clusterID,
       raft_datadir: '/raft_data',
-      raft_peers: peersList,
       raft_tls_cert_file: '"/raft-tls/node.raft-${HOSTNAME##*-}.crt"',
       raft_tls_key_file: '"/raft-tls/node.raft-${HOSTNAME##*-}.key"',
       raft_tls_ca_file: '/raft-tls/ca.crt',
     },
     local script = std.join('\n', [
-      '# Raft node IDs of this instance\'s nodes, in pod-ordinal order.',
-      'ids="' + idsList + '"',
+      '# Raft endpoints of this instance\'s nodes, in pod-ordinal order.',
+      'endpoints="' + std.join(' ', endpoints) + '"',
       'ordinal=$(( ${HOSTNAME##*-} + 1 ))',
       'exec core-service ' + std.join(' \\\n  ',
         std.map(function(kv)
-          if std.member(['raft_node_id', 'raft_tls_cert_file', 'raft_tls_key_file'], kv[0]) then '--%s=%s' % kv
+          if std.member(['raft_peer_url', 'raft_tls_cert_file', 'raft_tls_key_file'], kv[0]) then '--%s=%s' % kv
           else '\'' + ('--%s=%s' % kv) + '\'',
           util.objectItems(allArgs))),
     ]),
 
     assert std.length(nodes) > 0 : 'raft.nodes must list at least one node',
     assert badEndpoints == [] : 'raft node endpoints must be host:port without a scheme: ' + std.join(', ', badEndpoints),
-    assert duplicateIds == [] : 'duplicate Raft node IDs in raft.nodes / raft.peers: ' + std.join(', ', [std.toString(i) for i in duplicateIds]),
+    assert duplicateEndpoints == [] : 'duplicate endpoints in raft.nodes: ' + std.join(', ', duplicateEndpoints),
     assert raft.tlsSecret != '' : 'raft.tlsSecret is required: the Raft listeners authenticate with mutual TLS',
 
     statefulset: base.StatefulSet(metadata, 'core-service') {

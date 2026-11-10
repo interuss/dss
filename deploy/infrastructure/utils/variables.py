@@ -79,8 +79,6 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "yugabyte_zone",
     "yugabyte_light_resources",
     "yugabyte_external_nodes",
-    "raft_node_ids",
-    "raft_peers",
     "raft_cluster_id",
     "raft_port",
     "raft_tls_secret",

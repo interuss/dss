@@ -164,42 +164,16 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": {
-                "type": "integer",
-                "description": "Raft node ID. Must be unique within the pool and never reused: do not change it once the pool has been bootstrapped."
-              },
               "endpoint": {
                 "type": "string",
-                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to the address of the matching loadBalancers.raft entry."
+                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to the address of the matching loadBalancers.raft entry. The node is started with --raft_peer_url=https://<endpoint>."
               }
             },
             "required": [
-              "id",
               "endpoint"
             ]
           },
-          "description": "The DSS nodes (Raft voters) deployed by this release. Do not reorder or insert entries once the pool has been bootstrapped: the pod's persistent volume is bound to its position in the list."
-        },
-        "peers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "integer",
-                "description": "Raft node ID. Must match the ID of the node in the release that deploys it."
-              },
-              "endpoint": {
-                "type": "string",
-                "description": "Address (host:port, no scheme) of the node, reachable from this cluster."
-              }
-            },
-            "required": [
-              "id",
-              "endpoint"
-            ]
-          },
-          "description": "The other nodes of the Raft pool, deployed by other releases (e.g. on other clusters). The generated --raft_peers list is nodes + peers (self included)."
+          "description": "The DSS nodes (Raft voters) deployed by this release. Do not reorder or insert entries once the Raft groups have been formed: the pod's persistent volume is bound to its position in the list. The nodes start waiting and the Raft groups are formed with dssctl."
         },
         "clusterID": {
           "type": "integer",

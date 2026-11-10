@@ -66,12 +66,7 @@ local metadata = metadataBase {
   raft+: {
     nodes: [
       %{~ for n in VAR_RAFT_NODES ~}
-      { id: ${n.id}, endpoint: '${n.endpoint}', ip: '${n.ip}' },
-      %{~ endfor ~}
-    ],
-    peers: [
-      %{~ for p in VAR_RAFT_PEERS ~}
-      { id: ${p.id}, endpoint: '${p.endpoint}' },
+      { endpoint: '${n.endpoint}', ip: '${n.ip}' },
       %{~ endfor ~}
     ],
     clusterID: ${VAR_RAFT_CLUSTER_ID},

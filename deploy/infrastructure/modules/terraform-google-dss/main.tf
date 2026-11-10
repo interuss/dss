@@ -61,8 +61,6 @@ module "terraform-commons-dss" {
   yugabyte_zone                        = var.yugabyte_zone
   yugabyte_light_resources             = var.yugabyte_light_resources
   yugabyte_external_nodes              = var.yugabyte_external_nodes
-  raft_node_ids                        = var.raft_node_ids
-  raft_peers                           = var.raft_peers
   raft_cluster_id                      = var.raft_cluster_id
   raft_port                            = var.raft_port
   raft_tls_secret                      = var.raft_tls_secret

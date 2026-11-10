@@ -471,21 +471,6 @@ No RoleBinding is created when empty.</p>
 <p>Example: <code>1</code></p>
 <br/>Default value: <code>1</code></td>
             </tr><tr>
-                <td>raft_node_ids (<code>list(number)</code>)</td>
-                <td><p>Raft node IDs of the nodes deployed by this instance, in pod-ordinal order.
-Must contain exactly <code>node_count</code> entries. IDs must be unique within the pool and never reused:
-do not change or reorder them once the pool has been bootstrapped.</p>
-<p>Only used with the raft datastore.</p>
-<p>Example: <code>[1, 2, 3]</code></p>
-<br/>Default value: <code>[]</code></td>
-            </tr><tr>
-                <td>raft_peers (<code>list(object({<br/>id = number,<br/> endpoint = string})<br/>)</code>)</td>
-                <td><p>The other nodes of the Raft pool, deployed by other instances.
-<code>endpoint</code> is the address (host:port, without scheme) of the node, reachable from this cluster.</p>
-<p>Only used with the raft datastore.</p>
-<p>Example: <code>[{ id = 4, endpoint = &quot;0.db.dss.example.com:2407&quot; }]</code></p>
-<br/>Default value: <code>[]</code></td>
-            </tr><tr>
                 <td>raft_port (<code>number</code>)</td>
                 <td><p>Port of the Raft listener of the nodes of this instance.</p>
 <p>Only used with the raft datastore.</p>
