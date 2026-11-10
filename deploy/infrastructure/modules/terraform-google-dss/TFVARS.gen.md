@@ -242,7 +242,7 @@ It dumps sensitive information to logs; intended only for debugging and/or devel
 <br/>Default value: <code>false</code></td>
             </tr><tr>
                 <td>enable_rid (<code>bool</code>)</td>
-                <td><p>Set this boolean true to enable ASTM remote ID functionality</p>
+                <td><p>Set this boolean true to enable ASTM F3411-19 and F3411-22a Remote ID functionalities</p>
 <br/>Default value: <code>true</code></td>
             </tr><tr>
                 <td>enable_scd (<code>bool</code>)</td>
