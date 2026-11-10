@@ -6,6 +6,7 @@
     dump_requests: metadata.backend.dumpRequests,
     accepted_jwt_audiences: metadata.backend.hostname,
     locality: metadata.locality,
+    enable_rid: metadata.enableRid,
     enable_scd: metadata.enableScd,
     enable_scd_global_lock: metadata.enableScdGlobalLock,
   }

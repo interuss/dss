@@ -86,6 +86,7 @@ spec:
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
 {{- end }}
 
+{{- if ne (toString $.Values.dss.conf.enableRid) "false" }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -152,4 +153,5 @@ spec:
           volumes:
             {{- include "ca-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
             {{- include "client-certs:volume" (dict "cockroachdbEnabled" $.Values.cockroachdb.enabled ) | nindent 12 }}
+{{- end }}
 {{- end }}

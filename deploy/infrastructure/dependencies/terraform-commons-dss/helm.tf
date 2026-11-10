@@ -104,6 +104,7 @@ resource "local_file" "helm_chart_values" {
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
         gcpProfServiceName               = var.gcp_prof_service_name
+        enableRid                        = var.enable_rid
         enableScd                        = var.enable_scd
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
@@ -444,6 +445,7 @@ resource "local_file" "helm_chart_values" {
         jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
         hostname                         = var.app_hostname
         publicEndpoint                   = "https://${var.app_hostname}"
+        enableRid                        = var.enable_rid
         enableScd                        = var.enable_scd
         enableScdGlobalLock              = var.enable_scd_global_lock
         enableTimeBasedNotificationIndex = var.enable_time_based_notification_index

@@ -25,8 +25,8 @@ local datastoreparameters = import 'datastoreparameters.libsonnet';
             volumes: volumes.all(metadata).backendVolumes,
             initContainers: [
               base.WaitForDatastore(metadata),
-              base.WaitForSchema(metadata, "rid"),
-            ] + if metadata.enableScd then [base.WaitForSchema(metadata, "scd")] else [],
+            ] + (if metadata.enableRid then [base.WaitForSchema(metadata, "rid")] else [])
+              + (if metadata.enableScd then [base.WaitForSchema(metadata, "scd")] else []),
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
               imagePullPolicy: if metadata.backend.imagePullPolicy != '' then metadata.backend.imagePullPolicy else if metadata.cloud_provider == "minikube" then 'IfNotPresent' else 'Always',

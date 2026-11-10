@@ -6,6 +6,7 @@
   // Set this field if you don't intend to ever join this instance with others.
   // This disables inter cluster crdb<->crdb access when set to true.
   single_cluster: false,
+  enableRid: true,
   enableScd: false,
   enableScdGlobalLock: false,
   enableTimeBasedNotificationIndex: false,

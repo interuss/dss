@@ -44,7 +44,7 @@ local util = import 'util.libsonnet';
         },
       },
     },
-    RIDEvict: base.CronJob(metadata, 'dss-rid-evict') {
+    RIDEvict: if metadata.enableRid then base.CronJob(metadata, 'dss-rid-evict') {
       spec+: {
         schedule: if metadata.evict.rid.schedule != "" then metadata.evict.rid.schedule else "%d * * * *" % defaultMinute,
         suspend: !metadata.evict.rid.enable_cron,

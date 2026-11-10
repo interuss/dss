@@ -3,6 +3,7 @@
 dss:
   env: []
   conf:
+    enableRid: true
     enableScd: true
     dumpRequests: true
     evict:
