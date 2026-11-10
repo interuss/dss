@@ -38,7 +38,7 @@ func (r *repo) DeleteSubscription(ctx context.Context, sub *ridmodels.Subscripti
 func (r *repo) InsertSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	pbSub, err := sub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "failed to encode Subscription")
 	}
 
 	return r.consensus.HandleWritePayload[*ridmodels.Subscription](ctx, operations.ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_InsertSubscriptionRepoCall{
@@ -49,7 +49,7 @@ func (r *repo) InsertSubscription(ctx context.Context, sub *ridmodels.Subscripti
 func (r *repo) UpdateSubscription(ctx context.Context, sub *ridmodels.Subscription) (*ridmodels.Subscription, error) {
 	pbSub, err := sub.ToProto()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "failed to encode Subscription")
 	}
 
 	return r.consensus.HandleWritePayload[*ridmodels.Subscription](ctx, operations.ProposalPayload(&ridpb.Payload{Payload: &ridpb.Payload_UpdateSubscriptionRepoCall{

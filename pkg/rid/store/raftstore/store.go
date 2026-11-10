@@ -146,7 +146,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		req := payload.UpdateSubscriptionRepoCall
 		sub := new(ridmodels.Subscription)
 		if err := sub.FromProto(req.GetSubscription()); err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "invalid Subscription")
 		}
 		sub.Version = new(dssmodels.Version)
 		if err := sub.Version.FromProto(req.GetVersion()); err != nil {

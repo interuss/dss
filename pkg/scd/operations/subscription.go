@@ -7,6 +7,8 @@ import (
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -16,31 +18,31 @@ import (
 
 func init() {
 	Registry[restapi.CreateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*createSubscriptionPayload],
-		Execute: executePutSubscription,
+		EncodePayload: encodeCreateSubscription,
+		DecodePayload: decodeCreateSubscription,
+		Execute:       executePutSubscription,
 	}
 	Registry[restapi.UpdateSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateSubscriptionPayload],
-		Execute: executePutSubscription,
+		EncodePayload: encodeUpdateSubscription,
+		DecodePayload: decodeUpdateSubscription,
+		Execute:       executePutSubscription,
 	}
 	Registry[restapi.DeleteSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteSubscriptionPayload],
-		Execute: executeDeleteSubscription,
+		EncodePayload: encodeDeleteSubscription,
+		DecodePayload: decodeDeleteSubscription,
+		Execute:       executeDeleteSubscription,
 	}
 	Registry[restapi.GetSubscriptionOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.GetSubscriptionRequest],
-		Execute:    executeGetSubscription,
-		IsReadOnly: true,
+		EncodePayload: encodeGetSubscription,
+		DecodePayload: decodeGetSubscription,
+		Execute:       executeGetSubscription,
+		IsReadOnly:    true,
 	}
 	Registry[restapi.QuerySubscriptionsOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.QuerySubscriptionsRequest],
-		Execute:    executeQuerySubscriptions,
-		IsReadOnly: true,
+		EncodePayload: encodeQuerySubscriptions,
+		DecodePayload: decodeQuerySubscriptions,
+		Execute:       executeQuerySubscriptions,
+		IsReadOnly:    true,
 	}
 }
 
@@ -63,6 +65,62 @@ func (p *updateSubscriptionPayload) OperationID() string {
 }
 
 func (p *updateSubscriptionPayload) subscription() *scdmodels.Subscription { return p.Subscription }
+
+func encodeCreateSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*createSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateSubscriptionOperationID)
+	}
+	sub, err := payload.Subscription.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_CreateSubscriptionOperation{
+		CreateSubscriptionOperation: &scdpb.CreateSubscriptionOperation{Subscription: sub},
+	}}), nil
+}
+
+func decodeCreateSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetCreateSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.CreateSubscriptionOperationID)
+	}
+	sub := new(scdmodels.Subscription)
+	if err := sub.FromProto(req.GetSubscription()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
+	}
+	return &createSubscriptionPayload{Subscription: sub}, nil
+}
+
+func encodeUpdateSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*updateSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.UpdateSubscriptionOperationID)
+	}
+	sub, err := payload.Subscription.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_UpdateSubscriptionOperation{
+		UpdateSubscriptionOperation: &scdpb.UpdateSubscriptionOperation{
+			Subscription: sub,
+			Version:      payload.Subscription.Version.String(),
+		},
+	}}), nil
+}
+
+func decodeUpdateSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetUpdateSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.UpdateSubscriptionOperationID)
+	}
+	sub := new(scdmodels.Subscription)
+	if err := sub.FromProto(req.GetSubscription()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription")
+	}
+	sub.Version = scdmodels.OVN(req.GetVersion())
+	return &updateSubscriptionPayload{Subscription: sub}, nil
+}
 
 // subscriptionPayload is implemented by createSubscriptionPayload and updateSubscriptionPayload
 type subscriptionPayload interface {
@@ -301,6 +359,36 @@ func NewDeleteSubscriptionPayload(id dssmodels.ID, manager dssmodels.Manager, ve
 	return &deleteSubscriptionPayload{ID: id, Manager: manager, Version: version}
 }
 
+func encodeDeleteSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*deleteSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteSubscriptionOperationID)
+	}
+	id, err := payload.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_DeleteSubscriptionOperation{
+		DeleteSubscriptionOperation: &scdpb.DeleteSubscriptionOperation{
+			Id:      id,
+			Manager: payload.Manager.String(),
+			Version: payload.Version.String(),
+		},
+	}}), nil
+}
+
+func decodeDeleteSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetDeleteSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.DeleteSubscriptionOperationID)
+	}
+	decoded := &deleteSubscriptionPayload{Manager: dssmodels.Manager(req.GetManager()), Version: scdmodels.OVN(req.GetVersion())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+	}
+	return decoded, nil
+}
+
 func executeDeleteSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	payload, ok := request.(*deleteSubscriptionPayload)
 	if !ok {
@@ -349,17 +437,52 @@ func executeDeleteSubscription(ctx context.Context, repo repos.Repository, reque
 	return &restapi.DeleteSubscriptionResponse{Subscription: *p}, nil
 }
 
-func executeGetSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.GetSubscriptionRequest)
+type getSubscriptionPayload struct {
+	ID      dssmodels.ID
+	Manager dssmodels.Manager
+}
+
+func (p *getSubscriptionPayload) OperationID() string {
+	return restapi.GetSubscriptionOperationID
+}
+
+// NewGetSubscriptionPayload builds the payload for a Subscription retrieval request.
+func NewGetSubscriptionPayload(id dssmodels.ID, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &getSubscriptionPayload{ID: id, Manager: manager}
+}
+
+func encodeGetSubscription(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*getSubscriptionPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetSubscriptionOperationID)
 	}
-
-	// Retrieve Subscription ID
-	id, err := dssmodels.IDFromString(string(req.Subscriptionid))
+	id, err := payload.ID.ToProto()
 	if err != nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid ID format: `%s`", req.Subscriptionid)
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetSubscriptionOperation{
+		GetSubscriptionOperation: &scdpb.GetSubscriptionOperation{Id: id, Manager: payload.Manager.String()},
+	}}), nil
+}
+
+func decodeGetSubscription(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetGetSubscriptionOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.GetSubscriptionOperationID)
+	}
+	decoded := &getSubscriptionPayload{Manager: dssmodels.Manager(req.GetManager())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
+	}
+	return decoded, nil
+}
+
+func executeGetSubscription(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
+	payload, ok := request.(*getSubscriptionPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetSubscriptionOperationID)
+	}
+	id := payload.ID
 
 	// Get Subscription from Store
 	sub, err := repo.GetSubscription(ctx, id)
@@ -371,10 +494,10 @@ func executeGetSubscription(ctx context.Context, repo repos.Repository, request 
 	}
 
 	// Check if the client is authorized to view this Subscription
-	if dssmodels.Manager(*req.Auth.ClientID) != sub.Manager {
+	if payload.Manager != sub.Manager {
 		return nil, stacktrace.Propagate(
 			stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Subscription is owned by different client"),
-			"Subscription owned by %s, but %s attempted to view", sub.Manager, *req.Auth.ClientID)
+			"Subscription owned by %s, but %s attempted to view", sub.Manager, payload.Manager)
 	}
 
 	// Get dependent Operations
@@ -393,26 +516,57 @@ func executeGetSubscription(ctx context.Context, repo repos.Repository, request 
 	return &restapi.GetSubscriptionResponse{Subscription: *p}, nil
 }
 
+type querySubscriptionsPayload struct {
+	AreaOfInterest *dssmodels.CellsVolume4D
+	Manager        dssmodels.Manager
+}
+
+func (p *querySubscriptionsPayload) OperationID() string {
+	return restapi.QuerySubscriptionsOperationID
+}
+
+// NewQuerySubscriptionsPayload builds the payload for a Subscriptions query.
+func NewQuerySubscriptionsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+	return &querySubscriptionsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
+}
+
+func encodeQuerySubscriptions(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*querySubscriptionsPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QuerySubscriptionsOperationID)
+	}
+	if payload.AreaOfInterest == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QuerySubscriptionsOperation{
+		QuerySubscriptionsOperation: &scdpb.QuerySubscriptionsOperation{
+			AreaOfInterest: payload.AreaOfInterest.ToProto(),
+			Manager:        payload.Manager.String(),
+		},
+	}}), nil
+}
+
+func decodeQuerySubscriptions(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetQuerySubscriptionsOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.QuerySubscriptionsOperationID)
+	}
+	if req.GetAreaOfInterest() == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	decoded := &querySubscriptionsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
+	return decoded, nil
+}
+
 func executeQuerySubscriptions(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.QuerySubscriptionsRequest)
+	payload, ok := request.(*querySubscriptionsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QuerySubscriptionsOperationID)
 	}
 
-	// Retrieve the area of interest parameter
-	aoi := req.Body.AreaOfInterest
-	if aoi == nil {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing area_of_interest")
-	}
-
-	// Parse area of interest to a cells-native volume
-	cellsVolume, err := scdmodels.CellsVolume4DFromSCDRest(aoi)
-	if err != nil {
-		return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to convert to internal geometry model")
-	}
-
 	// Perform search query on Store
-	subs, err := repo.SearchSubscriptions(ctx, cellsVolume)
+	subs, err := repo.SearchSubscriptions(ctx, payload.AreaOfInterest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error searching Subscriptions in repo")
 	}
@@ -427,7 +581,7 @@ func executeQuerySubscriptions(ctx context.Context, repo repos.Repository, reque
 		// Do not return subscriptions which are expired.
 		// This implementation decision is described and motivated in https://github.com/interuss/tsc/pull/12.
 		isExpired := sub.EndTime.Before(nowMarker)
-		if !isExpired && sub.Manager == dssmodels.Manager(*req.Auth.ClientID) {
+		if !isExpired && sub.Manager == payload.Manager {
 			// Get dependent Operations
 			dependentOps, err := repo.GetDependentOperationalIntents(ctx, sub.ID)
 			if err != nil {
