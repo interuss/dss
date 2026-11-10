@@ -3,6 +3,8 @@ package operations
 import (
 	"context"
 	"errors"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -12,6 +14,8 @@ import (
 	"github.com/interuss/dss/pkg/auth"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -20,31 +24,31 @@ import (
 
 func init() {
 	Registry[restapi.GetOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*getOIRPayload],
-		Execute:    executeGetOperationalIntentReference,
-		IsReadOnly: true,
+		EncodePayload: encodeGetOIR,
+		DecodePayload: decodeGetOIR,
+		Execute:       executeGetOperationalIntentReference,
+		IsReadOnly:    true,
 	}
 	Registry[restapi.QueryOperationalIntentReferencesOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*queryOIRsPayload],
-		Execute:    executeQueryOperationalIntentReferences,
-		IsReadOnly: true,
+		EncodePayload: encodeQueryOIRs,
+		DecodePayload: decodeQueryOIRs,
+		Execute:       executeQueryOperationalIntentReferences,
+		IsReadOnly:    true,
 	}
 	Registry[restapi.DeleteOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*deleteOIRPayload],
-		Execute: executeDeleteOperationalIntentReference,
+		EncodePayload: encodeDeleteOIR,
+		DecodePayload: decodeDeleteOIR,
+		Execute:       executeDeleteOperationalIntentReference,
 	}
 	Registry[restapi.CreateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*createOIRPayload],
-		Execute: executePutOperationalIntentReference,
+		EncodePayload: encodeCreateOIR,
+		DecodePayload: decodeCreateOIR,
+		Execute:       executePutOperationalIntentReference,
 	}
 	Registry[restapi.UpdateOperationalIntentReferenceOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*updateOIRPayload],
-		Execute: executePutOperationalIntentReference,
+		EncodePayload: encodeUpdateOIR,
+		DecodePayload: decodeUpdateOIR,
+		Execute:       executePutOperationalIntentReference,
 	}
 }
 
@@ -92,6 +96,39 @@ func (p *deleteOIRPayload) OperationID() string {
 // NewDeleteOIRPayload builds the payload for an Operational Intent Reference deletion request.
 func NewDeleteOIRPayload(id dssmodels.ID, manager dssmodels.Manager, ovn scdmodels.OVN) dssstore.OperationRequest {
 	return &deleteOIRPayload{ID: id, Manager: manager, OVN: ovn}
+}
+
+func encodeDeleteOIR(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*deleteOIRPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.DeleteOperationalIntentReferenceOperationID)
+	}
+	id, err := payload.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_DeleteOperationalIntentReferenceOperation{
+		DeleteOperationalIntentReferenceOperation: &scdpb.DeleteOperationalIntentReferenceOperation{
+			Id:      id,
+			Manager: payload.Manager.String(),
+			Ovn:     payload.OVN.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeDeleteOIR(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetDeleteOperationalIntentReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.DeleteOperationalIntentReferenceOperationID)
+	}
+	decoded := &deleteOIRPayload{Manager: dssmodels.Manager(req.GetManager())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	if err := decoded.OVN.FromProto(req.GetOvn()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent OVN")
+	}
+	return decoded, nil
 }
 
 // executeDeleteOperationalIntentReference deletes a single operational intent ref for a given ID
@@ -200,6 +237,32 @@ func NewGetOIRPayload(id dssmodels.ID, manager dssmodels.Manager) dssstore.Opera
 	return &getOIRPayload{ID: id, Manager: manager}
 }
 
+func encodeGetOIR(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*getOIRPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetOperationalIntentReferenceOperationID)
+	}
+	id, err := payload.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetOperationalIntentReferenceOperation{
+		GetOperationalIntentReferenceOperation: &scdpb.GetOperationalIntentReferenceOperation{Id: id, Manager: payload.Manager.String()},
+	}}), nil
+}
+
+func decodeGetOIR(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetGetOperationalIntentReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.GetOperationalIntentReferenceOperationID)
+	}
+	decoded := &getOIRPayload{Manager: dssmodels.Manager(req.GetManager())}
+	if err := decoded.ID.FromProto(req.GetId()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	return decoded, nil
+}
+
 func executeGetOperationalIntentReference(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
 	payload, ok := request.(*getOIRPayload)
 	if !ok {
@@ -236,6 +299,35 @@ func (p *queryOIRsPayload) OperationID() string {
 // NewQueryOIRsPayload builds the payload for an Operational Intent References query.
 func NewQueryOIRsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
 	return &queryOIRsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
+}
+
+func encodeQueryOIRs(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*queryOIRsPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryOperationalIntentReferencesOperationID)
+	}
+	if payload.AreaOfInterest == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QueryOperationalIntentReferencesOperation{
+		QueryOperationalIntentReferencesOperation: &scdpb.QueryOperationalIntentReferencesOperation{
+			AreaOfInterest: payload.AreaOfInterest.ToProto(),
+			Manager:        payload.Manager.String(),
+		},
+	}}), nil
+}
+
+func decodeQueryOIRs(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetQueryOperationalIntentReferencesOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.QueryOperationalIntentReferencesOperationID)
+	}
+	if req.GetAreaOfInterest() == nil {
+		return nil, stacktrace.NewError("missing area of interest")
+	}
+	decoded := &queryOIRsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
+	return decoded, nil
 }
 
 func executeQueryOperationalIntentReferences(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
@@ -322,6 +414,91 @@ type validOIRParams struct {
 		ForConstraints bool
 	}
 	Key map[scdmodels.OVN]bool
+}
+
+func (vp *validOIRParams) toProto() (*scdpb.OperationalIntentParams, error) {
+	if vp == nil {
+		return nil, stacktrace.NewError("missing OperationalIntent parameters")
+	}
+	id, err := vp.ID.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	if vp.Volume == nil {
+		return nil, stacktrace.NewError("missing volume of OperationalIntent %s", vp.ID)
+	}
+	state, err := vp.State.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent state %s", vp.ID)
+	}
+	pb := &scdpb.OperationalIntentParams{
+		Id:         id,
+		NewOvn:     vp.NewOVN.ToProto(),
+		State:      state,
+		Volume:     vp.Volume.ToProto(),
+		UssBaseUrl: vp.USSBaseURL,
+		Key:        scdmodels.OVNsToProto(slices.Collect(maps.Keys(vp.Key))),
+	}
+	if !vp.SubscriptionID.Empty() {
+		if pb.SubscriptionId, err = vp.SubscriptionID.ToProto(); err != nil {
+			return nil, stacktrace.Propagate(err, "invalid Subscription ID of OperationalIntent %s", vp.ID)
+		}
+	}
+	if !vp.ImplicitSubscription.ID.Empty() {
+		implicitID, err := vp.ImplicitSubscription.ID.ToProto()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "invalid implicit Subscription ID of OperationalIntent %s", vp.ID)
+		}
+		pb.ImplicitSubscription = &scdpb.OperationalIntentParams_ImplicitSubscription{
+			Id:             implicitID,
+			BaseUrl:        vp.ImplicitSubscription.BaseURL,
+			ForConstraints: vp.ImplicitSubscription.ForConstraints,
+		}
+	}
+	return pb, nil
+}
+
+func (vp *validOIRParams) fromProto(pb *scdpb.OperationalIntentParams) error {
+	if pb == nil {
+		return stacktrace.NewError("missing OperationalIntent parameters")
+	}
+	decoded := validOIRParams{USSBaseURL: pb.GetUssBaseUrl(), Key: map[scdmodels.OVN]bool{}}
+	if err := decoded.ID.FromProto(pb.GetId()); err != nil {
+		return stacktrace.Propagate(err, "invalid OperationalIntent ID")
+	}
+	if pb.GetVolume() == nil {
+		return stacktrace.NewError("missing volume of OperationalIntent %s", decoded.ID)
+	}
+	decoded.Volume = new(dssmodels.CellsVolume4D)
+	decoded.Volume.FromProto(pb.GetVolume())
+	if err := decoded.NewOVN.FromProto(pb.GetNewOvn()); err != nil {
+		return err
+	}
+	if err := decoded.State.FromProto(pb.GetState()); err != nil {
+		return err
+	}
+	if pb.GetSubscriptionId() != nil {
+		if err := decoded.SubscriptionID.FromProto(pb.GetSubscriptionId()); err != nil {
+			return stacktrace.Propagate(err, "invalid Subscription ID of OperationalIntent %s", decoded.ID)
+		}
+	}
+	if implicit := pb.GetImplicitSubscription(); implicit != nil {
+		if err := decoded.ImplicitSubscription.ID.FromProto(implicit.GetId()); err != nil {
+			return stacktrace.Propagate(err, "invalid implicit Subscription ID of OperationalIntent %s", decoded.ID)
+		}
+		decoded.ImplicitSubscription.BaseURL = implicit.GetBaseUrl()
+		decoded.ImplicitSubscription.ForConstraints = implicit.GetForConstraints()
+	}
+	key, err := scdmodels.OVNsFromProto(pb.GetKey())
+	if err != nil {
+		return err
+	}
+	for _, ovn := range key {
+		decoded.Key[ovn] = true
+	}
+
+	*vp = decoded
+	return nil
 }
 
 func (vp *validOIRParams) toOIR(manager dssmodels.Manager, attachedSub *scdmodels.Subscription, version scdmodels.VersionNumber, pastOVNs []scdmodels.OVN) *scdmodels.OperationalIntent {
@@ -492,6 +669,68 @@ func (p *updateOIRPayload) OperationID() string {
 
 func (p *updateOIRPayload) manager() dssmodels.Manager { return p.Manager }
 func (p *updateOIRPayload) params() *validOIRParams    { return p.Params }
+
+func encodeCreateOIR(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*createOIRPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.CreateOperationalIntentReferenceOperationID)
+	}
+	params, err := payload.Params.toProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to encode OperationalIntent parameters for operation %q", restapi.CreateOperationalIntentReferenceOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_CreateOperationalIntentReferenceOperation{
+		CreateOperationalIntentReferenceOperation: &scdpb.CreateOperationalIntentReferenceOperation{
+			Manager: payload.Manager.String(),
+			Params:  params,
+		},
+	}}), nil
+}
+
+func decodeCreateOIR(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetCreateOperationalIntentReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.CreateOperationalIntentReferenceOperationID)
+	}
+	decoded := &createOIRPayload{Manager: dssmodels.Manager(req.GetManager()), Params: new(validOIRParams)}
+	if err := decoded.Params.fromProto(req.GetParams()); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to decode OperationalIntent parameters for operation %q", restapi.CreateOperationalIntentReferenceOperationID)
+	}
+	return decoded, nil
+}
+
+func encodeUpdateOIR(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*updateOIRPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.UpdateOperationalIntentReferenceOperationID)
+	}
+	params, err := payload.Params.toProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to encode OperationalIntent parameters for operation %q", restapi.UpdateOperationalIntentReferenceOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_UpdateOperationalIntentReferenceOperation{
+		UpdateOperationalIntentReferenceOperation: &scdpb.UpdateOperationalIntentReferenceOperation{
+			Manager: payload.Manager.String(),
+			Ovn:     payload.Params.OVN.ToProto(),
+			Params:  params,
+		},
+	}}), nil
+}
+
+func decodeUpdateOIR(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetUpdateOperationalIntentReferenceOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.UpdateOperationalIntentReferenceOperationID)
+	}
+	decoded := &updateOIRPayload{Manager: dssmodels.Manager(req.GetManager()), Params: new(validOIRParams)}
+	if err := decoded.Params.fromProto(req.GetParams()); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to decode OperationalIntent parameters for operation %q", restapi.UpdateOperationalIntentReferenceOperationID)
+	}
+	if err := decoded.Params.OVN.FromProto(req.GetOvn()); err != nil {
+		return nil, stacktrace.Propagate(err, "invalid OperationalIntent OVN for operation %q", restapi.UpdateOperationalIntentReferenceOperationID)
+	}
+	return decoded, nil
+}
 
 // oirPayload is implemented by createOIRPayload and updateOIRPayload
 type oirPayload interface {
