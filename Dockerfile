@@ -15,7 +15,7 @@ RUN mkdir /app
 COPY go.mod go.sum /app/
 # Intend to run delve download outside the go module directory to prevent it
 # from being added as a dependency
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.27.2
 WORKDIR /app
 
 # Get dependencies - will also be cached if we won't change mod/sum
