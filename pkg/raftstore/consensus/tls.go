@@ -67,13 +67,13 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 			return
 		}
 		lastLogged[reason] = time.Now()
-		fields := []zap.Field{zap.Int("duplicates_removed_for_"+reason, removed[reason]), zap.String("peer_address", conn.RemoteAddr().String()), zap.Error(err)}
+		fields := []zap.Field{zap.String("reason", reason), zap.Int("duplicates_removed", removed[reason]), zap.String("peer_address", conn.RemoteAddr().String()), zap.Error(err)}
 		removed[reason] = 0
 		if e, ok := errors.AsType[*tls.CertificateVerificationError](err); ok && len(e.UnverifiedCertificates) > 0 {
 			peer := e.UnverifiedCertificates[0]
 			fields = append(fields, zap.String("peer_subject", peer.Subject.String()), zap.String("peer_issuer", peer.Issuer.String()), zap.Time("peer_not_after", peer.NotAfter))
 		}
-		logger.Warn("raft: tls handshake failure: "+reason, fields...)
+		logger.Warn("raft: tls handshake failure", fields...)
 	}
 	return etcdtransport.NewListenerWithOpts(addr, "https", etcdtransport.WithTLSInfo(&tlsInfo))
 }

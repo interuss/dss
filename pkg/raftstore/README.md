@@ -30,7 +30,7 @@ Raft nodes authenticate each other with mutual TLS, configured by these three fl
 
 ### Logs and metrics
 
-With `--log_level debug`, a node logs its certificate and every CA of the bundle when it starts, with their expiry. A warning is logged if any of the CAs in the bundle has already expired. Each connection rejected during the TLS handshake is logged as the warning `raft: tls handshake failure: <reason>`, with the peer address, the error and, when the peer presented a certificate, its subject, issuer and expiry. A peer retries many times per second, so each reason is logged at most once every 5 seconds, with `duplicates_removed_for_<reason>` set to the number of failures not logged since for this specific reason. The metric below counts every rejection.
+With `--log_level debug`, a node logs its certificate and every CA of the bundle when it starts, with their expiry. A warning is logged if any of the CAs in the bundle has already expired. Each connection rejected during the TLS handshake is logged as the warning `raft: tls handshake failure`, with the reason, the peer address, the error and, when the peer presented a certificate, its subject, issuer and expiry. A peer retries many times per second, so each reason is logged at most once every 5 seconds, with `duplicates_removed` set to the number of failures not logged since for this specific reason. The metric below counts every rejection.
 
 | Reason              | Meaning                                                  |
 | ------------------- | -------------------------------------------------------- |
