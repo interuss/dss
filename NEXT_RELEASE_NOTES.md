@@ -84,6 +84,9 @@ The release notes should contain at least the following sections:
 * [helm] A Pod Security Policy RoleBinding can now be created with `dss.psp.roleBinding` and `dss.psp.roleRef`.
 * [terraform] New variable `psp_role_ref`: when set, the RoleBinding is created by Helm and Tanka.
 * [terraform/helm] `should_init` is now taken into account by Helm: when `false`, the CockroachDB cluster initialization job of the chart is no longer run. Setting `should_init` to `true` with a non-empty `crdb_external_nodes` is now rejected by terraform.
+* [helm] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `loadBalancers.dssGateway.preSharedCert` instead of a Google-managed certificate.
+* [tanka] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `backend.preSharedCert` instead of a Google-managed certificate.
+* [terraform/google] New variable `google_preshared_cert`, passed to Helm and Tanka.
 
 ## Minimal database schema version
 

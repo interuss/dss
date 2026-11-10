@@ -124,6 +124,7 @@ GOOGLE_MODULE_VARIABLES = (
     GOOGLE_KUBERNETES_VARIABLES
     + [
         "google_kubernetes_storage_class",
+        "google_preshared_cert",
         "crdb_hostname_suffix",
         "crdb_locality",
     ]
