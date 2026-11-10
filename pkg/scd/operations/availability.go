@@ -7,6 +7,8 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	"github.com/interuss/dss/pkg/pb/scdpb"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
 	dssstore "github.com/interuss/dss/pkg/store"
@@ -15,16 +17,80 @@ import (
 
 func init() {
 	Registry[restapi.GetUssAvailabilityOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:     dssstore.EncodeJSON,
-		Decode:     dssstore.DecodeJSON[*restapi.GetUssAvailabilityRequest],
-		Execute:    executeGetUssAvailability,
-		IsReadOnly: true,
+		EncodePayload: encodeGetUssAvailability,
+		DecodePayload: decodeGetUssAvailability,
+		Execute:       executeGetUssAvailability,
+		IsReadOnly:    true,
 	}
 	Registry[restapi.SetUssAvailabilityOperationID] = dssstore.OperationHandler[repos.Repository]{
-		Encode:  dssstore.EncodeJSON,
-		Decode:  dssstore.DecodeJSON[*setUssAvailabilityPayload],
-		Execute: executeSetUssAvailability,
+		EncodePayload: encodeSetUssAvailability,
+		DecodePayload: decodeSetUssAvailability,
+		Execute:       executeSetUssAvailability,
 	}
+}
+
+type getUssAvailabilityPayload struct {
+	Uss dssmodels.Manager
+}
+
+func (p *getUssAvailabilityPayload) OperationID() string {
+	return restapi.GetUssAvailabilityOperationID
+}
+
+// NewGetUssAvailabilityPayload builds the request for a USS availability retrieval.
+func NewGetUssAvailabilityPayload(uss dssmodels.Manager) dssstore.OperationRequest {
+	return &getUssAvailabilityPayload{Uss: uss}
+}
+
+func encodeGetUssAvailability(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*getUssAvailabilityPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetUssAvailabilityOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetUssAvailabilityOperation{
+		GetUssAvailabilityOperation: &scdpb.GetUssAvailabilityOperation{Uss: payload.Uss.String()},
+	}}), nil
+}
+
+func decodeGetUssAvailability(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetGetUssAvailabilityOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.GetUssAvailabilityOperationID)
+	}
+	return &getUssAvailabilityPayload{Uss: dssmodels.Manager(req.GetUss())}, nil
+}
+
+func encodeSetUssAvailability(request dssstore.OperationRequest) (*raftpb.Payload, error) {
+	payload, ok := request.(*setUssAvailabilityPayload)
+	if !ok {
+		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.SetUssAvailabilityOperationID)
+	}
+	availability, err := payload.Availability.ToProto()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to encode USS availability state for operation %q", restapi.SetUssAvailabilityOperationID)
+	}
+	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SetUssAvailabilityOperation{
+		SetUssAvailabilityOperation: &scdpb.SetUssAvailabilityOperation{
+			Uss:          payload.Uss.String(),
+			Availability: availability,
+			OldVersion:   payload.OldVersion.ToProto(),
+		},
+	}}), nil
+}
+
+func decodeSetUssAvailability(payload *raftpb.Payload) (dssstore.OperationRequest, error) {
+	req := payload.GetScdPayload().GetSetUssAvailabilityOperation()
+	if req == nil {
+		return nil, stacktrace.NewError("unexpected payload %T for operation %q", payload.GetPayload(), restapi.SetUssAvailabilityOperationID)
+	}
+	decoded := &setUssAvailabilityPayload{Uss: dssmodels.Manager(req.GetUss())}
+	if err := decoded.Availability.FromProto(req.GetAvailability()); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode USS availability state for operation %q", restapi.SetUssAvailabilityOperationID)
+	}
+	if err := decoded.OldVersion.FromProto(req.GetOldVersion()); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to decode USS old version for operation %q", restapi.SetUssAvailabilityOperationID)
+	}
+	return decoded, nil
 }
 
 type setUssAvailabilityPayload struct {
@@ -52,12 +118,12 @@ func NewSetUssAvailabilityPayload(ussID string, params *restapi.SetUssAvailabili
 }
 
 func executeGetUssAvailability(ctx context.Context, repo repos.Repository, request dssstore.OperationRequest) (any, error) {
-	req, ok := request.(*restapi.GetUssAvailabilityRequest)
+	payload, ok := request.(*getUssAvailabilityPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.GetUssAvailabilityOperationID)
 	}
 
-	id := dssmodels.ManagerFromString(req.UssId)
+	id := payload.Uss
 
 	// Get USS availability from Store
 	ussa, err := repo.GetUssAvailability(ctx, id)
