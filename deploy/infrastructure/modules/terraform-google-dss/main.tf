@@ -69,10 +69,10 @@ module "terraform-commons-dss" {
   raft_storage_size                    = var.raft_storage_size
   node_count                           = var.node_count
   kubernetes_api_endpoint              = module.terraform-google-kubernetes.kubernetes_api_endpoint
-  crdb_internal_nodes                  = module.terraform-google-kubernetes.crdb_nodes
-  yugabyte_internal_masters_nodes      = module.terraform-google-kubernetes.yugabyte_masters_nodes
-  yugabyte_internal_tservers_nodes     = module.terraform-google-kubernetes.yugabyte_tservers_nodes
-  raft_internal_nodes                  = module.terraform-google-kubernetes.raft_nodes
+  crdb_internal_nodes                  = module.terraform-google-kubernetes.crdb_addresses
+  yugabyte_internal_masters_nodes      = module.terraform-google-kubernetes.yugabyte_masters_addresses
+  yugabyte_internal_tservers_nodes     = module.terraform-google-kubernetes.yugabyte_tservers_addresses
+  raft_internal_nodes                  = module.terraform-google-kubernetes.raft_addresses
   ip_gateway                           = module.terraform-google-kubernetes.ip_gateway
   ssl_policy                           = module.terraform-google-kubernetes.ssl_policy
   google_preshared_cert                = var.google_preshared_cert

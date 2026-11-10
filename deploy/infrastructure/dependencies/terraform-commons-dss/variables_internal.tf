@@ -23,32 +23,36 @@ variable "kubernetes_api_endpoint" {
 # Hostnames and DNS
 variable "crdb_internal_nodes" {
   type = list(object({
-    dns = string
-    ip  = string
+    expected_dns    = string
+    address         = string
+    loadbalancer_ip = string
   }))
   description = "List of the IP addresses and related dns for the Cockroach DB nodes"
 }
 
 variable "yugabyte_internal_masters_nodes" {
   type = list(object({
-    dns = string
-    ip  = string
+    expected_dns    = string
+    address         = string
+    loadbalancer_ip = string
   }))
   description = "List of the IP addresses and related dns for the Yugabyte DB master nodes"
 }
 
 variable "yugabyte_internal_tservers_nodes" {
   type = list(object({
-    dns = string
-    ip  = string
+    expected_dns    = string
+    address         = string
+    loadbalancer_ip = string
   }))
   description = "List of the IP addresses and related dns for the Yugabyte DB tserver nodes"
 }
 
 variable "raft_internal_nodes" {
   type = list(object({
-    dns = string
-    ip  = string
+    expected_dns    = string
+    address         = string
+    loadbalancer_ip = string
   }))
   description = "List of the IP addresses and related dns for the Raft nodes"
 }

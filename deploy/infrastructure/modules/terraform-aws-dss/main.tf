@@ -70,10 +70,10 @@ module "terraform-commons-dss" {
   raft_port                            = var.raft_port
   raft_tls_secret                      = var.raft_tls_secret
   raft_storage_size                    = var.raft_storage_size
-  crdb_internal_nodes                  = module.terraform-aws-kubernetes.crdb_nodes
-  yugabyte_internal_masters_nodes      = module.terraform-aws-kubernetes.yugabyte_masters_nodes
-  yugabyte_internal_tservers_nodes     = module.terraform-aws-kubernetes.yugabyte_tservers_nodes
-  raft_internal_nodes                  = module.terraform-aws-kubernetes.raft_nodes
+  crdb_internal_nodes                  = module.terraform-aws-kubernetes.crdb_addresses
+  yugabyte_internal_masters_nodes      = module.terraform-aws-kubernetes.yugabyte_masters_addresses
+  yugabyte_internal_tservers_nodes     = module.terraform-aws-kubernetes.yugabyte_tservers_addresses
+  raft_internal_nodes                  = module.terraform-aws-kubernetes.raft_addresses
   ip_gateway                           = module.terraform-aws-kubernetes.ip_gateway
   kubernetes_api_endpoint              = module.terraform-aws-kubernetes.kubernetes_api_endpoint
   kubernetes_cloud_provider_name       = module.terraform-aws-kubernetes.kubernetes_cloud_provider_name
