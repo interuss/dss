@@ -103,6 +103,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "evict_rid_subscriptions",
     "enable_monitoring",
     "enable_dss_metrics",
+    "alerting",
 ]
 
 # dependencies/terraform-*-kubernetes

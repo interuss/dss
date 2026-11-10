@@ -147,6 +147,17 @@ local metadata = metadataBase {
     expose_external: ${VAR_PROMETHEUS_EXPOSE_EXTERNAL},
     IP: '${VAR_PROMETHEUS_IP}',
   },
+  alert+: {
+    enable: ${VAR_ALERT_ENABLE},
+    %{if VAR_ALERT_ENABLE}
+    smtp: {
+      host: ${VAR_ALERT_SMTP_SMARTHOST},
+      email: ${VAR_ALERT_SMTP_EMAIL},
+      password: ${VAR_ALERT_SMTP_PASSWORD},
+      dest: ${VAR_ALERT_SMTP_DEST},
+    },
+    %{endif}
+  },
   image_pull_secret: '${VAR_DOCKER_IMAGE_PULL_SECRET}',
   cloud_provider: '${VAR_CLOUD_PROVIDER}',
   %{if VAR_CLOUD_PROVIDER == "aws"}

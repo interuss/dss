@@ -15,6 +15,24 @@ The following table describes the variables of this terraform module.
             <th>Description</th>
         </thead>
         <tbody><tr>
+                <td>alerting (<code>object({<br/>smtp_smarthost = string,<br/> smtp_email = string,<br/> smtp_password = string,<br/> dest = string})<br/></code>)</td>
+                <td><p>Alerting by email with Alertmanager. Alerting is disabled when not set.</p>
+<ul>
+<li>smtp_smarthost: SMTP server, with its port.</li>
+<li>smtp_email: Email address sending the alerts, also used to authenticate on the SMTP server.</li>
+<li>smtp_password: Password to authenticate on the SMTP server.</li>
+<li>dest: Email address receiving the alerts.</li>
+</ul>
+<p>Example:</p>
+<pre><code>{
+  smtp_smarthost     = &quot;smtp.example.com:587&quot;
+  smtp_email         = &quot;dss@example.com&quot;
+  smtp_password      = &quot;password&quot;
+  dest               = &quot;team@example.com&quot;
+}
+</code></pre>
+</td>
+            </tr><tr>
                 <td>app_hostname (<code>string</code>)</td>
                 <td><p>Fully-qualified domain name of your HTTPS Gateway ingress endpoint.</p>
 <p>Example: <code>dss.example.com</code></p>

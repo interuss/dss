@@ -133,6 +133,25 @@ prometheus:
 
   alertmanager:
     enabled: false
+    persistence:
+      enabled: false
+    config:
+      global:
+        smtp_smarthost: ""
+        smtp_from: ""
+        smtp_auth_username: ""
+        smtp_auth_password: ""
+      route:
+        group_by:
+          - alertname
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 3h
+        receiver: dss-team
+      receivers:
+        - name: dss-team
+          email_configs:
+            - to: ""
 
   serverFiles:  # Caution: Since the prometheus helm chart does not detect changes in server files, update the `prometheus.server.podAnnotations.serverFilesVersion` to force the redeployment of prometheus.
     web-config.yml:
