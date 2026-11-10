@@ -27,7 +27,7 @@ A voter cannot be removed if the group would be left with fewer than 3 voters.`,
 )
 
 func init() {
-	removeCmd.Flags().StringVar(&removeURL, "url", "", "URL of the node to remove, i.e. its --raft_url")
+	removeCmd.Flags().StringVar(&removeURL, "url", "", "URL of the node to remove, i.e. its --raft_peer_url")
 	removeCmd.Flags().StringVar(&removeNodeID, "node_id", "", "ID of the node to remove, only when a single group is selected with --groups")
 	removeCmd.MarkFlagsMutuallyExclusive("url", "node_id")
 	removeCmd.MarkFlagsOneRequired("url", "node_id")

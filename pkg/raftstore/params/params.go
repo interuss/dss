@@ -116,6 +116,38 @@ func (c ConnectParameters) PeerMap() (map[uint64]*url.URL, error) {
 	return peers, nil
 }
 
+// RaftPeerUrl returns the URL at which the other nodes reach this node: its entry in --raft_peers if set, which --raft_peer_url
+// must then match if set too, and --raft_peer_url otherwise.
+func (c ConnectParameters) RaftPeerUrl() (*url.URL, error) {
+	if c.Peers != "" {
+		peers, err := c.PeerMap()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to parse peer map")
+		}
+		nodeURL, ok := peers[c.NodeID]
+		if !ok {
+			return nil, stacktrace.NewError("node ID %d not found in peers map", c.NodeID)
+		}
+		if c.URL != "" && c.URL != nodeURL.String() {
+			return nil, stacktrace.NewError("--raft_peer_url %s differs from the URL %s of node %d in --raft_peers", c.URL, nodeURL, c.NodeID)
+		}
+		return nodeURL, nil
+	}
+
+	nodeURL, err := url.Parse(c.URL)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "invalid --raft_peer_url %s", c.URL)
+	}
+	scheme := "http"
+	if c.TLSEnabled() {
+		scheme = "https"
+	}
+	if nodeURL.Scheme != scheme {
+		return nil, stacktrace.NewError("invalid --raft_peer_url %s: scheme must be %s (https when mutual TLS is enabled, http otherwise)", c.URL, scheme)
+	}
+	return nodeURL, nil
+}
+
 func (c ConnectParameters) ElectionInterval() time.Duration {
 	return time.Duration(c.ElectionTick) * c.TickInterval
 }
@@ -140,7 +172,7 @@ var (
 func init() {
 	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.StringVar(&connectParameters.Peers, "raft_peers", "", `Comma-separated "nodeID=peerURL" pairs defining all cluster members including this node, e.g. "1=http://node1:9011,2=http://node2:9011,3=http://node3:9011". The Raft groups (aux, rid, scd) of a node share a single listener at its URL.`)
-	flag.StringVar(&connectParameters.URL, "raft_url", "", "URL at which the other DSS nodes of the cluster reach this node, unique within the cluster, e.g. http://node1:9011.")
+	flag.StringVar(&connectParameters.URL, "raft_peer_url", "", "URL at which the other DSS nodes of the cluster reach this node, unique within the cluster, e.g. http://node1:9011. The Raft groups (aux, rid, scd) of the node share a single listener on its port.")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
 	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.")
 
@@ -169,8 +201,8 @@ func GetConnectParameters(subfolder string) (ConnectParameters, error) {
 	if connectParameters.NodeID == 0 {
 		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
 	}
-	if connectParameters.Peers == "" {
-		return ConnectParameters{}, stacktrace.NewError("--raft_peers is required")
+	if connectParameters.Peers == "" && connectParameters.URL == "" {
+		return ConnectParameters{}, stacktrace.NewError("--raft_peer_url is required when --raft_peers is not set")
 	}
 	p := connectParameters
 	if p.Insecure && (p.TLSCertFile != "" || p.TLSKeyFile != "" || p.TLSCAFile != "") {
