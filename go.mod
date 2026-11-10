@@ -7,7 +7,7 @@ require (
 	github.com/cockroachdb/cockroach-go/v2 v2.4.3
 	github.com/coreos/go-semver v0.3.1
 	github.com/exaring/otelpgx v0.13.0
-	github.com/go-jose/go-jose/v4 v4.1.7
+	github.com/go-jose/go-jose/v4 v4.1.8
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/geo v0.0.0-20261026081726-9e1e803a26c2
 	github.com/google/go-cmp v0.7.0
