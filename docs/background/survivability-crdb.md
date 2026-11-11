@@ -72,10 +72,13 @@ To configure a 3-replica cluster where exactly one replica lives on each of the 
 
 ```sql
 ALTER RANGE default CONFIGURE ZONE USING
-  num_replicas = 3;
+  num_replicas = 3,
+  constraints = '{"+dss=dss1": 1, "+dss=dss2": 1, "+dss=dss3": 1}';
 ```
 
 ### Explanation of the Parameters:
 * `num_replicas = 3`: Tells CockroachDB to keep 3 copies of each range.
+* `constraints`: A JSON object specifying per-replica constraints. Consult the [CockroachDB documentation about replication controls](https://docs.cockroachlabs.com/docs/v24.1/configure-replication-zones) for handling more complex use-cases.
+    * `"+dss=dss1": 1` tells CockroachDB that exactly one replica must be located on nodes matching the locality `dss=dss1`.
 
 Do note that outside of the default case described in this documentation, you will need to adjust the above SQL query by configuring different ranges and/or setting specific constraints. This is however not within the scope of this documentation.
