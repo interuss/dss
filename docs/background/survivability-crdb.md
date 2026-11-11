@@ -19,7 +19,7 @@ When starting each CockroachDB node, you must configure its `--locality` flag to
 We recommend that the locality use first at least the DSS provider key (i.e. `dss`), and optionally second the `node` key.
 Because CockroachDB will distribute range replicas using values of locality keys, the order of the keys defining the hierarchy to do so, if there is some existing locality set preventing this to be achieved, it is important that:
 - all DSS providers agree on a specific key whose value is specific to them (e.g. `dss=dss1`);
-- and that the number of total replicas set covers at least the total number of combination of the DSS provider key.
+- and that the number of total replicas set covers at least the total number of combination of the DSS provider key and the ones before.
 
 Example: with three DSS providers each with two nodes define the following localities:
 - `region=east,dss=dss1,node=dss1_node1`
