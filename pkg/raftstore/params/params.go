@@ -35,7 +35,6 @@ const (
 type (
 	// ConnectParameters bundles up parameters used for connecting nodes in a raftstore cluster.
 	ConnectParameters struct {
-		NodeID uint64
 		// URL is the URL at which the other nodes reach this node.
 		URL string
 
@@ -93,9 +92,9 @@ func (c ConnectParameters) ElectionInterval() time.Duration {
 	return time.Duration(c.ElectionTick) * c.TickInterval
 }
 
-func (c ConnectParameters) RaftConfig(storage raft.Storage) *raft.Config {
+func (c ConnectParameters) RaftConfig(nodeID uint64, storage raft.Storage) *raft.Config {
 	return &raft.Config{
-		ID:              c.NodeID,
+		ID:              nodeID,
 		ElectionTick:    c.ElectionTick,
 		HeartbeatTick:   c.HeartbeatTick,
 		MaxSizePerMsg:   c.MaxSizePerMsg,
@@ -111,10 +110,9 @@ var (
 )
 
 func init() {
-	flag.Uint64Var(&connectParameters.NodeID, "raft_node_id", 0, "Raft node ID for this instance (must be non-zero and unique within the cluster).")
 	flag.StringVar(&connectParameters.URL, "raft_peer_url", "", "URL at which the other DSS nodes of the cluster reach this node, unique within the cluster, e.g. http://node1:9011. The Raft groups (aux, rid, scd) of the node share a single listener on its port.")
 	flag.Uint64Var(&connectParameters.ClusterID, "raft_cluster_id", 1, "ID of the cluster, used to isolate different Raft clusters running in the same network (must be the same for all nodes in the cluster).")
-	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. If the directory is lost, the node must be removed from the cluster and re-added as a new node with a new NodeID.")
+	flag.StringVar(&connectParameters.DataDir, "raft_datadir", defaultDataDir, "Directory for raft data (node identity, WAL segments and snapshots), required for restarts. These should not be deleted while the node is running or across restarts unless the node is being permanently shut down. A node starting with an empty directory gets a new ID and waits to be added to the cluster: if the directory is lost, the node must be added again and its old ID removed.")
 
 	flag.Uint64Var(&connectParameters.SnapshotCatchupEntries, "raft_snapshot_catchup_entries", defaultSnapshotCatchupEntries,
 		"Log entries retained after compaction so a slow follower can catch up via replication rather than a full snapshot. Higher values tolerate slower followers but increase disk usage.")
@@ -138,9 +136,6 @@ func init() {
 
 // GetConnectParameters returns a ConnectParameters instance that gets populated from well-known CLI flags.
 func GetConnectParameters(subfolder string) (ConnectParameters, error) {
-	if connectParameters.NodeID == 0 {
-		return ConnectParameters{}, stacktrace.NewError("--raft_node_id is required and must be non-zero")
-	}
 	if _, err := types.NewURLs([]string{connectParameters.URL}); err != nil {
 		return ConnectParameters{}, stacktrace.Propagate(err, "--raft_peer_url is required and must be a valid URL with a port and without a path")
 	}

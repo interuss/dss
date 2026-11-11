@@ -71,7 +71,6 @@ if [[ "$DC_COMMAND" == up* ]]; then
       export USS_IDX=$i
       export USS_NODE_IDX=$j
       NODE_IDX=$(( (i-1) * NUM_NODES + j ))
-      export RAFT_ID=$NODE_IDX
       PADDED_NODE_IDX=$(printf "%02d" "$NODE_IDX")
       export PADDED_NODE_IDX
 

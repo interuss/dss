@@ -78,7 +78,7 @@ type Consensus struct {
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, old, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.NodeID, connectParams.SnapshotCatchupEntries)
+	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
@@ -89,12 +89,12 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	}
 
 	consensus := &Consensus{
-		logger: logging.WithValuesFromContext(ctx, logger),
+		logger: logging.WithValuesFromContext(ctx, logger).With(zap.Uint64("nodeID", nodeID)),
 
-		nodeID:           connectParams.NodeID,
+		nodeID:           nodeID,
 		group:            connectParams.Group,
 		publicURL:        nodeUrl.String(),
-		config:           connectParams.RaftConfig(storage),
+		config:           connectParams.RaftConfig(nodeID, storage),
 		tickInterval:     connectParams.TickInterval,
 		snapshotInterval: connectParams.SnapshotIntervalEntries,
 		node:             node.NewNodeState(),
@@ -110,13 +110,13 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		readTracker: newReadIndexTracker(),
 
 		membership: membership{
-			nodeID:  connectParams.NodeID,
+			nodeID:  nodeID,
 			members: map[uint64]member{},
 			removed: map[uint64]member{},
 		},
 	}
 
-	err = consensus.initTransport(ctx, connectParams.NodeID, connectParams.GroupClusterID, nodeUrl, NewTLSInfo(connectParams, logger))
+	err = consensus.initTransport(ctx, nodeID, connectParams.GroupClusterID, nodeUrl, NewTLSInfo(connectParams, logger))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -148,10 +148,10 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 	}
 
 	switch {
-	case consensus.membership.isIDRemoved(connectParams.NodeID):
+	case consensus.membership.isIDRemoved(nodeID):
 		consensus.logger.Warn("this node was removed from the Raft group")
 		consensus.node.SetRemoved()
-	case old:
+	case hasState:
 		consensus.logger.Info("restarting raft node", zap.String("address", nodeUrl.String()))
 		consensus.startNode(func() raft.Node { return raft.RestartNode(consensus.config) })
 	default:

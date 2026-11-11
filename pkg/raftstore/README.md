@@ -52,7 +52,7 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 ### Actors
 
 - **Raft group:** A set of Raft nodes that replicate one Raft log via the Raft consensus protocol (one leader and its followers).
-- **Raft Node:** One participant in a Raft group, identified by a unique `NodeID`. One [`Consensus`](consensus/consensus.go) instance wraps one Raft node.
+- **Raft Node:** One participant in a Raft group, identified by a unique `NodeID` generated on its first start. One [`Consensus`](consensus/consensus.go) instance wraps one Raft node.
 - **DSS Node:** One running core-service. Each DSS Node runs 3 Raft nodes (aux, rid, scd).
 - **Peer:** Another Raft node in the same Raft group, reachable over `rafthttp` at a configured URL. Peers exchange Raft messages (votes, log replication, heartbeats) with each other.
 - **Client:** An entity sending requests to a DSS node (e.g. via the REST ASTM API).
@@ -83,10 +83,12 @@ Most of the concepts defined below come from the Raft consensus algorithm itself
 
 A Raft group is formed through the [admin API](../../interfaces/admin/admin.yaml) served by the core-service on the Unix socket at `--admin_socket`, using `dssctl raft`: one node bootstraps it, then the other nodes are added to it one at a time. Nodes are added to and removed from a running group with [`Consensus.AddNode` and `Consensus.RemoveNode`](consensus/consensus.go), which propose a configuration change through the Raft log and block until it is applied. Each Raft group is managed independently: a DSS node bootstraps, joins or leaves each of its groups separately, with one configuration change per group.
 
+- **Identity:** A DSS node is identified by its `--raft_peer_url`, which must be unique within the cluster. On its first start, the node generates a random ID per group and records it in the metadata of the group's WAL. The node keeps this ID across restarts. IDs are random 64-bit numbers, so a collision within a group is unlikely. If it happens, adding a node whose ID is already used by a member or by a removed node is rejected (see Validation), and the node keeps waiting. Restarting it with an empty `--raft_datadir`, which holds no Raft state while it waits, generates a new ID.
 - **Startup:** A node with Raft state restarts as a member. A node without Raft state waits (`GET /admin/v1/raft/groups/{group_name}/this_node` reports its state) to be added to a running group or to bootstrap a new one. A waiting or removed node rejects the requests to the group.
 - **Bootstrapping:** `POST /admin/v1/raft/groups` on a waiting node creates a new group with this node as its only member. The other nodes are then added to it. Bootstrapping should only be done on one 
 node. Attempting this action on multiple nodes will create independent Raft groups.
 - **Joining:** A node is started, then added with `POST /admin/v1/raft/groups/{group_name}/members` sent to a member, with the URL of the node. The member reads the ID of the node from the node itself, on its Raft listener, and rejects a node that is unreachable, not waiting, or not running this group in this cluster. The node learns the configuration and the application state of the group from the leader.
+- **Replacing:** Replacing a node at the same URL is not supported yet. A node that lost its data directory starts with a new ID, and its old ID still uses its URL. With 4 voters or more, its old ID is removed, then the node is added. A group of 3 voters cannot go below the minimum: the node must be restarted with a different `--raft_peer_url` and added before its old ID is removed.
 - **Validation:** A configuration change is validated when it is proposed, to fail fast, and again by every node when it is applied. The following changes are rejected:
   - adding a node that is already a member, with an invalid peer URL, or with the peer URL of another member.
   - removing a node that is not a member, or a voter if the group would be left with fewer than 3 voters.
