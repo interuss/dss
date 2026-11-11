@@ -144,6 +144,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 		snapper: snapper,
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
+		// If existing entries, hard state or snapshot were loaded, the storage holds Raft state.
 	}, id.NodeID, !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
 }
 
