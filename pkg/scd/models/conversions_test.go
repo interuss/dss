@@ -5,12 +5,13 @@ import (
 	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func newRestTime(t time.Time) *restapi.Time {
-	return &restapi.Time{Value: t.Format(time.RFC3339), Format: TimeFormatRFC3339}
+	return &restapi.Time{Value: t.Format(time.RFC3339), Format: dssmodels.TimeFormatRFC3339}
 }
 
 func newRestAlt(a float32) *restapi.Altitude {
@@ -135,6 +136,7 @@ func TestCellsVolume4DFromSCDRest(t *testing.T) {
 	start := time.Date(2024, time.December, 15, 15, 0, 0, 0, time.UTC)
 	end := start.Add(time.Hour)
 	restInvalidTime := &restapi.Time{Value: start.Format(time.ANSIC)}
+	restInvalidTimeFormat := &restapi.Time{Value: start.Format(time.RFC3339), Format: "RFC3330"}
 	lo := float32(100.0)
 	hi := float32(200.0)
 	restInvalidAlt := &restapi.Altitude{Value: 0}
@@ -170,6 +172,16 @@ func TestCellsVolume4DFromSCDRest(t *testing.T) {
 		{
 			name:    "InvalidTimeEnd",
 			rest:    &restapi.Volume4D{TimeEnd: restInvalidTime},
+			wantErr: true,
+		},
+		{
+			name:    "InvalidTimeStartFormat",
+			rest:    &restapi.Volume4D{Volume: restapi.Volume3D{OutlinePolygon: &footprint}, TimeStart: restInvalidTimeFormat},
+			wantErr: true,
+		},
+		{
+			name:    "InvalidTimeEndFormat",
+			rest:    &restapi.Volume4D{Volume: restapi.Volume3D{OutlinePolygon: &footprint}, TimeEnd: restInvalidTimeFormat},
 			wantErr: true,
 		},
 		{

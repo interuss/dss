@@ -9,6 +9,7 @@ import (
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	"github.com/interuss/dss/pkg/memstore"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/operations"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -49,8 +50,8 @@ func oirTestVolume4D(now time.Time) restapi.Volume4D {
 	startStr := now.Format(time.RFC3339)
 	endStr := now.Add(25 * time.Minute).Format(time.RFC3339)
 	return restapi.Volume4D{
-		TimeStart: &restapi.Time{Value: startStr, Format: models.TimeFormatRFC3339},
-		TimeEnd:   &restapi.Time{Value: endStr, Format: models.TimeFormatRFC3339},
+		TimeStart: &restapi.Time{Value: startStr, Format: dssmodels.TimeFormatRFC3339},
+		TimeEnd:   &restapi.Time{Value: endStr, Format: dssmodels.TimeFormatRFC3339},
 		Volume: restapi.Volume3D{
 			OutlineCircle: &restapi.Circle{
 				Center: &restapi.LatLngPoint{Lat: 37.427636, Lng: -122.170502},
