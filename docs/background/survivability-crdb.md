@@ -17,9 +17,9 @@ To achieve this, we:
 
 When starting each CockroachDB node, you must configure its `--locality` flag to specify which DSS provider and node it represents. For the purpose of ensuring survivability of the cluster, it is important that all DSS providers align of the structure of their locality settings.
 We recommend that the locality use first at least the DSS provider key (i.e. `dss`), and optionally second the `node` key.
-Because CockroachDB will distribute range replicas using values of locality keys, the order of the keys defining the hierarchy to do so, if there is some existing locality set preventing this to be achieved, it is important that:
-- all DSS providers agree on a specific key whose value is specific to them (e.g. `dss=dss1`);
-- and that the number of total replicas set covers at least the total number of combination of the DSS provider key and the ones before.
+CockroachDB distributes range replicas hierarchically following the order of keys in `--locality`. If other locality keys must precede the DSS provider key (for example, `region` before `dss`), you must ensure that:
+- all DSS providers use the same key to identify themselves, with a value unique to each provider (e.g., `dss=dss1`);
+- the total number of replicas (`num_replicas`) is at least equal to the number of unique combinations of the DSS provider key and all locality keys preceding it.
 
 Example: with three DSS providers each with two nodes define the following localities:
 - `region=east,dss=dss1,node=dss1_node1`
@@ -79,6 +79,6 @@ ALTER RANGE default CONFIGURE ZONE USING
 ### Explanation of the Parameters:
 * `num_replicas = 3`: Tells CockroachDB to keep 3 copies of each range.
 * `constraints`: A JSON object specifying per-replica constraints. Consult the [CockroachDB documentation about replication controls](https://docs.cockroachlabs.com/docs/v24.1/configure-replication-zones) for handling more complex use-cases.
-    * `"+dss=dss1": 1` tells CockroachDB that exactly one replica must be located on nodes matching the locality `dss=dss1`.
+    * `"+dss=dss1": 1` tells CockroachDB that at least one replica must be located on of the nodes matching the locality `dss=dss1`.
 
 Do note that outside of the default case described in this documentation, you will need to adjust the above SQL query by configuring different ranges and/or setting specific constraints. This is however not within the scope of this documentation.
