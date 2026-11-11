@@ -153,11 +153,10 @@ func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 		return nil, geo.ErrRadiusMustBeLargerThan0
 	}
 
-	// TODO: Use an S2 Cap as an inscribed polygon does not fully cover the defined circle
-	return geo.RegionCoverer.Covering(s2.RegularLoop(
+	// Cover the whole circle, including its boundary.
+	return geo.RegionCoverer.Covering(s2.CapFromCenterAngle(
 		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.Lat, gc.Center.Lng)),
 		geo.DistanceMetersToAngle(float64(gc.RadiusMeter)),
-		20,
 	)), nil
 }
 
