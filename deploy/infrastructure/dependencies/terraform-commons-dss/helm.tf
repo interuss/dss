@@ -14,9 +14,8 @@ locals {
   yugabyte_precommand_suffix = ".${var.db_hostname_suffix}\" | sed 's/[\\/&]/\\\\&/g')\\2/\" /etc/hosts > /tmp/newhosts && /bin/cp /tmp/newhosts /etc/hosts && \\"
 
   raft_nodes = [
-    for i, n in var.raft_internal_nodes :
+    for n in var.raft_internal_nodes :
     {
-      id       = var.raft_node_ids[i]
       endpoint = "${n.expected_dns}:${var.raft_port}"
     }
   ]
@@ -232,7 +231,6 @@ locals {
     raft = {
       enabled   = true
       nodes     = local.raft_nodes
-      peers     = var.raft_peers
       clusterID = var.raft_cluster_id
       tlsSecret = var.raft_tls_secret
       storage = {

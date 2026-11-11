@@ -58,7 +58,7 @@ def parse_args():
         "--nodes-public-address",
         metavar="NODES_PUBLIC_ADDRESS",
         default="",
-        help="Public node address. Use <ID> to indicate id of the node (0, 1, ...), <TYPE> for the type (tserver, masters, raft). Example: '<ID>.<TYPE>.db.interuss.example'. Required by generate-raft-nodes. For raft nodes, <ID> is not the --raft_node_id",
+        help="Public node address. Use <ID> to indicate id of the node (0, 1, ...), <TYPE> for the type (tserver, masters, raft). Example: '<ID>.<TYPE>.db.interuss.example'.",
     )
     parser.add_argument(
         "--ca-file",

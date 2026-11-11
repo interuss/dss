@@ -51,7 +51,6 @@ resource "local_file" "tanka_config_main" {
     VAR_YUGABYTE_DOCKER_IMAGE_NAME           = "interuss/yugabyte:2025.1.2.1-interuss" // TODO: This should be an option
     VAR_YUGABYTE_LIGHT_RESOURCES             = var.yugabyte_light_resources
     VAR_RAFT_NODES                           = [for i, n in local.raft_nodes : merge(n, { ip = var.raft_internal_nodes[i].loadbalancer_ip })]
-    VAR_RAFT_PEERS                           = var.raft_peers
     VAR_RAFT_CLUSTER_ID                      = var.raft_cluster_id
     VAR_RAFT_TLS_SECRET                      = var.raft_tls_secret
     VAR_RAFT_STORAGE_SIZE                    = var.raft_storage_size

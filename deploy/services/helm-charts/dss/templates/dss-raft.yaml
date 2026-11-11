@@ -3,8 +3,6 @@
 {{- $raft := .Values.raft -}}
 {{- $datadir := "/raft_data" -}}
 {{- $nodes := $raft.nodes | default list -}}
-{{- $peers := $raft.peers | default list -}}
-{{- $all := concat $nodes $peers -}}
 {{- if not $nodes -}}
   {{- fail "raft.nodes must list at least one node" -}}
 {{- end -}}
@@ -12,32 +10,21 @@
   {{- fail "raft.tlsSecret is required: the Raft listeners authenticate with mutual TLS" -}}
 {{- end -}}
 
-{{- $allIDs := list -}}
-{{- range $all -}}
-  {{- if contains "://" .endpoint -}}
-    {{- fail (printf "raft node id %d: endpoint %q must not include a scheme" (int .id) .endpoint) -}}
-  {{- end -}}
-  {{- if ne (len (splitList ":" .endpoint)) 2 -}}
-    {{- fail (printf "raft node id %d: endpoint %q must be host:port" (int .id) .endpoint) -}}
-  {{- end -}}
-  {{- $allIDs = append $allIDs .id -}}
-{{- end -}}
-
-{{- if ne (len $allIDs) (len (uniq $allIDs)) -}}
-  {{- fail "duplicate Raft node IDs in raft.nodes / raft.peers" -}}
-{{- end -}}
-
-{{- $ids := list -}}
+{{- $endpoints := list -}}
 {{- $ports := list -}}
-{{- range $nodes -}}
-  {{- $port := index (splitList ":" .endpoint) 1 -}}
-  {{- $ids = append $ids (int .id) -}}
-  {{- $ports = append $ports ($port | int) -}}
+{{- range $i, $node := $nodes -}}
+  {{- if contains "://" $node.endpoint -}}
+    {{- fail (printf "raft node %d: endpoint %q must not include a scheme" $i $node.endpoint) -}}
+  {{- end -}}
+  {{- if ne (len (splitList ":" $node.endpoint)) 2 -}}
+    {{- fail (printf "raft node %d: endpoint %q must be host:port" $i $node.endpoint) -}}
+  {{- end -}}
+  {{- $endpoints = append $endpoints $node.endpoint -}}
+  {{- $ports = append $ports (index (splitList ":" $node.endpoint) 1 | int) -}}
 {{- end -}}
 
-{{- $peerList := list -}}
-{{- range $all -}}
-  {{- $peerList = append $peerList (printf "%d=https://%s" (int .id) .endpoint) -}}
+{{- if ne (len $endpoints) (len (uniq $endpoints)) -}}
+  {{- fail "duplicate endpoints in raft.nodes" -}}
 {{- end -}}
 
 ---
@@ -82,18 +69,17 @@ spec:
             - -c
           args:
             - |
-              # Raft node IDs of this release's nodes, in pod-ordinal order.
-              ids="{{ join " " $ids }}"
+              # Raft endpoints of this release's nodes, in pod-ordinal order.
+              endpoints="{{ join " " $endpoints }}"
               ordinal=$(( ${HOSTNAME##*-} + 1 ))
               exec core-service \
             {{- range splitList "\n" (include "core-service-args" $) }}
                 {{ . | squote }} \
             {{- end }}
                 --store_type=raft \
-                --raft_node_id=$(printf '%s\n' $ids | sed -n "${ordinal}p") \
+                --raft_peer_url="https://$(printf '%s\n' $endpoints | sed -n "${ordinal}p")" \
                 --raft_cluster_id={{ $raft.clusterID }} \
                 --raft_datadir={{ $datadir }} \
-                --raft_peers='{{ join "," $peerList }}' \
                 --raft_tls_cert_file="/raft-tls/node.raft-${HOSTNAME##*-}.crt" \
                 --raft_tls_key_file="/raft-tls/node.raft-${HOSTNAME##*-}.key" \
                 --raft_tls_ca_file=/raft-tls/ca.crt \
