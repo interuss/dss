@@ -46,52 +46,66 @@ The release notes should contain at least the following sections:
 ## Mandatory migration tasks
 
 * [terraform/tanka] `enable_monitoring` (default `false`) now also applies to Tanka. To keep Prometheus and Grafana managed by Tanka, set `enable_monitoring = true`. Otherwise, they are no longer rendered by Tanka; `tk apply` does not delete them, remove them manually if needed.
-* [tanka] The CockroachDB nodes are now started with `--locality=<locality>` instead of `--locality=zone=<locality>`. Please update your locality setting accordingly. To keep the same value, add `zone=` to your existing value. Example: `uss1` changed to `zone=uss1`.
 * [terraform/helm] The CockroachDB nodes are now started with `--locality=<locality>`, as with Tanka. The CockroachDB pods are restarted one by one at the next `helm upgrade`.
+* [tanka] The CockroachDB nodes are now started with `--locality=<locality>` instead of `--locality=zone=<locality>`. Please update your locality setting accordingly. To keep the same value, add `zone=` to your existing value. Example: `uss1` changed to `zone=uss1`.
 
 ## Optional migration tasks
 
 ## Important information
 
+### core-service
+
+* [evict] RID cleanup (`db-manager evict`, including the RID cleanup default `CronJob`) now evicts the expired ISAs and subscriptions of all the DSS instances of the pool, instead of only the ones written by the DSS instance identified by `--locality`. The `--locality` flag of `db-manager evict` is deprecated and has no effect. It will be removed in a future release.
+
+### Deployment tools
+
+* [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-Res-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 (aligning with the Google deployment) and restricts TLS 1.2 to AEAD (GCM/ChaCha20) cipher suites. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1, or to CBC cipher suites, will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
+* [deploy] CPU and memory requests and limits, additional environment variables (e.g. `GOGC`, `GOMAXPROCS`) and the CockroachDB `--cache` and `--max-sql-memory` flags of the CockroachDB and core-service containers can now be configured with Terraform, Tanka and Helm. See [CPU and memory allocation](docs/operations/performance.md#cpu-and-memory-allocation).
+* [deploy] Some users reported issues with CockroachDB under load in [#1732](https://github.com/interuss/dss/issues/1732). Please review it and consider using the new options `crdb_enable_liveness_probe` and `crdb_enable_readiness_probe` (Terraform), or `cockroach.enableLivenessProbe` and `cockroach.enableReadinessProbe` (Tanka), to disable the CockroachDB probes. For Helm, see the chart's README.
+
+#### Terraform
+
+* [terraform] The variables `desired_rid_db_version`, `desired_scd_db_version`, `desired_aux_db_version` and `aws_create_storage_class` were previously ignored by the `terraform-aws-dss` and `terraform-google-dss` modules and are now taken into account. Review your `terraform.tfvars` carefully before applying.
+* [terraform] New variable `alerting` (SMTP server, email, password and destination), passed to Helm and Tanka.
+* [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
+* [terraform] `kubernetes_namespace` now accepts namespaces other than `default`.
+* [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
+* [terraform] New variable `core_service_image_pull_policy` (default empty, keeps the current behavior), passed to Helm and Tanka.
+* [terraform] New variable `schema_manager_enabled` (default `true`), passed to Helm and Tanka.
+* [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
+* [terraform] New variable `schema_manager_image` (defaults to `image`), passed to Helm and Tanka.
+* [terraform] New variable `psp_role_ref`: when set, the RoleBinding is created by Helm and Tanka.
+* [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
+* [terraform/helm] `should_init` is now taken into account by Helm: when `false`, the CockroachDB cluster initialization job of the chart is no longer run. Setting `should_init` to `true` with a non-empty `crdb_external_nodes` is now rejected by terraform.
+* [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
+* [terraform/google] New variable `google_preshared_cert`, passed to Helm and Tanka.
 * [terraform/aws] EKS node auto repair is now enabled on the managed node group by default (new variable `aws_enable_node_auto_repair`, default `true`). EKS will automatically replace worker nodes that become unhealthy (e.g. stuck in `NotReady`), one node at a time, which matches the default behavior of GKE node pools. This requires AWS Terraform provider 6.20.0 or later (run `terraform init -upgrade` if an older version is locked). Applying this change updates the node group in place and does not replace nodes. Set `aws_enable_node_auto_repair = false` to keep the previous behavior.
 * [terraform/aws] The EKS node monitoring agent add-on (`eks-node-monitoring-agent`) can now be installed by setting the new variable `aws_enable_node_monitoring_agent` to `true` (default `false`). It reports additional node health conditions (container runtime, kernel, networking, storage) which EKS node auto repair, when enabled on the node group, uses to detect unhealthy nodes. It runs as a privileged DaemonSet, so review it against your security requirements before enabling it. Enabling it on an existing cluster only adds the DaemonSet and does not restart nodes or workloads. If the agent was already installed manually (e.g. with Helm), uninstall it before enabling the variable.
 * [terraform/aws] The Kubernetes Metrics Server is now installed as an EKS add-on (`metrics-server`), which makes `kubectl top` and the Metrics API available, as on GKE clusters. If metrics-server was already installed manually in the cluster (e.g. with Helm or `kubectl apply`), uninstall it before applying to avoid conflicts during the creation of the add-on.
-* [deploy] AWS NLB TLS listeners (DSS gateway and Prometheus, for both Helm and Tanka) now use the `ELBSecurityPolicy-TLS13-1-2-Res-2021-06` SSL negotiation policy, which enforces a minimum of TLS 1.2 (aligning with the Google deployment) and restricts TLS 1.2 to AEAD (GCM/ChaCha20) cipher suites. Previously the AWS Load Balancer Controller default (`ELBSecurityPolicy-2016-08`) applied, which allowed TLS 1.0 and 1.1. Clients limited to TLS 1.0 or 1.1, or to CBC cipher suites, will no longer be able to connect. Unlike the Google deployment, no resources need to be provisioned by Terraform or manually to set up the policy.
-* [evict] RID cleanup (`db-manager evict`, including the RID cleanup default `CronJob`) now evicts the expired ISAs and subscriptions of all the DSS instances of the pool, instead of only the ones written by the DSS instance identified by `--locality`. The `--locality` flag of `db-manager evict` is deprecated and has no effect. It will be removed in a future release.
-* [deploy] CPU and memory requests and limits, additional environment variables (e.g. `GOGC`, `GOMAXPROCS`) and the CockroachDB `--cache` and `--max-sql-memory` flags of the CockroachDB and core-service containers can now be configured with Terraform, Tanka and Helm. See [CPU and memory allocation](docs/operations/performance.md#cpu-and-memory-allocation).
-* [deploy] Some users reported issues with CockroachDB under load in [#1732](https://github.com/interuss/dss/issues/1732). Please review it and consider using the new options `crdb_enable_liveness_probe` and `crdb_enable_readiness_probe` (Terraform), or `cockroach.enableLivenessProbe` and `cockroach.enableReadinessProbe` (Tanka), to disable the CockroachDB probes. For Helm, see the chart's README.
-* [terraform] The variables `desired_rid_db_version`, `desired_scd_db_version`, `desired_aux_db_version` and `aws_create_storage_class` were previously ignored by the `terraform-aws-dss` and `terraform-google-dss` modules and are now taken into account. Review your `terraform.tfvars` carefully before applying.
-* [helm] A secret to pull the DSS image from a private registry can now be set with `dss.imagePullSecret`. Terraform now pass `image_pull_secret` to Helm.
-* [terraform/helm] The public key used by Helm deployments to validate access tokens is now `authorization.public_key_pem_path` instead of the hardcoded `/test-certs/auth2.pem`. Please review your current setting carefully before applying.
-* [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
-* [terraform] `desired_rid_db_version`, `desired_scd_db_version` and `desired_aux_db_version` are now also passed to Helm. Review your `terraform.tfvars` carefully before applying.
-* [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
-* [terraform] `kubernetes_namespace` now accepts namespaces other than `default`.
+
+#### Tanka
+
 * [tanka] The subject of the `cockroachdb` ClusterRoleBinding now uses the namespace of the deployment instead of `default`.
-* [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
-* [terraform] New variable `dump_requests` (default `false`), passed to Helm and Tanka: Helm deployments made with Terraform no longer log full HTTP requests and responses by default, as Tanka deployments made with Terraform.
-* [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
 * [tanka] When `enableScd` is `false`, the core-service no longer waits for the SCD schema and the SCD evict CronJob is no longer deployed: the core-service could not start on a new database in that case.
-* [terraform/tanka] The `injectLabels` option is now added to generated Tanka files by Terraform to allow the usage of Tanka's prune command. This will add new labels to resources the next time you apply Tanka files.
 * [tanka] The monitoring stack (Prometheus and Grafana) can now be disabled with `enableMonitoring: false` (default `true`).
 * [tanka] On minikube, the core-service is now exposed by the `gateway` LoadBalancer Service on port 80.
 * [tanka] The image pull policy of the core-service can now be set with `backend.imagePullPolicy`. The default is unchanged.
-* [terraform] New variable `core_service_image_pull_policy` (default empty, keeps the current behavior), passed to Helm and Tanka.
-* [helm] The schema manager jobs can now be disabled with `dss.schemaManager.enabled: false` (default `true`).
-* [terraform] New variable `schema_manager_enabled` (default `true`), passed to Helm and Tanka.
-* [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
-* [terraform] New variable `gcp_prof_service_name` (default empty), passed to Helm and Tanka.
-* [helm] The image of the schema manager and evict jobs can now be set with `dss.schemaManager.image` (defaults to `dss.image`).
-* [terraform] New variable `schema_manager_image` (defaults to `image`), passed to Helm and Tanka.
-* [helm] A Pod Security Policy RoleBinding can now be created with `dss.psp.roleBinding` and `dss.psp.roleRef`.
-* [terraform] New variable `psp_role_ref`: when set, the RoleBinding is created by Helm and Tanka.
-* [terraform/helm] `should_init` is now taken into account by Helm: when `false`, the CockroachDB cluster initialization job of the chart is no longer run. Setting `should_init` to `true` with a non-empty `crdb_external_nodes` is now rejected by terraform.
-* [helm] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `loadBalancers.dssGateway.preSharedCert` instead of a Google-managed certificate.
 * [tanka] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `backend.preSharedCert` instead of a Google-managed certificate.
-* [terraform/google] New variable `google_preshared_cert`, passed to Helm and Tanka.
-* [helm] Alerting by email is now available with the Alertmanager of the official Prometheus chart. Set `prometheus.alertmanager.enabled` to `true`, the SMTP parameters in `prometheus.alertmanager.config` and the Grafana contact point and notification policy in `grafana.alerting`. See `values.example.yaml`.
 * [tanka] Grafana now sends its alerts to Alertmanager with a contact point and a notification policy provisioned in `/etc/grafana/provisioning/alerting` (ConfigMap `grafana-alerting-provisioning`), instead of the legacy notifier, ignored since Grafana 11. The `grafana-notifier-provisioning` ConfigMap is not deleted by `tk apply` and can be removed manually.
-* [terraform] New variable `alerting` (SMTP server, email, password and destination), passed to Helm and Tanka.
+
+#### Helm
+
+* [helm] A secret to pull the DSS image from a private registry can now be set with `dss.imagePullSecret`. Terraform now pass `image_pull_secret` to Helm.
+* [helm] The database schema versions can now be set with `dss.schemaManager.desiredRidDbVersion`, `dss.schemaManager.desiredScdDbVersion` and `dss.schemaManager.desiredAuxDbVersion`. When empty (default), the latest version for the datastore is used, as before.
+* [helm] All the resources of the chart are now deployed in the namespace of the release (`helm install --namespace`) instead of always in `default`. Releases installed in the `default` namespace (the default value) are not affected.
+* [helm] The logging of full HTTP requests and responses can now be disabled with `dss.conf.dumpRequests: false`. The default stays `true`.
+* [helm] When `dss.conf.enableScd` is `false`, the SCD schema manager job and the SCD evict CronJob are no longer deployed, and the core-service no longer waits for the SCD schema.
+* [helm] The schema manager jobs can now be disabled with `dss.schemaManager.enabled: false` (default `true`).
+* [helm] The service name of the Go profiler can now be set with `dss.conf.gcpProfServiceName`.
+* [helm] The image of the schema manager and evict jobs can now be set with `dss.schemaManager.image` (defaults to `dss.image`).
+* [helm] A Pod Security Policy RoleBinding can now be created with `dss.psp.roleBinding` and `dss.psp.roleRef`.
+* [helm] On Google Cloud, the DSS gateway can now use a pre-shared certificate with `loadBalancers.dssGateway.preSharedCert` instead of a Google-managed certificate.
+* [helm] Alerting by email is now available with the Alertmanager of the official Prometheus chart. Set `prometheus.alertmanager.enabled` to `true`, the SMTP parameters in `prometheus.alertmanager.config` and the Grafana contact point and notification policy in `grafana.alerting`. See `values.example.yaml`.
 
 ## Minimal database schema version
 
