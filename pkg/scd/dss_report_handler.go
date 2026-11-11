@@ -9,6 +9,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
+	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -51,6 +52,20 @@ func (a *Server) MakeDssReport(ctx context.Context, req *restapi.MakeDssReportRe
 	if req.BodyParseError != nil {
 		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
+	if req.Body.Exchange.RequestTime == (restapi.Time{}) {
+		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing exchange request time"))}}
+	}
+
+	_, err := scdmodels.FromTime(&req.Body.Exchange.RequestTime)
+	if err == nil {
+		_, err = scdmodels.FromTime(req.Body.Exchange.ResponseTime)
+	}
+	if err != nil {
+		return restapi.MakeDssReportResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid exchange time"))}}
 	}
 
 	report, err := a.DSSReportHandler.Handle(ctx, req)

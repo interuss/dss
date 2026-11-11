@@ -11,30 +11,32 @@ import (
 )
 
 const (
-	// TimeFormatRFC3339 is the string used for RFC3339
-	TimeFormatRFC3339 = "RFC3339"
-	UnitsM            = "M"
-	ReferenceW84      = "W84"
+	UnitsM       = "M"
+	ReferenceW84 = "W84"
 )
+
+// FromTime converts SCD REST model to standard golang Time
+func FromTime(t *restapi.Time) (*time.Time, error) {
+	if t == nil {
+		return nil, nil
+	}
+	return dssmodels.TimeFromRest(t.Value, t.Format)
+}
 
 func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
 	filter := &dssmodels.CellsVolume4D{}
 
-	if vol4.TimeStart != nil {
-		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeStart.Value)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time")
-		}
-		filter.StartTime = &ts
+	startTime, err := FromTime(vol4.TimeStart)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting start time")
 	}
+	filter.StartTime = startTime
 
-	if vol4.TimeEnd != nil {
-		ts, err := time.Parse(time.RFC3339Nano, vol4.TimeEnd.Value)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time")
-		}
-		filter.EndTime = &ts
+	endTime, err := FromTime(vol4.TimeEnd)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting end time")
 	}
+	filter.EndTime = endTime
 
 	if filter.StartTime != nil && filter.EndTime != nil && filter.StartTime.After(*filter.EndTime) {
 		return nil, stacktrace.NewError("Start time cannot be after end time")

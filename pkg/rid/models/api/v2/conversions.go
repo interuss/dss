@@ -18,17 +18,7 @@ func FromTime(t *restapi.Time) (*time.Time, error) {
 	if t == nil {
 		return nil, nil
 	}
-	if t.Format != "RFC3339" {
-		return nil, stacktrace.NewError("Invalid time format '%v'; expected 'RFC3339'", t.Format)
-	}
-	if t.Value == "" {
-		return nil, stacktrace.NewError("Time structure specified, but `value` was missing")
-	}
-	ts, err := time.Parse(time.RFC3339Nano, t.Value)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error converting time")
-	}
-	return &ts, nil
+	return dssmodels.TimeFromRest(t.Value, t.Format)
 }
 
 // FromAltitude converts RID v2 REST model to float

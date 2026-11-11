@@ -10,6 +10,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const TimeFormatRFC3339 = "RFC3339"
+
+// TimeFromRest validates the format of a time received through a REST API and parses its value
+func TimeFromRest(value string, format string) (*time.Time, error) {
+	if format != TimeFormatRFC3339 {
+		return nil, stacktrace.NewError("Invalid time format '%v'; expected '%v'", format, TimeFormatRFC3339)
+	}
+	if value == "" {
+		return nil, stacktrace.NewError("Time structure specified, but `value` was missing")
+	}
+	ts, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error converting time")
+	}
+	return &ts, nil
+}
+
 type (
 	// ID represents a UUID-formatted string.
 	ID string
