@@ -21,7 +21,7 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
-func (r *repo) fetchISAs(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) fetchISAs(ctx context.Context, query string, args ...any) ([]*ridmodels.IdentificationServiceArea, error) {
 	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -62,7 +62,7 @@ func (r *repo) fetchISAs(ctx context.Context, query string, args ...interface{})
 	return payload, nil
 }
 
-func (r *repo) fetchISA(ctx context.Context, query string, args ...interface{}) (*ridmodels.IdentificationServiceArea, error) {
+func (r *repo) fetchISA(ctx context.Context, query string, args ...any) (*ridmodels.IdentificationServiceArea, error) {
 	isas, err := r.fetchISAs(ctx, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information

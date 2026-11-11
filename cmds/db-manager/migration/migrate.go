@@ -278,7 +278,7 @@ func enumerateMigrationSteps(path *string) ([]MigrationStep, error) {
 	// Render sorted step list
 	result := make([]MigrationStep, len(versions)+1)
 	result[0].version = *semver.New("0.0.0")
-	for i := 0; i < len(versions); i++ {
+	for i := range versions {
 		result[i+1] = steps[*versions[i]]
 	}
 

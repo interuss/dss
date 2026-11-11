@@ -51,7 +51,7 @@ func init() {
 	)
 }
 
-func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.OperationalIntent, error) {
+func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.OperationalIntent, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -121,7 +121,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	return payload, nil
 }
 
-func (s *repo) fetchOperationalIntent(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.OperationalIntent, error) {
+func (s *repo) fetchOperationalIntent(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.OperationalIntent, error) {
 	operations, err := s.fetchOperationalIntents(ctx, q, query, args...)
 	if err != nil {
 		return nil, err

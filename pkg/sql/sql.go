@@ -11,13 +11,13 @@ import (
 
 // Queryable abstracts common operations on sql.DB and sql.Tx instances.
 type Queryable interface {
-	Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, query string, args ...interface{}) pgx.Row
-	Exec(ctx context.Context, query string, args ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, query string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, query string, args ...any) pgx.Row
+	Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error)
 }
 
 // FetchIDs runs a query returning a single ID column and returns the IDs of all rows.
-func FetchIDs(ctx context.Context, q Queryable, query string, args ...interface{}) ([]dssmodels.ID, error) {
+func FetchIDs(ctx context.Context, q Queryable, query string, args ...any) ([]dssmodels.ID, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)

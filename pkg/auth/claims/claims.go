@@ -58,7 +58,7 @@ func (s *ScopeSet) UnmarshalJSON(data []byte) error {
 
 	*s = map[string]struct{}{}
 
-	for _, scope := range strings.Split(str, " ") {
+	for scope := range strings.SplitSeq(str, " ") {
 		(*s)[scope] = struct{}{}
 	}
 

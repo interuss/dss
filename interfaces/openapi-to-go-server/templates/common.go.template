@@ -41,7 +41,7 @@ type Authorizer interface {
 
 // --- Utilities ---
 
-func WriteJSON(w http.ResponseWriter, code int, obj interface{}) {
+func WriteJSON(w http.ResponseWriter, code int, obj any) {
     // A 204 response has no body
     if code == http.StatusNoContent {
         w.WriteHeader(code)

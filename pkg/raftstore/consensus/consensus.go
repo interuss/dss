@@ -751,7 +751,7 @@ func (c *Consensus) AddNode(ctx context.Context, peerURL string) (node.Info, err
 		return node.Info{}, stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the node at %s is %s, only a waiting node can be added", peerURL, peer.State)
 	}
 
-	err = c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(peer.ID)}, confChangeContext{member: member{URL: peerURL}})
+	err = c.proposeConfChange(ctx, &raftpb.ConfChangeSingle{Type: raftpb.ConfChangeAddNode.Enum(), NodeId: new(peer.ID)}, confChangeContext{URL: peerURL})
 	if err != nil {
 		return node.Info{}, err
 	}

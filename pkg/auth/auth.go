@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -28,26 +29,26 @@ import (
 // KeyResolver abstracts resolving keys.
 type KeyResolver interface {
 	// ResolveKeys returns a public or private key, most commonly an rsa.PublicKey.
-	ResolveKeys(context.Context) ([]interface{}, error)
+	ResolveKeys(context.Context) ([]any, error)
 }
 
 type fromMemoryKeyResolver struct {
-	Keys []interface{}
+	Keys []any
 }
 
 // ResolveKeys returns the set of keys provided to the fromMemoryKeyResolver.
-func (r *fromMemoryKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+func (r *fromMemoryKeyResolver) ResolveKeys(context.Context) ([]any, error) {
 	return r.Keys, nil
 }
 
 // FromFileKeyResolver resolves keys from 'KeyFile'.
 type FromFileKeyResolver struct {
 	KeyFiles []string
-	keys     []interface{}
+	keys     []any
 }
 
 // ResolveKeys resolves an RSA public key from file for verifying JWTs.
-func (r *FromFileKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+func (r *FromFileKeyResolver) ResolveKeys(context.Context) ([]any, error) {
 	if r.keys != nil {
 		return r.keys, nil
 	}
@@ -83,7 +84,7 @@ type JWKSResolver struct {
 }
 
 // ResolveKeys resolves an RSA public key from file for verifying JWTs.
-func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
+func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]any, error) {
 	req := http.Request{
 		Method: http.MethodGet,
 		URL:    r.Endpoint,
@@ -104,7 +105,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 		return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Error decoding JWKS")
 	}
 
-	var keys []interface{}
+	var keys []any
 	var webKeys []jose.JSONWebKey
 	if len(r.KeyIDs) == 0 {
 		webKeys = jwks.Keys
@@ -126,7 +127,7 @@ func (r *JWKSResolver) ResolveKeys(ctx context.Context) ([]interface{}, error) {
 // Authorizer authorizes incoming requests.
 type Authorizer struct {
 	logger            *zap.Logger
-	keys              []interface{}
+	keys              []any
 	keyGuard          sync.RWMutex
 	acceptedAudiences []string
 }
@@ -185,7 +186,7 @@ func NewRSAAuthorizer(ctx context.Context, configuration Configuration) (*Author
 	return authorizer, nil
 }
 
-func (a *Authorizer) setKeys(keys []interface{}) {
+func (a *Authorizer) setKeys(keys []any) {
 	a.keyGuard.Lock()
 	a.keys = keys
 	a.keyGuard.Unlock()
@@ -256,7 +257,7 @@ func (a *Authorizer) extractClaims(r *http.Request) (claims.Claims, error) {
 	for _, key := range keys {
 		keyClaims = claims.Claims{}
 		key := key
-		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (interface{}, error) {
+		_, err = jwt.ParseWithClaims(tknStr, &keyClaims, func(token *jwt.Token) (any, error) {
 			return key, nil
 		})
 		if err == nil {
@@ -276,12 +277,7 @@ func (a *Authorizer) extractClaims(r *http.Request) (claims.Claims, error) {
 }
 
 func HasScope(scopes []string, requiredScope api.RequiredScope) bool {
-	for _, scope := range scopes {
-		if scope == string(requiredScope) {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes, string(requiredScope))
 }
 
 // describeAuthorizationExpectations builds a human-readable string describing the expectations of the authorization options.

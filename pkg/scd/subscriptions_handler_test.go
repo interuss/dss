@@ -7,10 +7,6 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/scdv1"
 )
 
-func boolPointer(value bool) *bool {
-	return &value
-}
-
 func TestValidateRequestedSubscriptionScopes(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -68,8 +64,8 @@ func TestValidateRequestedSubscriptionScopes(t *testing.T) {
 			err := validateRequestedSubscriptionScopes(
 				api.AuthorizationResult{Scopes: test.scopes},
 				&restapi.PutSubscriptionParameters{
-					NotifyForOperationalIntents: boolPointer(test.opIntents),
-					NotifyForConstraints:        boolPointer(test.constraints),
+					NotifyForOperationalIntents: new(test.opIntents),
+					NotifyForConstraints:        new(test.constraints),
 				},
 			)
 			if (err != nil) != test.wantError {

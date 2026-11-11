@@ -21,7 +21,7 @@ const (
 )
 
 // process a query that should return one or many subscriptions.
-func (r *repo) process(ctx context.Context, query string, args ...interface{}) ([]*ridmodels.Subscription, error) {
+func (r *repo) process(ctx context.Context, query string, args ...any) ([]*ridmodels.Subscription, error) {
 	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -69,7 +69,7 @@ func (r *repo) process(ctx context.Context, query string, args ...interface{}) (
 }
 
 // processOne processes a query that should return exactly a single subscription.
-func (r *repo) processOne(ctx context.Context, query string, args ...interface{}) (*ridmodels.Subscription, error) {
+func (r *repo) processOne(ctx context.Context, query string, args ...any) (*ridmodels.Subscription, error) {
 	subs, err := r.process(ctx, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
