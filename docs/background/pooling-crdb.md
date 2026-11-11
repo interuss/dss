@@ -83,7 +83,8 @@ following those instructions.
   `--certs-dir` and `--ca-key` flags.
     - Do not specify `--insecure`
 - The ordering of the `--locality` flag keys must be the same across all
-  CockroachDB nodes in the cluster.
+  CockroachDB nodes in the cluster. See [CockroachDB Pool Survivability](survivability-crdb.md)
+  for details on setting up these values and configuring replication zone constraints.
 - All DSS instances in the same cluster must point their ntpd at the same NTP
   Servers.
   [CockroachDB recommends](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#considerations)

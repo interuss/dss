@@ -6,3 +6,4 @@ nav:
   - "Pooling": pooling.md
   - "Pooling: YugabyteDB specifics": pooling-yugabyte.md
   - "Pooling: CRDB specifics": pooling-crdb.md
+  - "Pool Survivability: CRDB specifics": survivability-crdb.md
