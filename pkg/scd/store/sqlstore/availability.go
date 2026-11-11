@@ -63,7 +63,7 @@ func (u *repo) UpsertUssAvailability(ctx context.Context, s *scdmodels.UssAvaila
 	return s, nil
 }
 
-func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.UssAvailabilityStatus, error) {
+func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.UssAvailabilityStatus, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -93,7 +93,7 @@ func (u *repo) fetchAvailabilities(ctx context.Context, q dsssql.Queryable, quer
 	return payload, nil
 }
 
-func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.UssAvailabilityStatus, error) {
+func (u *repo) fetchAvailability(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.UssAvailabilityStatus, error) {
 	availabilities, err := u.fetchAvailabilities(ctx, q, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information

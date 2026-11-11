@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -119,12 +120,9 @@ func (r *fakeSubscriptionRepo) SearchSubscriptions(_ context.Context, cells s2.C
 	for _, s := range r.subs {
 		appended := false
 		for _, c1 := range s.Cells {
-			for _, c2 := range cells {
-				if c1 == c2 {
-					subs = append(subs, s)
-					appended = true
-					break
-				}
+			if slices.Contains(cells, c1) {
+				subs = append(subs, s)
+				appended = true
 			}
 			if appended {
 				break
@@ -507,7 +505,7 @@ func TestInsertTooManySubscription(t *testing.T) {
 	}
 
 	// We should be able to insert 10 subscriptions without error.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		ret, err := insertSubscription(ctx, repo, makeSubscription([]uint64{12494535901059219456, 12494535866699481088}))
 		require.NoError(t, err)
 		require.NotNil(t, &ret)

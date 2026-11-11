@@ -59,7 +59,7 @@ func init() {
 	)
 }
 
-func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Subscription, error) {
+func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.Subscription, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -109,7 +109,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 	return payload, nil
 }
 
-func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Subscription, error) {
+func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.Subscription, error) {
 	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
 	if err != nil {
 		return nil, err

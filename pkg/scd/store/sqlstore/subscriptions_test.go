@@ -126,7 +126,7 @@ func TestCellLockKeys(t *testing.T) {
 
 	adjacent := s2.CellUnion{}
 	cell := cells[0]
-	for i := 0; i < 16; i++ {
+	for range 16 {
 		adjacent = append(adjacent, cell)
 		cell = cell.Next()
 	}

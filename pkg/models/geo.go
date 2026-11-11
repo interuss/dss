@@ -9,10 +9,6 @@ import (
 	"github.com/interuss/dss/pkg/memstore/utils"
 )
 
-func float32p(v float32) *float32 {
-	return &v
-}
-
 func timeP(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
@@ -88,10 +84,10 @@ func UnionCellsVolumes4D(volumes ...*CellsVolume4D) *CellsVolume4D {
 		} else if !unbounded.altitudeLo {
 			if result.AltitudeLo != nil {
 				if *volume.AltitudeLo < *result.AltitudeLo {
-					result.AltitudeLo = float32p(*volume.AltitudeLo)
+					result.AltitudeLo = new(*volume.AltitudeLo)
 				}
 			} else {
-				result.AltitudeLo = float32p(*volume.AltitudeLo)
+				result.AltitudeLo = new(*volume.AltitudeLo)
 			}
 		}
 
@@ -101,10 +97,10 @@ func UnionCellsVolumes4D(volumes ...*CellsVolume4D) *CellsVolume4D {
 		} else if !unbounded.altitudeHi {
 			if result.AltitudeHi != nil {
 				if *volume.AltitudeHi > *result.AltitudeHi {
-					result.AltitudeHi = float32p(*volume.AltitudeHi)
+					result.AltitudeHi = new(*volume.AltitudeHi)
 				}
 			} else {
-				result.AltitudeHi = float32p(*volume.AltitudeHi)
+				result.AltitudeHi = new(*volume.AltitudeHi)
 			}
 		}
 	}

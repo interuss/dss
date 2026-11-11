@@ -134,7 +134,7 @@ func VersionFromTime(t time.Time) *Version {
 }
 
 // Scan implements database/sql's scan interface.
-func (v *Version) Scan(src interface{}) error {
+func (v *Version) Scan(src any) error {
 	if src == nil {
 		return nil
 	}

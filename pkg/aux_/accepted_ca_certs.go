@@ -29,7 +29,7 @@ func (a *Server) GetAcceptedCAs(ctx context.Context, req *restapi.GetAcceptedCAs
 
 	var CAs []string
 
-	for _, CA := range strings.Split(string(data), START_OF_CERTIFICATE) {
+	for CA := range strings.SplitSeq(string(data), START_OF_CERTIFICATE) {
 		CA = strings.Trim(CA, "\r\n")
 
 		if CA != "" {

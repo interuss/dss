@@ -82,7 +82,7 @@ func rsaTokenReqWithMultipleAudience(key *rsa.PrivateKey, exp, nbf int64) *http.
 	return rsaTokenReqWithAudiences(key, exp, nbf, []string{"test-aud", "test-aud2"})
 }
 
-func rsaTokenReqWithAudiences(key *rsa.PrivateKey, exp, nbf int64, audiences interface{}) *http.Request {
+func rsaTokenReqWithAudiences(key *rsa.PrivateKey, exp, nbf int64, audiences any) *http.Request {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"foo": "bar",
 		"exp": exp,
@@ -156,7 +156,7 @@ func TestRSAAuthInterceptor(t *testing.T) {
 
 	a, err := NewRSAAuthorizer(t.Context(), Configuration{
 		KeyResolver: &fromMemoryKeyResolver{
-			Keys: []interface{}{&key.PublicKey},
+			Keys: []any{&key.PublicKey},
 		},
 		KeyRefreshInterval: 1 * time.Millisecond,
 		AcceptedAudiences:  []string{"test-aud"},
@@ -187,7 +187,7 @@ func TestRSAAuthAudiences(t *testing.T) {
 
 	var tests = []struct {
 		Accepted           []string
-		Provided           interface{}
+		Provided           any
 		ShouldBeAuthorized bool
 	}{
 		{
@@ -350,7 +350,7 @@ func TestRSAAuthAudiences(t *testing.T) {
 
 			a, err := NewRSAAuthorizer(t.Context(), Configuration{
 				KeyResolver: &fromMemoryKeyResolver{
-					Keys: []interface{}{&key.PublicKey},
+					Keys: []any{&key.PublicKey},
 				},
 				KeyRefreshInterval: 1 * time.Millisecond,
 				AcceptedAudiences:  test.Accepted,
@@ -493,11 +493,11 @@ func TestHasScope(t *testing.T) {
 
 type failingKeyResolver struct {
 	mu   sync.Mutex
-	keys []interface{}
+	keys []any
 	err  error
 }
 
-func (r *failingKeyResolver) ResolveKeys(context.Context) ([]interface{}, error) {
+func (r *failingKeyResolver) ResolveKeys(context.Context) ([]any, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.err != nil {
@@ -529,7 +529,7 @@ func TestKeyRefreshFailureKeepsCachedKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	logs := observeLogs(t)
-	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+	resolver := &failingKeyResolver{keys: []any{&key.PublicKey}}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -551,7 +551,7 @@ func TestKeyRefreshFailureKeepsCachedKeys(t *testing.T) {
 
 	a.keyGuard.RLock()
 	defer a.keyGuard.RUnlock()
-	require.Equal(t, []interface{}{&key.PublicKey}, a.keys)
+	require.Equal(t, []any{&key.PublicKey}, a.keys)
 }
 
 func TestKeyRefreshFailurePanicsAfterMaxCacheAge(t *testing.T) {
@@ -559,7 +559,7 @@ func TestKeyRefreshFailurePanicsAfterMaxCacheAge(t *testing.T) {
 	require.NoError(t, err)
 
 	logs := observeLogs(t)
-	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+	resolver := &failingKeyResolver{keys: []any{&key.PublicKey}}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -588,7 +588,7 @@ func TestKeyRefreshFailurePanicsImmediatelyWithoutMaxCacheAge(t *testing.T) {
 	require.NoError(t, err)
 
 	logs := observeLogs(t)
-	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}, err: nil}
+	resolver := &failingKeyResolver{keys: []any{&key.PublicKey}, err: nil}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -613,7 +613,7 @@ func TestKeyRefreshFailurePanicsOnNonRetryableError(t *testing.T) {
 	require.NoError(t, err)
 
 	logs := observeLogs(t)
-	resolver := &failingKeyResolver{keys: []interface{}{&key.PublicKey}}
+	resolver := &failingKeyResolver{keys: []any{&key.PublicKey}}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()

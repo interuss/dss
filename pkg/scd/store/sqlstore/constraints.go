@@ -52,7 +52,7 @@ func init() {
 	)
 }
 
-func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) ([]*scdmodels.Constraint, error) {
+func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.Constraint, error) {
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -93,7 +93,7 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 	return payload, nil
 }
 
-func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query string, args ...interface{}) (*scdmodels.Constraint, error) {
+func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.Constraint, error) {
 	constraints, err := c.fetchConstraints(ctx, q, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
