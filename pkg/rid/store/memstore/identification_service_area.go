@@ -129,14 +129,12 @@ func (r *repo) SearchISAs(_ context.Context, cells s2.CellUnion, earliest *time.
 	return out, nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) ListExpiredISAs(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
-	return listExpired(r.state.ISAs, threshold, dssmodels.MaxResultLimit), nil
+	return listExpired(r.state.ISAs, threshold), nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) DeleteExpiredISAs(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredISAs not implemented for memstore")
+	return deleteExpired(r.state.ISAs, threshold, limit), nil
 }
 
 func (r *repo) CountISAs(_ context.Context) (int64, error) {

@@ -2,6 +2,8 @@ package memstore
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -113,8 +115,8 @@ func TestCheckpointRestoreRoundTrip(t *testing.T) {
 
 	// Mutate after the checkpoint.
 	require.NoError(t, r.DeleteConstraint(ctx, constraintId))
-	require.NoError(t, r.DeleteSubscription(ctx, subscriptionId))
 	require.NoError(t, r.DeleteOperationalIntent(ctx, operationalIntentId))
+	require.NoError(t, r.DeleteSubscription(ctx, subscriptionId))
 
 	// Restore brings everything back.
 	r.Restore()
@@ -128,6 +130,59 @@ func TestCheckpointRestoreRoundTrip(t *testing.T) {
 	oi, err := r.GetOperationalIntent(ctx, operationalIntentId)
 	require.NoError(t, err)
 	require.NotNil(t, oi)
+}
+
+func TestDeleteExpired(t *testing.T) {
+	threshold := writeTime
+	newStore := func() map[dssmodels.ID]*subscriptionRecord {
+		return map[dssmodels.ID]*subscriptionRecord{
+			"c":      {ID: "c", EndTime: threshold.Add(-time.Hour)},
+			"a":      {ID: "a", EndTime: threshold.Add(-time.Minute)},
+			"b":      {ID: "b", EndTime: threshold},
+			"active": {ID: "active", EndTime: threshold.Add(time.Nanosecond)},
+		}
+	}
+
+	testCases := []struct {
+		name      string
+		limit     int
+		deleted   []dssmodels.ID
+		remaining []dssmodels.ID
+	}{{
+		name:      "unlimited",
+		limit:     0,
+		deleted:   []dssmodels.ID{"a", "b", "c"},
+		remaining: []dssmodels.ID{"active"},
+	}, {
+		name:      "limit keeps the smallest IDs",
+		limit:     2,
+		deleted:   []dssmodels.ID{"a", "b"},
+		remaining: []dssmodels.ID{"active", "c"},
+	}, {
+		name:      "limit above the number of expired records",
+		limit:     10,
+		deleted:   []dssmodels.ID{"a", "b", "c"},
+		remaining: []dssmodels.ID{"active"},
+	}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := newStore()
+			require.Equal(t, testCase.deleted, deleteExpired(store, threshold, testCase.limit))
+			require.ElementsMatch(t, testCase.remaining, slices.Collect(maps.Keys(store)))
+		})
+	}
+}
+
+func TestListExpired(t *testing.T) {
+	threshold := writeTime
+	store := map[dssmodels.ID]*subscriptionRecord{
+		"c":      {ID: "c", EndTime: threshold.Add(-time.Hour)},
+		"a":      {ID: "a", EndTime: threshold.Add(-time.Minute)},
+		"b":      {ID: "b", EndTime: threshold},
+		"active": {ID: "active", EndTime: threshold.Add(time.Nanosecond)},
+	}
+	require.Equal(t, []dssmodels.ID{"a", "b", "c"}, listExpired(store, threshold))
+	require.Len(t, store, 4, "listing must not delete")
 }
 
 func TestCheckpointIsolatesNotificationIndex(t *testing.T) {
