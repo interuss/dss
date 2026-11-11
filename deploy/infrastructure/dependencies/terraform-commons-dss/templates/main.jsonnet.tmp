@@ -71,6 +71,8 @@ local metadata = metadataBase {
     ],
     clusterID: ${VAR_RAFT_CLUSTER_ID},
     tlsSecret: '${VAR_RAFT_TLS_SECRET}',
+    automaticBootstrap: ${VAR_RAFT_AUTOMATIC_BOOTSTRAP},
+    automaticBootstrapNodes: [${VAR_RAFT_AUTOMATIC_BOOTSTRAP_NODES}],
     storage+: {
       size: '${VAR_RAFT_STORAGE_SIZE}',
       storageClass: '${VAR_STORAGE_CLASS}',

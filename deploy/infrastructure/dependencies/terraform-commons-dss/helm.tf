@@ -233,6 +233,10 @@ locals {
       nodes     = local.raft_nodes
       clusterID = var.raft_cluster_id
       tlsSecret = var.raft_tls_secret
+
+      automaticBootstrap      = var.raft_automatic_bootstrap
+      automaticBootstrapNodes = var.raft_automatic_bootstrap_nodes
+
       storage = {
         size         = var.raft_storage_size
         storageClass = var.kubernetes_storage_class

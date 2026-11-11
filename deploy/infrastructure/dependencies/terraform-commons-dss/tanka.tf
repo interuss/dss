@@ -54,6 +54,8 @@ resource "local_file" "tanka_config_main" {
     VAR_RAFT_CLUSTER_ID                      = var.raft_cluster_id
     VAR_RAFT_TLS_SECRET                      = var.raft_tls_secret
     VAR_RAFT_STORAGE_SIZE                    = var.raft_storage_size
+    VAR_RAFT_AUTOMATIC_BOOTSTRAP             = var.raft_automatic_bootstrap
+    VAR_RAFT_AUTOMATIC_BOOTSTRAP_NODES       = join(",", [for n in var.raft_automatic_bootstrap_nodes : "'${n}'"])
     VAR_APP_HOSTNAME                         = var.app_hostname
     VAR_PUBLIC_KEY_PEM_PATH                  = var.authorization.public_key_pem_path != null ? var.authorization.public_key_pem_path : ""
     VAR_JWKS_ENDPOINT                        = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""

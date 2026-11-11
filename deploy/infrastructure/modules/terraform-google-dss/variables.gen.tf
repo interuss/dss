@@ -827,6 +827,40 @@ variable "raft_storage_size" {
 }
 
 
+variable "raft_automatic_bootstrap" {
+  type        = bool
+  description = <<-EOT
+  Form the Raft groups automatically: the first node of this instance bootstraps them, then the other nodes of
+  this instance and the nodes of `raft_automatic_bootstrap_nodes` are added to them one at a time, retrying until
+  all of them are members.
+
+  Only meant for automation: enable it only for the first nodes of a cluster, otherwise independent Raft groups
+  are created.
+
+  Only used with the raft datastore.
+
+  Example: `true`
+  EOT
+
+  default = false
+}
+
+
+variable "raft_automatic_bootstrap_nodes" {
+  type        = list(string)
+  description = <<-EOT
+  Addresses (host:port, no scheme) of the Raft listeners of the nodes of other participants to add to the Raft
+  groups with `raft_automatic_bootstrap`.
+
+  Only used with the raft datastore.
+
+  Example: `["0.raft.dss.example.com:2407", "1.raft.dss.example.com:2407"]`
+  EOT
+
+  default = []
+}
+
+
 variable "evict_enable_scd_cron" {
   type        = bool
   description = <<-EOT
