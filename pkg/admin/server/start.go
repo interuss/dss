@@ -17,9 +17,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// Start serves the admin API on the Unix socket at socketPath, with requests failing after timeout.
+// Start serves the admin API on the Unix socket at socketPath, with requests failing after timeout and the context of
+// the handlers expiring after handlerTimeout.
 // The directory of the socket is created if needed. A leftover socket at socketPath is replaced.
-func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout time.Duration, raftGroups map[string]*consensus.Consensus) (*http.Server, error) {
+func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout time.Duration, handlerTimeout time.Duration, raftGroups map[string]*consensus.Consensus) (*http.Server, error) {
 	socketDir := filepath.Dir(socketPath)
 	if err := os.MkdirAll(socketDir, 0o700); err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create the directory of the admin socket at %s", socketDir)
@@ -39,10 +40,15 @@ func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout t
 	}
 
 	router := restapi.MakeAPIRouter(&Server{Logger: logger, raftGroups: raftGroups}, nil)
-	handler := &api.MultiRouter{Routers: []api.PartialRouter{&router}}
+	multiRouter := &api.MultiRouter{Routers: []api.PartialRouter{&router}}
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), handlerTimeout)
+		defer cancel()
+		multiRouter.ServeHTTP(w, r.WithContext(ctx))
+	})
 
 	server := &http.Server{
-		Handler:           http.TimeoutHandler(handler, timeout, "request timeout"),
+		Handler:           http.TimeoutHandler(handler, timeout, `{"message":"request timeout"}`),
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       15 * time.Second,
 	}
