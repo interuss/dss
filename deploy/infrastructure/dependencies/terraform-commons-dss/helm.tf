@@ -22,69 +22,16 @@ locals {
   ]
 }
 
-resource "local_file" "helm_chart_values" {
-  filename = "${local.workspace_location}/helm_values.yml"
-
-  lifecycle {
-    precondition {
-      condition     = var.datastore_type != "cockroachdb" || !var.should_init || length(var.crdb_external_nodes) == 0
-      error_message = "If should_init is true, crdb_external_nodes shall be empty"
-    }
+locals {
+  helm_dss_gateway = {
+    ip            = var.ip_gateway
+    subnet        = var.workload_subnet
+    certName      = var.gateway_cert_name
+    sslPolicy     = var.ssl_policy
+    preSharedCert = var.google_preshared_cert
   }
 
-  content = var.datastore_type == "cockroachdb" ? yamlencode({
-    cockroachdb = {
-      image = {
-        tag = var.crdb_image_tag
-      }
-      fullnameOverride = local.helm_crdb_statefulset_name
-
-      conf = {
-        join           = var.should_init || length(var.crdb_external_nodes) > 0 ? var.crdb_external_nodes : [for i in range(3) : "$${STATEFULSET_NAME}-${i}.$${STATEFULSET_FQDN}:26257"]
-        cluster-name   = var.crdb_cluster_name
-        cache          = var.crdb_cache
-        max-sql-memory = var.crdb_max_sql_memory
-        locality       = var.locality
-        single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
-      }
-
-      statefulset = {
-        replicas = length(var.crdb_internal_nodes)
-        args = [
-          "--locality-advertise-addr=${var.locality}@$(hostname -f)",
-          "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
-        ]
-        resources            = local.helm_crdb_resources
-        env                  = [for k, v in var.crdb_env : { name = k, value = v }]
-        customLivenessProbe  = var.crdb_enable_liveness_probe ? null : local.helm_crdb_always_true_probe
-        customReadinessProbe = var.crdb_enable_readiness_probe ? null : local.helm_crdb_always_true_probe
-      }
-
-      storage = {
-        persistentVolume = {
-          storageClass = var.kubernetes_storage_class
-        }
-      }
-    }
-
-    loadBalancers = {
-      cockroachdbNodes = [
-        for ip in var.crdb_internal_nodes[*].loadbalancer_ip :
-        {
-          ip     = ip
-          subnet = var.workload_subnet
-        }
-      ]
-
-      dssGateway = {
-        ip            = var.ip_gateway
-        subnet        = var.workload_subnet
-        certName      = var.gateway_cert_name
-        sslPolicy     = var.ssl_policy
-        preSharedCert = var.google_preshared_cert
-      }
-    }
-
+  helm_common_values = {
     dss = {
       image           = var.image
       imagePullSecret = var.image_pull_secret != null ? var.image_pull_secret : ""
@@ -168,111 +115,7 @@ resource "local_file" "helm_chart_values" {
         ip      = null
         subnet  = null
       }
-    },
-
-    prometheus = {
-      server = {
-        persistentVolume = {
-          storageClass = var.kubernetes_storage_class
-        }
-
-        global = {
-          external_labels = {
-            environment = "dev"
-            k8s_cluster = var.cluster_name
-          }
-        }
-      }
     }
-
-    grafana = {
-      persistence = {
-        storageClassName = var.kubernetes_storage_class
-      }
-    }
-
-    }) : var.datastore_type == "raft" ? yamlencode({
-    cockroachdb = {
-      enabled = false
-    }
-
-    raft = {
-      enabled   = true
-      nodes     = local.raft_nodes
-      peers     = var.raft_peers
-      clusterID = var.raft_cluster_id
-      tlsSecret = var.raft_tls_secret
-      storage = {
-        size         = var.raft_storage_size
-        storageClass = var.kubernetes_storage_class
-      }
-    }
-
-    loadBalancers = {
-      cockroachdbNodes = []
-
-      raft = [
-        for ip in var.raft_internal_nodes[*].loadbalancer_ip :
-        {
-          ip     = ip
-          subnet = var.workload_subnet
-        }
-      ]
-
-      dssGateway = {
-        ip        = var.ip_gateway
-        subnet    = var.workload_subnet
-        certName  = var.gateway_cert_name
-        sslPolicy = var.ssl_policy
-      }
-    }
-
-    dss = {
-      image           = var.image
-      imagePullSecret = var.image_pull_secret != null ? var.image_pull_secret : ""
-      imagePullPolicy = var.core_service_image_pull_policy
-      cpuRequest      = var.core_service_cpu_request
-      memoryRequest   = var.core_service_memory_request
-      cpuLimit        = var.core_service_cpu_limit
-      memoryLimit     = var.core_service_memory_limit
-      env             = [for k, v in var.core_service_env : { name = k, value = v }]
-
-      conf = {
-        pubKeys = [
-          for p in [var.authorization.public_key_pem_path] : p if p != null
-        ]
-        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        jwksRefreshInterval              = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
-        jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
-        hostname                         = var.app_hostname
-        publicEndpoint                   = "https://${var.app_hostname}"
-        gcpProfServiceName               = var.gcp_prof_service_name
-        enableScd                        = var.enable_scd
-        enableScdGlobalLock              = var.enable_scd_global_lock
-        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
-        enableDssMetrics                 = var.enable_dss_metrics
-        locality                         = "zone=${var.locality}"
-        dumpRequests                     = var.dump_requests
-      }
-    }
-
-    global = {
-      cloudProvider = var.kubernetes_cloud_provider_name
-    }
-
-    monitoring = {
-      enabled = var.enable_monitoring
-      externalService = var.prometheus_hostname != "" ? {
-        enabled = var.enable_monitoring
-        ip      = var.ip_prometheus
-        subnet  = var.workload_subnet
-        } : {
-        enabled = false
-        ip      = null
-        subnet  = null
-      }
-    },
 
     prometheus = {
       server = {
@@ -331,8 +174,89 @@ resource "local_file" "helm_chart_values" {
         }
       } : k => v if var.alerting != null }
     }
+  }
 
-    }) : yamlencode({
+  helm_cockroachdb_values = {
+    cockroachdb = {
+      image = {
+        tag = var.crdb_image_tag
+      }
+      fullnameOverride = local.helm_crdb_statefulset_name
+
+      conf = {
+        join           = var.should_init || length(var.crdb_external_nodes) > 0 ? var.crdb_external_nodes : [for i in range(3) : "$${STATEFULSET_NAME}-${i}.$${STATEFULSET_FQDN}:26257"]
+        cluster-name   = var.crdb_cluster_name
+        cache          = var.crdb_cache
+        max-sql-memory = var.crdb_max_sql_memory
+        locality       = var.locality
+        single-node    = false # Always false. Even with 1 replica, we would expect to keep the ability to pool it with another cluster.
+      }
+
+      statefulset = {
+        replicas = length(var.crdb_internal_nodes)
+        args = [
+          "--locality-advertise-addr=${var.locality}@$(hostname -f)",
+          "--advertise-addr=$${HOSTNAME##*-}.${var.db_hostname_suffix}"
+        ]
+        resources            = local.helm_crdb_resources
+        env                  = [for k, v in var.crdb_env : { name = k, value = v }]
+        customLivenessProbe  = var.crdb_enable_liveness_probe ? null : local.helm_crdb_always_true_probe
+        customReadinessProbe = var.crdb_enable_readiness_probe ? null : local.helm_crdb_always_true_probe
+      }
+
+      storage = {
+        persistentVolume = {
+          storageClass = var.kubernetes_storage_class
+        }
+      }
+    }
+
+    loadBalancers = {
+      cockroachdbNodes = [
+        for ip in var.crdb_internal_nodes[*].loadbalancer_ip :
+        {
+          ip     = ip
+          subnet = var.workload_subnet
+        }
+      ]
+
+      dssGateway = local.helm_dss_gateway
+    }
+  }
+
+  helm_raft_values = {
+    cockroachdb = {
+      enabled = false
+    }
+
+    raft = {
+      enabled   = true
+      nodes     = local.raft_nodes
+      peers     = var.raft_peers
+      clusterID = var.raft_cluster_id
+      tlsSecret = var.raft_tls_secret
+      storage = {
+        size         = var.raft_storage_size
+        storageClass = var.kubernetes_storage_class
+      }
+    }
+
+    loadBalancers = {
+      cockroachdbNodes = []
+
+      raft = [
+        for ip in var.raft_internal_nodes[*].loadbalancer_ip :
+        {
+          ip     = ip
+          subnet = var.workload_subnet
+        }
+      ]
+
+      dssGateway = local.helm_dss_gateway
+    }
+  }
+
+  helm_yugabyte_values = {
     cockroachdb = {
       enabled = false
     }
@@ -458,108 +382,24 @@ resource "local_file" "helm_chart_values" {
         }
       ]
 
-      dssGateway = {
-        ip        = var.ip_gateway
-        subnet    = var.workload_subnet
-        certName  = var.gateway_cert_name
-        sslPolicy = var.ssl_policy
-      }
+      dssGateway = local.helm_dss_gateway
     }
+  }
+}
 
-    dss = {
-      image         = var.image
-      cpuRequest    = var.core_service_cpu_request
-      memoryRequest = var.core_service_memory_request
-      cpuLimit      = var.core_service_cpu_limit
-      memoryLimit   = var.core_service_memory_limit
-      env           = [for k, v in var.core_service_env : { name = k, value = v }]
+resource "local_file" "helm_chart_values" {
+  filename = "${local.workspace_location}/helm_values.yml"
 
-      conf = {
-        pubKeys = [
-          "/test-certs/auth2.pem"
-        ]
-        jwksEndpoint                     = var.authorization.jwks != null ? var.authorization.jwks.endpoint : ""
-        jwksKeyIds                       = var.authorization.jwks != null ? [var.authorization.jwks.key_id] : []
-        jwksRefreshInterval              = var.authorization.jwks != null && var.authorization.jwks.refresh_interval != null ? var.authorization.jwks.refresh_interval : ""
-        jwksKeyTtl                       = var.authorization.jwks != null && var.authorization.jwks.key_ttl != null ? var.authorization.jwks.key_ttl : ""
-        hostname                         = var.app_hostname
-        publicEndpoint                   = "https://${var.app_hostname}"
-        enableRid                        = var.enable_rid
-        enableScd                        = var.enable_scd
-        enableScdGlobalLock              = var.enable_scd_global_lock
-        enableTimeBasedNotificationIndex = var.enable_time_based_notification_index
-        enableDssMetrics                 = var.enable_dss_metrics
-        locality                         = var.locality
-        datastoreMaxOpenConns            = var.datastore_max_open_conns
-
-        evict = {
-          scd = {
-            enableCron = var.evict_enable_scd_cron
-            schedule   = local.evict_scd_schedule
-            ttl : var.evict_scd_ttl
-            timeout : var.evict_scd_timeout
-            limit : var.evict_scd_limit
-            batchSize : var.evict_scd_batch_size
-            operationalIntents : var.evict_scd_operational_intents
-            subscriptions : var.evict_scd_subscriptions
-          }
-          rid = {
-            enableCron = var.evict_enable_rid_cron
-            schedule   = local.evict_rid_schedule
-            ttl : var.evict_rid_ttl
-            timeout : var.evict_rid_timeout
-            limit : var.evict_rid_limit
-            batchSize : var.evict_rid_batch_size
-            ISAs : var.evict_rid_isas
-            subscriptions : var.evict_rid_subscriptions
-          }
-        }
-      }
-
-      schemaManager = {
-        desiredRidDbVersion = local.rid_db_schema
-        desiredScdDbVersion = local.scd_db_schema
-        desiredAuxDbVersion = local.aux_db_schema
-      }
+  lifecycle {
+    precondition {
+      condition     = var.datastore_type != "cockroachdb" || !var.should_init || length(var.crdb_external_nodes) == 0
+      error_message = "If should_init is true, crdb_external_nodes shall be empty"
     }
+  }
 
-    global = {
-      cloudProvider = var.kubernetes_cloud_provider_name
-    }
-
-    monitoring = {
-      enabled = var.enable_monitoring
-      externalService = var.prometheus_hostname != "" ? {
-        enabled = var.enable_monitoring
-        ip      = var.ip_prometheus
-        subnet  = var.workload_subnet
-        } : {
-        enabled = false
-        ip      = null
-        subnet  = null
-      }
-    },
-
-    prometheus = {
-      server = {
-        persistentVolume = {
-          storageClass = var.kubernetes_storage_class
-        }
-
-        global = {
-          external_labels = {
-            environment = "dev"
-            k8s_cluster = var.cluster_name
-          }
-        }
-      }
-    }
-
-    grafana = {
-      persistence = {
-        storageClassName = var.kubernetes_storage_class
-      }
-    }
-  })
-
+  content = (
+    var.datastore_type == "cockroachdb" ? yamlencode(merge(local.helm_common_values, local.helm_cockroachdb_values)) :
+    var.datastore_type == "raft" ? yamlencode(merge(local.helm_common_values, local.helm_raft_values)) :
+    yamlencode(merge(local.helm_common_values, local.helm_yugabyte_values))
+  )
 }
