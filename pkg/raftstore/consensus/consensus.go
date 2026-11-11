@@ -1,9 +1,7 @@
 package consensus
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -54,7 +52,7 @@ type Consensus struct {
 	endpoint  *peerEndpoint
 
 	storage        *storage
-	getAppSnapshot func() ([]byte, error)
+	getAppSnapshot func() (*proposalpb.Snapshot, error)
 	commitC        chan<- EntryCommit
 
 	once  sync.Once
@@ -77,7 +75,7 @@ type Consensus struct {
 	snapshotDuration    metric.Float64Histogram
 }
 
-func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() ([]byte, error), commitC chan<- EntryCommit) (*Consensus, error) {
+func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() (*proposalpb.Snapshot, error), commitC chan<- EntryCommit) (*Consensus, error) {
 	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
@@ -139,7 +137,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
-		consensus.commitC <- EntryCommit{SnapshotData: initSnapshot.AppData}
+		consensus.commitC <- EntryCommit{Snapshot: initSnapshot.AppSnapshot}
 	}
 
 	err = consensus.registerMetrics()
@@ -569,7 +567,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						c.logger.Error("failed to restore membership", zap.Error(err))
 						return
 					}
-					c.commitC <- EntryCommit{SnapshotData: env.AppData}
+					c.commitC <- EntryCommit{Snapshot: env.AppSnapshot}
 
 					c.confState = raftUpdate.Snapshot.GetMetadata().GetConfState()
 					c.snapshotIndex.Store(raftUpdate.Snapshot.GetMetadata().GetIndex())
@@ -973,46 +971,67 @@ func (c *Consensus) updateSnapshotConfState(msgs []*raftpb.Message) {
 
 // snapshot wraps the application snapshot with the membership state that the raft library does not track itself,
 // so that a node catching up via a snapshot fully recovers it, including which IDs must never be reused.
-// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
 type snapshot struct {
 	// Members maps the ID of every member of the group to its membership properties.
-	Members map[uint64]member
+	Members memberMap
 	// Removed maps the ID of every node permanently removed from the group to its membership properties when it was removed.
-	Removed map[uint64]member
-	// AppData is the application snapshot data.
-	AppData []byte
+	Removed memberMap
+	// AppSnapshot holds the application snapshot.
+	AppSnapshot *proposalpb.Snapshot
 }
 
 // encodeSnapshot encodes the application snapshot with the current membership state into the snapshot data.
-// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
 func (c *Consensus) encodeSnapshot() ([]byte, error) {
-	appData, err := c.getAppSnapshot()
+	env, err := c.getAppSnapshot()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to get application snapshot data")
+		return nil, stacktrace.Propagate(err, "failed to get application snapshot")
+	}
+	if env.GetAppSnapshot() == nil {
+		return nil, stacktrace.NewError("missing application snapshot")
 	}
 
-	env := snapshot{
-		Members: c.membership.members,
-		Removed: c.membership.removed,
-		// TODO: Avoid encoding the data twice (to be addressed as part of https://github.com/interuss/dss/pull/1765)
-		AppData: appData,
-	}
+	env.Members = c.membership.members.toProto()
+	env.Removed = c.membership.removed.toProto()
 
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(env); err != nil {
+	data, err := proto.Marshal(env)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to encode snapshot")
 	}
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 // decodeSnapshot decodes the snapshot data produced by encodeSnapshot.
-// TODO: Use protobuf instead of gob as a follow-up to https://github.com/interuss/dss/pull/1765
 func decodeSnapshot(data []byte) (snapshot, error) {
-	var env snapshot
-	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&env); err != nil {
+	var env proposalpb.Snapshot
+	if err := proto.Unmarshal(data, &env); err != nil {
 		return snapshot{}, stacktrace.Propagate(err, "failed to decode snapshot")
 	}
-	return env, nil
+	if env.GetAppSnapshot() == nil {
+		return snapshot{}, stacktrace.NewError("missing application snapshot")
+	}
+	snap := snapshot{AppSnapshot: &env}
+	snap.Members.fromProto(env.GetMembers())
+	snap.Removed.fromProto(env.GetRemoved())
+	return snap, nil
+}
+
+// memberMap maps the ID of members of the group to their membership properties.
+type memberMap map[uint64]member
+
+func (m memberMap) toProto() map[uint64]*proposalpb.Member {
+	result := make(map[uint64]*proposalpb.Member, len(m))
+	for id, mem := range m {
+		result[id] = &proposalpb.Member{PeerUrl: mem.URL}
+	}
+	return result
+}
+
+func (m *memberMap) fromProto(pb map[uint64]*proposalpb.Member) {
+	result := make(memberMap, len(pb))
+	for id, mem := range pb {
+		result[id] = member{URL: mem.GetPeerUrl()}
+	}
+	*m = result
 }
 
 // Process implements the rafthttp.Raft interface.

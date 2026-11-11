@@ -1,13 +1,14 @@
 package memstore
 
 import (
-	"bytes"
-	"encoding/gob"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	ridsnapshotpb "github.com/interuss/dss/pkg/pb/ridpb/snapshotpb"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestSnapshotRoundTrip(t *testing.T) {
@@ -26,7 +27,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	dst := setUpStore(t)
-	require.NoError(t, dst.RestoreFromSnapshot(data))
+	require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, data)))
 
 	opt := cmpopts.EquateApproxTime(0)
 
@@ -88,12 +89,54 @@ func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRestoreFromSnapshotInvalidData(t *testing.T) {
-	require.Error(t, setUpStore(t).RestoreFromSnapshot([]byte("random value that is definitely not valid")))
+func TestRestoreFromSnapshotWrongType(t *testing.T) {
+	require.Error(t, setUpStore(t).RestoreFromSnapshot(&raftpb.Snapshot{}))
+	require.Error(t, setUpStore(t).RestoreFromSnapshot(&raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_RidSnapshot{RidSnapshot: &ridsnapshotpb.Snapshot{}}}))
 }
 
-func TestRestoreFromSnapshotVersionMismatch(t *testing.T) {
-	var buf bytes.Buffer
-	require.NoError(t, gob.NewEncoder(&buf).Encode(snapshotEnvelope{Version: snapshotVersion + 1}))
-	require.Error(t, setUpStore(t).RestoreFromSnapshot(buf.Bytes()))
+func TestSnapshotPreservesAltitudes(t *testing.T) {
+	zero, nonZero := float32(0), float32(100)
+	for name, alts := range map[string][2]*float32{
+		"zero lo": {&zero, &nonZero},
+		"zero hi": {&nonZero, &zero},
+		"zero":    {&zero, &zero},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := writeCtx()
+			src := setUpStore(t)
+			con := sampleConstraint()
+			con.CellsVolume4D = cellsVolume4D(cells, &startTime, &endTime, alts[0], alts[1])
+			_, err := src.UpsertConstraint(ctx, con)
+			require.NoError(t, err)
+			_, err = src.UpsertSubscription(ctx, sampleSubscription())
+			require.NoError(t, err)
+			oi := sampleOperationalIntent()
+			oi.CellsVolume4D = cellsVolume4D(cells, &startTime, &endTime, alts[0], alts[1])
+			_, err = src.UpsertOperationalIntent(ctx, oi)
+			require.NoError(t, err)
+
+			snap, err := src.GetSnapshot()
+			require.NoError(t, err)
+			dst := setUpStore(t)
+			require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, snap)))
+
+			gotCon, err := dst.GetConstraint(ctx, constraintId)
+			require.NoError(t, err)
+			require.Equal(t, alts[0], gotCon.AltitudeLo)
+			require.Equal(t, alts[1], gotCon.AltitudeHi)
+			gotOI, err := dst.GetOperationalIntent(ctx, operationalIntentId)
+			require.NoError(t, err)
+			require.Equal(t, alts[0], gotOI.AltitudeLo)
+			require.Equal(t, alts[1], gotOI.AltitudeHi)
+		})
+	}
+}
+
+func encodeDecode(t *testing.T, snap *raftpb.Snapshot) *raftpb.Snapshot {
+	t.Helper()
+	data, err := proto.Marshal(snap)
+	require.NoError(t, err)
+	var decoded raftpb.Snapshot
+	require.NoError(t, proto.Unmarshal(data, &decoded))
+	return &decoded
 }

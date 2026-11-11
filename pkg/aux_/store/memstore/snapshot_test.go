@@ -1,9 +1,7 @@
 package memstore
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"testing"
 	"time"
 
@@ -11,8 +9,11 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	auxmodels "github.com/interuss/dss/pkg/aux_/models"
 	"github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/pb/raftpb"
+	ridsnapshotpb "github.com/interuss/dss/pkg/pb/ridpb/snapshotpb"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestSnapshotRoundTrip(t *testing.T) {
@@ -27,7 +28,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	dst := newRepo()
-	require.NoError(t, dst.RestoreFromSnapshot(data))
+	require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, data)))
 
 	want, err := src.GetDSSMetadata(ctx)
 	require.NoError(t, err)
@@ -56,12 +57,16 @@ func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	require.Equal(t, "dss-1", md[0].Locality)
 }
 
-func TestRestoreFromSnapshotInvalidData(t *testing.T) {
-	require.Error(t, newRepo().RestoreFromSnapshot([]byte("random value that is definitely not valid")))
+func TestRestoreFromSnapshotWrongType(t *testing.T) {
+	require.Error(t, newRepo().RestoreFromSnapshot(&raftpb.Snapshot{}))
+	require.Error(t, newRepo().RestoreFromSnapshot(&raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_RidSnapshot{RidSnapshot: &ridsnapshotpb.Snapshot{}}}))
 }
 
-func TestRestoreFromSnapshotVersionMismatch(t *testing.T) {
-	var buf bytes.Buffer
-	require.NoError(t, gob.NewEncoder(&buf).Encode(snapshotEnvelope{Version: snapshotVersion + 1}))
-	require.Error(t, newRepo().RestoreFromSnapshot(buf.Bytes()))
+func encodeDecode(t *testing.T, snap *raftpb.Snapshot) *raftpb.Snapshot {
+	t.Helper()
+	data, err := proto.Marshal(snap)
+	require.NoError(t, err)
+	var decoded raftpb.Snapshot
+	require.NoError(t, proto.Unmarshal(data, &decoded))
+	return &decoded
 }

@@ -33,7 +33,7 @@ type state struct {
 	Availabilities map[dssmodels.Manager]*availabilityRecord
 }
 
-// constraintRecord is the gob-serializable representation of a Constraint. The
+// constraintRecord is the in-memory representation of a Constraint. The
 // model's OVN is never persisted: it is derived from UpdatedAt on read
 type constraintRecord struct {
 	ID         dssmodels.ID
@@ -44,7 +44,7 @@ type constraintRecord struct {
 	UpdatedAt  time.Time
 }
 
-// subscriptionRecord is the gob-serializable representation of a Subscription.
+// subscriptionRecord is the in-memory representation of a Subscription.
 // The sqlstore stores the version column but always writes 0 and discards it on
 // read (the model Version is derived from UpdatedAt), so it is not kept here.
 type subscriptionRecord struct {
@@ -61,7 +61,7 @@ type subscriptionRecord struct {
 	UpdatedAt                   time.Time
 }
 
-// operationalIntentRecord is the gob-serializable representation of an
+// operationalIntentRecord is the in-memory representation of an
 // OperationalIntent. USSRequestedOVN is empty when the OVN is DSS-generated.
 type operationalIntentRecord struct {
 	ID              dssmodels.ID
@@ -76,7 +76,7 @@ type operationalIntentRecord struct {
 	CellsVolume4D   *dssmodels.CellsVolume4D
 }
 
-// availabilityRecord is the gob-serializable representation of a
+// availabilityRecord is the in-memory representation of a
 // UssAvailabilityStatus. The model's Version is derived from UpdatedAt on read.
 type availabilityRecord struct {
 	Uss          dssmodels.Manager

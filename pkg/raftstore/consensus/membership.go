@@ -37,10 +37,10 @@ type membership struct {
 	transport *rafthttp.Transport
 
 	// members maps the ID of every member of the group to its description.
-	members map[uint64]member
+	members memberMap
 	// removed maps the ID of every node removed from the group to its description when it was removed.
 	// Removed IDs can never be reused.
-	removed map[uint64]member
+	removed memberMap
 }
 
 func (m *membership) isIDRemoved(id uint64) bool {
