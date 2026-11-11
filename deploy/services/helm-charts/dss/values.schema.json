@@ -166,14 +166,14 @@
             "properties": {
               "endpoint": {
                 "type": "string",
-                "description": "Address (host:port, no scheme) at which the node's Raft listener is reachable by its peers: this is the address of the node's own load balancer, which the chart creates and pins to the address of the matching loadBalancers.raft entry. The node is started with --raft_peer_url=https://<endpoint>."
+                "description": "Address (host:port, no scheme) of the node at which the node's Raft listener is reachable by its peers."
               }
             },
             "required": [
               "endpoint"
             ]
           },
-          "description": "The DSS nodes (Raft voters) deployed by this release. Do not reorder or insert entries once the Raft groups have been formed: the pod's persistent volume is bound to its position in the list. The nodes start waiting and the Raft groups are formed with dssctl."
+          "description": "The DSS nodes (Raft voters) deployed by this release. Do not reorder or insert entries once the pool has been bootstrapped: the pod's persistent volume is bound to its position in the list."
         },
         "clusterID": {
           "type": "integer",
