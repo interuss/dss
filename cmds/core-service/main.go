@@ -68,6 +68,7 @@ var (
 	enableTracing           = flag.Bool("enable_tracing", false, "Enable tracing")
 	metricsListeningAddress = flag.String("metrics_addr", ":8079", "Address and port that the for the prometheus-compatible metric service binds to and listens on for incoming connections")
 	adminSocket             = flag.String("admin_socket", "/run/dss/admin.sock", "Path of the Unix socket on which the admin API (used by dssctl) is served, when the core-service uses the raft store. Its directory is created if needed.")
+	adminHandlerTimeout     = flag.Duration("admin_handler_timeout", 7*time.Second, "Timeout of the handlers of the admin API, shorter than server_timeout so that they can respond with the cause of the timeout")
 
 	pkFile                  = flag.String("public_key_files", "", "Path to public Keys to use for JWT decoding, separated by commas.")
 	jwksEndpoint            = flag.String("jwks_endpoint", "", "URL pointing to an endpoint serving JWKS")
@@ -426,7 +427,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		if *enableSCD {
 			raftGroups["scd"] = scdStore.(*raftstore.Store[scdrepos.Repository]).Consensus
 		}
-		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, raftGroups)
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to start the admin server")
 		}
