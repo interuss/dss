@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"io"
 
 	"github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/stacktrace"
@@ -11,7 +10,7 @@ import (
 // store.Store is the generic means to access and interact with any type of data backing the DSS
 // may ever use, by obtaining a means to perform R-specific (repo type) operations.
 type Store[R any] interface {
-	io.Closer
+	Close(ctx context.Context) error
 	// Obtain a Repo (repo type R) that doesn't need transactional guarantees (for instance,
 	// read-only).
 	Interact(context.Context) (R, error)

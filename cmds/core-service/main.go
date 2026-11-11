@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -329,7 +328,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// The stores are closed when this function returns, so that a new attempt after a dsserr.Unavailable error starts them again.
 	defer func() {
-		stores := []io.Closer{auxStore}
+		stores := []interface{ Close(context.Context) error }{auxStore}
 		if *enableRID {
 			stores = append(stores, ridStore)
 		}
@@ -337,7 +336,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			stores = append(stores, scdStore)
 		}
 		for _, store := range stores {
-			if err := store.Close(); err != nil {
+			if err := store.Close(context.Background()); err != nil {
 				logger.Warn("Failed to close the store", zap.Error(err))
 			}
 		}
@@ -466,7 +465,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(signals)
 
+	shutdownDone := make(chan struct{})
 	go func() {
+		defer close(shutdownDone)
 		defer func() {
 			if err := httpServer.Shutdown(context.Background()); err != nil {
 				logger.Warn("failed to shut down http server", zap.Error(err))
@@ -486,7 +487,10 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 	}()
 
 	logger.Info("Starting DSS HTTP server")
-	return httpServer.ListenAndServe()
+	err = httpServer.ListenAndServe()
+	ctxCancel()
+	<-shutdownDone
+	return err
 }
 
 // healthyEndpointMiddleware intercepts a request and responds with an "ok" message at the endpoint "/healthy".
