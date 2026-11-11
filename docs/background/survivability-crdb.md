@@ -15,10 +15,10 @@ To achieve this, we:
 
 ## 1. Setting Node Locality
 
-When starting each CockroachDB node, you must configure its `--locality` flag to specify which USS and node it represents. For the purpose of ensuring survivability of the cluster, it is important that all USSes align of the structure of their locality settings.
-We recommend that the locality use first at least the `uss` key, and optionally second the `node` key.
+When starting each CockroachDB node, you must configure its `--locality` flag to specify which DSS Instance and node it represents. For the purpose of ensuring survivability of the cluster, it is important that all USSes align of the structure of their locality settings.
+We recommend that the locality use first at least the DSS Instance key (ie `uss`), and optionally second the `node` key.
 Because CockroachDB will distribute range replicas using values of locality keys, the order of the keys defining the hierarchy to do so, if there is some existing locality set preventing this to be achieved, it is important that:
-- all USSes define a specific key whose value is specific to them (e.g. `uss=uss1`);
+- all DSS providers agree on a specific key whose value is specific to them (e.g. `uss=uss1`);
 - and that the number of total replicas set is covers at least the total number of combination of keys of to the USS key.
 
 Example: with three USSs each with two nodes define the following localities:
