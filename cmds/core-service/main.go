@@ -386,13 +386,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
 	}
 
-	auxV1Router := apiauxv1.MakeAPIRouter(auxV1Server, authorizer)
-	versioningV1Router := apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer)
-	multiRouter := api.MultiRouter{
-		Routers: []api.PartialRouter{
-			&auxV1Router,
-			&versioningV1Router,
-		}}
+	multiRouter := api.MultiRouter{}
+	multiRouter.SetRouter("aux", apiauxv1.MakeAPIRouter(auxV1Server, authorizer))
+	multiRouter.SetRouter("versioning", apiversioningv1.MakeAPIRouter(versioningV1Server, authorizer))
 
 	// Initialize remote ID
 	if *enableRID {
@@ -401,9 +397,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			return stacktrace.Propagate(err, "Failed to create remote ID server")
 		}
 
-		ridV1Router := apiridv1.MakeAPIRouter(ridV1Server, authorizer)
-		ridV2Router := apiridv2.MakeAPIRouter(ridV2Server, authorizer)
-		multiRouter.Routers = append(multiRouter.Routers, &ridV1Router, &ridV2Router)
+		multiRouter.SetRouter("rid_v1", apiridv1.MakeAPIRouter(ridV1Server, authorizer))
+		multiRouter.SetRouter("rid_v2", apiridv2.MakeAPIRouter(ridV2Server, authorizer))
 	}
 
 	// Initialize strategic conflict detection
@@ -413,8 +408,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			return stacktrace.Propagate(err, "Failed to create strategic conflict detection server")
 		}
 
-		scdV1Router := apiscdv1.MakeAPIRouter(scdV1Server, authorizer)
-		multiRouter.Routers = append(multiRouter.Routers, &scdV1Router)
+		multiRouter.SetRouter("scd_v1", apiscdv1.MakeAPIRouter(scdV1Server, authorizer))
 	}
 
 	if params.GetStoreParameters().StoreType == params.RaftStoreType {

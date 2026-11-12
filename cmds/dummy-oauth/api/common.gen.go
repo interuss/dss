@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net/http"
 	"regexp"
+	"sync"
 )
 
 // --- Interface definitions ---
@@ -78,14 +80,27 @@ type PartialRouter interface {
 // --- Multi-router definitions ---
 
 type MultiRouter struct {
-	Routers []PartialRouter
+	routers map[string]PartialRouter
+	mu      sync.RWMutex
+}
+
+func (m *MultiRouter) SetRouter(name string, r PartialRouter) {
+	m.mu.Lock()
+	if m.routers == nil {
+		m.routers = make(map[string]PartialRouter)
+	}
+	m.routers[name] = r
+	m.mu.Unlock()
 }
 
 func (m *MultiRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, router := range m.Routers {
+	m.mu.RLock()
+	for router := range maps.Values(m.routers) {
 		if router.Handle(w, r) {
+			m.mu.RUnlock()
 			return
 		}
 	}
+	m.mu.RUnlock()
 	http.NotFound(w, r)
 }

@@ -39,8 +39,8 @@ func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout t
 		return nil, stacktrace.Propagate(err, "failed to restrict the permissions of the admin socket at %s", socketPath)
 	}
 
-	router := restapi.MakeAPIRouter(&Server{Logger: logger, raftGroups: raftGroups}, nil)
-	multiRouter := &api.MultiRouter{Routers: []api.PartialRouter{&router}}
+	multiRouter := &api.MultiRouter{}
+	multiRouter.SetRouter("admin", restapi.MakeAPIRouter(&Server{Logger: logger, raftGroups: raftGroups}, nil))
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), handlerTimeout)
 		defer cancel()

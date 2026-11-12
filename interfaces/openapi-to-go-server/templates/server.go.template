@@ -39,6 +39,6 @@ func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
 
 <ROUTES>
 
-func MakeAPIRouter(impl Implementation, auth <API_PACKAGE>.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth <API_PACKAGE>.Authorizer) *APIRouter {
 <ROUTING>
 }

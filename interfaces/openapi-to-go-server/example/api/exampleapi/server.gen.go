@@ -69,11 +69,11 @@ func (s *APIRouter) GetGreeting(exp *regexp.Regexp, w http.ResponseWriter, r *ht
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 1)}
 
 	pattern := regexp.MustCompile("^/exampleapi/greeting$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetGreeting, Name: "exampleapi.GetGreeting", Path: "/exampleapi/greeting"}
 
-	return router
+	return &router
 }
