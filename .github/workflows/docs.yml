@@ -41,7 +41,7 @@ jobs:
         name: Deploy 'dev' deployment documentation from 'master' branch
       - if: ${{ github.ref_type == 'tag' }}
         run: |
-          VERSION=$(echo ${{ github.ref_name }} | sed -e "s/^interuss\/dss\/v//")
+          VERSION=$(echo ${GITHUB_REF_NAME} | sed -e "s/^interuss\/dss\/v//")
           mike deploy --push --update-aliases $VERSION latest
           mike set-default --push latest
         name: Deploy new version of deployment documentation from tag
