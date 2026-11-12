@@ -132,9 +132,87 @@ spec:
             - mountPath: /raft-tls
               name: raft-tls
               readOnly: true
+            {{- if $raft.automaticBootstrap }}
+            - mountPath: /run/dss
+              name: admin-socket
+            {{- end }}
             {{- if $dss.conf.pubKeys }}
             {{- include "public-certs:volumeMount" (dict "cockroachdbEnabled" false) | nindent 12 }}
             {{- end }}
+        {{- if $raft.automaticBootstrap }}
+        - name: raft-bootstrapper
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              trap 'exit 0' TERM
+              if [ "${HOSTNAME##*-}" != "0" ]; then
+                sleep infinity &
+                wait
+              fi
+              until dssctl raft node > /dev/null 2>&1; do
+                sleep 5 &
+                wait
+              done
+              for group in aux rid scd; do
+                until dssctl raft node --groups "${group}" | grep -q ': member'; do
+                  dssctl raft bootstrap --groups "${group}" || sleep 5
+                done &
+              done
+              wait
+              endpoints="{{ join " " (concat (rest $endpoints) ($raft.automaticBootstrapNodes | default list)) }}"
+              while :; do
+                pending=""
+                for endpoint in ${endpoints}; do
+                  for group in aux rid scd; do
+                    if ! dssctl raft list --groups "${group}" | grep -qF "https://${endpoint} "; then
+                      pending="${pending} ${endpoint}"
+                      break
+                    fi
+                  done
+                done
+                if [ -z "${pending}" ]; then
+                  break
+                fi
+                endpoints="${pending}"
+                reachable=$(
+                  for endpoint in ${pending}; do
+                    (
+                      curl -sk --max-time 1 -o /dev/null "https://${endpoint}"
+                      case $? in
+                        6|7|28) ;;
+                        *) echo "${endpoint}" ;;
+                      esac
+                    ) &
+                  done
+                  wait
+                )
+                for endpoint in ${reachable}; do
+                  echo "${endpoint} reachable, adding it"
+                done
+                for group in aux rid scd; do
+                  (
+                    for endpoint in ${reachable}; do
+                      if ! dssctl raft list --groups "${group}" | grep -qF "https://${endpoint} "; then
+                        dssctl raft add --groups "${group}" --url "https://${endpoint}"
+                      fi
+                    done
+                  ) &
+                done
+                wait
+                sleep 5 &
+                wait
+              done
+              echo "Bootstrapping complete"
+              sleep infinity &
+              wait
+          image: {{ $dss.image }}
+          imagePullPolicy: {{ $dss.imagePullPolicy | default "Always" }}
+          volumeMounts:
+            - mountPath: /run/dss
+              name: admin-socket
+        {{- end }}
       {{- with $.Values.dss.imagePullSecret }}
       imagePullSecrets:
         - name: {{ . }}
@@ -144,6 +222,10 @@ spec:
         - name: raft-tls
           secret:
             secretName: {{ $raft.tlsSecret }}
+        {{- if $raft.automaticBootstrap }}
+        - name: admin-socket
+          emptyDir: {}
+        {{- end }}
         {{- if $dss.conf.pubKeys }}
         {{- include "public-certs:volume" (dict "cockroachdbEnabled" false) | nindent 8 }}
         {{- end }}

@@ -65,6 +65,8 @@
     clusterID: error 'must supply the raft cluster ID',
     // Secret with the mutual TLS material of the Raft listeners
     tlsSecret: error 'must supply the name of the raft mutual TLS secret',
+    automaticBootstrap: false,
+    automaticBootstrapNodes: [],
     storage: {
       size: '100Gi',
       storageClass: '',

@@ -486,6 +486,23 @@ No RoleBinding is created when empty.</p>
 <p>Example: <code>psp:privileged</code></p>
 <br/>Default value: <code>""</code></td>
             </tr><tr>
+                <td>raft_automatic_bootstrap (<code>bool</code>)</td>
+                <td><p>Form the Raft groups automatically: the first node of this instance bootstraps them, then the other nodes of
+this instance and the nodes of <code>raft_automatic_bootstrap_nodes</code> are added to them one at a time, retrying until
+all of them are members.</p>
+<p>Only meant for automation: enable it only for the first nodes of a cluster, otherwise independent Raft groups
+are created.</p>
+<p>Only used with the raft datastore.</p>
+<p>Example: <code>true</code></p>
+<br/>Default value: <code>false</code></td>
+            </tr><tr>
+                <td>raft_automatic_bootstrap_nodes (<code>list(string)</code>)</td>
+                <td><p>Addresses (host:port, no scheme) of the Raft listeners of the nodes of other participants to add to the Raft
+groups with <code>raft_automatic_bootstrap</code>.</p>
+<p>Only used with the raft datastore.</p>
+<p>Example: <code>[&quot;0.raft.dss.example.com:2407&quot;, &quot;1.raft.dss.example.com:2407&quot;]</code></p>
+<br/>Default value: <code>[]</code></td>
+            </tr><tr>
                 <td>raft_cluster_id (<code>number</code>)</td>
                 <td><p>Raft cluster ID. Must be identical on all nodes of the pool.</p>
 <p>Only used with the raft datastore.</p>

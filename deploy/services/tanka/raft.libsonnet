@@ -34,6 +34,73 @@ local args = import 'core-service-args.libsonnet';
           util.objectItems(allArgs))),
     ]),
 
+    local imagePullPolicy = if metadata.backend.imagePullPolicy != '' then metadata.backend.imagePullPolicy
+      else if metadata.cloud_provider == 'minikube' then 'IfNotPresent' else 'Always',
+    local adminSocketMount = { name: 'admin-socket', mountPath: '/run/dss' },
+    local bootstrapScript = |||
+      trap 'exit 0' TERM
+      if [ "${HOSTNAME##*-}" != "0" ]; then
+        sleep infinity &
+        wait
+      fi
+      until dssctl raft node > /dev/null 2>&1; do
+        sleep 5 &
+        wait
+      done
+      for group in aux rid scd; do
+        until dssctl raft node --groups "${group}" | grep -q ': member'; do
+          dssctl raft bootstrap --groups "${group}" || sleep 5
+        done &
+      done
+      wait
+      endpoints="%s"
+      while :; do
+        pending=""
+        for endpoint in ${endpoints}; do
+          for group in aux rid scd; do
+            if ! dssctl raft list --groups "${group}" | grep -qF "https://${endpoint} "; then
+              pending="${pending} ${endpoint}"
+              break
+            fi
+          done
+        done
+        if [ -z "${pending}" ]; then
+          break
+        fi
+        endpoints="${pending}"
+        reachable=$(
+          for endpoint in ${pending}; do
+            (
+              curl -sk --max-time 1 -o /dev/null "https://${endpoint}"
+              case $? in
+                6|7|28) ;;
+                *) echo "${endpoint}" ;;
+              esac
+            ) &
+          done
+          wait
+        )
+        for endpoint in ${reachable}; do
+          echo "${endpoint} reachable, adding it"
+        done
+        for group in aux rid scd; do
+          (
+            for endpoint in ${reachable}; do
+              if ! dssctl raft list --groups "${group}" | grep -qF "https://${endpoint} "; then
+                dssctl raft add --groups "${group}" --url "https://${endpoint}"
+              fi
+            done
+          ) &
+        done
+        wait
+        sleep 5 &
+        wait
+      done
+      echo "Bootstrapping complete"
+      sleep infinity &
+      wait
+    ||| % std.join(' ', endpoints[1:] + raft.automaticBootstrapNodes),
+
     assert std.length(nodes) > 0 : 'raft.nodes must list at least one node',
     assert badEndpoints == [] : 'raft node endpoints must be host:port without a scheme: ' + std.join(', ', badEndpoints),
     assert duplicateEndpoints == [] : 'duplicate endpoints in raft.nodes: ' + std.join(', ', duplicateEndpoints),
@@ -73,18 +140,26 @@ local args = import 'core-service-args.libsonnet';
                 }],
               },
             },
-            volumes: volumes.all(metadata).backendVolumes,
+            volumes: volumes.all(metadata).backendVolumes
+              + (if raft.automaticBootstrap then [{ name: 'admin-socket', emptyDir: {} }] else []),
+            containers: [self.soloContainer] + (if raft.automaticBootstrap then [base.Container('raft-bootstrapper') {
+              image: metadata.backend.image,
+              imagePullPolicy: imagePullPolicy,
+              command: ['sh', '-c'],
+              args: [bootstrapScript],
+              volumeMounts: [adminSocketMount],
+            }] else []),
             soloContainer:: base.Container('core-service') {
               image: metadata.backend.image,
-              imagePullPolicy: if metadata.backend.imagePullPolicy != '' then metadata.backend.imagePullPolicy
-                else if metadata.cloud_provider == 'minikube' then 'IfNotPresent' else 'Always',
+              imagePullPolicy: imagePullPolicy,
               command: ['sh', '-c'],
               args: [script],
               ports: [
                 { containerPort: metadata.backend.port, name: 'http' },
               ] + (if metadata.enableDssMetrics then [{ containerPort: 8079, name: 'metrics' }] else [])
               + [{ containerPort: p } for p in ports],
-              volumeMounts: volumes.all(metadata).backendMounts,
+              volumeMounts: volumes.all(metadata).backendMounts
+                + (if raft.automaticBootstrap then [adminSocketMount] else []),
               env: util.makeEnv(metadata.backend.env),
               resources: util.resources(metadata.backend),
               readinessProbe: {
