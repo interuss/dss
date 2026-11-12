@@ -64,6 +64,9 @@ type Consensus struct {
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
 
+	// confChangeC holds a token while a config change proposed by this node is in flight.
+	confChangeC chan struct{}
+
 	membership membership
 	confState  *raftpb.ConfState
 
@@ -106,6 +109,8 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
+
+		confChangeC: make(chan struct{}, 1),
 
 		membership: membership{
 			nodeID:  nodeID,
@@ -866,7 +871,16 @@ func (c *Consensus) readyNode() (raft.Node, error) {
 // proposeConfChange proposes a single membership change and blocks until it is applied or ctx is cancelled.
 // Note that Raft only allows one config change in flight: a change proposed while another one is pending
 // is silently dropped by the leader, in which case this blocks until ctx is cancelled.
+// The changes proposed by this node are queued, so that they do not drop each other. A change proposed by
+// another node, or right after a leader election, can still be dropped.
 func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfChangeSingle, cctx confChangeContext) error {
+	select {
+	case c.confChangeC <- struct{}{}:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	defer func() { <-c.confChangeC }()
+
 	raftNode, err := c.node.Member()
 	if err != nil {
 		return err
