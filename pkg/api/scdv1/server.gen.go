@@ -4,14 +4,10 @@ package scdv1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 )
@@ -25,30 +21,13 @@ type APIRouter struct {
 var tracer = otel.Tracer("scdv1.api")
 
 // *scdv1.APIRouter (type defined above) implements the api.PartialRouter interface
-func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+func (s *APIRouter) MatchRoute(r *http.Request) (bool, *api.Route) {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
-
-			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
-				labeler.Add(semconv.HTTPRoute(route.Path))
-			}
-
-			// We retrieve the current span from the otelhttp handler to set its name property.
-			span := trace.SpanFromContext(r.Context())
-
-			if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
-				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
-			}
-
-			ctx, span := tracer.Start(r.Context(), route.Name)
-			defer span.End()
-			r = r.WithContext(ctx)
-
-			route.Handler(route.Pattern, w, r)
-			return true
+			return true, route
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (s *APIRouter) QueryOperationalIntentReferences(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -1078,62 +1057,62 @@ func setAuthError(ctx context.Context, authErr error, resp401 **api.ClientErrorB
 	}
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 18)}
 
 	pattern := regexp.MustCompile("^/dss/v1/operational_intent_references/query$")
-	router.Routes[0] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryOperationalIntentReferences, Name: "scdv1.QueryOperationalIntentReferences", Path: "/dss/v1/operational_intent_references/query"}
+	router.Routes[0] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryOperationalIntentReferences, Name: "scdv1.QueryOperationalIntentReferences", Path: "/dss/v1/operational_intent_references/query", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetOperationalIntentReference, Name: "scdv1.GetOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}"}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetOperationalIntentReference, Name: "scdv1.GetOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/operational_intent_references/(?P<entityid>[^/]*)$")
-	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateOperationalIntentReference, Name: "scdv1.CreateOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}"}
+	router.Routes[2] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateOperationalIntentReference, Name: "scdv1.CreateOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateOperationalIntentReference, Name: "scdv1.UpdateOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}/{ovn}"}
+	router.Routes[3] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateOperationalIntentReference, Name: "scdv1.UpdateOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}/{ovn}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/operational_intent_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteOperationalIntentReference, Name: "scdv1.DeleteOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}/{ovn}"}
+	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteOperationalIntentReference, Name: "scdv1.DeleteOperationalIntentReference", Path: "/dss/v1/operational_intent_references/{entityid}/{ovn}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/constraint_references/query$")
-	router.Routes[5] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryConstraintReferences, Name: "scdv1.QueryConstraintReferences", Path: "/dss/v1/constraint_references/query"}
+	router.Routes[5] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QueryConstraintReferences, Name: "scdv1.QueryConstraintReferences", Path: "/dss/v1/constraint_references/query", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetConstraintReference, Name: "scdv1.GetConstraintReference", Path: "/dss/v1/constraint_references/{entityid}"}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetConstraintReference, Name: "scdv1.GetConstraintReference", Path: "/dss/v1/constraint_references/{entityid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/constraint_references/(?P<entityid>[^/]*)$")
-	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateConstraintReference, Name: "scdv1.CreateConstraintReference", Path: "/dss/v1/constraint_references/{entityid}"}
+	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateConstraintReference, Name: "scdv1.CreateConstraintReference", Path: "/dss/v1/constraint_references/{entityid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateConstraintReference, Name: "scdv1.UpdateConstraintReference", Path: "/dss/v1/constraint_references/{entityid}/{ovn}"}
+	router.Routes[8] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateConstraintReference, Name: "scdv1.UpdateConstraintReference", Path: "/dss/v1/constraint_references/{entityid}/{ovn}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/constraint_references/(?P<entityid>[^/]*)/(?P<ovn>[^/]*)$")
-	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteConstraintReference, Name: "scdv1.DeleteConstraintReference", Path: "/dss/v1/constraint_references/{entityid}/{ovn}"}
+	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteConstraintReference, Name: "scdv1.DeleteConstraintReference", Path: "/dss/v1/constraint_references/{entityid}/{ovn}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/subscriptions/query$")
-	router.Routes[10] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QuerySubscriptions, Name: "scdv1.QuerySubscriptions", Path: "/dss/v1/subscriptions/query"}
+	router.Routes[10] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.QuerySubscriptions, Name: "scdv1.QuerySubscriptions", Path: "/dss/v1/subscriptions/query", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[11] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription, Name: "scdv1.GetSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}"}
+	router.Routes[11] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetSubscription, Name: "scdv1.GetSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)$")
-	router.Routes[12] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription, Name: "scdv1.CreateSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}"}
+	router.Routes[12] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.CreateSubscription, Name: "scdv1.CreateSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[13] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription, Name: "scdv1.UpdateSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}/{version}"}
+	router.Routes[13] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.UpdateSubscription, Name: "scdv1.UpdateSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}/{version}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/subscriptions/(?P<subscriptionid>[^/]*)/(?P<version>[^/]*)$")
-	router.Routes[14] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription, Name: "scdv1.DeleteSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}/{version}"}
+	router.Routes[14] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription, Name: "scdv1.DeleteSubscription", Path: "/dss/v1/subscriptions/{subscriptionid}/{version}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/reports$")
-	router.Routes[15] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.MakeDssReport, Name: "scdv1.MakeDssReport", Path: "/dss/v1/reports"}
+	router.Routes[15] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.MakeDssReport, Name: "scdv1.MakeDssReport", Path: "/dss/v1/reports", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[16] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetUssAvailability, Name: "scdv1.GetUssAvailability", Path: "/dss/v1/uss_availability/{uss_id}"}
+	router.Routes[16] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetUssAvailability, Name: "scdv1.GetUssAvailability", Path: "/dss/v1/uss_availability/{uss_id}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
-	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability, Name: "scdv1.SetUssAvailability", Path: "/dss/v1/uss_availability/{uss_id}"}
+	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability, Name: "scdv1.SetUssAvailability", Path: "/dss/v1/uss_availability/{uss_id}", Tracer: tracer}
 
-	return router
+	return &router
 }

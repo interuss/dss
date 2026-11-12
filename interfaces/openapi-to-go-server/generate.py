@@ -122,15 +122,14 @@ def _generate_apis(
         server_template_vars = {
             "<PACKAGE>": api.package,
             "<IMPORTS>": rendering.imports(
-                list(new_imports)
-                + [
-                    api_import,
-                    "fmt",
-                    "go.opentelemetry.io/otel",
-                    "go.opentelemetry.io/otel/trace",
-                    "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp",
-                    'semconv "go.opentelemetry.io/otel/semconv/v1.40.0"',
-                ]
+                sorted(
+                    new_imports
+                    | {
+                        api_import,
+                        "go.opentelemetry.io/otel",
+                        "net/http",
+                    }
+                )
             ),
             "<API_PACKAGE>": api_package,
             "<ROUTES>": "\n".join(routes),

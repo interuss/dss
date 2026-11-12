@@ -546,11 +546,11 @@ def routing(api: apis.API, api_package: str) -> list[str]:
             )
         )
         lines.append(
-            f'router.Routes[{i}] = &{api_package}.Route{{Method: {operation.verb_const_name}, Pattern: pattern, Handler: router.{operation.interface_name}, Name: "{api.package}.{operation.interface_name}", Path: "{prefix}{operation.path}"}}'
+            f'router.Routes[{i}] = &{api_package}.Route{{Method: {operation.verb_const_name}, Pattern: pattern, Handler: router.{operation.interface_name}, Name: "{api.package}.{operation.interface_name}", Path: "{prefix}{operation.path}", Tracer: tracer}}'
         )
         lines.append("")
         first_assignment = False
-    lines.append("return router")
+    lines.append("return &router")
     return lines
 
 
@@ -761,15 +761,10 @@ def example_router_defs(implementations: dict[str, str], api_package: str) -> li
     """
     lines: list[str] = []
 
+    lines.append(f"multiRouter := {api_package}.MultiRouter{{}}")
     for api_name, implementation in implementations.items():
         lines.append(
-            f"{api_name}Router := {api_name}.MakeAPIRouter(&{implementation}{{}}, &authorizer)"
+            f'multiRouter.SetRouter("{api_name}", {api_name}.MakeAPIRouter(&{implementation}{{}}, &authorizer))'
         )
-    router_list = ", ".join(
-        f"&{api_name}Router" for api_name, _ in implementations.items()
-    )
-    lines.append(
-        f"multiRouter := {api_package}.MultiRouter{{Routers: []{api_package}.PartialRouter{{{router_list}}}}}"
-    )
 
     return lines

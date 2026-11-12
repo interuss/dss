@@ -3,12 +3,8 @@ package dummyoauth
 
 import (
 	"context"
-	"fmt"
 	"github.com/interuss/dss/cmds/dummy-oauth/api"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -23,30 +19,13 @@ type APIRouter struct {
 var tracer = otel.Tracer("dummyoauth.api")
 
 // *dummyoauth.APIRouter (type defined above) implements the api.PartialRouter interface
-func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+func (s *APIRouter) MatchRoute(r *http.Request) (bool, *api.Route) {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
-
-			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
-				labeler.Add(semconv.HTTPRoute(route.Path))
-			}
-
-			// We retrieve the current span from the otelhttp handler to set its name property.
-			span := trace.SpanFromContext(r.Context())
-
-			if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
-				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
-			}
-
-			ctx, span := tracer.Start(r.Context(), route.Name)
-			defer span.End()
-			r = r.WithContext(ctx)
-
-			route.Handler(route.Pattern, w, r)
-			return true
+			return true, route
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (s *APIRouter) GetToken(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -120,14 +99,14 @@ func (s *APIRouter) GetJWKS(exp *regexp.Regexp, w http.ResponseWriter, r *http.R
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 2)}
 
 	pattern := regexp.MustCompile("^/token$")
-	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetToken, Name: "dummyoauth.GetToken", Path: "/token"}
+	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetToken, Name: "dummyoauth.GetToken", Path: "/token", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/.well-known/jwks.json$")
-	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetJWKS, Name: "dummyoauth.GetJWKS", Path: "/.well-known/jwks.json"}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetJWKS, Name: "dummyoauth.GetJWKS", Path: "/.well-known/jwks.json", Tracer: tracer}
 
-	return router
+	return &router
 }
