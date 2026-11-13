@@ -296,6 +296,45 @@ func TestListExpiredISAsWithEmptyWriter(t *testing.T) {
 	require.Len(t, serviceAreas, 1)
 }
 
+func TestDeleteExpiredISAs(t *testing.T) {
+	ctx := context.Background()
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
+	repo := setUpStore(t)
+
+	start := fakeClock.Now().Add(-2 * time.Hour)
+	expiredEnd := fakeClock.Now().Add(-time.Hour)
+	activeEnd := fakeClock.Now().Add(time.Hour)
+	for _, isa := range []struct {
+		id  dssmodels.ID
+		end *time.Time
+	}{
+		{id: "00000000-0000-0000-0000-000000000003", end: &activeEnd},
+		{id: "00000000-0000-0000-0000-000000000002", end: &expiredEnd},
+		{id: "00000000-0000-0000-0000-000000000001", end: &expiredEnd},
+	} {
+		in := *serviceArea
+		in.CellsVolume4D = &dssmodels.CellsVolume4D{Cells: serviceArea.Cells, StartTime: &start, EndTime: isa.end}
+		in.ID = isa.id
+		_, err := repo.InsertISA(ctx, &in)
+		require.NoError(t, err)
+	}
+
+	deleted, err := repo.DeleteExpiredISAs(ctx, fakeClock.Now(), 1)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{"00000000-0000-0000-0000-000000000001"}, deleted)
+
+	deleted, err = repo.DeleteExpiredISAs(ctx, fakeClock.Now(), 0)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{"00000000-0000-0000-0000-000000000002"}, deleted)
+
+	expired, err := repo.ListExpiredISAs(ctx, fakeClock.Now())
+	require.NoError(t, err)
+	require.Empty(t, expired)
+	got, err := repo.GetISA(ctx, "00000000-0000-0000-0000-000000000003", false)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+}
+
 func TestStoreCountISAs(t *testing.T) {
 	ctx := context.Background()
 	ctx = timestamp.NewContext(ctx, fakeClock.Now())

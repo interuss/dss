@@ -214,6 +214,34 @@ func TestListExpiredOperationalIntents(t *testing.T) {
 	}
 }
 
+func TestDeleteExpiredOperationalIntents(t *testing.T) {
+	ctx := writeCtx()
+	r := setUpStore(t)
+
+	for _, oi := range []*scdmodels.OperationalIntent{oi3, oi2, oi1} {
+		_, err := r.UpsertOperationalIntent(ctx, oi)
+		require.NoError(t, err)
+	}
+
+	// oi1 and oi2 are expired, oi3 is not.
+	threshold := time.Date(2024, time.September, 16, 14, 0, 0, 0, time.UTC)
+
+	deleted, err := r.DeleteExpiredOperationalIntents(ctx, threshold, 1)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{oi1ID}, deleted)
+
+	deleted, err = r.DeleteExpiredOperationalIntents(ctx, threshold, 0)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{oi2ID}, deleted)
+
+	expired, err := r.ListExpiredOperationalIntents(ctx, threshold)
+	require.NoError(t, err)
+	require.Empty(t, expired)
+	got, err := r.GetOperationalIntent(ctx, oi3ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+}
+
 func TestCircleOverlappingIntentIsDiscoverable(t *testing.T) {
 	ctx := writeCtx()
 	repo := setUpStore(t)

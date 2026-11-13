@@ -337,6 +337,45 @@ func TestListExpiredSubscriptionsWithEmptyWriter(t *testing.T) {
 	require.Len(t, subscriptions, 1)
 }
 
+func TestDeleteExpiredSubscriptions(t *testing.T) {
+	ctx := context.Background()
+	ctx = timestamp.NewContext(ctx, fakeClock.Now())
+	repo := setUpStore(t)
+
+	start := fakeClock.Now().Add(-2 * time.Hour)
+	expiredEnd := fakeClock.Now().Add(-time.Hour)
+	activeEnd := fakeClock.Now().Add(time.Hour)
+	for _, sub := range []struct {
+		id  dssmodels.ID
+		end *time.Time
+	}{
+		{id: "00000000-0000-0000-0000-000000000003", end: &activeEnd},
+		{id: "00000000-0000-0000-0000-000000000002", end: &expiredEnd},
+		{id: "00000000-0000-0000-0000-000000000001", end: &expiredEnd},
+	} {
+		in := *subscriptionsPool[0].input
+		in.CellsVolume4D = &dssmodels.CellsVolume4D{Cells: in.Cells, StartTime: &start, EndTime: sub.end}
+		in.ID = sub.id
+		_, err := repo.InsertSubscription(ctx, &in)
+		require.NoError(t, err)
+	}
+
+	deleted, err := repo.DeleteExpiredSubscriptions(ctx, fakeClock.Now(), 1)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{"00000000-0000-0000-0000-000000000001"}, deleted)
+
+	deleted, err = repo.DeleteExpiredSubscriptions(ctx, fakeClock.Now(), 0)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{"00000000-0000-0000-0000-000000000002"}, deleted)
+
+	expired, err := repo.ListExpiredSubscriptions(ctx, fakeClock.Now())
+	require.NoError(t, err)
+	require.Empty(t, expired)
+	got, err := repo.GetSubscription(ctx, "00000000-0000-0000-0000-000000000003")
+	require.NoError(t, err)
+	require.NotNil(t, got)
+}
+
 func TestStoreCountSubscription(t *testing.T) {
 	ctx := context.Background()
 	ctx = timestamp.NewContext(ctx, fakeClock.Now())

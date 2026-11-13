@@ -168,18 +168,12 @@ func (r *repo) GetDependentOperationalIntents(_ context.Context, subscriptionID 
 	return dependentOps, nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) ListExpiredOperationalIntents(ctx context.Context, threshold time.Time) ([]dssmodels.ID, error) {
-	var out []dssmodels.ID
-	for _, rec := range listExpired(r.state.OperationalIntents, threshold, dssmodels.MaxResultLimit) {
-		out = append(out, rec.ID)
-	}
-	return out, nil
+	return listExpired(r.state.OperationalIntents, threshold), nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) DeleteExpiredOperationalIntents(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredOperationalIntents not implemented for memstore")
+	return deleteExpired(r.state.OperationalIntents, threshold, limit), nil
 }
 
 func (r *repo) CountOperationalIntents(_ context.Context) (int64, error) {
