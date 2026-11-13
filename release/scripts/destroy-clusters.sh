@@ -99,7 +99,7 @@ for name in "${TARGETS[@]}"; do
     START_OF[$name]=$(date +%s)
     (
         cd "$PERSONAL_DIR/$name"
-        terraform destroy -auto-approve -input=false
+        terraform destroy -auto-approve -input=false && rm -rf "${PERSONAL_DIR:?}/${name:?}"
     ) >"$LOG_DIR/$name.destroy.log" 2>&1 &
     PID_OF[$name]=$!
     printf '  %s▶%s  %-32s destroying (pid %d)\n' "$BLUE" "$RESET" "$name" "${PID_OF[$name]}"

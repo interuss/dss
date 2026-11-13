@@ -48,7 +48,7 @@ Run the commands below from the root of the repository. Each step writes its log
 ./release/scripts/spawn-clusters.sh
 ```
 
-This runs terraform apply on the four clusters in parallel and configurations are stored in `personal/`.
+This runs terraform apply on the four clusters in parallel and configurations are stored in `personal/`. Existing configs in `personal/` are not removed: the script asks whether to proceed, then whether to overwrite their module and tfvars (terraform state is kept).
 
 Done when it prints `All 4 clusters up`. If some issues are encountered during the deployment, it is possible to perform a `terraform apply` in the `personal/*` folders.
 
@@ -119,6 +119,6 @@ The benchmarker outputs from step 5 are not included in the zip.
 ./release/scripts/destroy-clusters.sh
 ```
 
-This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster.
+This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster. The `personal/` config of each successfully destroyed cluster is removed.
 
 Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log. Finally, check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.

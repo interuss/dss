@@ -23,16 +23,28 @@ module_for() {
     echo "terraform-$cloud-dss"
 }
 
-# === 1. Cleanup ===
-section "Cleanup personal configs"
+# === 1. Check existing personal configs ===
+section "Check existing personal configs"
+EXISTING=()
 for name in "${CLUSTERS[@]}"; do
     if [[ -d "$PERSONAL_DIR/$name" ]]; then
-        printf '  %s✗%s  rm  %s\n' "$YELLOW" "$RESET" "$PERSONAL_DIR/$name"
-        rm -rf "${PERSONAL_DIR:?}/${name:?}"
+        printf '  %s!%s  exists  %s\n' "$YELLOW" "$RESET" "$PERSONAL_DIR/$name"
+        EXISTING+=("$name")
     else
-        printf '  %s·%s  ok  %s (absent)\n' "$DIM" "$RESET" "$PERSONAL_DIR/$name"
+        printf '  %s·%s  ok      %s (absent)\n' "$DIM" "$RESET" "$PERSONAL_DIR/$name"
     fi
 done
+
+OVERWRITE=1
+if (( ${#EXISTING[@]} > 0 )); then
+    read -r -p "$(printf '\n%sExisting configs found. Proceed? [y/N]:%s ' "$BOLD" "$RESET")" ans
+    if [[ ! "$ans" =~ ^[yY]([eE][sS])?$ ]]; then
+        printf '%sAborted.%s\n' "$YELLOW" "$RESET"
+        exit 0
+    fi
+    read -r -p "$(printf '%sOverwrite module + tfvars in existing configs? [y/N]:%s ' "$BOLD" "$RESET")" ans
+    [[ "$ans" =~ ^[yY]([eE][sS])?$ ]] || OVERWRITE=0
+fi
 
 # === 2. Copy module + release tfvars into personal/ ===
 section "Copy configs into personal/"
@@ -41,6 +53,11 @@ for name in "${CLUSTERS[@]}"; do
     src_module="$MODULES_DIR/$module"
     src_release="$RELEASE_INFRA_DIR/$name.tfvars"
     dst="$PERSONAL_DIR/$name"
+
+    if [[ -d "$dst" ]] && (( OVERWRITE == 0 )); then
+        printf '  %s·%s  %s%s%s  kept as-is\n' "$DIM" "$RESET" "$BOLD" "$name" "$RESET"
+        continue
+    fi
 
     [[ -d "$src_module"  ]] || die "missing module $src_module"
     [[ -f "$src_release" ]] || die "missing release tfvars $src_release"
