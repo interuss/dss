@@ -30,7 +30,7 @@ To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES
 
 ## Promote to stable
 
-Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the release candidate. Set release label as `Latest`**. Validation (step 4) is mandatory.
+Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the release candidate. Set release label as `Latest`. Validation (step 4) is mandatory.
 
 ## After a release
 
