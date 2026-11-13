@@ -607,7 +607,7 @@ func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, r
 	}
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 10)}
 
 	pattern := regexp.MustCompile("^/rid/v1/dss/identification_service_areas$")
@@ -640,5 +640,5 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/rid/v1/dss/subscriptions/(?P<id>[^/]*)/(?P<version>[^/]*)$")
 	router.Routes[9] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteSubscription, Name: "rid.DeleteSubscription", Path: "/rid/v1/dss/subscriptions/{id}/{version}"}
 
-	return router
+	return &router
 }

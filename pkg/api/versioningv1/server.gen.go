@@ -3,9 +3,10 @@ package versioning
 
 import (
 	"context"
-	"github.com/interuss/dss/pkg/api"
 	"net/http"
 	"regexp"
+
+	"github.com/interuss/dss/pkg/api"
 )
 
 type APIRouter struct {
@@ -64,11 +65,11 @@ func (s *APIRouter) GetVersion(exp *regexp.Regexp, w http.ResponseWriter, r *htt
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 1)}
 
 	pattern := regexp.MustCompile("^/versions/(?P<system_identity>[^/]*)$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion}
 
-	return router
+	return &router
 }

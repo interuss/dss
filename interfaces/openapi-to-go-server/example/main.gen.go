@@ -200,10 +200,10 @@ func (*ExampleapiImplementation) GetGreeting(ctx context.Context, req *exampleap
 
 func main() {
 	authorizer := PermissiveAuthorizer{}
-	scdRouter := scd.MakeAPIRouter(&ScdImplementation{}, &authorizer)
-	ridRouter := rid.MakeAPIRouter(&RidImplementation{}, &authorizer)
-	exampleapiRouter := exampleapi.MakeAPIRouter(&ExampleapiImplementation{}, &authorizer)
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&scdRouter, &ridRouter, &exampleapiRouter}}
+	multiRouter := api.MultiRouter{}
+	multiRouter.SetRouter("scd", scd.MakeAPIRouter(&ScdImplementation{}, &authorizer))
+	multiRouter.SetRouter("rid", rid.MakeAPIRouter(&RidImplementation{}, &authorizer))
+	multiRouter.SetRouter("exampleapi", exampleapi.MakeAPIRouter(&ExampleapiImplementation{}, &authorizer))
 	s := &http.Server{
 		Addr:           ":8080",
 		Handler:        &multiRouter,

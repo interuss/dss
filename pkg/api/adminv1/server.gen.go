@@ -225,7 +225,7 @@ func (s *APIRouter) DeleteRaftGroupMember(exp *regexp.Regexp, w http.ResponseWri
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 5)}
 
 	pattern := regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/this_node$")
@@ -243,5 +243,5 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/members/(?P<node_id>[^/]*)$")
 	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteRaftGroupMember, Name: "adminv1.DeleteRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members/{node_id}"}
 
-	return router
+	return &router
 }

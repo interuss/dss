@@ -120,7 +120,7 @@ func (s *APIRouter) GetJWKS(exp *regexp.Regexp, w http.ResponseWriter, r *http.R
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 2)}
 
 	pattern := regexp.MustCompile("^/token$")
@@ -129,5 +129,5 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/.well-known/jwks.json$")
 	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetJWKS, Name: "dummyoauth.GetJWKS", Path: "/.well-known/jwks.json"}
 
-	return router
+	return &router
 }

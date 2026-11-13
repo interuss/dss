@@ -1078,7 +1078,7 @@ func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, r
 	}
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 18)}
 
 	pattern := regexp.MustCompile("^/scd/dss/v1/operational_intent_references/query$")
@@ -1135,5 +1135,5 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 	pattern = regexp.MustCompile("^/scd/dss/v1/uss_availability/(?P<uss_id>[^/]*)$")
 	router.Routes[17] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.SetUssAvailability, Name: "scd.SetUssAvailability", Path: "/scd/dss/v1/uss_availability/{uss_id}"}
 
-	return router
+	return &router
 }
