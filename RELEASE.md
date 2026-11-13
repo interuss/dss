@@ -9,7 +9,7 @@ Releases are git tags `interuss/dss/vX.Y.Z[-W]`, following [semantic versioning]
 - **Release candidates** (`vX.Y.Z-rcN`) are for early adopters.
 - **Stable versions** (`vX.Y.Z`) are usually a promoted release candidate. Before a stable version is published, it must be validated on a DSS pool of two DSS instances hosted in two separate clouds (see [release/infrastructure](./release/infrastructure)):
   - it must pass the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) and the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier);
-  - its performance should be documented with the [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker).
+  - its performance shall be documented with the [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker).
 
   The [validation artifacts](#validation-artifacts) are attached to the release. A discussion page with extended validation information may also be created.
 
