@@ -121,4 +121,4 @@ The benchmarker outputs from step 5 are not included in the zip.
 
 This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster.
 
-Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log, then check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
+Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log. Finally, check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
