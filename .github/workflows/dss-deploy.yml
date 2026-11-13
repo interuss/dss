@@ -20,12 +20,13 @@ jobs:
           echo "Trigger: ${{ github.event_name }}"
           echo "Host: ${{ runner.os }}"
           echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref }}"
+          echo "Branch: ${GITHUB_REF}"
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
