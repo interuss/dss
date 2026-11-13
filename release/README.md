@@ -86,7 +86,7 @@ Done when it prints `ALL PASSED`. If it prints `FAILED`, the image did not pass 
 
 ### 5. Benchmark performance
 
-While the clusters are still up, run the benchmarker with the configurations in tests/benchmarker/ twice: once with db_type = 'crdb' and once with db_type = 'ybdb'.
+While the clusters are still up, run the benchmarker with the configurations in tests/benchmarker/ twice: once with db_type = 'crdb' and once with db_type = 'ybdb'. See [benchmarker/README.md](benchmarker/README.md).
 
 Done when the outputs contain the four scenarios aws crdb, google crdb, aws ybdb and google ybdb.
 
