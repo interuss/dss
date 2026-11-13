@@ -37,4 +37,12 @@ Upon reviewing your design document, an [InterUSS committer](https://github.com/
 
 If your PR introduces a major change, especially a breaking change to configuration or an important new feature, update [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) in the same PR with what users need to migrate to it and use it.
 
+If your change is larger than the anticipated next version recorded in NEXT_RELEASE_NOTES.md, bump that version in the same PR:
+
+| Last release | Anticipated next version | Your change | Update the anticipated version? |
+| --- | --- | --- | --- |
+| v0.24.0 | v0.24.1 | Bug fix | No |
+| v0.24.0 | v0.24.1 | New feature or breaking change | Yes, to v0.25.0 |
+| v0.24.0 | v0.25.0 | Any change | No, already bumped |
+
 See [RELEASE.md](RELEASE.md) for how releases are published.
