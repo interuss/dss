@@ -128,7 +128,7 @@ for cfg in "${configs[@]}"; do
             --name "dss-release-qual-$cfg" \
             --network "$TEST_NETWORK" \
             -u "$(id -u):$(id -g)" \
-            -e PYTHONBUFFERED=1 \
+            -e PYTHONUNBUFFERED=1 \
             -e AUTH_SPEC="DummyOAuth($OAUTH_URL_IN_NET,uss_qualifier)" \
             -e AUTH_SPEC_2="DummyOAuth($OAUTH_URL_IN_NET,uss_qualifier_2)" \
             -v "$TESTS_DIR:/app/monitoring/uss_qualifier/configurations/personal" \
