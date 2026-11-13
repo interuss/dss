@@ -1,65 +1,48 @@
-# Release versions
+# Releasing the DSS
 
-Currently, InterUSS publishes two types of release versions: release candidates and stable versions. Creation of releases is based on Commiters' appreciation.
+This document is for InterUSS committers. Release notes are on the [releases page](https://github.com/interuss/dss/releases). 
 
-Release candidates can be identified by their suffix `-rc*`. Those versions are published for early adopters.
+## Versions
 
-The source of stable versions is usually a release candidate.
+Releases are git tags `interuss/dss/vX.Y.Z[-W]`, following [semantic versioning](https://semver.org).
 
-Release notes can be found on the [releases page](https://github.com/interuss/dss/releases) of this repository.
-Keeping track of breaking changes and migration instructions is done through the [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) file, which is updated as features are added or modified and serves as a basis for release notes.
+- **Release candidates** (`vX.Y.Z-rcN`) are for early adopters.
+- **Stable versions** (`vX.Y.Z`) are usually a promoted release candidate. To be promoted, a release must pass the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober), the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) and performance benchmarks should be documented using the [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker) on a DSS pool of two DSS instances hosted in two separate clouds (see [release/infrastructure](./release/infrastructure)). Reports are attached to the release and a discussion page including extended validation information may be created.
 
-To be promoted to stable, a release must be first tested on a DSS Pool composed by two DSS Instances hosted in two separate clouds. The verification is made by running the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) and the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) on both DSS Instances.
-Reports are attached to releases on the [releases page](https://github.com/interuss/dss/releases).
+To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md).
 
-# Release Management
+## Publish a release candidate
 
-Releases of the DSS are based on git tags in the format `interuss/dss/v[0-9]+\.[0-9]+\.[0-9]+`, optionally suffixed with `-[0-9A-Za-z-.]+`.  This tag form follows the pattern `[owner]/[component]/[semantic version]`; see [semantic version](https://semver.org) for more information.
+1. Check that [CI](https://github.com/interuss/dss/actions/workflows/ci.yml) is green on `master`.
+2. Go to [Releases → Draft a new release](https://github.com/interuss/dss/releases/new):
+   - **Tag:** `interuss/dss/vX.Y.Z-rcN` on `master`. **Title:** `vX.Y.Z-rcN`.
+   - Click **Generate release notes**, then paste the pending content of NEXT_RELEASE_NOTES.md at the top.
+   - Select release label: `Pre-release`
+   - Click **Publish release**. This pushes the tag.
 
-When either an executable or image is built from a `git` checkout of the source, the most recent tag is used as the version tag. If no such tag exists, the build system defaults to v0.0.0-[commit_hash]. If commits have been added to the tag, the commit hash is appended to the version. If the workspace is not clean, `-dirty` is appended to it. The version tag is computed by [`scripts/git/version.sh`](scripts/git/version.sh).
+3. Wait for [dss-publish.yml](.github/workflows/dss-publish.yml) to build, sign and push `docker.io/interuss/dss:vX.Y.Z-rcN`. This also updates the `latest` image tag.
+4. Optionally, validate the image.
+  a. Follow release/README.md with IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN. Pin the monitoring version with MONITORING_IMAGE=interuss/monitoring:vA.B.C (it defaults to latest).
+  b. Run the benchmarker as described in release/tests/benchmarker, once with db_type set to crdb and once with ybdb.
+  c. Edit the release: add a Validation section that gives the monitoring version used and summarizes the results, then attach the artifacts.
 
-## Release procedure
+## Promote to stable
 
-Releasing a DSS version requires the following steps:
-- Select a release version `vX.Y.Z[-W]` appropriate for the release
-  - `X` is the major release number
-  - `Y` is the minor release number
-  - `Z` is the patch number
-  - (optionally) `W` is the prerelease
-  - `X.Y.Z[-W]` is according to [semantic versioning](https://semver.org)
-    - Note that valid examples of this form include `0.1.0`, `20.0.0`, `0.5.0-rc`, `0.5.0-1.2`
-  - `X`, `Y`, and `Z` should be selected according to the nature of the changes included in the release
-    - See [NEXT_RELEASE_NOTES.md](./NEXT_RELEASE_NOTES.md) for the minimum version increment, and look for any changes that might suggest a more substantial category of release than the intended next version currently tracked in NEXT_RELEASE_NOTES
-- Create a release tag via *one* of the following methods:
-  - On the InterUSS fork, click Releases -> Draft a new release
-    - For **Tag**, enter `interuss/dss/vX.Y.Z` (see below for format)
-    - For **Release title**, enter `vX.Y.Z` (corresponding to the tag)
-    - For Release notes, click **Generate release notes**, then add:
-      - any content from [NEXT_RELEASE_NOTES.md](./NEXT_RELEASE_NOTES.md) to the top of the notes
-      - an additional section *Validation* linking the version of the USS qualifier used and referring to the attached assets for the associated test configuration and report
-    - Assets: test configuration and report of the USS qualifier validation run
-  - Create a release tag on main using `make tag VERSION=X.Y.Z[-W]`. The script will push a tag (`release tag`) to the remote origin under the form of `[owner]/dss/vX.Y.Z[-W]`, where
-      - `[owner]` is either the organization name or the username of the origin remote url
-      - Official releases are `interuss/dss/v#.#.#`.
-      - Add the pending release notes from [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) to the release notes.
-- The github workflow ([.github/workflows/image-publish.yml](.github/workflows/dss-publish.yml)) is triggered for every new release tag. On the canonical interuss fork, it builds and publishes the DSS image to the [official docker registry](https://hub.docker.com/repository/docker/interuss/dss).
-- Use helpers in [RELEASE](./release/README.md) folder to generate test artefacts and upload the zip with the release.
-- After completing the release, open a PR to remove the pending release notes from [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) and update the anticipated next release version number assuming just a bug fix (e.g., v0.18.3 -> v0.18.4)
-- When a PR with a change larger than the current anticipated next release version number in [NEXT_RELEASE_NOTES.md](./NEXT_RELEASE_NOTES.md) is made, it should ideally also adjust the anticipated next release version number in NEXT_RELEASE_NOTES
-  - Example 1: if the most recent release was v0.18.3, NEXT_RELEASE_NOTES indicated v0.18.4, and a PR made a change larger than a bug fix, that PR should change the number in NEXT_RELEASE_NOTES to v0.19.0
-  - Example 2: if the most recent release was v1.3.0, NEXT_RELEASE_NOTES indicated v1.4.0, and a PR made a bug fix or minor change, that PR does not need to update NEXT_RELEASE_NOTES
-  - Example 3: if the most recent release was v3.1.4, NEXT_RELEASE_NOTES indicated v3.1.5, and a PR made a major change, that PR should change the number in NEXT_RELEASE_NOTES to v4.0.0
+Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the validated release candidate. Validation (point 4) is mandatory.
+
+## After a release
+
+Open a PR on NEXT_RELEASE_NOTES.md that removes the published notes and sets the anticipated next version to the next patch (for example `v0.24.0` → `v0.24.1`).
 
 ## Releasing from a fork
 
-To enable releases of DSS version in a fork, the following steps are required:
-  1. Set the remote origin url of the repository of the target fork. (ie git@github.com:[owner]/dss.git)
-  2. Edit in ([.github/workflows/dss-publish.yml](.github/workflows/dss-publish.yml)) the trigger to match the tags of the fork's owner as well as the job's entry condition to allow the forked repository.
-  3. [Enable github actions in the forked project](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#configuring-required-approval-for-workflows-from-public-forks).
-  4. Configure the environment variables to setup the registry. (See instructions at the top of [.github/workflows/dss-publish.yml](.github/workflows/dss-publish.yml))
+1. Point your remote origin to your fork. Tags become `[owner]/dss/vX.Y.Z`.
+2. In [dss-publish.yml](.github/workflows/dss-publish.yml), change the tag trigger and the job's `if:` condition to match your fork.
+3. [Enable GitHub Actions](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#configuring-required-approval-for-workflows-from-public-forks) in your fork.
+4. Set the secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD` and `DOCKER_URL`.
 
-Optionally, you can manually build the DSS docker image using [build/build.sh](build/build.sh), tag accordingly the image `interuss-local/dss` and push it out to an image registry of your choice.
+Alternatively, build with [build/build.sh](build/build.sh) and push the `interuss-local/dss` image to your own registry.
 
-# Historical CockroachDB version note
+## Build versions
 
-We try to use the latest version major and minor of CockroachDB.  For a legacy deployment with CRDB prior to v20.2.0, know that CRDB 20.2.0 comes with upgrades to the underlying storage of CRDB itself using a branched version of RocksDB called Pebble.  20.2.x is backwards compatible with the files written by 20.1.x and upgrades are simple. However you CANNOT downgrade back to 20.1.x as the new version updates the metadata and prevents the older version of the CRDB to be started on same files. Although 20.2.x is compatible with 20.1.x in the same cluster, operators should quickly upgrade all the remaining nodes to 20.2.x and reduce the version drift as much as possible. The possible negative effect of running a mixed cluster is the difference in features available between the nodes, the operator must be sure not to leverage the new or deprecated features as this could negatively affect queries.
+[`scripts/git/version.sh`](scripts/git/version.sh) derives the version from the latest tag. It appends `-<commit hash>` if there are commits after the tag, and `-dirty` if there are uncommitted changes. Only release versions that have neither suffix.
