@@ -15,6 +15,8 @@ import (
 
 var Names = []string{"aux", "rid", "scd"}
 
+var EvictionGroupNames = []string{"rid", "scd"}
+
 var selected []string
 
 // RegisterFlags registers the flags selecting the Raft groups.
@@ -46,6 +48,23 @@ func Selected() ([]Group, error) {
 		return nil, stacktrace.NewError("no Raft group selected with --groups")
 	}
 	return New(names)
+}
+
+// SelectedEviction returns the Raft groups with eviction selected with --groups, all of them if not set.
+func SelectedEviction(fs *pflag.FlagSet) ([]Group, error) {
+	if !fs.Changed("groups") {
+		return New(EvictionGroupNames)
+	}
+	groups, err := Selected()
+	if err != nil {
+		return nil, err
+	}
+	for _, g := range groups {
+		if !slices.Contains(EvictionGroupNames, g.Name) {
+			return nil, stacktrace.NewError("the %s Raft group has no eviction, expected some of %s in --groups", g.Name, strings.Join(EvictionGroupNames, ","))
+		}
+	}
+	return groups, nil
 }
 
 // New returns the Raft groups of names, in the order of names.
