@@ -34,7 +34,7 @@ Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of t
 
 ## After a release
 
-Open a PR on NEXT_RELEASE_NOTES.md that removes the published notes and sets the anticipated next version to the next patch (for example `v0.24.0` → `v0.24.1`).
+Open a PR on NEXT_RELEASE_NOTES.md that removes the published notes and sets the anticipated next version to the next patch (for example `v0.24.0` → `v0.25.0`).
 
 ## Releasing from a fork
 
