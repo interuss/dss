@@ -1,5 +1,5 @@
 # AWS account
-aws_region = "eu-central-1"
+aws_region = "us-east-2"
 
 # DNS Management
 aws_route53_zone_id = "$ZONE_ID"
@@ -25,7 +25,7 @@ should_init = true
 # CockroachDB
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss-example"
-locality            = "interuss_dss-aws-ew1"
+locality            = "interuss_dss-aws-ue2"
 crdb_external_nodes = []
 
 datastore_type = "cockroachdb"
