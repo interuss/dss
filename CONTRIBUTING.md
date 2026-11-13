@@ -45,4 +45,7 @@ If your change is larger than the anticipated next version recorded in NEXT_RELE
 | v0.24.0 | v0.24.1 | New feature or breaking change | Yes, to v0.25.0 |
 | v0.24.0 | v0.25.0 | Any change | No, already bumped |
 
+Currently, no major version > 0 has been released. The criteria for such release is subject to TSC approval.
+
+
 See [RELEASE.md](RELEASE.md) for how releases are published.
