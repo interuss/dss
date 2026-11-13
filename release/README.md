@@ -2,18 +2,14 @@
 
 This procedure validates a DSS image. It deploys it in two DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
 
-| Cluster | Cloud | Datastore | Deployed with | Nodes |
-| --- | --- | --- | --- | --- |
-| `release-aws-dss-crdb` | AWS (`us-east-2`) | CockroachDB | Tanka | 3 × `m5.xlarge` |
-| `release-google-dss-crdb` | Google Cloud (`us-central-1-a`) | CockroachDB | Helm | 3 × `n2-standard-4` |
-| `release-aws-dss-ybdb` | AWS (`us-east-2`) | Yugabyte | Tanka | 3 × `m5.xlarge` |
-| `release-google-dss-ybdb` | Google Cloud (`us-central-1-a`) | Yugabyte | Helm | 3 × `n2-standard-4` |
+| Cluster                   | Cloud                           | Datastore   | Deployed with | Nodes               |
+| ------------------------- | ------------------------------- | ----------- | ------------- | ------------------- |
+| `release-aws-dss-crdb`    | AWS (`us-east-2`)               | CockroachDB | Tanka         | 3 × `m5.xlarge`     |
+| `release-google-dss-crdb` | Google Cloud (`us-central-1-a`) | CockroachDB | Helm          | 3 × `n2-standard-4` |
+| `release-aws-dss-ybdb`    | AWS (`us-east-2`)               | Yugabyte    | Tanka         | 3 × `m5.xlarge`     |
+| `release-google-dss-ybdb` | Google Cloud (`us-central-1-a`) | Yugabyte    | Helm          | 3 × `n2-standard-4` |
 
 The clusters are defined in [infrastructure/](infrastructure), and the tests in [tests/](tests).
-
-> [!WARNING]
-> - Terraform state is local, in `deploy/infrastructure/personal/release-*`. `spawn-clusters.sh` deletes those folders before it starts. **Never re-run it while clusters exist:** the state would be lost and the cloud resources orphaned.
-> - Certificates are always regenerated from scratch.
 
 ## Prerequisite
 
@@ -47,14 +43,17 @@ Run the commands below from the root of the repository. Each step writes its log
 ## Procedure
 
 ### 1. Spawn the clusters (infrastructure layer)
+
 ```shell
 ./release/scripts/spawn-clusters.sh
 ```
+
 This runs terraform apply on the four clusters in parallel and configurations are stored in `personal/`.
 
 Done when it prints `All 4 clusters up`. If some issues are encountered during the deployment, it is possible to perform a `terraform apply` in the `personal/*` folders.
 
 ### 2. Configure clusters
+
 ```shell
 ./release/scripts/configure-clusters.sh
 ```
@@ -66,14 +65,17 @@ Done when it prints `All 4 clusters prepared`.
 After this step, services are ready to be deployed.
 
 ### 3. Deploy the services
+
 ```shell
 ./release/scripts/deploy-services.sh
 ```
+
 This deploys the DSS, then waits until https://<DSS>/healthy returns ok on the four instances. While it waits, it lists the pods that are not ready.
 
 Done when it prints `All 4 clusters healthy`.
 
 ### 4. Run the functional tests
+
 ```shell
 ./release/scripts/run-tests.sh
 ```
@@ -89,6 +91,7 @@ While the clusters are still up, run the benchmarker with the configurations in 
 Done when the outputs contain the four scenarios aws crdb, google crdb, aws ybdb and google ybdb.
 
 ### 6. Compile the results
+
 ```shell
 ./release/scripts/compile-results.sh
 ```
@@ -103,7 +106,7 @@ Done when `release/output/<version>.zip` exists, with this structure:
 │   │   ├── dss1-aws.txt
 │   │   └── dss2-google.txt
 │   └── uss_qualifier/
-│       └── pooled_dss_probing/ 
+│       └── pooled_dss_probing/
 └── yugabyte/
     └── (same structure)
 ```
@@ -111,6 +114,7 @@ Done when `release/output/<version>.zip` exists, with this structure:
 The benchmarker outputs from step 5 are not included in the zip.
 
 ### 7. Destroy the clusters
+
 ```shell
 ./release/scripts/destroy-clusters.sh
 ```
