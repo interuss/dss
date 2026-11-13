@@ -29,7 +29,7 @@ func setUpStore(ctx context.Context, t *testing.T) (*sqlstore.Store[repos.Reposi
 	require.NoError(t, err)
 	return store, func() {
 		require.NoError(t, cleanUp(ctx, store))
-		require.NoError(t, store.Close())
+		require.NoError(t, store.Close(ctx))
 	}
 }
 

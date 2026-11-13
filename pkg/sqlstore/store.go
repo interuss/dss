@@ -244,7 +244,7 @@ func (s *Store[R]) Ready() bool {
 	return true
 }
 
-func (s *Store[R]) Close() error {
+func (s *Store[R]) Close(_ context.Context) error {
 	s.Pool.Close()
 	return nil
 }
