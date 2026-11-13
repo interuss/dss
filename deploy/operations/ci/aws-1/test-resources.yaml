@@ -249,7 +249,7 @@ spec:
             - name: cache
               mountPath: /app/monitoring/uss_qualifier/.templates_cache
           env:
-            - name: PYTHONBUFFERED
+            - name: PYTHONUNBUFFERED
               value: "1"
             - name: AUTH_SPEC
               value: DummyOAuth(http://dummy-oauth.tests.svc.cluster.local:8085/token,uss_qualifier)
