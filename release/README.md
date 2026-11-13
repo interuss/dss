@@ -1,83 +1,120 @@
-This folder contains script helpers, deployment configurations, and test configurations to be run on DSS images for each release.
-Scripts are not expected to be robust; in case of an error, manual intervention will be needed. They are only intended to assist someone with sufficient technical knowledge.
+# DSS release validation
 
-Credentials to access clusters are not included.
+This procedure validates a DSS image. It deploys it in two DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
 
-Scripts will erase existing personal configurations or workspaces named `release-aws-dss-ybdb`, `release-aws-dss-crdb`, `release-google-dss-ybdb`, or `release-google-dss-crdb`.
+| Cluster | Cloud | Datastore | Deployed with | Nodes |
+| --- | --- | --- | --- | --- |
+| `release-aws-dss-crdb` | AWS (`us-east-2`) | CockroachDB | Tanka | 3 × `m5.xlarge` |
+| `release-google-dss-crdb` | Google Cloud (`us-central-1-a`) | CockroachDB | Helm | 3 × `n2-standard-4` |
+| `release-aws-dss-ybdb` | AWS (`us-east-2`) | Yugabyte | Tanka | 3 × `m5.xlarge` |
+| `release-google-dss-ybdb` | Google Cloud (`us-central-1-a`) | Yugabyte | Helm | 3 × `n2-standard-4` |
 
-Certificates are always regenerated from scratch.
+The clusters are defined in [infrastructure/](infrastructure), and the tests in [tests/](tests).
 
-### Release Process
+> [!WARNING]
+> - Terraform state is local, in `deploy/infrastructure/personal/release-*`. `spawn-clusters.sh` deletes those folders before it starts. **Never re-run it while clusters exist:** the state would be lost and the cloud resources orphaned.
+> - Certificates are always regenerated from scratch.
 
-#### Ensure require CLI tools are available and set up
+## Prerequisite
+
+### 1. Tools
+
+terraform, aws, gcloud, kubectl, helm, tk (Tanka), docker, envsubst (package gettext-base), curl and zip. Docker must be running, and port 8085 must be free.
+
+### 2. Cloud access
+
 ```shell
-which gcloud aws terraform
-
-# login with aws
 aws login
 aws configure --profile aws-interuss-dss
 
-# login with gcloud
 gcloud auth login
-
-# your local path may vary for this configuration, but ensure the target projects are set correctly
-cat $HOME/.config/gcloud/configurations/config_default
-
-# could help if you encounter auth issues when other projects are setup in your local environment
-unset GOOGLE_CLOUD_PROJECT
+cat ~/.config/gcloud/configurations/config_default   # check that the project is the validation project
+unset GOOGLE_CLOUD_PROJECT                            # avoids auth issues if other projects are configured
 ```
 
-#### Configure environment variables
-* `export IMAGE=docker.io/interuss/dss:v0.22.0`
-* `export ZONE_ID=(AWS zone id)`
-* `export GOOGLE_PROJECT_NAME=(google project name)`
-* `export ZONE_NAME=(google zone name)`
-* `export AWS_PROFILE=...` (if needed)
+### 3. Configure environment variables
 
+```shell
+export IMAGE=docker.io/interuss/dss:v0.22.0
+export ZONE_ID=(AWS zone id)
+export GOOGLE_PROJECT_NAME=(google project name)
+export ZONE_NAME=(google zone name)
+export AWS_PROFILE=(if needed)
+```
 
-#### Deploy clusters
-* `./release/scripts/spawn-clusters.sh`
+Run the commands below from the root of the repository. Each step writes its logs to release/logs/<cluster>.<step>.log.
 
-Spawn clusters defined in infrastructure/. Config is copied into the usual 'personal/' folder and the terraform module is built.
-A parallel terraform apply is then run.
+## Procedure
 
-After this step, Kubernetes clusters are ready.
+### 1. Spawn the clusters (infrastructure layer)
+```shell
+./release/scripts/spawn-clusters.sh
+```
+This runs terraform apply on the four clusters in parallel and configurations are stored in `personal/`.
 
-If some issues are encountered during the deployment, it is safe to perform a `terraform apply` in the `personal/*` folders.
+Done when it prints `All 4 clusters up`. If some issues are encountered during the deployment, it is possible to perform a `terraform apply` in the `personal/*` folders.
 
-#### Configure clusters
-* `./release/scripts/configure-clusters.sh`
+### 2. Configure clusters
+```shell
+./release/scripts/configure-clusters.sh
+```
 
-Fetch the Kubernetes configuration for clusters, generate certificates (trusted between clusters), and apply certificates configuration.
+This fetches the Kubernetes credentials, generates new certificates, and makes the two instances of each pool trust each other.
+
+Done when it prints `All 4 clusters prepared`.
 
 After this step, services are ready to be deployed.
 
-#### Deploy services
-* `./release/scripts/deploy-services.sh`
+### 3. Deploy the services
+```shell
+./release/scripts/deploy-services.sh
+```
+This deploys the DSS, then waits until https://<DSS>/healthy returns ok on the four instances. While it waits, it lists the pods that are not ready.
 
-Deploy services using Helm or Tanka. Wait for the dss /healthy endpoint to return OK.
+Done when it prints `All 4 clusters healthy`.
 
-After this step, services are ready to be tested.
+### 4. Run the functional tests
+```shell
+./release/scripts/run-tests.sh
+```
 
-#### Run tests
-* `./release/scripts/run-tests.sh`
+This starts a local dummy OAuth server on port 8085. It then runs the prober against each instance, and the USS qualifier configurations crdb and ybdb against each pool.
 
-Run the prober and the qualifier against deployed services.
+Done when it prints `ALL PASSED`. If it prints `FAILED`, the image did not pass validation. Keep the logs, and continue to step 6 to collect the results.
 
-A local 'dummy-oauth' service is spwaned to retrive tokens.
+### 5. Benchmark performance
 
-#### Compile results
-* `./release/scripts/compile-results.sh`
+While the clusters are still up, run the benchmarker with the configurations in tests/benchmarker/ twice: once with db_type = 'crdb' and once with db_type = 'ybdb'.
 
-Zip archive containing results will be available in `release/output`.
+Done when the outputs contain the four scenarios aws crdb, google crdb, aws ybdb and google ybdb.
 
-#### Destroy clusters
-* `./release/scripts/destroy-clusters.sh`
+### 6. Compile the results
+```shell
+./release/scripts/compile-results.sh
+```
 
-Cleanup resources by:
+Done when `release/output/<version>.zip` exists, with this structure:
 
-* Uninstalling Helm / Tanka services
-* Removing Kubernetes persistent volumes
-* Applying terraform destroy to release clusters
+```
+<version>/
+├── cockroachdb/
+│   ├── README.md
+│   ├── prober/
+│   │   ├── dss1-aws.txt
+│   │   └── dss2-google.txt
+│   └── uss_qualifier/
+│       └── pooled_dss_probing/ 
+└── yugabyte/
+    └── (same structure)
+```
 
-No manual cleaning operations are needed after this step.
+The benchmarker outputs from step 5 are not included in the zip.
+
+### 7. Destroy the clusters
+```shell
+./release/scripts/destroy-clusters.sh
+```
+
+This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster.
+
+Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log, then check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
