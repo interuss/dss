@@ -32,3 +32,9 @@ Following the initial discussion, the next step will be to create a design docum
 
 #### Work and PRs breakdown
 Upon reviewing your design document, an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers) may require you to break the contribution into smaller packages, allowing small PRs to be reviewed progressively. See this page for an actual [example](https://github.com/interuss/dss/wiki/Updating-SCD-API).
+
+## Release notes
+
+If your PR introduces a major change, especially a breaking change to configuration or an important new feature, update [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) in the same PR with what users need to migrate to it and use it.
+
+See [RELEASE.md](RELEASE.md) for how releases are published.

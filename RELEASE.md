@@ -1,13 +1,17 @@
 # Releasing the DSS
 
-This document is for InterUSS committers. Release notes are on the [releases page](https://github.com/interuss/dss/releases). 
+This document is for InterUSS committers. Release notes are on the [releases page](https://github.com/interuss/dss/releases).
 
 ## Versions
 
 Releases are git tags `interuss/dss/vX.Y.Z[-W]`, following [semantic versioning](https://semver.org).
 
 - **Release candidates** (`vX.Y.Z-rcN`) are for early adopters.
-- **Stable versions** (`vX.Y.Z`) are usually a promoted release candidate. To be promoted, a release must pass the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober), the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier) and performance benchmarks should be documented using the [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker) on a DSS pool of two DSS instances hosted in two separate clouds (see [release/infrastructure](./release/infrastructure)). Reports are attached to the release and a discussion page including extended validation information may be created.
+- **Stable versions** (`vX.Y.Z`) are usually a promoted release candidate. Before a stable version is published, it must be validated on a DSS pool of two DSS instances hosted in two separate clouds (see [release/infrastructure](./release/infrastructure)):
+  - it must pass the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) and the [USS qualifier](https://github.com/interuss/monitoring/tree/main/monitoring/uss_qualifier);
+  - its performance should be documented with the [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker).
+
+  The [validation artifacts](#validation-artifacts) are attached to the release. A discussion page with extended validation information may also be created.
 
 To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md).
 
@@ -19,16 +23,14 @@ To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES
    - Click **Generate release notes**, then paste the pending content of NEXT_RELEASE_NOTES.md at the top.
    - Select release label: `Pre-release`
    - Click **Publish release**. This pushes the tag.
-
 3. Wait for [dss-publish.yml](.github/workflows/dss-publish.yml) to build, sign and push `docker.io/interuss/dss:vX.Y.Z-rcN`. This also updates the `latest` image tag.
-4. Optionally, validate the image.
-  a. Follow release/README.md with IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN. Pin the monitoring version with MONITORING_IMAGE=interuss/monitoring:vA.B.C (it defaults to latest).
-  b. Run the benchmarker as described in release/tests/benchmarker, once with db_type set to crdb and once with ybdb.
-  c. Edit the release: add a Validation section that gives the monitoring version used and summarizes the results, then attach the artifacts.
+4. Optionally, validate the image:
+   1. Follow [release/README.md](release/README.md) with `IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN`. Pin the monitoring version with `MONITORING_IMAGE=interuss/monitoring:vA.B.C` (it defaults to `latest`).
+   2. Edit the release: add a **Validation** section that gives the monitoring version used and summarizes the results, then attach the artifacts.
 
 ## Promote to stable
 
-Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the validated release candidate. Validation (point 4) is mandatory.
+Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the release candidate. Set release label as `Latest`**. Validation (step 4) is mandatory.
 
 ## After a release
 
