@@ -5,6 +5,7 @@ Welcome to the DSS repository and thank you for your interest in contributing to
 In order to maximize the quality of contributions while keeping the time and energy spent by contributors and committers to a minimum, we kindly ask you to adhere to the practices described below.
 
 ## General principles
+
 1. Any change to resources in this repository must be handled through a [Pull Request (PR)](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
 1. PRs to the master branch are expected to pass [continuous integration automated tests](.github/workflows/CI.md).
@@ -15,20 +16,40 @@ In order to maximize the quality of contributions while keeping the time and ene
 
 1. Before your PR can be accepted, you must submit a Contributor License Agreement (CLA). See [here](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#contributor-license-agreement-cla) for more details.
 
-1. Contributions involving Python code should generally follow the [InterUSS Python style guide](https://github.com/interuss/tsc/blob/main/python_style_guide.md). 
+1. Contributions involving Python code should generally follow the [InterUSS Python style guide](https://github.com/interuss/tsc/blob/main/python_style_guide.md).
 
 1. The size of individual PRs is a key factor with respect to the quality and efficiency of the reviews. When [Large Contributions](#large-contributions) are required, they should be structured as a series of small and focused PRs. Here are some helpful references:
     - [Strategies For Small, Focused Pull Requests, Steve Hicks](https://artsy.github.io/blog/2021/03/09/strategies-for-small-focused-pull-requests/)
     - [The Art of Small Pull Requests, David Wilson](https://essenceofcode.com/2019/10/29/the-art-of-small-pull-requests/)
 
 ### Large contributions
+
 Given the critical nature of the content of this repository, contributions require careful review. To ensure that large contributions don't have a negative impact on the quality of the reviews, the following steps help ensure your contribution gets merged progressively, maximizing knowledge sharing between contributors and committers.
 
 #### Initial discussion
+
 Get in touch with an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers) using the [mailing list](https://github.com/interuss/tsc#mailing-list) or [Slack](https://github.com/interuss/tsc#slack) so they know what to expect and can provide early feedback and guidance.
 
 #### Design document
+
 Following the initial discussion, the next step will be to create a design document that provides a detailed description of the contribution and outlines clearly how it will integrate and interact with the existing components. The expected content of this design document includes a narrative, overall architecture description, sequence diagrams, and test plans. If applicable, based on the advice of an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers), this material should be submitted as a PR to the repository in a DESIGN.md file or design directory.
 
 #### Work and PRs breakdown
+
 Upon reviewing your design document, an [InterUSS committer](https://github.com/interuss/tsc/blob/main/CONTRIBUTING.md#committers) may require you to break the contribution into smaller packages, allowing small PRs to be reviewed progressively. See this page for an actual [example](https://github.com/interuss/dss/wiki/Updating-SCD-API).
+
+## Release notes
+
+If your PR introduces a major change, especially a breaking change to configuration or an important new feature, update [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) in the same PR with what users need to migrate to it and use it.
+
+If your change is larger than the anticipated next version recorded in NEXT_RELEASE_NOTES.md, bump that version in the same PR:
+
+| Last release | Anticipated next version | Your change                    | Update the anticipated version? |
+| ------------ | ------------------------ | ------------------------------ | ------------------------------- |
+| v0.24.0      | v0.24.1                  | Bug fix                        | No                              |
+| v0.24.0      | v0.24.1                  | New feature or breaking change | Yes, to v0.25.0                 |
+| v0.24.0      | v0.25.0                  | Any change                     | No, already bumped              |
+
+Currently, no major version > 0 has been released. The criteria for such release is subject to TSC approval.
+
+See [RELEASE.md](RELEASE.md) for how releases are published.
