@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package scd.snapshot;
 
+import "eviction/eviction.proto";
 import "google/protobuf/timestamp.proto";
 import "models.proto";
 import "scd/availability.proto";
@@ -58,4 +59,6 @@ message Snapshot {
     map<string, OperationalIntent> operational_intents = 4;
     // availabilities holds the stored USS availabilities keyed by USS Manager.
     map<string, Availability> availabilities = 5;
+    // eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
+    eviction.Config eviction_config = 6;
 }

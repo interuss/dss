@@ -8,6 +8,7 @@ import (
 	"github.com/golang/geo/s2"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
+	storerepos "github.com/interuss/dss/pkg/store/repos"
 )
 
 // ErrNotFound indicates that a requested resource does not exist.
@@ -124,4 +125,5 @@ type Repository interface {
 	Subscription
 	Constraint
 	UssAvailability
+	storerepos.Eviction
 }

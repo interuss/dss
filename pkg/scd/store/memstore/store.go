@@ -19,6 +19,7 @@ import (
 type repo struct {
 	state      state
 	checkpoint state
+	eviction   *memstore.Eviction
 }
 
 // state is the serializable in-memory state.
@@ -31,6 +32,8 @@ type state struct {
 	OperationalIntents map[dssmodels.ID]*operationalIntentRecord
 	// Availabilities holds the stored USS availabilities keyed by USS Manager.
 	Availabilities map[dssmodels.Manager]*availabilityRecord
+	// EvictionConfig holds the eviction settings, nil until they are first set.
+	EvictionConfig *dssmodels.EvictionConfig
 }
 
 // constraintRecord is the in-memory representation of a Constraint. The
@@ -86,6 +89,7 @@ type availabilityRecord struct {
 
 func newRepo() *repo {
 	r := &repo{}
+	r.eviction = newEviction(r)
 	r.resetState()
 	return r
 }
@@ -232,6 +236,7 @@ func (s state) clone() state {
 		Subscriptions:      subs,
 		OperationalIntents: ois,
 		Availabilities:     avails,
+		EvictionConfig:     s.EvictionConfig,
 	}
 }
 

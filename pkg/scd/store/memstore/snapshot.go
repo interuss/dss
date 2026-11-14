@@ -72,6 +72,10 @@ func (r *repo) GetSnapshot() (*raftpb.Snapshot, error) {
 		}
 	}
 
+	if r.state.EvictionConfig != nil {
+		snap.EvictionConfig = r.state.EvictionConfig.ToProto()
+	}
+
 	return &raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_ScdSnapshot{ScdSnapshot: snap}}, nil
 }
 
@@ -155,6 +159,13 @@ func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
 			Uss:          uss,
 			Availability: availability,
 			UpdatedAt:    pb.GetUpdatedAt().AsTime(),
+		}
+	}
+
+	if snap.GetEvictionConfig() != nil {
+		restored.EvictionConfig = new(dssmodels.EvictionConfig)
+		if err := restored.EvictionConfig.FromProto(snap.GetEvictionConfig()); err != nil {
+			return stacktrace.Propagate(err, "invalid eviction config in snapshot")
 		}
 	}
 
