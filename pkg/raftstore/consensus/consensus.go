@@ -173,30 +173,18 @@ func (c *Consensus) startNode(newNode func() raft.Node) (bool, node.State) {
 // stops the Raft node and closes its WAL. It must be called only once.
 func (c *Consensus) Stop(ctx context.Context) error {
 	c.logger.Info("stopping consensus")
+	if err := c.metricsRegistration.Unregister(); err != nil {
+		c.logger.Error("failed to unregister raft metrics", zap.Error(err))
+	}
 	close(c.stopC)
 
-	if c.node.RaftNode() != nil {
+	raftNode := c.node.RaftNode()
+	if raftNode != nil {
 		select {
 		case <-c.doneC:
 		case <-ctx.Done():
 			return stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
 		}
-	}
-
-	c.leave()
-
-	err := c.storage.wal.Close()
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to close the WAL")
-	}
-	c.logger.Info("WAL closed")
-	return nil
-}
-
-// leave stops this node from taking part in the group. It can be called more than once.
-func (c *Consensus) leave() {
-	if err := c.metricsRegistration.Unregister(); err != nil {
-		c.logger.Error("failed to unregister raft metrics", zap.Error(err))
 	}
 
 	c.listener.unregister(c.transport.ClusterID)
@@ -205,10 +193,18 @@ func (c *Consensus) leave() {
 	c.transport.Stop()
 	c.logger.Info("transport stopped")
 	c.endpoint.close()
-	if raftNode := c.node.RaftNode(); raftNode != nil {
+	// A waiting node, or one found removed at startup, has no raft node.
+	if raftNode != nil {
 		raftNode.Stop()
 		c.logger.Info("raft node stopped")
 	}
+
+	err := c.storage.wal.Close()
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to close the WAL")
+	}
+	c.logger.Info("WAL closed")
+	return nil
 }
 
 // HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
@@ -531,18 +527,12 @@ func (c *Consensus) registerMetrics() error {
 	return nil
 }
 
-// startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine.
-// It exits the process on errors it can't recover from, so that the DSS node gets restarted instead of serving errors.
+// startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine
+// TODO: restart the store when this goroutine stops on an error, instead of leaving it stopped
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	raftNode := c.node.RaftNode()
 	go func() {
 		defer close(c.doneC)
-
-		select {
-		case <-c.stopC:
-			return
-		default:
-		}
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
@@ -555,7 +545,8 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 				raftNode.Tick()
 			case raftUpdate, ok := <-raftNode.Ready():
 				if !ok {
-					c.logger.Fatal("could not read from Ready()")
+					c.logger.Error("could not read from Ready()")
+					return
 				}
 
 				if softState := raftUpdate.SoftState; softState != nil && softState.Lead != raft.None {
@@ -567,23 +558,27 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 
 				err := c.storage.handleReceivedState(raftUpdate.Snapshot, raftUpdate.HardState, raftUpdate.Entries)
 				if err != nil {
-					c.logger.Fatal("failed to handle received snapshot", zap.Error(err))
+					c.logger.Error("failed to handle received snapshot", zap.Error(err))
+					return
 				}
 
 				if !raft.IsEmptySnap(raftUpdate.Snapshot) {
 					if raftUpdate.Snapshot.GetMetadata().GetIndex() <= c.appliedIndex {
-						c.logger.Fatal("snapshot index shall be greater than current applied index",
+						c.logger.Error("snapshot index shall be greater than current applied index",
 							zap.Uint64("snapshotIndex", raftUpdate.Snapshot.GetMetadata().GetIndex()), zap.Uint64("appliedIndex", c.appliedIndex))
+						return
 					}
 
 					env, err := decodeSnapshot(raftUpdate.Snapshot.GetData())
 					if err != nil {
-						c.logger.Fatal("failed to decode received snapshot", zap.Error(err))
+						c.logger.Error("failed to decode received snapshot", zap.Error(err))
+						return
 					}
 
 					err = c.membership.restore(env.Members, env.Removed)
 					if err != nil {
-						c.logger.Fatal("failed to restore membership", zap.Error(err))
+						c.logger.Error("failed to restore membership", zap.Error(err))
+						return
 					}
 					c.commitC <- EntryCommit{Snapshot: env.AppSnapshot}
 
@@ -597,18 +592,25 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 
 				entries, err := c.entriesToApply(raftUpdate.CommittedEntries)
 				if err != nil {
-					c.logger.Fatal("failed to get entries to apply", zap.Error(err))
+					c.logger.Error("failed to get entries to apply", zap.Error(err))
+					return
 				}
 
 				err = c.publishEntries(entries, snapshotInterval)
 				if errors.Is(err, errSelfRemoved) {
 					c.logger.Warn("this node was removed from the Raft group, stopping")
 					c.node.SetRemoved()
-					c.leave()
+					c.transport.Stop()
+					raftNode.Stop()
+					// without its local state, the group starts again as a waiting node
+					if err := c.storage.delete(); err != nil {
+						c.logger.Error("failed to delete the local state", zap.Error(err))
+					}
 					return
 				}
 				if err != nil {
-					c.logger.Fatal("failed to publish entries", zap.Error(err))
+					c.logger.Error("failed to publish entries", zap.Error(err))
+					return
 				}
 
 				for _, rs := range raftUpdate.ReadStates {
@@ -620,8 +622,10 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 
 				raftNode.Advance()
 			case err := <-c.transport.ErrorC:
+				// rafthttp only reports here that this node was removed from the group
 				c.logger.Error("transport error", zap.Error(err))
-				c.leave()
+				c.transport.Stop()
+				raftNode.Stop()
 				return
 			}
 		}

@@ -22,7 +22,8 @@ import (
 
 // storage persists the Raft log and snapshots and manages the raft in-memory storage.
 type storage struct {
-	logger *zap.Logger
+	logger  *zap.Logger
+	dataDir string
 
 	*raft.MemoryStorage
 
@@ -135,7 +136,8 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 	logger.Info("Loaded previous hardstate and entries to Raft memory storage", zap.Any("hard-state", state), zap.Int("entries-number", len(entries)))
 
 	return &storage{
-		logger: logger,
+		logger:  logger,
+		dataDir: dataDir,
 
 		MemoryStorage: raftMemoryStorage,
 
@@ -178,6 +180,14 @@ func loadSnapshot(logger *zap.Logger, walPath string, snapshotter *snap.Snapshot
 
 	logger.Info("Loaded snapshot", zap.Uint64("index", snapshot.GetMetadata().GetIndex()), zap.Uint64("term", snapshot.GetMetadata().GetTerm()))
 	return snapshot, nil
+}
+
+// delete removes the WAL and the snapshots, so that the node starts as a waiting node with a new ID next time.
+func (s *storage) delete() error {
+	if err := os.RemoveAll(s.dataDir); err != nil {
+		return stacktrace.Propagate(err, "failed to delete %s", s.dataDir)
+	}
+	return nil
 }
 
 // save saves the given snapshot to the snapshotter and the wal.

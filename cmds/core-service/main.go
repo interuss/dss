@@ -298,21 +298,25 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		return stacktrace.NewError("Public endpoint not set")
 	}
 
+	// the stores keep running after a signal, so that the requests in progress complete before they are shut down below
+	storesCtx, storesCancel := context.WithCancel(context.WithoutCancel(ctx))
+	defer storesCancel()
+
 	// Initialize the stores
-	auxStore, err := auxs.Init(ctx, logger, true)
+	auxStore, err := auxs.Init(storesCtx, logger, true)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to initialize aux store")
 	}
 	var ridStore rids.Store
 	if *enableRID {
-		ridStore, err = rids.Init(ctx, logger, true)
+		ridStore, err = rids.Init(storesCtx, logger, true)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to initialize rid store")
 		}
 	}
 	var scdStore scds.Store
 	if *enableSCD {
-		scdStore, err = scds.Init(ctx, logger, true)
+		scdStore, err = scds.Init(storesCtx, logger, true)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to initialize scd store")
 		}
@@ -326,9 +330,9 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		readiness["scd"] = scdStore
 	}
 
-	// The stores are closed when this function returns, so that a new attempt after a dsserr.Unavailable error starts them again.
+	// The stores are shut down when this function returns, so that a new attempt after a dsserr.Unavailable error starts them again.
 	defer func() {
-		stores := []interface{ Close(context.Context) error }{auxStore}
+		stores := []interface{ Shutdown(context.Context) error }{auxStore}
 		if *enableRID {
 			stores = append(stores, ridStore)
 		}
@@ -336,8 +340,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			stores = append(stores, scdStore)
 		}
 		for _, store := range stores {
-			if err := store.Close(context.Background()); err != nil {
-				logger.Warn("Failed to close the store", zap.Error(err))
+			if err := store.Shutdown(context.Background()); err != nil {
+				logger.Warn("Failed to shut down the store", zap.Error(err))
 			}
 		}
 	}()

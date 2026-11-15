@@ -37,8 +37,7 @@ type Store[R any] struct {
 }
 
 func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
-	// we keep processing commits until Close even after ctx is canceled, otherwise Stop can block forever
-	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	ctx, cancel := context.WithCancel(ctx)
 
 	sugar := logger.WithOptions(zap.AddCallerSkip(1)).Sugar()
 	raft.SetLogger(&ZapRaftLogger{sugar: sugar})
@@ -126,8 +125,8 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.raftRepo.GetRepo(), nil
 }
 
-// Close shuts down the consensus instance and processCommits loop.
-func (s *Store[R]) Close(ctx context.Context) error {
+// Shutdown shuts down the consensus instance and processCommits loop.
+func (s *Store[R]) Shutdown(ctx context.Context) error {
 	err := s.Stop(ctx)
 	s.cancel()
 	s.logger.Info("waiting for commit processing goroutine to exit")
