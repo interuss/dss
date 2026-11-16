@@ -29,7 +29,15 @@ To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES
 
 ## Promote to stable
 
-Repeat steps 2–4 with the tag `interuss/dss/vX.Y.Z`, targeting the commit of the release candidate. Set release label as `Latest`. Validation (step 4) is mandatory.
+After a release candidate has been sufficiently validated by both the required validation process and any additional validation that may be appropriate, promote the validated release candidate to a full release.
+
+1. Create and push a new tag of the form `interuss/dss/vX.Y.Z` to the repo at the same commit as the `interuss/dss/vX.Y.Z-rcN` release candidate that was successfully validated.
+2. Go to [Releases → Draft a new release](https://github.com/interuss/dss/releases/new):
+3. Populate **Tag** with the existing `interuss/dss/vX.Y.Z` tag you just created and **Title** with `vX.Y.Z`.
+4. Copy the full content of the release notes for the release candidate.  Add any additional validation information that was performed on the release candidate since its release notes were last edited.  Edit if necessary to ensure information is easily readable by users seeking to understand whether any changes affect their use cases.
+5. Select "Latest".
+6. Check "Create a discussion for this release" if there is additional information about this release that is not in the release notes (extended validation, for instance).
+7. Click "Publish release"
 
 ## After a release
 
