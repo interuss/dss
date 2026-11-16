@@ -9,3 +9,8 @@ scrape_configs:
           - local-dss-core-service:8079
           - local-dss-core-service-2:8079
           - local-dss-core-service-3:8079
+    # Stable per-node identity, mirroring the pod_name label set by the K8s-Pods job in tanka/helm.
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '([^:]+)(?::\d+)?'
+        target_label: pod_name

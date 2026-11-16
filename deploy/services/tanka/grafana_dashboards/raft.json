@@ -3211,8 +3211,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "rate(process_cpu_seconds_total[5m])",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "rate(process_cpu_seconds_total[5m]) * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3328,8 +3328,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "process_resident_memory_bytes",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "process_resident_memory_bytes * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3445,8 +3445,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "go_memstats_heap_inuse_bytes + go_memstats_heap_idle_bytes",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "(go_memstats_heap_inuse_bytes + go_memstats_heap_idle_bytes) * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3562,8 +3562,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "go_memstats_sys_bytes",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "go_memstats_sys_bytes * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3679,8 +3679,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "go_goroutines",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "go_goroutines * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3796,8 +3796,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "go_gc_duration_seconds{quantile=\"0.75\"}",
-                        "legendFormat": "{{instance}}{{pod_name}} p75"
+                        "expr": "go_gc_duration_seconds{quantile=\"0.75\"} * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
@@ -3913,8 +3913,8 @@
                         "name": "prometheus"
                       },
                       "spec": {
-                        "expr": "rate(go_memstats_alloc_bytes_total[5m])",
-                        "legendFormat": "{{instance}}{{pod_name}}"
+                        "expr": "rate(go_memstats_alloc_bytes_total[5m]) * on(instance) group_left(node_id) count by (instance, node_id) (raft_snapshot_index{group=\"aux\"})",
+                        "legendFormat": "{{pod_name}}"
                       }
                     },
                     "refId": "A",
