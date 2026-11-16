@@ -26,6 +26,7 @@ If applicable, add relevant `core-service` logs, HTTP request/response payloads,
  - Configuration Flags: [e.g. `enable_time_based_notification_index`]
  - Deployment Method: [e.g. local `docker-compose`, Helm, Tanka, Terraform]
  - Infrastructure: [e.g. AWS, GCP, Azure, on-prem, local machine]
+ - Latency Distribution (p50 and p95 between DSS nodes and between DSS instances): [e.g. intra-instance <2ms, inter-instance regions, or output from CockroachDB Network Latency page]
  - Pool Size (if applicable): [e.g. single instance, 3-node instance, pool of x instances with y nodes each]
 
 **Additional context**
