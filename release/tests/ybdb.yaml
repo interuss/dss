@@ -18,7 +18,6 @@ v1:
         netrid_dss_instances_v22a: { $ref: './library/ybdb.yaml#/netrid_dss_instances_v22a' }
         netrid_dss_instances_v19: { $ref: './library/ybdb.yaml#/netrid_dss_instances_v19' }
         che_non_conflicting_flights: {$ref: '../dev/library/resources.yaml#/che_non_conflicting_flights'}
-        test_exclusions: { $ref: '../dev/library/resources.yaml#/test_exclusions' }
     non_baseline_inputs:
       - v1.test_run.resources.resource_declarations.utm_auth
       - v1.test_run.resources.resource_declarations.second_utm_auth
@@ -41,7 +40,6 @@ v1:
           problematically_big_area: kentland_problematically_big_area
           second_utm_auth: second_utm_auth
           flight_intents: che_non_conflicting_flights
-          test_exclusions: test_exclusions
     execution:
       stop_fast: false
   artifacts:
@@ -68,7 +66,7 @@ v1:
   validation:
     criteria:
       - $ref: ../dev/library/validation.yaml#/execution_error_none
-      - $ref: ../dev/library/validation.yaml#/failed_check_severity_max_low
+      - $ref: ../dev/library/validation.yaml#/failed_check_severity_max_low_except_acceptable
       - applicability:
           skipped_actions: {}
         pass_condition:
