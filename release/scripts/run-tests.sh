@@ -84,6 +84,10 @@ for name in "${CLUSTERS[@]}"; do
     junit="$LOG_DIR/$name.prober.junit.xml"
     : > "$junit"   # docker -v <file>:<file> requires the host file to exist
     printf '  %s→%s  %-32s %s\n' "$BLUE" "$RESET" "$name" "$endpoint"
+    prober_extra_args=()
+    if grep -Eq '^[[:space:]]*enable_time_based_notification_index[[:space:]]*=[[:space:]]*true' "$RELEASE_INFRA_DIR/$name.tfvars"; then
+        prober_extra_args+=(--scd-time-based-notification-index true)
+    fi
     start_ts=$(date +%s)
     if docker run --rm \
             --name "dss-release-prober-$name" \
@@ -100,6 +104,7 @@ for name in "${CLUSTERS[@]}"; do
                 --scd-auth2   "DummyOAuth($OAUTH_URL_IN_NET,sub=fake_uss2)" \
                 --scd-api-version 1.0.0 \
                 --heavy_traffic_concurrent_workers 2 \
+                "${prober_extra_args[@]}" \
             >"$log" 2>&1; then
         printf '    %s✓%s  prober ok in %s\n' "$GREEN" "$RESET" "$(fmt_dur "$(( $(date +%s) - start_ts ))")"
     else
