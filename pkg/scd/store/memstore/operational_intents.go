@@ -1,6 +1,7 @@
 package memstore
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -150,10 +151,10 @@ func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmod
 			continue
 		}
 		matched = append(matched, rec)
-
-		if len(matched) >= dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
-			break
-		}
+	}
+	slices.SortFunc(matched, func(a, b *operationalIntentRecord) int { return cmp.Compare(a.ID, b.ID) })
+	if len(matched) > dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
+		matched = matched[:dssmodels.MaxResultLimit]
 	}
 	return r.buildOperationalIntents(ctx, matched)
 }
