@@ -1,6 +1,6 @@
 # DSS release candidate validation procedure
 
-This procedure validates a DSS image. It deploys it in two DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
+This procedure validates the image of a DSS release candidate. It deploys it in two DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
 
 | Cluster                   | Cloud                           | Datastore   | Deployed with | Nodes               |
 | ------------------------- | ------------------------------- | ----------- | ------------- | ------------------- |
