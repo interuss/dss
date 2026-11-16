@@ -42,3 +42,5 @@ evict_rid_schedule    = "*/2 * * * *"
 
 prometheus_hostname = "prometheus.release-ybdb.ci.aws-interuss.uspace.dev"
 enable_monitoring   = true
+
+enable_time_based_notification_index = true
