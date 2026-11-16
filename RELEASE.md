@@ -1,6 +1,6 @@
 # Releasing the DSS
 
-This document is for InterUSS committers. Release notes are on the [releases page](https://github.com/interuss/dss/releases).
+This document is the release process for InterUSS committers to follow. Release notes are on the [releases page](https://github.com/interuss/dss/releases).
 
 ## Versions
 
