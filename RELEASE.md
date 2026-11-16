@@ -25,6 +25,7 @@ To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES
 4. Validate the release candidate:
    1. Follow [release/README.md](release/README.md) with `IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN`.
    2. Edit the release: add a **Validation** section that gives the monitoring version used and summarizes the results, then attach the artifacts.
+   3. If problems or shortcomings preventing release are found, validation on this candidate can stop.  Once these are resolved, begin the process again with the next release candidate.
 
 ## Promote to stable
 
