@@ -23,7 +23,7 @@ To choose the version, start from the anticipated version in [NEXT_RELEASE_NOTES
    - Click **Publish release**. This pushes the tag.
 3. Wait for [dss-publish.yml](.github/workflows/dss-publish.yml) to build, sign and push `docker.io/interuss/dss:vX.Y.Z-rcN`. This also updates the `latest` image tag.
 4. Validate the release candidate:
-   1. Follow [release/README.md](release/README.md) with `IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN`. Pin the monitoring version with `MONITORING_IMAGE=interuss/monitoring:vA.B.C` (it defaults to `latest`).
+   1. Follow [release/README.md](release/README.md) with `IMAGE=docker.io/interuss/dss:vX.Y.Z-rcN`.
    2. Edit the release: add a **Validation** section that gives the monitoring version used and summarizes the results, then attach the artifacts.
 
 ## Promote to stable
