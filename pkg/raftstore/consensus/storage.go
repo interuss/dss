@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/stacktrace"
@@ -23,9 +24,10 @@ import (
 
 // storage persists the Raft log and snapshots and manages the raft in-memory storage.
 type storage struct {
-	logger   *zap.Logger
-	walPath  string
-	snapPath string
+	logger      *zap.Logger
+	walPath     string
+	snapPath    string
+	archivePath string
 
 	*raft.MemoryStorage
 
@@ -138,9 +140,10 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 	logger.Info("Loaded previous hardstate and entries to Raft memory storage", zap.Any("hard-state", state), zap.Int("entries-number", len(entries)))
 
 	return &storage{
-		logger:   logger,
-		walPath:  walPath,
-		snapPath: snapshotPath,
+		logger:      logger,
+		walPath:     walPath,
+		snapPath:    snapshotPath,
+		archivePath: path.Join(dataDir, "archive"),
 
 		MemoryStorage: raftMemoryStorage,
 
@@ -185,20 +188,26 @@ func loadSnapshot(logger *zap.Logger, walPath string, snapshotter *snap.Snapshot
 	return snapshot, nil
 }
 
-// delete removes the WAL and the snapshots, so that the node starts as a waiting node with a new ID next time.
-// Only the files written by the WAL and the snapshotter are removed, in case the data directory is misconfigured.
-func (s *storage) delete() error {
-	for _, pattern := range []string{path.Join(s.walPath, "*.wal"), path.Join(s.walPath, "*.tmp"), path.Join(s.snapPath, "*.snap")} {
-		files, err := filepath.Glob(pattern)
+// archive moves the WAL and snapshot files to archive/<node ID>, which the raft lib doesn't read, so that the node starts
+// as a waiting node with a new ID next time.
+func (s *storage) archive(nodeID uint64) error {
+	dest := path.Join(s.archivePath, strconv.FormatUint(nodeID, 10))
+	for _, dir := range []struct{ path, pattern string }{{s.walPath, "*.wal"}, {s.snapPath, "*.snap"}} {
+		files, err := filepath.Glob(path.Join(dir.path, dir.pattern))
 		if err != nil {
-			return stacktrace.Propagate(err, "failed to list %s", pattern)
+			return stacktrace.Propagate(err, "failed to list %s", dir.pattern)
+		}
+		target := path.Join(dest, path.Base(dir.path))
+		if err := os.MkdirAll(target, 0o750); err != nil {
+			return stacktrace.Propagate(err, "failed to create %s", target)
 		}
 		for _, f := range files {
-			if err := os.Remove(f); err != nil {
-				return stacktrace.Propagate(err, "failed to delete %s", f)
+			if err := os.Rename(f, path.Join(target, path.Base(f))); err != nil {
+				return stacktrace.Propagate(err, "failed to move %s to %s", f, target)
 			}
 		}
 	}
+	s.logger.Info("archived the WAL and the snapshots", zap.String("path", dest))
 	return nil
 }
 

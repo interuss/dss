@@ -601,8 +601,8 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					c.transport.Stop()
 					raftNode.Stop()
 					// to start again as a waiting node
-					if err := c.storage.delete(); err != nil {
-						c.logger.Error("failed to delete the local state", zap.Error(err))
+					if err := c.storage.archive(c.nodeID); err != nil {
+						c.logger.Error("failed to archive the local state", zap.Error(err))
 					}
 					return
 				}
