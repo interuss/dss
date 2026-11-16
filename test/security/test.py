@@ -3,6 +3,7 @@
 # Extract URLs directly from the code to be avoid the need of updated API and
 # to ensure we get all patterns from the code.
 # Assume all endpoint need authentification, but some can be whitelisted there.
+# The admin API is served on a Unix socket only, so its endpoints are checked to not be served publicly.
 # Expect that `start-locally` have been ran
 
 import base64
@@ -18,12 +19,9 @@ from urllib import request
 
 import jwt
 
+ADMIN_API_DIR = "pkg/api/adminv1/"
+
 ENDPOINT_WITHOUT_AUTHS = [
-    "/admin/v1/raft/groups",  # TODO: remove when the admin API is protected
-    "/admin/v1/raft/groups/{group_name}",  # TODO: remove when the admin API is protected
-    "/admin/v1/raft/groups/{group_name}/members",  # TODO: remove when the admin API is protected
-    "/admin/v1/raft/groups/{group_name}/members/{node_id}",  # TODO: remove when the admin API is protected
-    "/admin/v1/raft/groups/{group_name}/this_node",  # TODO: remove when the admin API is protected
     "/aux/v1/configuration/accepted_ca_certs",
     "/aux/v1/configuration/ca_certs",
     "/aux/v1/version",
@@ -52,13 +50,15 @@ logging.basicConfig(
 logger = logging.getLogger("security")
 
 
-def build_urls():
+def build_urls(admin):
 
     pattern = re.compile(r'Method:\s*http\.Method(\w+).*?Path:\s*"([^"]+)"')
 
     urls = set()
 
     for filepath in glob.glob("pkg/api/**/*.go", recursive=True):
+        if filepath.startswith(ADMIN_API_DIR) != admin:
+            continue
         with open(filepath) as f:
             for match in pattern.finditer(f.read()):
                 method = match.group(1).upper()
@@ -121,6 +121,22 @@ def get_valid_token_without(field):
 
 def fill_path(path):
     return re.sub(r"\{[^}]+\}", "test", path)
+
+
+def test_not_served(method, path):
+
+    logger.debug("❓ Testing that the endpoint is not served publicly...")
+
+    conn = http.client.HTTPConnection("localhost:8082")
+    conn.request(method, fill_path(path))
+    resp = conn.getresponse()
+    if resp.status != 404:
+        logger.error(
+            f"❌ Unexpected response {resp.status} instead of 404 for an admin endpoint, which must only be served on the admin socket."
+        )
+        sys.exit(1)
+    else:
+        logger.info("✅ Admin endpoint is not served publicly.")
 
 
 def test_no_authentification(method, path):
@@ -403,9 +419,11 @@ def test_valid_token(method, path):
         logger.info(f"✅ Valid token generated a {resp.status}.")
 
 
-urls = build_urls()
+for method, path in sorted(build_urls(admin=True)):
+    logger.info(f"📋 Testing {method} {path}...")
+    test_not_served(method, path)
 
-for method, path in sorted(urls):
+for method, path in sorted(build_urls(admin=False)):
     logger.info(f"📋 Testing {method} {path}...")
 
     if path in ENDPOINT_WITHOUT_AUTHS:
