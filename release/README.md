@@ -70,7 +70,7 @@ After this step, services are ready to be deployed.
 ./release/scripts/deploy-services.sh
 ```
 
-This deploys the DSS, then waits until https://<DSS>/healthy returns ok on the four instances. While it waits, it lists the pods that are not ready.
+This deploys the DSS instances, then waits until https://<DSS>/healthy returns ok on the four instances. While it waits, it lists the pods that are not ready.
 
 Done when it prints `All 4 clusters healthy`.
 
