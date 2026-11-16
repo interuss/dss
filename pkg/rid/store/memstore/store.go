@@ -19,6 +19,7 @@ import (
 type repo struct {
 	state      state
 	checkpoint state
+	eviction   *memstore.Eviction
 }
 
 // state is the serializable in-memory state.
@@ -27,6 +28,8 @@ type state struct {
 	ISAs map[dssmodels.ID]*isaRecord
 	// Subscriptions holds the stored subscriptions keyed by ID.
 	Subscriptions map[dssmodels.ID]*subscriptionRecord
+	// EvictionConfig holds the eviction settings, nil until they are first set.
+	EvictionConfig *dssmodels.EvictionConfig
 }
 
 // isaRecord is the in-memory representation of an ISA. It intentionally
@@ -62,6 +65,7 @@ type subscriptionRecord struct {
 
 func newRepo() *repo {
 	r := &repo{}
+	r.eviction = newEviction(r)
 	r.resetState()
 	return r
 }
@@ -206,7 +210,7 @@ func (s state) clone() state {
 	for id, rec := range s.Subscriptions {
 		subs[id] = rec.clone()
 	}
-	return state{ISAs: isas, Subscriptions: subs}
+	return state{ISAs: isas, Subscriptions: subs, EvictionConfig: s.EvictionConfig}
 }
 
 // Checkpoint ask the repo to store a quick, internal checkpoint with its current state.

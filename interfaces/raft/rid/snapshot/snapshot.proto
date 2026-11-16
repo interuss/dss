@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package rid.snapshot;
 
+import "eviction/eviction.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/interuss/dss/pkg/pb/ridpb/snapshotpb";
@@ -37,4 +38,6 @@ message Snapshot {
     map<string, ISA> isas = 2;
     // subscriptions holds the stored subscriptions keyed by ID.
     map<string, Subscription> subscriptions = 3;
+    // eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
+    eviction.Config eviction_config = 4;
 }

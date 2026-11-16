@@ -7,6 +7,7 @@
 package snapshotpb
 
 import (
+	evictionpb "github.com/interuss/dss/pkg/pb/evictionpb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -253,8 +254,10 @@ type Snapshot struct {
 	Isas map[string]*ISA `protobuf:"bytes,2,rep,name=isas,proto3" json:"isas,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// subscriptions holds the stored subscriptions keyed by ID.
 	Subscriptions map[string]*Subscription `protobuf:"bytes,3,rep,name=subscriptions,proto3" json:"subscriptions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
+	EvictionConfig *evictionpb.Config `protobuf:"bytes,4,opt,name=eviction_config,json=evictionConfig,proto3" json:"eviction_config,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -301,11 +304,18 @@ func (x *Snapshot) GetSubscriptions() map[string]*Subscription {
 	return nil
 }
 
+func (x *Snapshot) GetEvictionConfig() *evictionpb.Config {
+	if x != nil {
+		return x.EvictionConfig
+	}
+	return nil
+}
+
 var File_rid_snapshot_snapshot_proto protoreflect.FileDescriptor
 
 const file_rid_snapshot_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1brid/snapshot/snapshot.proto\x12\frid.snapshot\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf4\x02\n" +
+	"\x1brid/snapshot/snapshot.proto\x12\frid.snapshot\x1a\x17eviction/eviction.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf4\x02\n" +
 	"\x03ISA\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x14\n" +
@@ -339,10 +349,11 @@ const file_rid_snapshot_snapshot_proto_rawDesc = "" +
 	"updated_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x0e\n" +
 	"\f_altitude_hiB\x0e\n" +
-	"\f_altitude_lo\"\xbb\x02\n" +
+	"\f_altitude_lo\"\xf6\x02\n" +
 	"\bSnapshot\x124\n" +
 	"\x04isas\x18\x02 \x03(\v2 .rid.snapshot.Snapshot.IsasEntryR\x04isas\x12O\n" +
-	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x1aJ\n" +
+	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x129\n" +
+	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x1aJ\n" +
 	"\tIsasEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\v2\x11.rid.snapshot.ISAR\x05value:\x028\x01\x1a\\\n" +
@@ -370,6 +381,7 @@ var file_rid_snapshot_snapshot_proto_goTypes = []any{
 	nil,                           // 3: rid.snapshot.Snapshot.IsasEntry
 	nil,                           // 4: rid.snapshot.Snapshot.SubscriptionsEntry
 	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*evictionpb.Config)(nil),     // 6: eviction.Config
 }
 var file_rid_snapshot_snapshot_proto_depIdxs = []int32{
 	5,  // 0: rid.snapshot.ISA.start_time:type_name -> google.protobuf.Timestamp
@@ -380,13 +392,14 @@ var file_rid_snapshot_snapshot_proto_depIdxs = []int32{
 	5,  // 5: rid.snapshot.Subscription.updated_at:type_name -> google.protobuf.Timestamp
 	3,  // 6: rid.snapshot.Snapshot.isas:type_name -> rid.snapshot.Snapshot.IsasEntry
 	4,  // 7: rid.snapshot.Snapshot.subscriptions:type_name -> rid.snapshot.Snapshot.SubscriptionsEntry
-	0,  // 8: rid.snapshot.Snapshot.IsasEntry.value:type_name -> rid.snapshot.ISA
-	1,  // 9: rid.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> rid.snapshot.Subscription
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	6,  // 8: rid.snapshot.Snapshot.eviction_config:type_name -> eviction.Config
+	0,  // 9: rid.snapshot.Snapshot.IsasEntry.value:type_name -> rid.snapshot.ISA
+	1,  // 10: rid.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> rid.snapshot.Subscription
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_rid_snapshot_snapshot_proto_init() }
