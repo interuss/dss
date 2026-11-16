@@ -98,22 +98,7 @@ Done when the outputs contain the four scenarios aws crdb, google crdb, aws ybdb
 ./release/scripts/compile-results.sh
 ```
 
-Done when `release/output/<version>.zip` exists, with this structure:
-
-```
-<version>/
-├── cockroachdb/
-│   ├── README.md
-│   ├── prober/
-│   │   ├── dss1-aws.txt
-│   │   └── dss2-google.txt
-│   └── uss_qualifier/
-│       └── pooled_dss_probing/
-└── yugabyte/
-    └── (same structure)
-```
-
-The benchmarker outputs from step 5 are not included in the zip.
+Done when `release/output/<version>.zip` exists/
 
 ### 7. Destroy the clusters
 
