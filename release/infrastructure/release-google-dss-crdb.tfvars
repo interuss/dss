@@ -38,3 +38,5 @@ evict_rid_schedule    = "*/2 * * * *"
 
 prometheus_hostname = "prometheus.release-crdb.ci.google-interuss.uspace.dev"
 enable_monitoring   = true
+
+enable_time_based_notification_index = true
