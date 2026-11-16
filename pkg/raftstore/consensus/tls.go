@@ -117,13 +117,13 @@ func checkCertificates(ctx context.Context, tlsInfo etcdtransport.TLSInfo, logge
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to load the CAs from %s", tlsInfo.TrustedCAFile)
 	}
-	notAfter, err := otel.Meter("raftstore").Int64Gauge("raft_trusted_ca_not_after_seconds", metric.WithDescription("Expiry of the CAs of --raft_tls_ca_file in seconds since the Unix epoch by issuer"))
+	notAfter, err := otel.Meter("raftstore").Int64Gauge("raft_trusted_ca_not_after_seconds", metric.WithDescription("Expiry of CAs in seconds since the Unix epoch by subject and serial"))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create the raft_trusted_ca_not_after_seconds metric")
 	}
 	unexpired := 0
 	for _, ca := range cas {
-		notAfter.Record(ctx, ca.NotAfter.Unix(), metric.WithAttributes(attribute.String("issuer", ca.Issuer.String())))
+		notAfter.Record(ctx, ca.NotAfter.Unix(), metric.WithAttributes(attribute.String("subject", ca.Subject.String()), attribute.String("serial", ca.SerialNumber.String())))
 		fields := []zap.Field{zap.String("subject", ca.Subject.String()), zap.Time("not_after", ca.NotAfter)}
 		if now.After(ca.NotAfter) {
 			logger.Warn("raft: a CA of --raft_tls_ca_file has expired", fields...)
