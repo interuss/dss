@@ -42,7 +42,10 @@ With `--log_level debug`, a node logs its certificate and every CA of the bundle
 | `bad_certificate`   | Any other invalid peer certificate                       |
 | `other`             | Any other failure                                        |
 
-With `--enable_metrics`, a node exports `raft_peer_tls_handshake_failures_total{reason}`: the connections rejected during the TLS handshake, by the reasons above.
+With `--enable_metrics`, a node exports:
+
+- `raft_peer_tls_handshake_failures_total{reason}`: the connections rejected during the TLS handshake, by the reasons above.
+- `raft_trusted_ca_not_after_seconds{issuer}`: the expiry of each CA of the bundle in seconds since the Unix epoch. It is set when the node starts since the bundle is only read then.
 
 
 ## Terminology

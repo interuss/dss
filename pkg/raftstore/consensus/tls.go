@@ -44,7 +44,7 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 	if tlsInfo.Empty() {
 		return (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
 	}
-	if err := checkCertificates(tlsInfo, logger); err != nil {
+	if err := checkCertificates(ctx, tlsInfo, logger); err != nil {
 		return nil, err
 	}
 
@@ -101,8 +101,8 @@ func handshakeFailureReason(err error) string {
 }
 
 // checkCertificates fails when the certificate of this node cannot be loaded or has expired, or when no CA of the CA
-// file is left that has not expired. It warns about each expired CA.
-func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error {
+// file is left that has not expired. It warns about each expired CA and records the expiry of each CA.
+func checkCertificates(ctx context.Context, tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error {
 	now := time.Now()
 	cert, err := tls.LoadX509KeyPair(tlsInfo.CertFile, tlsInfo.KeyFile)
 	if err != nil {
@@ -117,8 +117,13 @@ func checkCertificates(tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) error 
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to load the CAs from %s", tlsInfo.TrustedCAFile)
 	}
+	notAfter, err := otel.Meter("raftstore").Int64Gauge("raft_trusted_ca_not_after_seconds", metric.WithDescription("Expiry of the CAs of --raft_tls_ca_file in seconds since the Unix epoch by issuer"))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create the raft_trusted_ca_not_after_seconds metric")
+	}
 	unexpired := 0
 	for _, ca := range cas {
+		notAfter.Record(ctx, ca.NotAfter.Unix(), metric.WithAttributes(attribute.String("issuer", ca.Issuer.String())))
 		fields := []zap.Field{zap.String("subject", ca.Subject.String()), zap.Time("not_after", ca.NotAfter)}
 		if now.After(ca.NotAfter) {
 			logger.Warn("raft: a CA of --raft_tls_ca_file has expired", fields...)
