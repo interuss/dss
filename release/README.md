@@ -30,6 +30,8 @@ unset GOOGLE_CLOUD_PROJECT                            # avoids auth issues if ot
 
 ### 3. Configure environment variables
 
+_Note: change `v0.22.0` below to the DSS release candidate version being validated._
+
 ```shell
 export IMAGE=docker.io/interuss/dss:v0.22.0
 export ZONE_ID=(AWS zone id)
