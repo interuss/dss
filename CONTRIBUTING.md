@@ -42,6 +42,8 @@ Upon reviewing your design document, an [InterUSS committer](https://github.com/
 
 If your PR introduces a major change, especially a breaking change to configuration or an important new feature, update [NEXT_RELEASE_NOTES.md](NEXT_RELEASE_NOTES.md) in the same PR with what users need to migrate to it and use it.
 
+Ensure that NEXT_RELEASE_NOTES.md content remains readable.  Instead indefinitely extending a list of bulleted changes in important information, for instance, group similar important information into recognizable units like "Terraform changes".
+
 If your change is larger than the anticipated next version recorded in NEXT_RELEASE_NOTES.md, bump that version in the same PR:
 
 | Last release | Anticipated next version | Your change                    | Update the anticipated version? |
