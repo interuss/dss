@@ -140,8 +140,8 @@ func main() {
 
 	// Define and start HTTP server
 	impl := DummyOAuthImplementation{PrivateKey: privateKey, KeyID: keyID}
-	router := dummyoauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{})
-	multiRouter := api.MultiRouter{Routers: []api.PartialRouter{&router}}
+	multiRouter := api.MultiRouter{}
+	multiRouter.SetRouter("dummy_oauth", dummyoauth.MakeAPIRouter(&impl, &PermissiveAuthorizer{}))
 	s := &http.Server{
 		Addr:              *address,
 		Handler:           &multiRouter,

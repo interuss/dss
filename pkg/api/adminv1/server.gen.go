@@ -4,12 +4,8 @@ package adminv1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/interuss/dss/pkg/api"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 )
@@ -23,30 +19,13 @@ type APIRouter struct {
 var tracer = otel.Tracer("adminv1.api")
 
 // *adminv1.APIRouter (type defined above) implements the api.PartialRouter interface
-func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+func (s *APIRouter) MatchRoute(r *http.Request) (bool, *api.Route) {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
-
-			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
-				labeler.Add(semconv.HTTPRoute(route.Path))
-			}
-
-			// We retrieve the current span from the otelhttp handler to set its name property.
-			span := trace.SpanFromContext(r.Context())
-
-			if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
-				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
-			}
-
-			ctx, span := tracer.Start(r.Context(), route.Name)
-			defer span.End()
-			r = r.WithContext(ctx)
-
-			route.Handler(route.Pattern, w, r)
-			return true
+			return true, route
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (s *APIRouter) GetThisRaftNode(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -330,32 +309,32 @@ func (s *APIRouter) CreateEvictionRun(exp *regexp.Regexp, w http.ResponseWriter,
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 8)}
 
 	pattern := regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/this_node$")
-	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetThisRaftNode, Name: "adminv1.GetThisRaftNode", Path: "/admin/v1/raft/groups/{group_name}/this_node"}
+	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetThisRaftNode, Name: "adminv1.GetThisRaftNode", Path: "/admin/v1/raft/groups/{group_name}/this_node", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups$")
-	router.Routes[1] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateRaftGroup, Name: "adminv1.CreateRaftGroup", Path: "/admin/v1/raft/groups"}
+	router.Routes[1] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateRaftGroup, Name: "adminv1.CreateRaftGroup", Path: "/admin/v1/raft/groups", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)$")
-	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetRaftGroup, Name: "adminv1.GetRaftGroup", Path: "/admin/v1/raft/groups/{group_name}"}
+	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetRaftGroup, Name: "adminv1.GetRaftGroup", Path: "/admin/v1/raft/groups/{group_name}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/members$")
-	router.Routes[3] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateRaftGroupMember, Name: "adminv1.CreateRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members"}
+	router.Routes[3] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateRaftGroupMember, Name: "adminv1.CreateRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/members/(?P<node_id>[^/]*)$")
-	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteRaftGroupMember, Name: "adminv1.DeleteRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members/{node_id}"}
+	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteRaftGroupMember, Name: "adminv1.DeleteRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members/{node_id}", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
-	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetEvictionConfig, Name: "adminv1.GetEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config"}
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetEvictionConfig, Name: "adminv1.GetEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
-	router.Routes[6] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionConfig, Name: "adminv1.PutEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config"}
+	router.Routes[6] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionConfig, Name: "adminv1.PutEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/runs$")
-	router.Routes[7] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateEvictionRun, Name: "adminv1.CreateEvictionRun", Path: "/admin/v1/raft/groups/{group_name}/eviction/runs"}
+	router.Routes[7] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateEvictionRun, Name: "adminv1.CreateEvictionRun", Path: "/admin/v1/raft/groups/{group_name}/eviction/runs", Tracer: tracer}
 
-	return router
+	return &router
 }

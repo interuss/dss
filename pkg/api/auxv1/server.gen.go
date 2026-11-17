@@ -3,14 +3,10 @@ package auxv1
 
 import (
 	"context"
-	"fmt"
 	"github.com/interuss/dss/pkg/api"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/stacktrace"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"regexp"
 )
@@ -24,30 +20,13 @@ type APIRouter struct {
 var tracer = otel.Tracer("auxv1.api")
 
 // *auxv1.APIRouter (type defined above) implements the api.PartialRouter interface
-func (s *APIRouter) Handle(w http.ResponseWriter, r *http.Request) bool {
+func (s *APIRouter) MatchRoute(r *http.Request) (bool, *api.Route) {
 	for _, route := range s.Routes {
 		if route.Method == r.Method && route.Pattern.MatchString(r.URL.Path) {
-
-			if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
-				labeler.Add(semconv.HTTPRoute(route.Path))
-			}
-
-			// We retrieve the current span from the otelhttp handler to set its name property.
-			span := trace.SpanFromContext(r.Context())
-
-			if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
-				span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
-			}
-
-			ctx, span := tracer.Start(r.Context(), route.Name)
-			defer span.End()
-			r = r.WithContext(ctx)
-
-			route.Handler(route.Pattern, w, r)
-			return true
+			return true, route
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (s *APIRouter) GetVersion(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
@@ -357,32 +336,32 @@ func setAuthError(ctx context.Context, authErr error, resp401 **api.ClientErrorB
 	}
 }
 
-func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
+func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 8)}
 
 	pattern := regexp.MustCompile("^/aux/v1/version$")
-	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion, Name: "auxv1.GetVersion", Path: "/aux/v1/version"}
+	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetVersion, Name: "auxv1.GetVersion", Path: "/aux/v1/version", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/validate_oauth$")
-	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.ValidateOauth, Name: "auxv1.ValidateOauth", Path: "/aux/v1/validate_oauth"}
+	router.Routes[1] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.ValidateOauth, Name: "auxv1.ValidateOauth", Path: "/aux/v1/validate_oauth", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/pool$")
-	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetPool, Name: "auxv1.GetPool", Path: "/aux/v1/pool"}
+	router.Routes[2] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetPool, Name: "auxv1.GetPool", Path: "/aux/v1/pool", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/pool/dss_instances$")
-	router.Routes[3] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetDSSInstances, Name: "auxv1.GetDSSInstances", Path: "/aux/v1/pool/dss_instances"}
+	router.Routes[3] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetDSSInstances, Name: "auxv1.GetDSSInstances", Path: "/aux/v1/pool/dss_instances", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/pool/dss_instances/heartbeat$")
-	router.Routes[4] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutDSSInstancesHeartbeat, Name: "auxv1.PutDSSInstancesHeartbeat", Path: "/aux/v1/pool/dss_instances/heartbeat"}
+	router.Routes[4] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutDSSInstancesHeartbeat, Name: "auxv1.PutDSSInstancesHeartbeat", Path: "/aux/v1/pool/dss_instances/heartbeat", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/configuration/accepted_ca_certs$")
-	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetAcceptedCAs, Name: "auxv1.GetAcceptedCAs", Path: "/aux/v1/configuration/accepted_ca_certs"}
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetAcceptedCAs, Name: "auxv1.GetAcceptedCAs", Path: "/aux/v1/configuration/accepted_ca_certs", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/configuration/ca_certs$")
-	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs, Name: "auxv1.GetInstanceCAs", Path: "/aux/v1/configuration/ca_certs"}
+	router.Routes[6] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetInstanceCAs, Name: "auxv1.GetInstanceCAs", Path: "/aux/v1/configuration/ca_certs", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/aux/v1/configuration/global_options$")
-	router.Routes[7] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetGlobalOptions, Name: "auxv1.GetGlobalOptions", Path: "/aux/v1/configuration/global_options"}
+	router.Routes[7] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetGlobalOptions, Name: "auxv1.GetGlobalOptions", Path: "/aux/v1/configuration/global_options", Tracer: tracer}
 
-	return router
+	return &router
 }

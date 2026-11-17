@@ -1,10 +1,16 @@
 import (
-    "encoding/json"
-    "fmt"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net/http"
 	"regexp"
+	"sync"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // --- Interface definitions ---
@@ -63,31 +69,65 @@ func WriteJSON(w http.ResponseWriter, code int, obj any) {
 
 // --- API router definitions ---
 
-type Handler func (exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
+type Handler func(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request)
 
 type Route struct {
-    Method  string
-    Pattern *regexp.Regexp
-    Handler Handler
-    Name    string
-    Path    string
+	Method  string
+	Pattern *regexp.Regexp
+	Handler Handler
+	Name    string
+	Path    string
+	Tracer  trace.Tracer
+}
+
+func (route *Route) Handle(w http.ResponseWriter, r *http.Request) {
+	if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+		labeler.Add(semconv.HTTPRoute(route.Path))
+	}
+
+	// We retrieve the current span from the otelhttp handler to set its name property.
+	span := trace.SpanFromContext(r.Context())
+
+	if span.IsRecording() { // If the span is not recording, the name cannot be changed. This also likely means the otelhttp handler is not present (tracing disabled).
+		span.SetName(fmt.Sprintf("%s %s", r.Method, route.Path))
+	}
+
+	ctx, span := route.Tracer.Start(r.Context(), route.Name)
+	defer span.End()
+	r = r.WithContext(ctx)
+
+	route.Handler(route.Pattern, w, r)
 }
 
 type PartialRouter interface {
-    Handle(w http.ResponseWriter, r *http.Request) bool
+	MatchRoute(r *http.Request) (match bool, route *Route)
 }
 
 // --- Multi-router definitions ---
 
 type MultiRouter struct {
-    Routers []PartialRouter
+	routers map[string]PartialRouter
+	mu      sync.RWMutex
+}
+
+func (m *MultiRouter) SetRouter(name string, r PartialRouter) {
+	m.mu.Lock()
+	if m.routers == nil {
+		m.routers = make(map[string]PartialRouter)
+	}
+	m.routers[name] = r
+	m.mu.Unlock()
 }
 
 func (m *MultiRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    for _, router := range m.Routers {
-        if router.Handle(w, r) {
-            return
-        }
-    }
-    http.NotFound(w, r)
+	m.mu.RLock()
+	for router := range maps.Values(m.routers) {
+		if match, route := router.MatchRoute(r); match {
+			m.mu.RUnlock()
+			route.Handle(w, r)
+			return
+		}
+	}
+	m.mu.RUnlock()
+	http.NotFound(w, r)
 }

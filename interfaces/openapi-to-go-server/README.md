@@ -52,7 +52,7 @@ An API's implementation is abstracted from the HTTP server with the interface de
 
 ### server.gen.go
 
-All boilerplate code for handling generic incoming HTTP requests using an instance of the implementation interface defined above (and an Authorizer that evaluates security requirements) is located in server.gen.go.  An API-specific APIRouter object is defined, and each operation defined in the API is added as a method.  Near the end of the file, a function is included that creates an APIRouter instance including regex-based routes to each method.  The APIRouter's Handle method nearly matches the handler method required by http.Server, but it returns a boolean indicating whether the request was handled.  This enables multiple APIRouters to be used in a single HTTP server using the shared MultiRouter.
+All boilerplate code for handling generic incoming HTTP requests using an instance of the implementation interface defined above (and an Authorizer that evaluates security requirements) is located in server.gen.go.  An API-specific APIRouter object is defined, and each operation defined in the API is added as a method.  Near the end of the file, a function is included that creates an APIRouter instance including regex-based routes to each method.  The APIRouter's MatchRoute method checks whether an incoming request matches one of its routes and returns the matching Route so it can be served via Route.Handle.  This enables multiple APIRouters to be used in a single HTTP server using the shared MultiRouter.
 
 ### client.gen.go
 

@@ -76,8 +76,8 @@ func TestAPIRouter_SetAuthError(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			router := versioning.MakeAPIRouter(&Server{}, stubAuthorizer{err: tc.authErr})
-			multi := api.MultiRouter{Routers: []api.PartialRouter{&router}}
+			multi := api.MultiRouter{}
+			multi.SetRouter("versioning", versioning.MakeAPIRouter(&Server{}, stubAuthorizer{err: tc.authErr}))
 
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/versions/local_dss", nil)
 			rec := httptest.NewRecorder()
