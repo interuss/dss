@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sync"
 	"sync/atomic"
@@ -1077,6 +1078,10 @@ func (c *Consensus) Process(ctx context.Context, m *raftpb.Message) error {
 	if m.GetTo() != c.nodeID {
 		return stacktrace.NewError("received a message for node %d, this node is %d", m.GetTo(), c.nodeID)
 	}
+	if c.membership.isIDRemoved(m.GetFrom()) {
+		c.logger.Warn("rejected a message from a removed node", zap.Uint64("from", m.GetFrom()))
+		return removedNodeError{}
+	}
 
 	raftNode, state := c.node.Get()
 	if state == node.Waiting {
@@ -1093,6 +1098,19 @@ func (c *Consensus) Process(ctx context.Context, m *raftpb.Message) error {
 		return stacktrace.NewError("this node was removed from the Raft group")
 	}
 	return raftNode.Step(ctx, m)
+}
+
+// removedNodeError is returned by Process for a message from a removed node. rafthttp answers it with a 403, on which
+// the removed node stops.
+type removedNodeError struct{}
+
+func (removedNodeError) Error() string {
+	return "the sender was removed from the Raft group"
+}
+
+// WriteTo implements the writerToResponse interface of rafthttp.
+func (e removedNodeError) WriteTo(w http.ResponseWriter) {
+	http.Error(w, e.Error(), http.StatusForbidden)
 }
 
 // IsIDRemoved implements the rafthttp.Raft interface.
