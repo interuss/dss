@@ -55,8 +55,8 @@ type Consensus struct {
 	getAppSnapshot func() (*proposalpb.Snapshot, error)
 	commitC        chan<- EntryCommit
 
-	once  sync.Once
 	stopC chan struct{} // when closed, signals shutdown to the raft updates consumer goroutine
+	doneC chan struct{} // closed when the raft updates consumer exits
 
 	readyOnce sync.Once
 	readyC    chan struct{} // closed once this node is a member of the group and knows its leader
@@ -105,6 +105,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		commitC:        commitC,
 
 		stopC:  make(chan struct{}),
+		doneC:  make(chan struct{}),
 		readyC: make(chan struct{}),
 
 		tracker:     newProposalsTracker(),
@@ -174,28 +175,38 @@ func (c *Consensus) startNode(newNode func() raft.Node) (bool, node.State) {
 	return started, state
 }
 
-// TODO: ctx is currently ignored (see issue: https://github.com/interuss/dss/issues/1610)
-func (c *Consensus) Stop(ctx context.Context) {
-	// TODO: remove once (see issue: https://github.com/interuss/dss/issues/1610)
-	c.once.Do(func() {
-		c.logger.Info("stopping consensus")
-		if err := c.metricsRegistration.Unregister(); err != nil {
-			c.logger.Error("failed to unregister raft metrics", zap.Error(err))
-		}
-		close(c.stopC)
+// stops the Raft node and closes its WAL. Call it only once.
+func (c *Consensus) Stop(ctx context.Context) error {
+	c.logger.Info("stopping consensus")
+	if err := c.metricsRegistration.Unregister(); err != nil {
+		c.logger.Error("failed to unregister raft metrics", zap.Error(err))
+	}
+	close(c.stopC)
 
-		c.listener.unregister(c.transport.ClusterID)
-		c.logger.Info("unregistered from listener")
+	c.listener.unregister(c.transport.ClusterID)
+	c.logger.Info("unregistered from listener")
 
-		c.transport.Stop()
-		c.logger.Info("transport stopped")
-		c.endpoint.close()
-		// A waiting node, or one found removed at startup, has no raft node.
-		if raftNode := c.node.RaftNode(); raftNode != nil {
-			raftNode.Stop()
-			c.logger.Info("raft node stopped")
+	c.transport.Stop()
+	c.logger.Info("transport stopped")
+	c.endpoint.close()
+
+	var err error
+	// only a member still runs a raft node and its consumer
+	if raftNode, state := c.node.Get(); state == node.Member {
+		select {
+		case <-c.doneC:
+		case <-ctx.Done():
+			err = stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
 		}
-	})
+		raftNode.Stop()
+		c.logger.Info("raft node stopped")
+	}
+
+	if walErr := c.storage.wal.Close(); walErr != nil {
+		return errors.Join(err, stacktrace.Propagate(walErr, "failed to close the WAL"))
+	}
+	c.logger.Info("WAL closed")
+	return err
 }
 
 // HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
@@ -519,12 +530,11 @@ func (c *Consensus) registerMetrics() error {
 }
 
 // startRaftUpdatesConsumer starts a goroutine that processes the Ready channel of the Raft node and applies committed entries to the state machine
+// TODO: restart the store when this goroutine stops on an error
 func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapshotInterval uint64) {
 	raftNode := c.node.RaftNode()
 	go func() {
-		// TODO: this shouldn't be triggered from inside the consensus instance, removing it will allow removing the once.
-		// (see issue: https://github.com/interuss/dss/issues/1610)
-		defer c.Stop(context.Background())
+		defer close(c.doneC)
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
@@ -592,6 +602,13 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 				if errors.Is(err, errSelfRemoved) {
 					c.logger.Warn("this node was removed from the Raft group, stopping")
 					c.node.SetRemoved()
+					// TODO: let the store do this through Stop, which needs a signal from here
+					c.transport.Stop()
+					raftNode.Stop()
+					// to start again as a waiting node
+					if err := c.storage.archive(c.nodeID); err != nil {
+						c.logger.Error("failed to archive the local state", zap.Error(err))
+					}
 					return
 				}
 				if err != nil {
@@ -608,7 +625,11 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 
 				raftNode.Advance()
 			case err := <-c.transport.ErrorC:
+				// rafthttp reports critical errors here (e.g. this node was removed) and asks to stop the raft node and transport
 				c.logger.Error("transport error", zap.Error(err))
+				// TODO: same as above
+				c.transport.Stop()
+				raftNode.Stop()
 				return
 			}
 		}
@@ -848,6 +869,8 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 func (c *Consensus) Ready() bool {
 	select {
 	case <-c.stopC:
+		return false
+	case <-c.doneC:
 		return false
 	default:
 	}

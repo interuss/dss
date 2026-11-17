@@ -64,7 +64,7 @@ func (ms *mockStore) Ready() bool {
 	return true
 }
 
-func (ms *mockStore) Close() error {
+func (ms *mockStore) Shutdown(_ context.Context) error {
 	args := ms.Called()
 	return args.Error(0)
 }

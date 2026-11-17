@@ -57,6 +57,7 @@ func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.Conn
 
 	consensusInstance, err := consensus.NewConsensus(ctx, logger, params, r.GetSnapshot, commitC)
 	if err != nil {
+		cancel()
 		return nil, stacktrace.Propagate(err, "failed to initialize consensus")
 	}
 
@@ -124,13 +125,15 @@ func (s *Store[R]) Interact(_ context.Context) (R, error) {
 	return s.raftRepo.GetRepo(), nil
 }
 
-// Close shuts down the consensus instance and processCommits loop.
-// TODO: pass a context to Stop then to consensus.Stop (see issue: https://github.com/interuss/dss/issues/1610).
-func (s *Store[R]) Close() error {
-	s.Stop(context.Background())
+// Shutdown shuts down the consensus instance and processCommits loop.
+func (s *Store[R]) Shutdown(ctx context.Context) error {
+	err := s.Stop(ctx)
 	s.cancel()
 	s.logger.Info("waiting for commit processing goroutine to exit")
 	<-s.done
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to stop consensus")
+	}
 	return nil
 }
 

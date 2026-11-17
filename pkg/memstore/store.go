@@ -76,6 +76,6 @@ func (s *Store[R]) Ready() bool {
 	return true
 }
 
-func (s *Store[R]) Close() error {
+func (s *Store[R]) Shutdown(_ context.Context) error {
 	return nil
 }
