@@ -61,6 +61,7 @@ type Consensus struct {
 
 	readyOnce sync.Once
 	readyC    chan struct{} // closed once this node is a member of the group and knows its leader
+	leaderC   chan bool     // receives whether this node is the leader of the group when it changes
 
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
@@ -108,9 +109,10 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		getAppSnapshot: provider,
 		commitC:        commitC,
 
-		stopC:  make(chan struct{}),
-		doneC:  make(chan struct{}),
-		readyC: make(chan struct{}),
+		stopC:   make(chan struct{}),
+		doneC:   make(chan struct{}),
+		readyC:  make(chan struct{}),
+		leaderC: make(chan bool, 1),
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
@@ -543,6 +545,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
 
+		leader := false
 		for {
 			select {
 			case <-c.stopC:
@@ -555,11 +558,21 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					return
 				}
 
-				if softState := raftUpdate.SoftState; softState != nil && softState.Lead != raft.None {
-					c.readyOnce.Do(func() {
-						c.logger.Info("ready to serve requests", zap.Uint64("leaderID", softState.Lead))
-						close(c.readyC)
-					})
+				if softState := raftUpdate.SoftState; softState != nil {
+					if softState.Lead != raft.None {
+						c.readyOnce.Do(func() {
+							c.logger.Info("ready to serve requests", zap.Uint64("leaderID", softState.Lead))
+							close(c.readyC)
+						})
+					}
+					if isLeader := softState.RaftState == raft.StateLeader; isLeader != leader {
+						leader = isLeader
+						select {
+						case <-c.leaderC:
+						default:
+						}
+						c.leaderC <- leader
+					}
 				}
 
 				err := c.storage.handleReceivedState(raftUpdate.Snapshot, raftUpdate.HardState, raftUpdate.Entries)
@@ -866,6 +879,11 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 			return Membership{}, ctx.Err()
 		}
 	}
+}
+
+// LeaderC receives whether this node is the leader of the group when it changes.
+func (c *Consensus) LeaderC() <-chan bool {
+	return c.leaderC
 }
 
 // Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, currently knows its leader

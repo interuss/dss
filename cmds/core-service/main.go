@@ -37,6 +37,7 @@ import (
 	scdrepos "github.com/interuss/dss/pkg/scd/repos"
 	scds "github.com/interuss/dss/pkg/scd/store"
 	"github.com/interuss/dss/pkg/store/params"
+	storerepos "github.com/interuss/dss/pkg/store/repos"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/dss/pkg/version"
 	"github.com/interuss/dss/pkg/versioning"
@@ -418,13 +419,26 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		raftGroups := map[string]*consensus.Consensus{
 			"aux": auxStore.(*raftstore.Store[auxrepos.Repository]).Consensus,
 		}
+		evictions := map[string]storerepos.Eviction{}
 		if *enableRID {
-			raftGroups["rid"] = ridStore.(*raftstore.Store[ridrepos.Repository]).Consensus
+			store := ridStore.(*raftstore.Store[ridrepos.Repository])
+			raftGroups["rid"] = store.Consensus
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to get the rid repository")
+			}
+			evictions["rid"] = repo
 		}
 		if *enableSCD {
-			raftGroups["scd"] = scdStore.(*raftstore.Store[scdrepos.Repository]).Consensus
+			store := scdStore.(*raftstore.Store[scdrepos.Repository])
+			raftGroups["scd"] = store.Consensus
+			repo, err := store.Interact(ctx)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to get the scd repository")
+			}
+			evictions["scd"] = repo
 		}
-		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups, nil)
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups, evictions)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to start the admin server")
 		}
