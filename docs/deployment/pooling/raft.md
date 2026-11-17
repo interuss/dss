@@ -148,7 +148,7 @@ instances creating the pool at the same time as other participants).
 
 1. If other participants create their instances at the same time, list the
    `ENDPOINT` of their nodes in the `automaticBootstrapNodes` setting of this
-   instance.
+   instance (`raft_automatic_bootstrap_nodes` in the terraform variables).
 
 1. Deploy the services as described in
    [services deployment](../services/index.md).  The other participants

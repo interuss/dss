@@ -208,8 +208,8 @@ It gives, per Raft group:
 * the health of the links to the peers: latency (current, average, min, max,
   standard deviation) and the AppendEntries success/failure counts, reported
   by the leader,
-* the storage: WAL write and fsync durations, bytes written, the snapshot
-  durations and frequency, the number of log entries,
+* the storage: the number of log entries, the applied index since the last
+  snapshot, the snapshot durations and frequency,
 * the load: the proposal duration, the pending proposals (writes and reads)
   and the proposal rate.
 
@@ -219,10 +219,10 @@ The metrics below are the ones worth alerting on:
 
 | Metric | Description | Alert criteria |
 | :--- | :--- | :--- |
-| `raft_peer_tls_handshake_failures_total{reason}` | Connections from Raft peers rejected during the TLS handshake, per node. | Sustained growth: a participant's CA is not (or no longer) trusted by the pool, see [Troubleshooting](./troubleshooting.md#raft-store) for the reasons. |
+| `raft_peer_tls_handshake_failures_total{reason}` | Connections from Raft peers rejected during the TLS handshake, per node. | Sustained growth: a participant's CA is not (or no longer) trusted by the pool; the possible reasons are listed below. |
 | `raft_trusted_ca_not_after_seconds{subject, serial}` | Expiry (seconds since the Unix epoch) of each CA of the trusted bundle, per node. | A CA is close to its expiry: rotate it before it expires (see [certificates](../deployment/pooling/raft.md#certificates)). |
 | `raft_is_leader{group, node_id}` / `raft_state{group, node_id, state}` | Leadership and state of each group, per node. | A group with no leader on any node, or frequent state transitions (elections). |
-| `raft_follower_lag_entries{group, node_id, peer_id}` | Number of committed entries a follower has not applied yet, reported by the leader. | A follower that is not catching up. |
+| `raft_follower_lag_entries{group, node_id, peer_id}` | Number of committed entries a follower has not received yet (commit index minus its match index), reported by the leader. | A follower that is not catching up. |
 | `raft_proposals_pending{group, node_id, type}` | Number of pending write (or read) proposals of the node. | A persistent backlog: the node is not keeping up with the traffic of the pool. |
 | `raft_proposal_duration_seconds{group, node_id, type}` | Duration of the proposals of the node. | Sustained increase of the write latency of the pool. |
 | `raft_peer_send_fail_total{group, node_id, peer_id}` | Cumulative number of failed messages sent to a peer, reported by the leader. | Growth: the link to the peer is broken or saturated. |
