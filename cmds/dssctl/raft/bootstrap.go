@@ -3,6 +3,7 @@ package raft
 import (
 	"fmt"
 
+	"github.com/interuss/dss/cmds/dssctl/raft/raftgroup"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +18,12 @@ with dssctl raft add.`,
 }
 
 func bootstrap(cmd *cobra.Command, _ []string) error {
-	groups, err := selectedGroups()
+	groups, err := raftgroup.Selected()
 	if err != nil {
 		return err
 	}
 
-	return forEachGroup(groups, func(g namedGroup) (string, error) {
+	return raftgroup.ForEach(groups, func(g raftgroup.Group) (string, error) {
 		membership, err := g.Bootstrap(cmd.Context())
 		if err != nil {
 			return "", err

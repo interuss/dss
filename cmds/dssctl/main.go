@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/interuss/dss/cmds/dssctl/admin"
 	"github.com/interuss/dss/cmds/dssctl/raft"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +21,7 @@ var (
 )
 
 func init() {
+	admin.RegisterFlags(dssctlCmd.PersistentFlags())
 	dssctlCmd.AddCommand(raft.RaftCmd)
 }
 

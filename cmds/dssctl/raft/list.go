@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/interuss/dss/cmds/dssctl/raft/raftgroup"
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
 	"github.com/spf13/cobra"
 )
@@ -19,12 +20,12 @@ var listCmd = &cobra.Command{
 }
 
 func list(cmd *cobra.Command, _ []string) error {
-	groups, err := selectedGroups()
+	groups, err := raftgroup.Selected()
 	if err != nil {
 		return err
 	}
 
-	return forEachGroup(groups, func(g namedGroup) (string, error) {
+	return raftgroup.ForEach(groups, func(g raftgroup.Group) (string, error) {
 		members, err := g.Members(cmd.Context())
 		if err != nil {
 			return "", err

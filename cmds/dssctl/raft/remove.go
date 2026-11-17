@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/interuss/dss/cmds/dssctl/raft/raftgroup"
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +35,7 @@ func init() {
 }
 
 func remove(cmd *cobra.Command, _ []string) error {
-	groups, err := selectedGroups()
+	groups, err := raftgroup.Selected()
 	if err != nil {
 		return err
 	}
@@ -42,7 +43,7 @@ func remove(cmd *cobra.Command, _ []string) error {
 		return stacktrace.NewError("--node_id identifies a node in a single group, select it with --groups")
 	}
 
-	return forEachGroup(groups, func(g namedGroup) (string, error) {
+	return raftgroup.ForEach(groups, func(g raftgroup.Group) (string, error) {
 		nodeID := removeNodeID
 		if removeURL != "" {
 			var err error
@@ -60,7 +61,7 @@ func remove(cmd *cobra.Command, _ []string) error {
 }
 
 // memberID returns the ID of the member of g at url.
-func memberID(ctx context.Context, g namedGroup, url string) (string, error) {
+func memberID(ctx context.Context, g raftgroup.Group, url string) (string, error) {
 	membership, err := g.Members(ctx)
 	if err != nil {
 		return "", err
