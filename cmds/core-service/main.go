@@ -427,7 +427,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		if *enableSCD {
 			raftGroups["scd"] = scdStore.(*raftstore.Store[scdrepos.Repository]).Consensus
 		}
-		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups)
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups, nil)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to start the admin server")
 		}
