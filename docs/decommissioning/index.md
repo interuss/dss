@@ -4,6 +4,7 @@ Before infrastructure decommissioning, the DSS instance must gracefully leave th
 
 * [Leaving a CockroachDB pool](depooling-crdb.md)
 * [Leaving a YugabyteDB pool](depooling-yugabyte.md)
+* [Leaving a Raft store pool](depooling-raft.md) (experimental)
 
 Final decommissioning depends on how the DSS was deployed:
 
