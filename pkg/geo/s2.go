@@ -127,3 +127,14 @@ func Covering(points []s2.Point) (s2.CellUnion, error) {
 	}
 	return RegionCoverer.Covering(loop), nil
 }
+
+// CapCovering calculates the S2 covering of a cap.
+func CapCovering(c s2.Cap) (s2.CellUnion, error) {
+	area := (c.Area() * earthAreaKm2) / (4.0 * math.Pi)
+	if area > maxAllowedAreaKm2 {
+		return nil, stacktrace.Propagate(
+			ErrAreaTooLarge, "Area is too large (%fkm² > %fkm²)",
+			area, maxAllowedAreaKm2)
+	}
+	return RegionCoverer.Covering(c), nil
+}
