@@ -62,6 +62,7 @@ def _generate_apis(
     apis_folder: str,
     api_import: str,
     ensure_500: bool,
+    override_client_error_codes: set[int],
     clients: list[str],
 ):
     """Generate Go libraries for APIs.
@@ -70,6 +71,7 @@ def _generate_apis(
     :param apis_folder: Root location where generated Go API packages should be written
     :param api_import: Go import path for the root api package
     :param ensure_500: True to auto-generate a 500 response for each operation when one is not already declared in the API
+    :param override_client_error_codes: HTTP status codes whose response body type is overridden with ClientErrorBody
     :param clients: Packages of the APIs for which a client is also generated
     """
     api_package = formatting.package_of_import(api_import)
@@ -104,7 +106,9 @@ def _generate_apis(
             "<PACKAGE>": api.package,
             "<IMPORTS>": rendering.imports([api_import]),
             "<INTERFACES>": "\n".join(
-                rendering.implementation_interface(api, api_package, ensure_500)
+                rendering.implementation_interface(
+                    api, api_package, ensure_500, override_client_error_codes
+                )
             ),
         }
         with open(os.path.join(api_folder, "interface.gen.go"), "w") as f:
@@ -112,7 +116,9 @@ def _generate_apis(
             f.write(rendering.template_content("interface", interface_template_vars))
 
         # Generate Go server factory
-        routes, new_imports = rendering.routes(api, api_package, ensure_500)
+        routes, new_imports = rendering.routes(
+            api, api_package, ensure_500, override_client_error_codes
+        )
         server_template_vars = {
             "<PACKAGE>": api.package,
             "<IMPORTS>": rendering.imports(
@@ -136,7 +142,9 @@ def _generate_apis(
 
         # Generate Go client, if requested
         if api.package in clients:
-            methods, new_imports = rendering.client_methods(api, api_import, ensure_500)
+            methods, new_imports = rendering.client_methods(
+                api, api_import, ensure_500, override_client_error_codes
+            )
             client_template_vars = {
                 "<PACKAGE>": api.package,
                 "<IMPORTS>": rendering.imports(
@@ -229,7 +237,17 @@ def main():
 
     # Render Go code
     if args.api_folder:
-        _generate_apis(api_list, args.api_folder, args.api_import, True, args.clients)
+        _generate_apis(
+            api_list,
+            args.api_folder,
+            args.api_import,
+            True,
+            {
+                401,
+                403,
+            },  # those should match the client error codes handled by 'setAuthError'
+            args.clients,
+        )
         os.system(f"cd {args.api_folder} && gofmt -s -w .")
     if args.example_folder:
         _generate_example(api_list, args.example_folder, args.api_import)

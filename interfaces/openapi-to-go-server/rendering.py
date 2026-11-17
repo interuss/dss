@@ -103,14 +103,56 @@ def _object_field(field: data_types.ObjectField) -> list[str]:
     return lines
 
 
+def _operation_responses(
+    operation: operations.Operation,
+    api_package: str,
+    ensure_500: bool,
+    override_client_error_codes: set[int],
+) -> list[operations.Response]:
+    responses = [
+        operations.Response(
+            code=r.code,
+            description=r.description,
+            json_body_type=f"{api_package}.ClientErrorBody",
+        )
+        if r.code in override_client_error_codes
+        else r
+        for r in operation.responses
+    ]
+    existing_codes = {r.code for r in responses}
+    if operation.security.options:
+        for code in sorted(override_client_error_codes):
+            if code not in existing_codes:
+                responses.append(
+                    operations.Response(
+                        code=code,
+                        description="Auto-generated client error response",
+                        json_body_type=f"{api_package}.ClientErrorBody",
+                    )
+                )
+    if ensure_500 and 500 not in existing_codes:
+        responses.append(
+            operations.Response(
+                code=500,
+                description="Auto-generated internal server error response",
+                json_body_type=f"{api_package}.InternalServerErrorBody",
+            )
+        )
+    return responses
+
+
 def implementation_interface(
-    api: apis.API, api_package: str, ensure_500: bool
+    api: apis.API,
+    api_package: str,
+    ensure_500: bool,
+    override_client_error_codes: set[int],
 ) -> list[str]:
     """Generate Go code defining the interface an API implementation must implement.
 
     :param api: API to be rendered into an interface
     :param api_package: Name of root/common API package
     :param ensure_500: If True, add a 500 response to all operations that don't already define a 500 response
+    :param override_client_error_codes: HTTP status codes whose response body type is overridden with ClientErrorBody
     :return: Lines of Go code defining the interface
     """
     lines: list[str] = []
@@ -207,15 +249,9 @@ def implementation_interface(
         lines.append(f"type {operation.response_type_name} struct {{")
 
         body: list[str] = []
-        responses = [r for r in operation.responses]
-        if ensure_500 and 500 not in {r.code for r in responses}:
-            responses.append(
-                operations.Response(
-                    code=500,
-                    description="Auto-generated internal server error response",
-                    json_body_type=f"{api_package}.InternalServerErrorBody",
-                )
-            )
+        responses = _operation_responses(
+            operation, api_package, ensure_500, override_client_error_codes
+        )
         for response in responses:
             if response.description:
                 body.extend(comment(response.description.split("\n")))
@@ -262,13 +298,17 @@ def implementation_interface(
 
 
 def routes(
-    api: apis.API, api_package: str, ensure_500: bool
+    api: apis.API,
+    api_package: str,
+    ensure_500: bool,
+    override_client_error_codes: set[int],
 ) -> tuple[list[str], set[str]]:
     """Generate handler Go code for each operation, routed appropriately.
 
     :param api: API to have its operation routes rendered
     :param api_package: Name of root/common API package
     :param ensure_500: If True, add a 500 response to all operations that don't already define a 500 response
+    :param override_client_error_codes: HTTP status codes whose response body type is overridden with ClientErrorBody
     :return:
         * Lines of Go code defining the handler functions and router creation function
         * Go packages that need to be imported
@@ -407,15 +447,9 @@ def routes(
 
         # Write the first populated response discovered and finish the handler
         body.extend(comment(["Write response to client"]))
-        responses = [r for r in operation.responses]
-        if ensure_500 and 500 not in {r.code for r in operation.responses}:
-            responses.append(
-                operations.Response(
-                    code=500,
-                    description="",
-                    json_body_type=f"{api_package}.InternalServerErrorBody",
-                )
-            )
+        responses = _operation_responses(
+            operation, api_package, ensure_500, override_client_error_codes
+        )
         for response in responses:
             body.append(f"if response.{response.response_set_field} != nil {{")
             body.extend(
@@ -439,7 +473,7 @@ def routes(
 
     if need_auth_error:
         lines.append(
-            "func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {"
+            f"func setAuthError(ctx context.Context, authErr error, resp401 **{api_package}.ClientErrorBody, resp403 **{api_package}.ClientErrorBody, resp500 **{api_package}.InternalServerErrorBody) {{"
         )
 
         body: list[str] = []
@@ -449,7 +483,7 @@ def routes(
         body.extend(
             indent(
                 [
-                    '*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}'
+                    f'*resp401 = &{api_package}.ClientErrorBody{{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}}'
                 ],
                 1,
             )
@@ -458,7 +492,7 @@ def routes(
         body.extend(
             indent(
                 [
-                    '*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}'
+                    f'*resp403 = &{api_package}.ClientErrorBody{{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}}'
                 ],
                 1,
             )
@@ -470,7 +504,7 @@ def routes(
         body.extend(
             indent(
                 [
-                    '*resp500 = &api.InternalServerErrorBody{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}'
+                    f'*resp500 = &{api_package}.InternalServerErrorBody{{ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Could not perform authorization"))}}'
                 ],
                 1,
             )
@@ -526,7 +560,10 @@ def _client_argument_name(parameter: operations.StringParameter) -> str:
 
 
 def client_methods(
-    api: apis.API, api_import: str, ensure_500: bool
+    api: apis.API,
+    api_import: str,
+    ensure_500: bool,
+    override_client_error_codes: set[int],
 ) -> tuple[list[str], set[str]]:
     """Generate Go code calling each operation of the API from a client.
 
@@ -536,6 +573,7 @@ def client_methods(
     :param api: API to have its client methods rendered
     :param api_import: Full Go import path for the root/common API package
     :param ensure_500: If True, handle a 500 response for all operations that don't already define a 500 response
+    :param override_client_error_codes: HTTP status codes whose response body type is overridden with ClientErrorBody
     :return:
         * Lines of Go code defining the client methods
         * Go packages that need to be imported in addition to those of the client template
@@ -618,15 +656,9 @@ def client_methods(
         body.append("")
 
         # Populate the response matching the status code
-        responses = [r for r in operation.responses]
-        if ensure_500 and 500 not in {r.code for r in responses}:
-            responses.append(
-                operations.Response(
-                    code=500,
-                    description="",
-                    json_body_type=f"{api_package}.InternalServerErrorBody",
-                )
-            )
+        responses = _operation_responses(
+            operation, api_package, ensure_500, override_client_error_codes
+        )
         body.append("switch resp.StatusCode {")
         for response in responses:
             body.append(f"case {response.code}:")

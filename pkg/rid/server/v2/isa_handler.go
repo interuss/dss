@@ -51,7 +51,7 @@ func (s *Server) CreateIdentificationServiceArea(ctx context.Context, req *resta
 ) restapi.CreateIdentificationServiceAreaResponseSet {
 
 	if req.Auth.ClientID == nil {
-		return restapi.CreateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.CreateIdentificationServiceAreaResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if req.BodyParseError != nil {
@@ -115,7 +115,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 	}
 
 	if req.Auth.ClientID == nil {
-		return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	// TODO: put the validation logic in the models layer
@@ -151,7 +151,7 @@ func (s *Server) UpdateIdentificationServiceArea(ctx context.Context, req *resta
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: errResp}
+			return restapi.UpdateIdentificationServiceAreaResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.VersionMismatch:
 			return restapi.UpdateIdentificationServiceAreaResponseSet{Response409: errResp}
 		case dsserr.BadRequest, dsserr.NotFound:
@@ -175,7 +175,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 ) restapi.DeleteIdentificationServiceAreaResponseSet {
 
 	if req.Auth.ClientID == nil {
-		return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
@@ -198,7 +198,7 @@ func (s *Server) DeleteIdentificationServiceArea(ctx context.Context, req *resta
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: errResp}
+			return restapi.DeleteIdentificationServiceAreaResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.VersionMismatch:
 			return restapi.DeleteIdentificationServiceAreaResponseSet{Response409: errResp}
 		case dsserr.NotFound:

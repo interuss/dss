@@ -1064,12 +1064,12 @@ func (s *APIRouter) SetUssAvailability(exp *regexp.Regexp, w http.ResponseWriter
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func setAuthError(ctx context.Context, authErr error, resp401 **ErrorResponse, resp403 **ErrorResponse, resp500 **api.InternalServerErrorBody) {
+func setAuthError(ctx context.Context, authErr error, resp401 **api.ClientErrorBody, resp403 **api.ClientErrorBody, resp500 **api.InternalServerErrorBody) {
 	switch stacktrace.GetCode(authErr) {
 	case dsserr.Unauthenticated:
-		*resp401 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
+		*resp401 = &api.ClientErrorBody{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authentication failed"))}
 	case dsserr.PermissionDenied:
-		*resp403 = &ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
+		*resp403 = &api.ClientErrorBody{Message: dsserr.Handle(ctx, stacktrace.Propagate(authErr, "Authorization failed"))}
 	default:
 		if authErr == nil {
 			authErr = stacktrace.NewError("Unknown error")

@@ -95,10 +95,10 @@ type SearchIdentificationServiceAreasResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested area was too large.
 	Response413 *ErrorResponse
@@ -129,10 +129,10 @@ type GetIdentificationServiceAreaResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested Entity could not be found.
 	Response404 *ErrorResponse
@@ -170,10 +170,10 @@ type CreateIdentificationServiceAreaResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * An Identification Service Area with the specified ID already exists and is owned by a different client.
 	// * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
@@ -218,10 +218,10 @@ type UpdateIdentificationServiceAreaResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * The specified Identification Service Area's current version does not match the provided version.
 	// * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
@@ -259,11 +259,11 @@ type DeleteIdentificationServiceAreaResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint.
 	// * The Identification Service Area does not belong to the client requesting deletion.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// Entity could not be deleted because it could not be found.
 	Response404 *ErrorResponse
@@ -298,10 +298,10 @@ type SearchSubscriptionsResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested area was too large.
 	Response413 *ErrorResponse
@@ -330,10 +330,10 @@ type GetSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// A Subscription with the specified ID was not found.
 	Response404 *ErrorResponse
@@ -369,10 +369,10 @@ type CreateSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * A Subscription with the specified ID already exists and is owned by a different client.
 	// * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
@@ -415,10 +415,10 @@ type UpdateSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * The specified Subscriptions's current version does not match the provided version.
 	// * Despite repeated attempts, the DSS was unable to update the DAR because of other simultaneous changes.
@@ -454,11 +454,11 @@ type DeleteSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint.
 	// * The Entity does not belong to the client requesting deletion.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// Subscription could not be deleted because it could not be found.
 	Response404 *ErrorResponse

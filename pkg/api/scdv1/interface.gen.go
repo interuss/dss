@@ -189,10 +189,10 @@ type QueryOperationalIntentReferencesResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested area was too large.
 	Response413 *ErrorResponse
@@ -226,10 +226,10 @@ type GetOperationalIntentReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested Entity could not be found.
 	Response404 *ErrorResponse
@@ -270,10 +270,10 @@ type CreateOperationalIntentReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * The provided key did not prove knowledge of all current and relevant airspace Entities
 	// * Despite repeated attempts, the DSS was unable to complete the update because of other simultaneous changes.
@@ -324,10 +324,10 @@ type UpdateOperationalIntentReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * The provided key did not prove knowledge of all current and relevant airspace Entities
 	// * The provided `ovn` does not match the current version of the existing operational intent.
@@ -373,10 +373,10 @@ type DeleteOperationalIntentReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested Entity could not be found.
 	Response404 *ErrorResponse
@@ -420,10 +420,10 @@ type QueryConstraintReferencesResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested area was too large.
 	Response413 *ErrorResponse
@@ -457,10 +457,10 @@ type GetConstraintReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested Entity could not be found.
 	Response404 *ErrorResponse
@@ -501,10 +501,10 @@ type CreateConstraintReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * A constraint with the provided ID already exists.
 	// * Despite repeated attempts, the DSS was unable to complete the update because of other simultaneous changes.
@@ -552,10 +552,10 @@ type UpdateConstraintReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * The provided `ovn` does not match the current version of the existing constraint.
 	// * Despite repeated attempts, the DSS was unable to complete the update because of other simultaneous changes.
@@ -597,10 +597,10 @@ type DeleteConstraintReferenceResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested Entity could not be found.
 	Response404 *ErrorResponse
@@ -639,10 +639,10 @@ type QuerySubscriptionsResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The requested area was too large.
 	Response413 *ErrorResponse
@@ -674,10 +674,10 @@ type GetSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// A subscription with the specified ID was not found.
 	Response404 *ErrorResponse
@@ -716,11 +716,11 @@ type CreateSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
 	// * Client attempted to request notifications for an Entity type to which the scopes included in the access token do not provide access.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * A subscription with the specified ID already exists.
 	// * Despite repeated attempts, the DSS was unable to complete the update because of other simultaneous changes.
@@ -763,11 +763,11 @@ type UpdateSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
 	// * Client attempted to request notifications for an Entity type to which the scopes included in the access token do not provide access.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// * A subscription with the specified ID already exists and is managed by a different client.
 	// * The provided `version` does not match the current subscription.
@@ -804,10 +804,10 @@ type DeleteSubscriptionResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// A subscription with the specified ID was not found.
 	Response404 *ErrorResponse
@@ -848,10 +848,10 @@ type MakeDssReportResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
@@ -880,10 +880,10 @@ type GetUssAvailabilityResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The client issued too many requests in a short period of time.
 	Response429 *ErrorResponse
@@ -918,10 +918,10 @@ type SetUssAvailabilityResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// * The access token was decoded successfully but did not include a scope appropriate to this endpoint or the request.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// This response not part of the original F3548 standard API allows to indicate that:
 	// * The provided `version` does not match the current version of the USS availability status.

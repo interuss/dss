@@ -1,5 +1,5 @@
 // This file is auto-generated; do not change as any changes will be overwritten
-package versioning
+package versioningv1
 
 import (
 	"context"
@@ -22,15 +22,20 @@ type GetVersionRequest struct {
 	// The result of attempting to authorize this request
 	Auth api.AuthorizationResult
 }
+
+const GetVersionOperationID = "versioningv1.GetVersion"
+
+func (request *GetVersionRequest) OperationID() string { return GetVersionOperationID }
+
 type GetVersionResponseSet struct {
 	// This interface successfully provided the version of the system identity/boundary that was requested.
 	Response200 *GetVersionResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *api.EmptyResponseBody
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *api.EmptyResponseBody
+	Response403 *api.ClientErrorBody
 
 	// The requested system identity/boundary is not known, or the versioning automated testing interface is not available.
 	Response404 *api.EmptyResponseBody

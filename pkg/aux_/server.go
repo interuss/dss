@@ -30,10 +30,10 @@ func (a *Server) GetVersion(context.Context, *restapi.GetVersionRequest) restapi
 func (a *Server) ValidateOauth(ctx context.Context, req *restapi.ValidateOauthRequest) restapi.ValidateOauthResponseSet {
 
 	if req.Auth.ClientID == nil {
-		return restapi.ValidateOauthResponseSet{Response403: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
+		return restapi.ValidateOauthResponseSet{Response403: &api.ClientErrorBody{Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if req.Owner != nil && *req.Owner != *req.Auth.ClientID {
-		return restapi.ValidateOauthResponseSet{Response403: &restapi.ErrorResponse{Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Owner mismatch, required: %s, but oauth token has %s", *req.Owner, *req.Auth.ClientID))}}
+		return restapi.ValidateOauthResponseSet{Response403: &api.ClientErrorBody{Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Owner mismatch, required: %s, but oauth token has %s", *req.Owner, *req.Auth.ClientID))}}
 	}
 	return restapi.ValidateOauthResponseSet{Response200: &api.EmptyResponseBody{}}
 }

@@ -78,10 +78,10 @@ type ValidateOauthResponseSet struct {
 	Response200 *api.EmptyResponseBody
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// Auto-generated internal server error response
 	Response500 *api.InternalServerErrorBody
@@ -101,10 +101,10 @@ type GetPoolResponseSet struct {
 	Response200 *PoolResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The server has not implemented this operation.
 	Response501 *ErrorResponse
@@ -127,10 +127,10 @@ type GetDSSInstancesResponseSet struct {
 	Response200 *DSSInstancesResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The server has not implemented this operation.
 	Response501 *ErrorResponse
@@ -167,10 +167,10 @@ type PutDSSInstancesHeartbeatResponseSet struct {
 	Response400 *ErrorResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The server has not implemented this operation.
 	Response501 *ErrorResponse
@@ -233,10 +233,10 @@ type GetGlobalOptionsResponseSet struct {
 	Response200 *GlobalOptionsResponse
 
 	// Bearer access token was not provided in Authorization header, token could not be decoded, or token was invalid.
-	Response401 *ErrorResponse
+	Response401 *api.ClientErrorBody
 
 	// The access token was decoded successfully but did not include a scope appropriate to this endpoint.
-	Response403 *ErrorResponse
+	Response403 *api.ClientErrorBody
 
 	// The server has not implemented this operation.
 	Response501 *ErrorResponse

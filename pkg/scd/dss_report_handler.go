@@ -77,7 +77,7 @@ func (a *Server) MakeDssReport(ctx context.Context, req *restapi.MakeDssReportRe
 		case dsserr.BadRequest:
 			return restapi.MakeDssReportResponseSet{Response400: errResp}
 		case dsserr.PermissionDenied:
-			return restapi.MakeDssReportResponseSet{Response403: errResp}
+			return restapi.MakeDssReportResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		default:
 			return restapi.MakeDssReportResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, err)}}
