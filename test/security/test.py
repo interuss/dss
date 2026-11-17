@@ -421,7 +421,7 @@ def test_valid_token(method, path):
 
 for method, path in sorted(build_urls(admin=True)):
     logger.info(f"📋 Testing {method} {path}...")
-    test_not_served(method, path)
+    test_admin_not_served(method, path)
 
 for method, path in sorted(build_urls(admin=False)):
     logger.info(f"📋 Testing {method} {path}...")
