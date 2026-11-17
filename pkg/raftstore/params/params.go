@@ -102,6 +102,10 @@ func (c ConnectParameters) RaftConfig(nodeID uint64, storage raft.Storage) *raft
 		Storage:         storage,
 		// a removed leader steps down so that the remaining nodes elect a new leader
 		StepDownOnRemoval: true,
+		// a leader that does not hear from a quorum for an election timeout steps down
+		CheckQuorum: true,
+		// a node does not disrupt the group with a new election unless a quorum would vote for it
+		PreVote: true,
 	}
 }
 
