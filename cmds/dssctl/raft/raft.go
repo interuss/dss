@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"github.com/interuss/dss/cmds/dssctl/raft/evict"
 	"github.com/interuss/dss/cmds/dssctl/raft/raftgroup"
 	"github.com/spf13/cobra"
 )
@@ -22,5 +23,5 @@ in which case it can be retried for the failed groups only with --groups.`,
 
 func init() {
 	raftgroup.RegisterFlags(RaftCmd.PersistentFlags())
-	RaftCmd.AddCommand(bootstrapCmd, addCmd, removeCmd, listCmd, nodeCmd)
+	RaftCmd.AddCommand(bootstrapCmd, addCmd, removeCmd, listCmd, nodeCmd, evict.Cmd)
 }
