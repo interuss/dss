@@ -123,7 +123,7 @@ def fill_path(path):
     return re.sub(r"\{[^}]+\}", "test", path)
 
 
-def test_not_served(method, path):
+def test_admin_not_served(method, path):
 
     logger.debug("❓ Testing that the endpoint is not served publicly...")
 
