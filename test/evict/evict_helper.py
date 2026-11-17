@@ -7,6 +7,13 @@ import sys
 class EvictHelper:
     def __init__(self):
         self.logger: logging.Logger = logging.getLogger(__name__)
+        self.container = os.environ.get(
+            "EVICT_CONTAINER", "dss_sandbox-local-dss-core-service-1"
+        )
+        self.raft = os.environ.get("EVICT_STORE") == "raft"
+        self.supports_batch_size = not self.raft
+        self.supports_dry_run = not self.raft
+        self.selects_entity_types = not self.raft
 
     def run_evict(
         self,
@@ -22,6 +29,37 @@ class EvictHelper:
         rid_batch_size: int | None = None,
         delete: bool = False,
     ):
+        if self.raft:
+            if scd_batch_size is not None or rid_batch_size is not None:
+                self.logger.error(
+                    "❌ Batch sizes are not supported with the raft store"
+                )
+                sys.exit(1)
+            if not delete:
+                self.logger.error("❌ Dry runs are not supported with the raft store")
+                sys.exit(1)
+            group, ttl, limit = (
+                ("rid", rid_ttl, rid_limit)
+                if rid_isa or rid_sub
+                else ("scd", scd_ttl, scd_limit)
+            )
+            command = [
+                "docker",
+                "exec",
+                self.container,
+                "dssctl",
+                "raft",
+                "evict",
+                "run",
+                f"--groups={group}",
+                f"--{group}_ttl",
+                str(ttl).lower(),
+                f"--{group}_limit",
+                str(limit or 0),
+            ]
+            self._run(command)
+            return
+
         db_hostname = os.environ.get("DB_HOSTNAME", "local-dss-crdb")
         db_port = os.environ.get("DB_PORT", "26257")
         db_username = os.environ.get("DB_USERNAME", "root")
@@ -29,7 +67,7 @@ class EvictHelper:
         command = [
             "docker",
             "exec",
-            "dss_sandbox-local-dss-core-service-1",
+            self.container,
             "db-manager",
             "evict",
             f"--scd_oir={str(scd_oir).lower()}",
@@ -83,6 +121,9 @@ class EvictHelper:
                 str(rid_batch_size),
             ]
 
+        self._run(command)
+
+    def _run(self, command: list[str]):
         process = subprocess.run(
             " ".join(command), shell=True, capture_output=True, timeout=5
         )

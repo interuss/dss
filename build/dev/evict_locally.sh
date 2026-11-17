@@ -13,9 +13,10 @@ else
 fi
 cd "${BASEDIR}/../.." || exit 1
 
-CORE_SERVICE_CONTAINER="dss_sandbox-local-dss-core-service-1"
-OAUTH_CONTAINER="dss_sandbox-local-dss-dummy-oauth-1"
-declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER")
+CORE_SERVICE_CONTAINER="${CORE_SERVICE_CONTAINER:-dss_sandbox-local-dss-core-service-1}"
+OAUTH_CONTAINER="${OAUTH_CONTAINER:-dss_sandbox-local-dss-dummy-oauth-1}"
+export EVICT_CONTAINER="${EVICT_CONTAINER:-$CORE_SERVICE_CONTAINER}"
+declare -a localhost_containers=("$CORE_SERVICE_CONTAINER" "$OAUTH_CONTAINER" "$EVICT_CONTAINER")
 
 for container_name in "${localhost_containers[@]}"; do
 	if [ "$( docker container inspect -f '{{.State.Status}}' "$container_name" )" == "running" ]; then
@@ -29,6 +30,12 @@ for container_name in "${localhost_containers[@]}"; do
 		exit 1;
 	fi
 done
+
+# With the raft store, eviction goes through the admin API of the DSS node (dssctl) instead of the database.
+if [[ "${COMPOSE_PROFILES:-}" == *with-raft* ]]; then
+    export EVICT_STORE="${EVICT_STORE:-raft}"
+fi
+echo "Evicting through ${EVICT_CONTAINER} with the ${EVICT_STORE:-sql} store"
 
 # If yugabyte container is running, assume that we're running in yugabyte mode
 if [ "$( docker container inspect -f '{{.State.Status}}' "dss_sandbox-local-dss-ybdb-1" )" == "running" ]; then

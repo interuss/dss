@@ -40,23 +40,27 @@ def test_rid_ISA(qh: QueryHelper, eh: EvictHelper):
     _ = sys.stdout.flush()
     time.sleep(3)
 
-    logger.debug("Evicting subscriptions older than 1s in dry mode")
-    eh.evict_rid_ISAs("1s", delete=False)
+    if eh.supports_dry_run:
+        logger.debug("Evicting subscriptions older than 1s in dry mode")
+        eh.evict_rid_ISAs("1s", delete=False)
 
-    logger.debug("Check that ISA still exists")
-    if not qh.get_rid_ISA(ISA_id):
-        logger.error("❌ Test ISA shall still be present since delete was set to false")
-        sys.exit(1)
+        logger.debug("Check that ISA still exists")
+        if not qh.get_rid_ISA(ISA_id):
+            logger.error(
+                "❌ Test ISA shall still be present since delete was set to false"
+            )
+            sys.exit(1)
 
-    logger.debug("Evicting subscriptions older than 1s")
-    eh.evict_rid_subscriptions("1s", delete=True)
+    if eh.selects_entity_types:
+        logger.debug("Evicting subscriptions older than 1s")
+        eh.evict_rid_subscriptions("1s", delete=True)
 
-    logger.debug("Check that ISA still exists")
-    if not qh.get_rid_ISA(ISA_id):
-        logger.error(
-            "❌ Test ISA shall still be present since we evicted subscriptions"
-        )
-        sys.exit(1)
+        logger.debug("Check that ISA still exists")
+        if not qh.get_rid_ISA(ISA_id):
+            logger.error(
+                "❌ Test ISA shall still be present since we evicted subscriptions"
+            )
+            sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
     eh.evict_rid_ISAs("1s", delete=True)
