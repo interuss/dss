@@ -4,6 +4,7 @@ import (
 	"context"
 
 	ridv2 "github.com/interuss/dss/pkg/api/ridv2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/pb/ridpb"
@@ -170,6 +171,24 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 
 	case *ridpb.Payload_CountSubscriptionsRepoCall:
 		return r.Store.GetRepo().CountSubscriptions(ctx)
+
+	// Eviction repository requests
+	case *ridpb.Payload_DeleteExpiredRepoCall:
+		var params dssmodels.EvictionParameters
+		if err := params.FromProto(payload.DeleteExpiredRepoCall.GetParameters()); err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid eviction parameters")
+		}
+		return r.Store.GetRepo().DeleteExpired(ctx, params)
+
+	case *ridpb.Payload_GetEvictionConfigRepoCall:
+		return r.Store.GetRepo().GetEvictionConfig(ctx)
+
+	case *ridpb.Payload_SetEvictionConfigRepoCall:
+		var config dssmodels.EvictionConfig
+		if err := config.FromProto(payload.SetEvictionConfigRepoCall.GetConfig()); err != nil {
+			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid eviction config")
+		}
+		return r.Store.GetRepo().SetEvictionConfig(ctx, config)
 
 	default:
 		return nil, stacktrace.NewError("unknown request: %q", proposal.Name())

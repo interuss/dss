@@ -25,7 +25,7 @@ message Config {
 
 // DeleteExpiredRepoCall deletes the expired entities.
 message DeleteExpiredRepoCall {
-    // Parameters of a manual run. When unset, the stored config of the group is used.
+    // Parameters of the cleanup job, resolved by the proposer so that every node applies the same ones.
     Parameters parameters = 1;
 }
 

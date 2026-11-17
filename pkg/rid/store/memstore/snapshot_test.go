@@ -3,6 +3,7 @@ package memstore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -22,12 +23,19 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	_, err = src.InsertSubscription(ctx, subscriptionsPool[0].input)
 	require.NoError(t, err)
+	config := models.EvictionConfig{Interval: time.Hour, Parameters: models.EvictionParameters{TTL: time.Minute, Limit: 3}}
+	_, err = src.SetEvictionConfig(ctx, config)
+	require.NoError(t, err)
 
 	data, err := src.GetSnapshot()
 	require.NoError(t, err)
 
 	dst := setUpStore(t)
 	require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, data)))
+
+	gotConfig, err := dst.GetEvictionConfig(ctx)
+	require.NoError(t, err)
+	require.Equal(t, config, gotConfig)
 
 	wantISA, err := src.GetISA(ctx, serviceArea.ID, false)
 	require.NoError(t, err)
@@ -62,7 +70,13 @@ func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	other.ID = "00000000-0000-4000-8000-000000000002"
 	_, err = dst.InsertISA(ctx, &other)
 	require.NoError(t, err)
+	_, err = dst.SetEvictionConfig(ctx, models.EvictionConfig{Interval: time.Hour, Parameters: models.EvictionParameters{TTL: time.Minute}})
+	require.NoError(t, err)
 	require.NoError(t, dst.RestoreFromSnapshot(data))
+
+	config, err := dst.GetEvictionConfig(ctx)
+	require.NoError(t, err)
+	require.Equal(t, defaultEvictionConfig, config)
 
 	count, err := dst.CountISAs(ctx)
 	require.NoError(t, err)

@@ -134,7 +134,7 @@ func (x *Config) GetParameters() *Parameters {
 // DeleteExpiredRepoCall deletes the expired entities.
 type DeleteExpiredRepoCall struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Parameters of a manual run. When unset, the stored config of the group is used.
+	// Parameters of the cleanup job, resolved by the proposer so that every node applies the same ones.
 	Parameters    *Parameters `protobuf:"bytes,1,opt,name=parameters,proto3" json:"parameters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
