@@ -27,7 +27,7 @@ COPY . /app
 RUN make interuss
 
 
-FROM alpine:latest
+FROM alpine:3.24.4
 RUN apk update && apk add ca-certificates curl
 COPY --from=build /go/bin/core-service /usr/bin
 COPY --from=build /go/bin/db-manager /usr/bin

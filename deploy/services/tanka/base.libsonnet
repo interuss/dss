@@ -281,7 +281,7 @@ local volumes = import 'volumes.libsonnet';
 
   WaitForDatastore(metadata): {
     name: "wait-for-datastore",
-    image: "alpine:3.17.3",
+    image: "alpine:3.24.4",
     command: [
       'sh',
       '-c',
