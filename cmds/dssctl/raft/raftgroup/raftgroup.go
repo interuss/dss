@@ -52,9 +52,9 @@ func Selected() ([]Group, error) {
 func New(names []string) ([]Group, error) {
 	result := make([]Group, 0, len(names))
 	for _, name := range names {
-		group, err := admin.NewRaftGroup(name)
+		group, err := client.NewRaftGroup(admin.Socket, name, admin.Timeout)
 		if err != nil {
-			return nil, err
+			return nil, stacktrace.Propagate(err, "invalid --admin_socket")
 		}
 		result = append(result, Group{Name: name, RaftGroup: group})
 	}
