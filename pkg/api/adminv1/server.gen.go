@@ -225,8 +225,113 @@ func (s *APIRouter) DeleteRaftGroupMember(exp *regexp.Regexp, w http.ResponseWri
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) GetEvictionConfig(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetEvictionConfigRequest
+	var response GetEvictionConfigResponseSet
+
+	// Parse path parameters
+	pathMatch := exp.FindStringSubmatch(r.URL.Path)
+	req.GroupName = RaftGroupName(pathMatch[1])
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response = s.Implementation.GetEvictionConfig(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response404 != nil {
+		api.WriteJSON(w, 404, response.Response404)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
+func (s *APIRouter) PutEvictionConfig(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req PutEvictionConfigRequest
+	var response PutEvictionConfigResponseSet
+
+	// Parse path parameters
+	pathMatch := exp.FindStringSubmatch(r.URL.Path)
+	req.GroupName = RaftGroupName(pathMatch[1])
+
+	// Parse request body
+	req.Body = new(EvictionConfig)
+	defer r.Body.Close()
+	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response = s.Implementation.PutEvictionConfig(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response400 != nil {
+		api.WriteJSON(w, 400, response.Response400)
+		return
+	}
+	if response.Response404 != nil {
+		api.WriteJSON(w, 404, response.Response404)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
+func (s *APIRouter) CreateEvictionRun(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req CreateEvictionRunRequest
+	var response CreateEvictionRunResponseSet
+
+	// Parse path parameters
+	pathMatch := exp.FindStringSubmatch(r.URL.Path)
+	req.GroupName = RaftGroupName(pathMatch[1])
+
+	// Parse request body
+	req.Body = new(EvictionRunParameters)
+	defer r.Body.Close()
+	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response = s.Implementation.CreateEvictionRun(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response400 != nil {
+		api.WriteJSON(w, 400, response.Response400)
+		return
+	}
+	if response.Response404 != nil {
+		api.WriteJSON(w, 404, response.Response404)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 5)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 8)}
 
 	pattern := regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/this_node$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetThisRaftNode, Name: "adminv1.GetThisRaftNode", Path: "/admin/v1/raft/groups/{group_name}/this_node"}
@@ -242,6 +347,15 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) APIRouter {
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/members/(?P<node_id>[^/]*)$")
 	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteRaftGroupMember, Name: "adminv1.DeleteRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members/{node_id}"}
+
+	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetEvictionConfig, Name: "adminv1.GetEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config"}
+
+	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
+	router.Routes[6] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionConfig, Name: "adminv1.PutEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config"}
+
+	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/runs$")
+	router.Routes[7] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateEvictionRun, Name: "adminv1.CreateEvictionRun", Path: "/admin/v1/raft/groups/{group_name}/eviction/runs"}
 
 	return router
 }

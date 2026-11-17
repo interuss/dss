@@ -102,6 +102,80 @@ components:
           items:
             $ref: '#/components/schemas/RaftNode'
 
+    EvictionParameters:
+      description: >-
+        Eviction parameters of a Raft group, applied to each of its entity types.
+      type: object
+      required:
+        - ttl
+      properties:
+        ttl:
+          description: >-
+            Duration, as a Go duration string, after their end at which entities are expired. Must be positive.
+          type: string
+          example: 30m
+        limit:
+          description: Maximum number of entities evicted per entity type by a cleanup job, 0 for unlimited.
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+
+    EvictionConfig:
+      description: >-
+        Eviction settings of a Raft group, used by the cleanup jobs scheduled by its leader.
+      type: object
+      required:
+        - interval
+        - parameters
+      properties:
+        interval:
+          description: >-
+            Duration, as a Go duration string, after their end at which entities are expired. Must be positive.
+          type: string
+          example: 1h
+        parameters:
+          $ref: '#/components/schemas/EvictionParameters'
+
+    EvictionRunParameters:
+      description: Parameters of a cleanup job run on demand.
+      type: object
+      properties:
+        parameters:
+          description: >-
+            Eviction parameters of the job. When absent, the parameters of the eviction settings of the group are used.
+          allOf:
+            - $ref: '#/components/schemas/EvictionParameters'
+
+    EntityEvictionCount:
+      description: Number of entities of an entity type deleted by a cleanup job.
+      type: object
+      required:
+        - type
+        - count
+      properties:
+        type:
+          description: Entity type, e.g. `isas`.
+          type: string
+          example: isas
+        count:
+          description: Number of entities deleted.
+          type: integer
+          format: int64
+          example: 12
+
+    EvictionRunResult:
+      description: Result of a cleanup job run on demand.
+      type: object
+      required:
+        - counts
+      properties:
+        counts:
+          description: Number of entities deleted per entity type of the group, sorted by entity type.
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityEvictionCount'
+
 paths:
   /admin/v1/raft/groups/{group_name}/this_node:
     parameters:
@@ -117,7 +191,7 @@ paths:
         Representation of this node within the specified group. It is available for every group that the
         node runs, including while the node waits to create or join it.
       operationId: getThisRaftNode
-      tags: [ raft ]
+      tags: [ group ]
       responses:
         '200':
           description: This DSS node is successfully described.
@@ -139,7 +213,7 @@ paths:
         This DSS node must be waiting, i.e. not a member of a group with this name yet. The other nodes are then added
         to the group one at a time. The request returns once this DSS node is the leader of the new group.
       operationId: createRaftGroup
-      tags: [ raft ]
+      tags: [ group ]
       requestBody:
         required: true
         content:
@@ -183,7 +257,7 @@ paths:
     get:
       summary: Retrieve the specified Raft group, as known by this DSS node
       operationId: getRaftGroup
-      tags: [ raft ]
+      tags: [ group ]
       responses:
         '200':
           description: Raft group information was retrieved successfully.
@@ -215,7 +289,7 @@ paths:
         running and waiting: this member reads the ID of the node from the node itself, then adds it.
         A node started with an empty data directory waits to be added. The request returns once the change is adopted by the group.
       operationId: createRaftGroupMember
-      tags: [ raft ]
+      tags: [ group ]
       requestBody:
         required: true
         content:
@@ -278,7 +352,7 @@ paths:
         A voter cannot be removed if the group would be left with fewer than 3 voters.
         The request returns once the change is adopted by the group.
       operationId: deleteRaftGroupMember
-      tags: [ raft ]
+      tags: [ group ]
       responses:
         '204':
           description: The node was removed.
@@ -295,6 +369,110 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /admin/v1/raft/groups/{group_name}/eviction/config:
+    parameters:
+      - name: group_name
+        in: path
+        required: true
+        description: Name of the Raft group.
+        schema:
+          $ref: '#/components/schemas/RaftGroupName'
+    get:
+      summary: Retrieve the eviction settings of a Raft group
+      operationId: getEvictionConfig
+      tags: [ eviction ]
+      responses:
+        '200':
+          description: >-
+            The eviction settings were retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvictionConfig'
+        '404':
+          description: >-
+            This DSS node has no Raft group with this name or the group does not support eviction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Replace the eviction settings of a Raft group
+      description: >-
+        The settings replace the previous ones as a whole. The request returns once the change is adopted by the group.
+      operationId: putEvictionConfig
+      tags: [ eviction ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvictionConfig'
+      responses:
+        '200':
+          description: The eviction settings were replaced. They are returned as stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvictionConfig'
+        '400':
+          description: >-
+            The request was not properly formed, e.g. an invalid duration, a negative interval, a non-positive TTL or a negative limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: >-
+            This DSS node has no Raft group with this name or the group does not support eviction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/v1/raft/groups/{group_name}/eviction/runs:
+    parameters:
+      - name: group_name
+        in: path
+        required: true
+        description: Name of the Raft group.
+        schema:
+          $ref: '#/components/schemas/RaftGroupName'
+    post:
+      summary: Run a cleanup job on a Raft group
+      description: >-
+        The job deletes the expired entities of every entity type of the group, according to the parameters given or to the eviction settings.
+      operationId: createEvictionRun
+      tags: [ eviction ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvictionRunParameters'
+      responses:
+        '200':
+          description: The cleanup job was run.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvictionRunResult'
+        '400':
+          description: >-
+            The request was not properly formed, e.g. an invalid duration, a non-positive TTL or a negative limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: >-
+            This DSS node has no Raft group with this name or the group does not support eviction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 tags:
-  - name: raft
+  - name: group
     description: Endpoints exposed by a DSS node for management of its Raft groups.
+  - name: eviction
+    description: Endpoints exposed by a DSS node for the eviction of the expired entities of its Raft groups.

@@ -112,7 +112,7 @@ dss_apis: openapi-to-go-server
 	    -v "$(CURDIR)/:/resources/src" \
 			interuss/openapi-to-go-server \
 		  		--api_import github.com/interuss/dss/pkg/api \
-    	      	--api /resources/adminv1.yaml#raft \
+				--api /resources/adminv1.yaml#group,eviction \
     	      	--api /resources/auxv1.yaml#dss \
     	      	--api /resources/scdv1.yaml#dss \
 				--api /resources/ridv1.yaml#dss \

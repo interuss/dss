@@ -51,3 +51,41 @@ type RaftGroup struct {
 	// Nodes that are or were members of the Raft group.
 	Nodes []RaftNode `json:"nodes"`
 }
+
+// Eviction parameters of a Raft group, applied to each of its entity types.
+type EvictionParameters struct {
+	// Duration, as a Go duration string, after their end at which entities are expired. Must be positive.
+	Ttl string `json:"ttl"`
+
+	// Maximum number of entities evicted per entity type by a cleanup job, 0 for unlimited.
+	Limit *int64 `json:"limit,omitempty"`
+}
+
+// Eviction settings of a Raft group, used by the cleanup jobs scheduled by its leader.
+type EvictionConfig struct {
+	// Duration, as a Go duration string, after their end at which entities are expired. Must be positive.
+	Interval string `json:"interval"`
+
+	Parameters EvictionParameters `json:"parameters"`
+}
+
+// Parameters of a cleanup job run on demand.
+type EvictionRunParameters struct {
+	// Eviction parameters of the job. When absent, the parameters of the eviction settings of the group are used.
+	Parameters *EvictionParameters `json:"parameters,omitempty"`
+}
+
+// Number of entities of an entity type deleted by a cleanup job.
+type EntityEvictionCount struct {
+	// Entity type, e.g. `isas`.
+	Type string `json:"type"`
+
+	// Number of entities deleted.
+	Count int64 `json:"count"`
+}
+
+// Result of a cleanup job run on demand.
+type EvictionRunResult struct {
+	// Number of entities deleted per entity type of the group, sorted by entity type.
+	Counts []EntityEvictionCount `json:"counts"`
+}
