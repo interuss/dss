@@ -95,7 +95,7 @@ func createKeyResolver() (auth.KeyResolver, error) {
 			KeyIDs:   strings.Split(*jwksKeyIDs, ","),
 		}, nil
 	default:
-		return nil, nil
+		return nil, stacktrace.NewError("One of --public_key_files, or --jwks_endpoint together with --jwks_key_ids, must be set")
 	}
 }
 
@@ -370,11 +370,8 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 
 	// Initialize access token validation
 	keyResolver, err := createKeyResolver()
-	switch {
-	case err != nil:
+	if err != nil {
 		return stacktrace.Propagate(err, "Error creating RSA authorizer")
-	case keyResolver == nil:
-		logger.Warn("operating without authorizing interceptor")
 	}
 
 	authorizer, err := auth.NewRSAAuthorizer(
