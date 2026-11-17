@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
+	"github.com/interuss/dss/cmds/dssctl/admin"
 	"github.com/interuss/dss/pkg/admin/client"
 	"github.com/interuss/stacktrace"
 	"github.com/spf13/pflag"
@@ -15,17 +15,11 @@ import (
 
 var Names = []string{"aux", "rid", "scd"}
 
-var (
-	selected     []string
-	adminSocket  string
-	adminTimeout time.Duration
-)
+var selected []string
 
-// RegisterFlags registers the flags selecting the Raft groups and reaching the admin API of the DSS node.
+// RegisterFlags registers the flags selecting the Raft groups.
 func RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&selected, "groups", Names, "Comma-separated Raft groups to act on, all of them if not set")
-	fs.StringVar(&adminSocket, "admin_socket", "/run/dss/admin.sock", "Path of the Unix socket of the admin API of the DSS node, matching its --admin_socket")
-	fs.DurationVar(&adminTimeout, "admin_timeout", time.Minute, "Timeout of each request to the admin API")
 }
 
 // Group is a Raft group of the DSS node, managed through its admin API.
@@ -58,9 +52,9 @@ func Selected() ([]Group, error) {
 func New(names []string) ([]Group, error) {
 	result := make([]Group, 0, len(names))
 	for _, name := range names {
-		group, err := client.NewRaftGroup(adminSocket, name, adminTimeout)
+		group, err := admin.NewRaftGroup(name)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "invalid --admin_socket")
+			return nil, err
 		}
 		result = append(result, Group{Name: name, RaftGroup: group})
 	}
