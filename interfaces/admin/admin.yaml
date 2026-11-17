@@ -123,7 +123,7 @@ components:
 
     EvictionConfig:
       description: >-
-        Eviction settings of a Raft group, used by the cleanup jobs scheduled by its leader. Until they are set, the default ones are used.
+        Eviction settings of a Raft group, used by the cleanup jobs scheduled by its leader.
       type: object
       required:
         - interval
