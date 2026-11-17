@@ -50,7 +50,7 @@ logging.basicConfig(
 logger = logging.getLogger("security")
 
 
-def build_urls(admin):
+def build_urls(is_admin):
 
     pattern = re.compile(r'Method:\s*http\.Method(\w+).*?Path:\s*"([^"]+)"')
 
