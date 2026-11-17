@@ -14,6 +14,7 @@ services:
     restart: always
     networks:
       - dss_sandbox_default_network
+    profiles: ["", "with-monitoring"]
     healthcheck:
       test: curl -f 'http://localhost:8080/health?ready=1' || exit 1
       interval: 3m
@@ -72,28 +73,46 @@ services:
 
   local-dss-rid-bootstrapper:
     image: interuss-local/dss
-    command: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --datastore_host local-dss-crdb
+    command:
+      - /bin/sh
+      - -c
+      - |
+        case "${COMPOSE_PROFILES-}" in *with-raft*|*with-yugabyte*) exit 0;; esac
+        exec /usr/bin/db-manager migrate --schemas_dir=/db-schemas/rid --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
+        required: false
     networks:
       - dss_sandbox_default_network
 
   local-dss-scd-bootstrapper:
     image: interuss-local/dss
-    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --datastore_host local-dss-crdb
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        case "${COMPOSE_PROFILES-}" in *with-raft*|*with-yugabyte*) exit 0;; esac
+        exec /usr/bin/db-manager migrate --schemas_dir=/db-schemas/scd --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
+        required: false
     networks:
       - dss_sandbox_default_network
 
   local-dss-aux-bootstrapper:
     image: interuss-local/dss
-    entrypoint: /usr/bin/db-manager migrate --schemas_dir=/db-schemas/aux_ --db_version "latest" --datastore_host local-dss-crdb
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        case "${COMPOSE_PROFILES-}" in *with-raft*|*with-yugabyte*) exit 0;; esac
+        exec /usr/bin/db-manager migrate --schemas_dir=/db-schemas/aux_ --db_version "latest" --datastore_host local-dss-crdb
     depends_on:
       local-dss-crdb:
         condition: service_healthy
+        required: false
     networks:
       - dss_sandbox_default_network
 
