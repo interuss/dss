@@ -195,6 +195,8 @@ empty data directory and wait to be added to the pool by an existing node.
 
 ## Next steps
 
+Proceed to [services deployment](../services/index.md).
+
 Once the pool is formed, its day-2 operations are described in
 [pooling operations](../../operations/pooling.md).
 
