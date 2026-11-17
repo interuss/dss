@@ -133,7 +133,6 @@ Done when it prints `ALL DONE`. Logs of each pool are written to release/logs/<p
     * `report.json`: raw report
     * `scalability_curve.png`: flight throughput, failures, create operational intent latency, DSS queries/s and USL fit, one subfigure per DSS instance
     * `timeline/index.html`: timeline of flights and operational intent operations, one `timeline/s<N>.html` per scenario
-    * `usslogset.json`: queries performed
     * `intermediate<N>/`: `report.json`, `timeline/` and `scalability_curve.png` generated after each DSS instance but the last
 * `isas_uncontended`:
     * `report.json`: raw report
