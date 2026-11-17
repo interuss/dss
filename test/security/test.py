@@ -57,7 +57,7 @@ def build_urls(is_admin):
     urls = set()
 
     for filepath in glob.glob("pkg/api/**/*.go", recursive=True):
-        if filepath.startswith(ADMIN_API_DIR) != admin:
+        if filepath.startswith(ADMIN_API_DIR) != is_admin:
             continue
         with open(filepath) as f:
             for match in pattern.finditer(f.read()):
@@ -419,11 +419,11 @@ def test_valid_token(method, path):
         logger.info(f"✅ Valid token generated a {resp.status}.")
 
 
-for method, path in sorted(build_urls(admin=True)):
+for method, path in sorted(build_urls(is_admin=True)):
     logger.info(f"📋 Testing {method} {path}...")
     test_admin_not_served(method, path)
 
-for method, path in sorted(build_urls(admin=False)):
+for method, path in sorted(build_urls(is_admin=False)):
     logger.info(f"📋 Testing {method} {path}...")
 
     if path in ENDPOINT_WITHOUT_AUTHS:
