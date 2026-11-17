@@ -29,7 +29,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.DeleteConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.DeleteConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -47,7 +47,7 @@ func (a *Server) DeleteConstraintReference(ctx context.Context, req *restapi.Del
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.DeleteConstraintReferenceResponseSet{Response403: errResp}
+			return restapi.DeleteConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.BadRequest:
 			return restapi.DeleteConstraintReferenceResponseSet{Response400: errResp}
 		case dsserr.NotFound:
@@ -74,7 +74,7 @@ func (a *Server) GetConstraintReference(ctx context.Context, req *restapi.GetCon
 	}
 
 	if req.Auth.ClientID == nil {
-		return restapi.GetConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.GetConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -101,7 +101,7 @@ func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.Cre
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	if req.Auth.ClientID == nil {
-		return restapi.CreateConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.CreateConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -117,7 +117,7 @@ func (a *Server) CreateConstraintReference(ctx context.Context, req *restapi.Cre
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.CreateConstraintReferenceResponseSet{Response403: errResp}
+			return restapi.CreateConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.VersionMismatch:
 			return restapi.CreateConstraintReferenceResponseSet{Response409: errResp}
 		case dsserr.BadRequest:
@@ -139,7 +139,7 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	if req.Auth.ClientID == nil {
-		return restapi.UpdateConstraintReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.UpdateConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -155,7 +155,7 @@ func (a *Server) UpdateConstraintReference(ctx context.Context, req *restapi.Upd
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.UpdateConstraintReferenceResponseSet{Response403: errResp}
+			return restapi.UpdateConstraintReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.VersionMismatch:
 			return restapi.UpdateConstraintReferenceResponseSet{Response409: errResp}
 		case dsserr.BadRequest:

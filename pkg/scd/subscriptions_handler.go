@@ -43,11 +43,11 @@ func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	if req.Auth.ClientID == nil {
-		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.CreateSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if err := validateRequestedSubscriptionScopes(req.Auth, req.Body); err != nil {
-		return restapi.CreateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.CreateSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, err)}}
 	}
 	payload, err := operations.NewCreateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Body, a.AllowHTTPBaseUrls)
@@ -61,7 +61,7 @@ func (a *Server) CreateSubscription(ctx context.Context, req *restapi.CreateSubs
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.CreateSubscriptionResponseSet{Response403: errResp}
+			return restapi.CreateSubscriptionResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.AlreadyExists, dsserr.VersionMismatch:
 			return restapi.CreateSubscriptionResponseSet{Response409: errResp}
 		case dsserr.BadRequest, dsserr.NotFound:
@@ -83,11 +83,11 @@ func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 	if req.Auth.ClientID == nil {
-		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.UpdateSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 	if err := validateRequestedSubscriptionScopes(req.Auth, req.Body); err != nil {
-		return restapi.UpdateSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.UpdateSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, err)}}
 	}
 	payload, err := operations.NewUpdateSubscriptionPayload(req.Subscriptionid, dssmodels.Manager(*req.Auth.ClientID), req.Version, req.Body, a.AllowHTTPBaseUrls)
@@ -101,7 +101,7 @@ func (a *Server) UpdateSubscription(ctx context.Context, req *restapi.UpdateSubs
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.UpdateSubscriptionResponseSet{Response403: errResp}
+			return restapi.UpdateSubscriptionResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.AlreadyExists, dsserr.VersionMismatch:
 			return restapi.UpdateSubscriptionResponseSet{Response409: errResp}
 		case dsserr.BadRequest, dsserr.NotFound:
@@ -128,7 +128,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.GetSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.GetSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
@@ -140,7 +140,7 @@ func (a *Server) GetSubscription(ctx context.Context, req *restapi.GetSubscripti
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.GetSubscriptionResponseSet{Response403: errResp}
+			return restapi.GetSubscriptionResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.BadRequest:
 			return restapi.GetSubscriptionResponseSet{Response400: errResp}
 		case dsserr.NotFound:
@@ -179,7 +179,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.QuerySubscriptionsResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.QuerySubscriptionsResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
@@ -193,7 +193,7 @@ func (a *Server) QuerySubscriptions(ctx context.Context, req *restapi.QuerySubsc
 		case dsserr.BadRequest:
 			return restapi.QuerySubscriptionsResponseSet{Response400: errResp}
 		case dsserr.PermissionDenied:
-			return restapi.QuerySubscriptionsResponseSet{Response403: errResp}
+			return restapi.QuerySubscriptionsResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.AreaTooLarge:
 			return restapi.QuerySubscriptionsResponseSet{Response413: errResp}
 		default:
@@ -226,7 +226,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.DeleteSubscriptionResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.DeleteSubscriptionResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing owner"))}}
 	}
 
@@ -238,7 +238,7 @@ func (a *Server) DeleteSubscription(ctx context.Context, req *restapi.DeleteSubs
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.DeleteSubscriptionResponseSet{Response403: errResp}
+			return restapi.DeleteSubscriptionResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.BadRequest:
 			return restapi.DeleteSubscriptionResponseSet{Response400: errResp}
 		case dsserr.NotFound:

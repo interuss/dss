@@ -29,7 +29,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -48,7 +48,7 @@ func (a *Server) DeleteOperationalIntentReference(ctx context.Context, req *rest
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: errResp}
+			return restapi.DeleteOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.NotFound:
 			return restapi.DeleteOperationalIntentReferenceResponseSet{Response404: errResp}
 		case dsserr.VersionMismatch:
@@ -75,7 +75,7 @@ func (a *Server) GetOperationalIntentReference(ctx context.Context, req *restapi
 	}
 
 	if req.Auth.ClientID == nil {
-		return restapi.GetOperationalIntentReferenceResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.GetOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -120,7 +120,7 @@ func (a *Server) QueryOperationalIntentReferences(ctx context.Context, req *rest
 
 	// Retrieve ID of client making call
 	if req.Auth.ClientID == nil {
-		return restapi.QueryOperationalIntentReferencesResponseSet{Response403: &restapi.ErrorResponse{
+		return restapi.QueryOperationalIntentReferencesResponseSet{Response403: &api.ClientErrorBody{
 			Message: dsserr.Handle(ctx, stacktrace.NewErrorWithCode(dsserr.PermissionDenied, "Missing manager"))}}
 	}
 
@@ -150,7 +150,7 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 	if err != nil {
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		if stacktrace.GetCode(err) == dsserr.PermissionDenied {
-			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: errResp}
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		}
 		return restapi.CreateOperationalIntentReferenceResponseSet{Response400: errResp}
 	}
@@ -161,7 +161,7 @@ func (a *Server) CreateOperationalIntentReference(ctx context.Context, req *rest
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: errResp}
+			return restapi.CreateOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.BadRequest, dsserr.NotFound:
 			return restapi.CreateOperationalIntentReferenceResponseSet{Response400: errResp}
 		case dsserr.VersionMismatch:
@@ -193,7 +193,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 	if err != nil {
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		if stacktrace.GetCode(err) == dsserr.PermissionDenied {
-			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: errResp}
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		}
 		return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: errResp}
 	}
@@ -204,7 +204,7 @@ func (a *Server) UpdateOperationalIntentReference(ctx context.Context, req *rest
 		errResp := &restapi.ErrorResponse{Message: dsserr.Handle(ctx, err)}
 		switch stacktrace.GetCode(err) {
 		case dsserr.PermissionDenied:
-			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: errResp}
+			return restapi.UpdateOperationalIntentReferenceResponseSet{Response403: &api.ClientErrorBody{Message: errResp.Message}}
 		case dsserr.BadRequest, dsserr.NotFound:
 			return restapi.UpdateOperationalIntentReferenceResponseSet{Response400: errResp}
 		case dsserr.VersionMismatch:

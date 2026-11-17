@@ -38,6 +38,7 @@ ALL_SCOPES = [
     "interuss.pool_status.read",
     "interuss.pool_status.heartbeat.write",
     "utm.availability_arbitration",
+    "interuss.versioning.read_system_versions",
 ]
 
 

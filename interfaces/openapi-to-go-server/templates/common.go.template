@@ -11,6 +11,11 @@ import (
 
 type EmptyResponseBody struct {}
 
+type ClientErrorBody struct {
+	// Human-readable message indicating what error occurred and/or why.
+    Message *string `json:"message,omitempty"`
+}
+
 type InternalServerErrorBody struct {
     ErrorMessage string `json:"error_message"`
 }

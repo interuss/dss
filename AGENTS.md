@@ -9,6 +9,7 @@ This document provides context and guidelines for AI agents working in the `dss`
 ## Development & Tooling Tips
 
 - **CLI Flag Changes**: When adding, renaming, or removing CLI flags in `cmds/`, consult [`DEVELOPMENT.md`](./DEVELOPMENT.md#changing-command-line-flags-or-commands) for the full list of files to update across `docs/`, Helm, Tanka, Terraform, and `test/`.
+- **OpenAPI Go Server Codegen (`interfaces/openapi-to-go-server/`)**: Modifying generator scripts or templates affects three generated trees (`pkg/api`, `interfaces/openapi-to-go-server/example`, and `cmds/dummy-oauth/api`, normally regenerated via `make apis`, which CI verifies produces zero `*.gen.go` diff). When adding a new protected endpoint or scope to `pkg/api`, also ensure its required OAuth scope is included in `ALL_SCOPES` in [`test/security/test.py`](./test/security/test.py) (which scrapes `Path:` fields from `pkg/api/**/*.go`).
 
 ## Continuous Improvement of this Guide
 
