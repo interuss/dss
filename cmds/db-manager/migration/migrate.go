@@ -219,7 +219,7 @@ func migrate(cmd *cobra.Command, _ []string) error {
 			return fmt.Errorf("failed to get current database version for %s: %w", dbName, err)
 		}
 		if !actualVersion.Equal(*newVersion) {
-			return fmt.Errorf("migration %s should have migrated %s schema version %v to %v, but instead resulted in %v", fullFilePath, dbName, currentVersion, newVersion, currentVersion)
+			return fmt.Errorf("migration %s should have migrated %s schema version %v to %v, but instead resulted in %v", fullFilePath, dbName, currentVersion, newVersion, actualVersion)
 		}
 		currentVersion = actualVersion
 		currentStepIndex = newCurrentStepIndex
