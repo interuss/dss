@@ -2,9 +2,11 @@ package memstore
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/interuss/dss/pkg/pb/raftpb"
 	ridsnapshotpb "github.com/interuss/dss/pkg/pb/ridpb/snapshotpb"
 	"github.com/stretchr/testify/require"
@@ -22,12 +24,19 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	_, err = src.UpsertUssAvailability(ctx, sampleAvailability())
 	require.NoError(t, err)
+	config := dssmodels.EvictionConfig{Interval: time.Hour, Parameters: dssmodels.EvictionParameters{TTL: time.Minute, Limit: 3}}
+	_, err = src.SetEvictionConfig(ctx, config)
+	require.NoError(t, err)
 
 	data, err := src.GetSnapshot()
 	require.NoError(t, err)
 
 	dst := setUpStore(t)
 	require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, data)))
+
+	gotConfig, err := dst.GetEvictionConfig(ctx)
+	require.NoError(t, err)
+	require.Equal(t, config, gotConfig)
 
 	opt := cmpopts.EquateApproxTime(0)
 
@@ -77,7 +86,13 @@ func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	other.ID = "00000185-e36d-40be-8d38-beca6ca39999"
 	_, err = dst.UpsertConstraint(ctx, other)
 	require.NoError(t, err)
+	_, err = dst.SetEvictionConfig(ctx, dssmodels.EvictionConfig{Interval: time.Hour, Parameters: dssmodels.EvictionParameters{TTL: time.Minute}})
+	require.NoError(t, err)
 	require.NoError(t, dst.RestoreFromSnapshot(data))
+
+	config, err := dst.GetEvictionConfig(ctx)
+	require.NoError(t, err)
+	require.Equal(t, defaultEvictionConfig, config)
 
 	count, err := dst.CountConstraints(ctx)
 	require.NoError(t, err)

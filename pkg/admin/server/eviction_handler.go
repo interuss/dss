@@ -12,6 +12,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
 	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	storerepos "github.com/interuss/dss/pkg/store/repos"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,7 @@ func (s *Server) GetEvictionConfig(ctx context.Context, req *restapi.GetEviction
 		return restapi.GetEvictionConfigResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get the eviction config of the %s raft group", req.GroupName))}}
 	}
-	return restapi.GetEvictionConfigResponseSet{Response200: toEvictionConfig(*config)}
+	return restapi.GetEvictionConfigResponseSet{Response200: toEvictionConfig(config)}
 }
 
 func (s *Server) PutEvictionConfig(ctx context.Context, req *restapi.PutEvictionConfigRequest) restapi.PutEvictionConfigResponseSet {
@@ -61,7 +62,7 @@ func (s *Server) PutEvictionConfig(ctx context.Context, req *restapi.PutEviction
 
 	s.Logger.Info("set eviction config", zap.String("group", string(req.GroupName)), zap.Duration("interval", stored.Interval),
 		zap.Duration("ttl", stored.Parameters.TTL), zap.Int("limit", stored.Parameters.Limit))
-	return restapi.PutEvictionConfigResponseSet{Response200: toEvictionConfig(*stored)}
+	return restapi.PutEvictionConfigResponseSet{Response200: toEvictionConfig(stored)}
 }
 
 func (s *Server) CreateEvictionRun(ctx context.Context, req *restapi.CreateEvictionRunRequest) restapi.CreateEvictionRunResponseSet {
@@ -112,7 +113,7 @@ func (s *Server) CreateEvictionRun(ctx context.Context, req *restapi.CreateEvict
 }
 
 // eviction returns the eviction of the Raft group or a dsserr.NotFound error.
-func (s *Server) eviction(name restapi.RaftGroupName) (Eviction, error) {
+func (s *Server) eviction(name restapi.RaftGroupName) (storerepos.Eviction, error) {
 	eviction, ok := s.evictions[string(name)]
 	if !ok {
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "No eviction for raft group %q", name)

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package scd;
 
+import "eviction/eviction.proto";
 import "scd/availability.proto";
 import "scd/constraint.proto";
 import "scd/operational_intents.proto";
@@ -63,5 +64,10 @@ message Payload {
         IncrementNotificationIndicesForOperationalIntentsRepoCall increment_notification_indices_for_operational_intents_repo_call = 164;
         IncrementNotificationIndicesForConstraintsRepoCall increment_notification_indices_for_constraints_repo_call = 165;
         CountSubscriptionsRepoCall count_subscriptions_repo_call = 166;
+
+        // Eviction repository requests
+        eviction.DeleteExpiredRepoCall delete_expired_repo_call = 180;
+        eviction.GetConfigRepoCall get_eviction_config_repo_call = 181;
+        eviction.SetConfigRepoCall set_eviction_config_repo_call = 182;
     }
 }

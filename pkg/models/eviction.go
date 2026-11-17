@@ -52,14 +52,6 @@ type EvictionConfig struct {
 	Parameters EvictionParameters
 }
 
-func (c *EvictionConfig) Clone() *EvictionConfig {
-	if c == nil {
-		return nil
-	}
-	clone := *c
-	return &clone
-}
-
 func (c *EvictionConfig) ToProto() *evictionpb.Config {
 	return &evictionpb.Config{
 		Interval:   durationpb.New(c.Interval),
