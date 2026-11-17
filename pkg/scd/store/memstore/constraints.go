@@ -1,7 +1,9 @@
 package memstore
 
 import (
+	"cmp"
 	"context"
+	"slices"
 
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -28,7 +30,7 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 		return []*scdmodels.Constraint{}, nil
 	}
 
-	var out []*scdmodels.Constraint
+	var matched []*constraintRecord
 	for _, rec := range r.state.Constraints {
 		if !overlaps(rec.Volume.Cells, want) {
 			continue
@@ -36,11 +38,16 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 		if !overlapsTime(*rec.Volume.StartTime, *rec.Volume.EndTime, cellsVolume) {
 			continue
 		}
-		out = append(out, rec.toModel())
+		matched = append(matched, rec)
+	}
+	slices.SortFunc(matched, func(a, b *constraintRecord) int { return cmp.Compare(a.ID, b.ID) })
+	if len(matched) > dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
+		matched = matched[:dssmodels.MaxResultLimit]
+	}
 
-		if len(out) >= dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
-			break
-		}
+	var out []*scdmodels.Constraint
+	for _, rec := range matched {
+		out = append(out, rec.toModel())
 	}
 	return out, nil
 }

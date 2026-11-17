@@ -3,11 +3,11 @@ package memstore
 import (
 	"context"
 	"iter"
+	"maps"
 	"slices"
 	"time"
 
 	"github.com/golang/geo/s2"
-	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -102,7 +102,25 @@ func (r *repo) DeleteSubscription(_ context.Context, id dssmodels.ID) error {
 		return stacktrace.NewError("Attempted to delete non-existent Subscription")
 	}
 	delete(r.state.Subscriptions, id)
+	// Delete any operational intents referencing the subscription.
+	// Mirrors the behavior of the sql store, which has a foreign key constraint with cascade delete.
+	r.deleteOperationalIntentsOfSubscriptions([]dssmodels.ID{id})
 	return nil
+}
+
+// deleteOperationalIntentsOfSubscriptions deletes the operational intents referencing the given subscriptions
+func (r *repo) deleteOperationalIntentsOfSubscriptions(ids []dssmodels.ID) {
+	deleted := make(map[dssmodels.ID]struct{}, len(ids))
+	for _, id := range ids {
+		deleted[id] = struct{}{}
+	}
+	maps.DeleteFunc(r.state.OperationalIntents, func(_ dssmodels.ID, rec *operationalIntentRecord) bool {
+		if rec.SubscriptionID == nil {
+			return false
+		}
+		_, ok := deleted[*rec.SubscriptionID]
+		return ok
+	})
 }
 
 func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
@@ -134,18 +152,16 @@ func (r *repo) LockSubscriptionsOnCells(_ context.Context, _ s2.CellUnion, _ []d
 	return nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) ListExpiredSubscriptions(_ context.Context, threshold time.Time) ([]dssmodels.ID, error) {
-	var out []dssmodels.ID
-	for _, rec := range listExpired(r.state.Subscriptions, threshold, dssmodels.MaxResultLimit) {
-		out = append(out, rec.ID)
-	}
-	return out, nil
+	return listExpired(r.state.Subscriptions, threshold), nil
 }
 
-// TODO: Implement when raftstore evict is implemented (#1718)
 func (r *repo) DeleteExpiredSubscriptions(_ context.Context, threshold time.Time, limit int) ([]dssmodels.ID, error) {
-	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpiredSubscriptions not implemented for memstore")
+	ids := deleteExpired(r.state.Subscriptions, threshold, limit)
+	// Delete any operational intents referencing the subscription.
+	// Mirrors the behavior of the sql store, which has a foreign key constraint with cascade delete.
+	r.deleteOperationalIntentsOfSubscriptions(ids)
+	return ids, nil
 }
 
 func (r *repo) CountSubscriptions(_ context.Context) (int64, error) {

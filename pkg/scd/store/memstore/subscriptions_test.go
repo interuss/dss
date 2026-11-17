@@ -1,6 +1,8 @@
 package memstore
 
 import (
+	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -33,6 +35,29 @@ func TestSubscriptionUpsertGetDelete(t *testing.T) {
 	gone, err := r.GetSubscription(ctx, subscriptionId)
 	require.NoError(t, err)
 	require.Nil(t, gone)
+}
+
+func TestSubscriptionDeleteCascadesToOperationalIntents(t *testing.T) {
+	ctx := writeCtx()
+	r := setUpStore(t)
+
+	_, err := r.UpsertSubscription(ctx, sub1)
+	require.NoError(t, err)
+	_, err = r.UpsertSubscription(ctx, sub2)
+	require.NoError(t, err)
+	_, err = r.UpsertOperationalIntent(ctx, oi1)
+	require.NoError(t, err)
+	_, err = r.UpsertOperationalIntent(ctx, oi2)
+	require.NoError(t, err)
+
+	require.NoError(t, r.DeleteSubscription(ctx, sub1ID))
+
+	gone, err := r.GetOperationalIntent(ctx, oi1ID)
+	require.NoError(t, err)
+	require.Nil(t, gone)
+	kept, err := r.GetOperationalIntent(ctx, oi2ID)
+	require.NoError(t, err)
+	require.NotNil(t, kept)
 }
 
 func TestSubscriptionGetMissingReturnsNil(t *testing.T) {
@@ -232,4 +257,43 @@ func TestListExpiredSubscriptions(t *testing.T) {
 			require.ElementsMatch(t, expired, testCase.expired)
 		})
 	}
+}
+
+func TestDeleteExpiredSubscriptions(t *testing.T) {
+	ctx := writeCtx()
+	r := setUpStore(t)
+
+	for _, sub := range []*scdmodels.Subscription{sub3, sub2, sub1} {
+		_, err := r.UpsertSubscription(ctx, sub)
+		require.NoError(t, err)
+	}
+	// Each operational intent references the subscription with the same number.
+	for _, oi := range []*scdmodels.OperationalIntent{oi1, oi2, oi3} {
+		_, err := r.UpsertOperationalIntent(ctx, oi)
+		require.NoError(t, err)
+	}
+	requireOperationalIntents := func(t *testing.T, want ...dssmodels.ID) {
+		t.Helper()
+		require.ElementsMatch(t, want, slices.Collect(maps.Keys(r.state.OperationalIntents)))
+	}
+
+	// sub1 and sub2 are expired, sub3 is not.
+	threshold := time.Date(2024, time.September, 16, 14, 0, 0, 0, time.UTC)
+
+	deleted, err := r.DeleteExpiredSubscriptions(ctx, threshold, 1)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{sub1ID}, deleted)
+	requireOperationalIntents(t, oi2ID, oi3ID)
+
+	deleted, err = r.DeleteExpiredSubscriptions(ctx, threshold, 0)
+	require.NoError(t, err)
+	require.Equal(t, []dssmodels.ID{sub2ID}, deleted)
+	requireOperationalIntents(t, oi3ID)
+
+	expired, err := r.ListExpiredSubscriptions(ctx, threshold)
+	require.NoError(t, err)
+	require.Empty(t, expired)
+	got, err := r.GetSubscription(ctx, sub3ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
 }

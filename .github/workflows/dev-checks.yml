@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - master
+permissions:
+  contents: read
 jobs:
   windows:
     name: Clone on Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Checkout on Windows
         run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."
   macos:
@@ -17,6 +21,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Checkout on Mac
         run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."
   ubuntu:
@@ -24,5 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Checkout on Ubuntu
         run: echo "Project successfully cloned on ${{ runner.os }}. See `Set up Job` stage for more details about the Runner."

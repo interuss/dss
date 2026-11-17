@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - master
+permissions:
+  contents: read
 jobs:
   hygiene-tests:
     name: Repository hygiene
@@ -15,12 +17,13 @@ jobs:
         echo "Trigger: ${{ github.event_name }}"
         echo "Host: ${{ runner.os }}"
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
+        echo "Branch: ${GITHUB_REF}"
         docker images
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         submodules: true
+        persist-credentials: false
     - name: Python lint
       run: make python-lint
     - name: Automated hygiene verification
@@ -58,13 +61,14 @@ jobs:
         echo "Trigger: ${{ github.event_name }}"
         echo "Host: ${{ runner.os }}"
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
+        echo "Branch: ${GITHUB_REF}"
         docker images
         go env
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         submodules: true
+        persist-credentials: false
     - name: Deployment infrastructure tests
       run: make evaluate-tanka
     - name: Go unit tests
@@ -127,13 +131,14 @@ jobs:
           echo "Trigger: ${{ github.event_name }}"
           echo "Host: ${{ runner.os }}"
           echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref }}"
+          echo "Branch: ${GITHUB_REF}"
           docker images
           go env
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: true
+          persist-credentials: false
       - name: Build dss image
         run: make build-dss
       - name: Deploy a 3-node raft cluster
@@ -184,12 +189,13 @@ jobs:
         echo "Trigger: ${{ github.event_name }}"
         echo "Host: ${{ runner.os }}"
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
+        echo "Branch: ${GITHUB_REF}"
         docker images
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         submodules: true
+        persist-credentials: false
     - name: Tests
       run: cd test/certificates-management/ && python test.py
 
@@ -203,11 +209,12 @@ jobs:
         echo "Trigger: ${{ github.event_name }}"
         echo "Host: ${{ runner.os }}"
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
+        echo "Branch: ${GITHUB_REF}"
         docker images
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         submodules: true
+        persist-credentials: false
     - name: Check migrations
       run: ./test/migrations/up_and_down.sh

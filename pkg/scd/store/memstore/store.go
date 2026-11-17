@@ -156,21 +156,31 @@ func (rec *subscriptionRecord) endTime() time.Time { return rec.EndTime }
 
 func (rec *operationalIntentRecord) endTime() time.Time { return *rec.CellsVolume4D.EndTime }
 
-// listExpired returns the records whose end time is at or before threshold. A limit of 0 means unlimited.
-func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time, limit int) []R {
-	var out []R
-	for _, rec := range store {
+// listExpired returns the sorted IDs of the records whose end time is at or before threshold.
+func listExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time) []dssmodels.ID {
+	var out []dssmodels.ID
+	for id, rec := range store {
 		// ends_at <= threshold
-		if rec.endTime().After(threshold) {
-			continue
-		}
-		out = append(out, rec)
-
-		if limit > 0 && len(out) >= limit { // mirror SQL "LIMIT MaxResultLimit"
-			break
+		if !rec.endTime().After(threshold) {
+			out = append(out, id)
 		}
 	}
+	slices.Sort(out)
 	return out
+}
+
+// deleteExpired deletes up to limit records whose end time is at or before threshold and returns their IDs.
+// The limit applies to the IDs sorted by listExpired to ensure deterministic behavior.
+// A limit of 0 means unlimited.
+func deleteExpired[R expiringRecord](store map[dssmodels.ID]R, threshold time.Time, limit int) []dssmodels.ID {
+	ids := listExpired(store, threshold)
+	if limit > 0 && len(ids) > limit {
+		ids = ids[:limit]
+	}
+	for _, id := range ids {
+		delete(store, id)
+	}
+	return ids
 }
 
 func (rec *constraintRecord) clone() *constraintRecord {
