@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -99,18 +100,37 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 	}
 
 	// open the wal at the given snapshot and get all subsequent entries
-	w, err = wal.Open(logger, walPath, &walpb.Snapshot{
-		Index:     new(snapshot.GetMetadata().GetIndex()),
-		Term:      new(snapshot.GetMetadata().GetTerm()),
-		ConfState: snapshot.GetMetadata().GetConfState(),
-	})
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "failed to open wal with index %d, term %d and confstate %v at: %s", snapshot.GetMetadata().GetIndex(), snapshot.GetMetadata().GetTerm(), snapshot.GetMetadata().GetConfState(), walPath)
-	}
+	var (
+		metadata []byte
+		state    *raftpb.HardState
+		entries  []*raftpb.Entry
+		repaired bool
+	)
+	for {
+		w, err = wal.Open(logger, walPath, &walpb.Snapshot{
+			Index:     new(snapshot.GetMetadata().GetIndex()),
+			Term:      new(snapshot.GetMetadata().GetTerm()),
+			ConfState: snapshot.GetMetadata().GetConfState(),
+		})
+		if err != nil {
+			return nil, 0, false, stacktrace.Propagate(err, "failed to open wal with index %d, term %d and confstate %v at: %s", snapshot.GetMetadata().GetIndex(), snapshot.GetMetadata().GetTerm(), snapshot.GetMetadata().GetConfState(), walPath)
+		}
 
-	metadata, state, entries, err := w.ReadAll()
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "failed to read wal state and entries")
+		metadata, state, entries, err = w.ReadAll()
+		if err == nil {
+			break
+		}
+		if closeErr := w.Close(); closeErr != nil {
+			return nil, 0, false, stacktrace.Propagate(closeErr, "failed to close wal at: %s", walPath)
+		}
+		if repaired || !errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, 0, false, stacktrace.Propagate(err, "failed to read wal state and entries")
+		}
+		if !wal.Repair(logger, walPath) {
+			return nil, 0, false, stacktrace.Propagate(err, "failed to repair wal at: %s", walPath)
+		}
+		logger.Warn("repaired wal by truncating its torn last record", zap.String("path", walPath), zap.Error(err))
+		repaired = true
 	}
 
 	var id identity
