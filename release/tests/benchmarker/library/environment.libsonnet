@@ -44,4 +44,9 @@
       } for i in std.range(0, std.length(pool.dss_instances) - 1)
     },
   },
+
+  without_query_details: function(config) config + {
+    scenarios: [s + {record_query_details: false} for s in config.scenarios],
+    artifacts: [a for a in config.artifacts if !std.objectHas(a, 'usslogset')],
+  },
 }
