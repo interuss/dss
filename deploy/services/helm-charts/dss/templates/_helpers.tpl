@@ -33,7 +33,7 @@ yugabyte
 
 {{- define "init-container-wait-for-http" -}}
 - name: wait-for-{{.serviceName}}
-  image: alpine:3.17.3
+  image: alpine:3.24.4
   command: [ 'sh', '-c', "until wget -nv {{.url}}; do echo waiting for {{.serviceName}}; sleep 2; done" ]
 {{- end -}}
 

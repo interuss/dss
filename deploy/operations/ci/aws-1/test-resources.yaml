@@ -235,7 +235,7 @@ spec:
           emptyDir: {}
       initContainers:
         - name: wait-for-dss-public
-          image: alpine:3.17.3
+          image: alpine:3.24.4
           command: [ 'sh', '-c', "until wget -nv https://dss.ci.aws-interuss.uspace.dev/healthy; do echo waiting for dss to be available from the public internet; sleep 2; done" ]
       containers:
         - image: interuss/monitoring:v0.33.0
