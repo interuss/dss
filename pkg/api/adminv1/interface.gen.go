@@ -12,6 +12,9 @@ var (
 	GetRaftGroupSecurity          = []api.AuthorizationOption{}
 	CreateRaftGroupMemberSecurity = []api.AuthorizationOption{}
 	DeleteRaftGroupMemberSecurity = []api.AuthorizationOption{}
+	GetEvictionConfigSecurity     = []api.AuthorizationOption{}
+	PutEvictionConfigSecurity     = []api.AuthorizationOption{}
+	CreateEvictionRunSecurity     = []api.AuthorizationOption{}
 )
 
 type GetThisRaftNodeRequest struct {
@@ -163,6 +166,93 @@ type DeleteRaftGroupMemberResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type GetEvictionConfigRequest struct {
+	// Name of the Raft group.
+	GroupName RaftGroupName
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+
+const GetEvictionConfigOperationID = "adminv1.GetEvictionConfig"
+
+func (request *GetEvictionConfigRequest) OperationID() string { return GetEvictionConfigOperationID }
+
+type GetEvictionConfigResponseSet struct {
+	// The eviction settings were retrieved successfully.
+	Response200 *EvictionConfig
+
+	// This DSS node has no Raft group with this name or the group does not support eviction.
+	Response404 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
+type PutEvictionConfigRequest struct {
+	// Name of the Raft group.
+	GroupName RaftGroupName
+
+	// The data contained in the body of this request, if it parsed correctly
+	Body *EvictionConfig
+
+	// The error encountered when attempting to parse the body of this request
+	BodyParseError error
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+
+const PutEvictionConfigOperationID = "adminv1.PutEvictionConfig"
+
+func (request *PutEvictionConfigRequest) OperationID() string { return PutEvictionConfigOperationID }
+
+type PutEvictionConfigResponseSet struct {
+	// The eviction settings were replaced. They are returned as stored.
+	Response200 *EvictionConfig
+
+	// The request was not properly formed, e.g. an invalid duration, a negative interval, a non-positive TTL or a negative limit.
+	Response400 *ErrorResponse
+
+	// This DSS node has no Raft group with this name or the group does not support eviction.
+	Response404 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
+type CreateEvictionRunRequest struct {
+	// Name of the Raft group.
+	GroupName RaftGroupName
+
+	// The data contained in the body of this request, if it parsed correctly
+	Body *EvictionRunParameters
+
+	// The error encountered when attempting to parse the body of this request
+	BodyParseError error
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+
+const CreateEvictionRunOperationID = "adminv1.CreateEvictionRun"
+
+func (request *CreateEvictionRunRequest) OperationID() string { return CreateEvictionRunOperationID }
+
+type CreateEvictionRunResponseSet struct {
+	// The cleanup job was run.
+	Response200 *EvictionRunResult
+
+	// The request was not properly formed, e.g. an invalid duration, a non-positive TTL or a negative limit.
+	Response400 *ErrorResponse
+
+	// This DSS node has no Raft group with this name or the group does not support eviction.
+	Response404 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type Implementation interface {
 	// Describe this DSS node in a Raft group
 	// ---
@@ -186,4 +276,17 @@ type Implementation interface {
 	// ---
 	// The ID of the removed node is retired permanently: it can never be added again to the group. A voter cannot be removed if the group would be left with fewer than 3 voters. The request returns once the change is adopted by the group.
 	DeleteRaftGroupMember(ctx context.Context, req *DeleteRaftGroupMemberRequest) DeleteRaftGroupMemberResponseSet
+
+	// Retrieve the eviction settings of a Raft group
+	GetEvictionConfig(ctx context.Context, req *GetEvictionConfigRequest) GetEvictionConfigResponseSet
+
+	// Replace the eviction settings of a Raft group
+	// ---
+	// The settings replace the previous ones as a whole. The request returns once the change is adopted by the group.
+	PutEvictionConfig(ctx context.Context, req *PutEvictionConfigRequest) PutEvictionConfigResponseSet
+
+	// Run a cleanup job on a Raft group
+	// ---
+	// The job deletes the expired entities of every entity type of the group, according to the parameters given or to the eviction settings.
+	CreateEvictionRun(ctx context.Context, req *CreateEvictionRunRequest) CreateEvictionRunResponseSet
 }

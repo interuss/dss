@@ -212,3 +212,101 @@ func (c *Client) DeleteRaftGroupMember(ctx context.Context, groupName RaftGroupN
 	}
 	return response, err
 }
+
+// Retrieve the eviction settings of a Raft group
+func (c *Client) GetEvictionConfig(ctx context.Context, groupName RaftGroupName) (GetEvictionConfigResponseSet, error) {
+	var response GetEvictionConfigResponseSet
+
+	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction/config"
+
+	resp, err := c.do(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return response, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	switch resp.StatusCode {
+	case 200:
+		response.Response200 = new(EvictionConfig)
+		err = json.NewDecoder(resp.Body).Decode(response.Response200)
+	case 404:
+		response.Response404 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response404)
+	case 500:
+		response.Response500 = new(api.InternalServerErrorBody)
+		err = json.NewDecoder(resp.Body).Decode(response.Response500)
+	default:
+		err = fmt.Errorf("unexpected response status %s", resp.Status)
+	}
+	return response, err
+}
+
+// Replace the eviction settings of a Raft group
+func (c *Client) PutEvictionConfig(ctx context.Context, groupName RaftGroupName, body *EvictionConfig) (PutEvictionConfigResponseSet, error) {
+	var response PutEvictionConfigResponseSet
+
+	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction/config"
+
+	var requestBody any
+	if body != nil {
+		requestBody = body
+	}
+	resp, err := c.do(ctx, http.MethodPut, path, requestBody)
+	if err != nil {
+		return response, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	switch resp.StatusCode {
+	case 200:
+		response.Response200 = new(EvictionConfig)
+		err = json.NewDecoder(resp.Body).Decode(response.Response200)
+	case 400:
+		response.Response400 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response400)
+	case 404:
+		response.Response404 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response404)
+	case 500:
+		response.Response500 = new(api.InternalServerErrorBody)
+		err = json.NewDecoder(resp.Body).Decode(response.Response500)
+	default:
+		err = fmt.Errorf("unexpected response status %s", resp.Status)
+	}
+	return response, err
+}
+
+// Run a cleanup job on a Raft group
+func (c *Client) CreateEvictionRun(ctx context.Context, groupName RaftGroupName, body *EvictionRunParameters) (CreateEvictionRunResponseSet, error) {
+	var response CreateEvictionRunResponseSet
+
+	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction/runs"
+
+	var requestBody any
+	if body != nil {
+		requestBody = body
+	}
+	resp, err := c.do(ctx, http.MethodPost, path, requestBody)
+	if err != nil {
+		return response, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	switch resp.StatusCode {
+	case 200:
+		response.Response200 = new(EvictionRunResult)
+		err = json.NewDecoder(resp.Body).Decode(response.Response200)
+	case 400:
+		response.Response400 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response400)
+	case 404:
+		response.Response404 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response404)
+	case 500:
+		response.Response500 = new(api.InternalServerErrorBody)
+		err = json.NewDecoder(resp.Body).Decode(response.Response500)
+	default:
+		err = fmt.Errorf("unexpected response status %s", resp.Status)
+	}
+	return response, err
+}
