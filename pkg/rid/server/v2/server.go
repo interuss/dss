@@ -1,8 +1,6 @@
 package server
 
 import (
-	"github.com/robfig/cron/v3"
-
 	"github.com/interuss/dss/pkg/rid/store"
 )
 
@@ -11,5 +9,4 @@ type Server struct {
 	Store             store.Store
 	Locality          string
 	AllowHTTPBaseUrls bool
-	Cron              *cron.Cron
 }
