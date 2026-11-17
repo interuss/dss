@@ -864,8 +864,8 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 	}
 }
 
-// Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, knows its leader and the
-// Raft group is not stopped.
+// Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, currently knows its leader
+// and the Raft group is not stopped.
 func (c *Consensus) Ready() bool {
 	select {
 	case <-c.stopC:
@@ -877,10 +877,12 @@ func (c *Consensus) Ready() bool {
 
 	select {
 	case <-c.readyC:
-		return true
 	default:
 		return false
 	}
+
+	return c.node.RaftNode().Status().Lead != raft.None
+
 }
 
 // readyNode returns the raft node, or a dsserr.Unavailable error if this node cannot serve requests.
