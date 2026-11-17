@@ -1,4 +1,4 @@
-package raftstore
+package consensus
 
 import (
 	"go.uber.org/zap"

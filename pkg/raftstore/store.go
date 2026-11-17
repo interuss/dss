@@ -11,7 +11,6 @@ import (
 	"github.com/interuss/dss/pkg/store"
 	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
-	"go.etcd.io/raft/v3"
 	"go.uber.org/zap"
 )
 
@@ -38,9 +37,6 @@ type Store[R any] struct {
 
 func Init[R any](ctx context.Context, logger *zap.Logger, params raftparams.ConnectParameters, r RaftRepo[R], registry map[string]store.OperationHandler[R]) (*Store[R], error) {
 	ctx, cancel := context.WithCancel(ctx)
-
-	sugar := logger.WithOptions(zap.AddCallerSkip(1)).Sugar()
-	raft.SetLogger(&ZapRaftLogger{sugar: sugar})
 
 	store := &Store[R]{
 		raftRepo: r,
