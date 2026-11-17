@@ -90,13 +90,16 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		return nil, stacktrace.Propagate(err, "failed to get the URL of the node")
 	}
 
+	config := connectParams.RaftConfig(nodeID, storage)
+	config.Logger = &ZapRaftLogger{sugar: logger.WithOptions(zap.AddCallerSkip(1)).Sugar()}
+
 	consensus := &Consensus{
 		logger: logging.WithValuesFromContext(ctx, logger).With(zap.Uint64("nodeID", nodeID)),
 
 		nodeID:           nodeID,
 		group:            connectParams.Group,
 		publicURL:        nodeUrl.String(),
-		config:           connectParams.RaftConfig(nodeID, storage),
+		config:           config,
 		tickInterval:     connectParams.TickInterval,
 		snapshotInterval: connectParams.SnapshotIntervalEntries,
 		node:             node.NewNodeState(),
