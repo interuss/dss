@@ -146,7 +146,7 @@ func Init[R any](ctx context.Context, cfg Config[R], withCheckCron bool) (*Store
 	}
 	if err != nil {
 		db.Pool.Close()
-		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "database has not been bootstrapped with Schema Manager") {
+		if strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), fmt.Sprintf("database \"%s\" does not exist", cfg.DBName)) || strings.Contains(err.Error(), "has not been bootstrapped with Schema Manager") {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "Failed to create %s store", cfg.DBName)
 		}
 		return nil, stacktrace.Propagate(err, "Failed to create %s store", cfg.DBName)
