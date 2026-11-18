@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 USSQ_OUT="$RELEASE_DIR/uss_qualifier_output"
+BENCH_OUT="$RELEASE_DIR/tests/benchmarker/output"
 OUTPUT_DIR="$RELEASE_DIR/output"
 
 # subdir  short_name  display
@@ -37,6 +38,17 @@ redact_vars() {
         "$1"
 }
 
+# Personal tfvars if clusters were spawned from this machine, release tfvars otherwise.
+tfvars_of() {
+    local personal="$PERSONAL_DIR/$1/terraform.tfvars"
+    if [[ -f "$personal" ]]; then
+        echo "$personal"
+    else
+        sed "s|\\\$IMAGE|${IMAGE:-}|g" "$RELEASE_INFRA_DIR/$1.tfvars" > "$STAGE/$1.tfvars"
+        echo "$STAGE/$1.tfvars"
+    fi
+}
+
 # === 1. Resolve release version ===
 if [[ -n "${IMAGE:-}" ]]; then
     VERSION="${IMAGE##*:}"
@@ -61,15 +73,16 @@ for entry in "${DATASTORES[@]}"; do
     ds_dir="$STAGE/$VERSION/$subdir"
     mkdir -p "$ds_dir/prober"
 
-    aws_vars="$PERSONAL_DIR/release-aws-dss-$short/terraform.tfvars"
-    goo_vars="$PERSONAL_DIR/release-google-dss-$short/terraform.tfvars"
+    aws_vars=$(tfvars_of "release-aws-dss-$short")
+    goo_vars=$(tfvars_of "release-google-dss-$short")
     aws_log="$LOG_DIR/release-aws-dss-$short.prober.log"
     goo_log="$LOG_DIR/release-google-dss-$short.prober.log"
     ussq_src="$USSQ_OUT/$short"
+    bench_log="$LOG_DIR/$short.benchmarker.log"
     monitoring_version=$(get_monitoring_version_from_report "$ussq_src/$short/report.json")
 
     printf '%s» %s%s  (%s)\n' "$BOLD$CYAN" "$subdir" "$RESET" "$display"
-    for f in "$aws_vars" "$goo_vars" "$aws_log" "$goo_log"; do
+    for f in "$aws_vars" "$goo_vars" "$aws_log" "$goo_log" "$bench_log"; do
         [[ -e "$f" ]] || warn "missing: $f"
     done
     [[ -d "$ussq_src" ]] || warn "missing: $ussq_src"
@@ -112,7 +125,7 @@ EOF
 
 ## Test driver
 
-Prober and USS qualifier test runs have been performed from a local machine connected to public Internet outside of the Kubernetes clusters hosting the DSS instances.
+Prober, USS qualifier and benchmarker test runs have been performed from an AWS EC2 instance (m5.2xlarge, us-east-2) connected to public Internet outside of the Kubernetes clusters hosting the DSS instances.
 
 EOF
         # shellcheck disable=SC2016
@@ -141,6 +154,18 @@ EOF
         n=$(find "$ussq_dst" -type f | wc -l)
         printf '  + uss_qualifier/  (%d files)\n' "$n"
     fi
+
+    # --- benchmarker output ---
+    bench_dst="$ds_dir/benchmarker"
+    mkdir -p "$bench_dst"
+    for src in "$BENCH_OUT"/*_"$short"; do
+        [[ -d "$src" ]] || { warn "missing: $BENCH_OUT/*_$short"; continue; }
+        test_name=$(basename "$src" "_$short")
+        mkdir -p "$bench_dst/$test_name"
+        find "$src" -maxdepth 1 -name '*.png' -exec cp {} "$bench_dst/$test_name/" \;
+        n=$(find "$bench_dst/$test_name" -type f | wc -l)
+        printf '  + benchmarker/%s/  (%d files)\n' "$test_name" "$n"
+    done
 done
 
 # === 3. Zip ===

@@ -18,7 +18,7 @@ The clusters are defined in [infrastructure/](infrastructure), and the tests in 
 
 ### 1. Tools
 
-terraform, aws, gcloud, kubectl, helm, tk (Tanka), docker, envsubst (package gettext-base), curl and zip. Docker must be running, and port 8085 must be free.
+terraform, aws, gcloud, kubectl, helm, tk (Tanka) and envsubst (package gettext-base).
 
 ### 2. Cloud access
 
@@ -44,6 +44,35 @@ export AWS_PROFILE=(if needed)
 ```
 
 Run the commands below from the root of the repository. Each step writes its logs to release/logs/<cluster>.<step>.log.
+
+### 4. Test machine
+
+Steps 4 to 6 of the procedure run on an AWS EC2 instance:
+
+1. Spawn an AWS EC2 instance in `us-east-2`, with instance type `m5.2xlarge` and AMI Debian 13.
+
+2. Connect to the instance with SSH, then run everything as root:
+
+    ```shell
+    sudo -i
+    apt-get update
+    apt-get install -y git curl zip unzip
+    cd /opt
+    git clone https://github.com/interuss/dss.git
+    cd dss
+    ```
+
+3. Configure environment variables:
+
+    _Note: change `v0.22.0` below to the DSS release candidate version being validated._
+
+    ```shell
+    export IMAGE=docker.io/interuss/dss:v0.22.0
+    export MONITORING_IMAGE=docker.io/interuss/monitoring:latest
+    export DUMMY_OAUTH_IMAGE=docker.io/interuss/dummy-oauth
+    ```
+
+Docker is installed by the scripts if missing.
 
 ## Procedure
 
@@ -81,6 +110,8 @@ Done when it prints `All 4 clusters healthy`.
 
 ### 4. Run the functional tests
 
+On the test machine:
+
 ```shell
 ./release/scripts/run-tests.sh
 ```
@@ -91,17 +122,42 @@ Done when it prints `ALL PASSED`. If it prints `FAILED`, the image did not pass 
 
 ### 5. Benchmark performance
 
-While the clusters are still up, run the benchmarker with the configurations in tests/benchmarker/ twice: once with db_type = 'crdb' and once with db_type = 'ybdb'. See [tests/benchmarker/README.md](tests/benchmarker/README.md).
+On the test machine:
 
-Done when the outputs contain the four scenarios aws crdb, google crdb, aws ybdb and google ybdb.
+```shell
+./release/scripts/run-benchmarks.sh
+```
+
+This starts a local dummy OAuth server on port 8085. It then runs each [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker) configuration `tests/benchmarker/<test>_<pool>.jsonnet`, which applies a test (`congested_area`, `separated_ops`, `typical_load`, `isas_uncontended`) to one pool (`crdb` or `ybdb`, see [tests/benchmarker/library](tests/benchmarker/library)). Pools are benchmarked in parallel, and the configurations of a pool sequentially; a pool stops at its first failed configuration. Do not run it at the same time as step 4.
+
+Done when it prints `ALL DONE`. Logs of each pool are written to release/logs/<pool>.benchmarker.log, and each configuration writes to `tests/benchmarker/output/<test>_<pool>/`:
+
+* `congested_area`, `separated_ops`, `typical_load`:
+    * `report.json`: raw report
+    * `scalability_curve.png`: flight throughput, failures, create operational intent latency, DSS queries/s and USL fit, one subfigure per DSS instance
+    * `timeline/index.html`: timeline of flights and operational intent operations, one `timeline/s<N>.html` per scenario
+    * `intermediate<N>/`: `report.json`, `timeline/` and `scalability_curve.png` generated after each DSS instance but the last
+* `isas_uncontended`:
+    * `report.json`: raw report
+    * `throughput_with_latency.png`: flight throughput, one series per DSS instance
 
 ### 6. Compile the results
+
+On the test machine:
 
 ```shell
 ./release/scripts/compile-results.sh
 ```
 
-Done when `release/output/<version>.zip` exists/
+This packages the prober, USS qualifier and benchmarker results.
+
+Done when `release/output/<version>.zip` exists. Retrieve it, e.g. from your computer:
+
+```shell
+scp <user>@<instance>:/opt/dss/release/output/<version>.zip .
+```
+
+Then terminate the test machine.
 
 ### 7. Destroy the clusters
 
