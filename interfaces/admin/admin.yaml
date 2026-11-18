@@ -150,6 +150,19 @@ components:
             Time of the last successful cleanup job of the group, absent if none ran.
           type: string
           format: date-time
+        disabled:
+          description: >-
+            Whether the scheduled cleanup jobs are disabled.
+          type: boolean
+
+    EvictionDisabled:
+      description: Whether the scheduled cleanup jobs of a Raft group are disabled. The eviction settings are kept either way.
+      type: object
+      required:
+        - disabled
+      properties:
+        disabled:
+          type: boolean
 
     EvictionRunParameters:
       description: Parameters of a cleanup job run on demand.
@@ -441,6 +454,48 @@ paths:
         '400':
           description: >-
             The request was not properly formed, e.g. an invalid duration, a negative interval, a non-positive TTL or a negative limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: >-
+            This DSS node has no Raft group with this name or the group does not support eviction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/v1/raft/groups/{group_name}/eviction/disabled:
+    parameters:
+      - name: group_name
+        in: path
+        required: true
+        description: Name of the Raft group.
+        schema:
+          $ref: '#/components/schemas/RaftGroupName'
+    put:
+      summary: Disable or enable the scheduled cleanup jobs of a Raft group
+      description: >-
+        The eviction settings are kept. The request returns once the change is adopted by the group.
+      operationId: putEvictionDisabled
+      tags: [ eviction ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvictionDisabled'
+      responses:
+        '200':
+          description: The scheduled cleanup jobs were disabled or enabled. The eviction state is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvictionState'
+        '400':
+          description: >-
+            The request was not properly formed.
           content:
             application/json:
               schema:

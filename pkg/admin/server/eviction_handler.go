@@ -29,11 +29,7 @@ func (s *Server) GetEvictionState(ctx context.Context, req *restapi.GetEvictionS
 		return restapi.GetEvictionStateResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get the eviction state of the %s raft group", req.GroupName))}}
 	}
-	result := &restapi.EvictionState{Config: *toEvictionConfig(state.Config)}
-	if !state.LastRun.IsZero() {
-		result.LastRun = new(state.LastRun.Format(time.RFC3339))
-	}
-	return restapi.GetEvictionStateResponseSet{Response200: result}
+	return restapi.GetEvictionStateResponseSet{Response200: toEvictionState(state)}
 }
 
 func (s *Server) PutEvictionConfig(ctx context.Context, req *restapi.PutEvictionConfigRequest) restapi.PutEvictionConfigResponseSet {
@@ -123,6 +119,35 @@ func (s *Server) eviction(name restapi.RaftGroupName) (storerepos.Eviction, erro
 		return nil, stacktrace.NewErrorWithCode(dsserr.NotFound, "No eviction for raft group %q", name)
 	}
 	return eviction, nil
+}
+
+func (s *Server) PutEvictionDisabled(ctx context.Context, req *restapi.PutEvictionDisabledRequest) restapi.PutEvictionDisabledResponseSet {
+	eviction, err := s.eviction(req.GroupName)
+	if err != nil {
+		return restapi.PutEvictionDisabledResponseSet{Response404: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, err)}}
+	}
+	if req.BodyParseError != nil {
+		return restapi.PutEvictionDisabledResponseSet{Response400: &restapi.ErrorResponse{
+			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
+	}
+
+	state, err := eviction.SetEvictionDisabled(ctx, req.Body.Disabled)
+	if err != nil {
+		return restapi.PutEvictionDisabledResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not set whether the eviction of the %s raft group is disabled", req.GroupName))}}
+	}
+
+	s.Logger.Info("set eviction status", zap.String("group", string(req.GroupName)), zap.Bool("disabled", req.Body.Disabled))
+	return restapi.PutEvictionDisabledResponseSet{Response200: toEvictionState(state)}
+}
+
+func toEvictionState(state dssmodels.EvictionState) *restapi.EvictionState {
+	result := &restapi.EvictionState{Config: *toEvictionConfig(state.Config), Disabled: new(state.Disabled)}
+	if !state.LastRun.IsZero() {
+		result.LastRun = new(state.LastRun.Format(time.RFC3339))
+	}
+	return result
 }
 
 func toEvictionConfig(config dssmodels.EvictionConfig) *restapi.EvictionConfig {

@@ -271,6 +271,44 @@ func (s *APIRouter) PutEvictionConfig(exp *regexp.Regexp, w http.ResponseWriter,
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
+func (s *APIRouter) PutEvictionDisabled(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req PutEvictionDisabledRequest
+	var response PutEvictionDisabledResponseSet
+
+	// Parse path parameters
+	pathMatch := exp.FindStringSubmatch(r.URL.Path)
+	req.GroupName = RaftGroupName(pathMatch[1])
+
+	// Parse request body
+	req.Body = new(EvictionDisabled)
+	defer r.Body.Close()
+	req.BodyParseError = json.NewDecoder(r.Body).Decode(req.Body)
+
+	// Call implementation
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	response = s.Implementation.PutEvictionDisabled(ctx, &req)
+
+	// Write response to client
+	if response.Response200 != nil {
+		api.WriteJSON(w, 200, response.Response200)
+		return
+	}
+	if response.Response400 != nil {
+		api.WriteJSON(w, 400, response.Response400)
+		return
+	}
+	if response.Response404 != nil {
+		api.WriteJSON(w, 404, response.Response404)
+		return
+	}
+	if response.Response500 != nil {
+		api.WriteJSON(w, 500, response.Response500)
+		return
+	}
+	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
+}
+
 func (s *APIRouter) CreateEvictionRun(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
 	var req CreateEvictionRunRequest
 	var response CreateEvictionRunResponseSet
@@ -310,7 +348,7 @@ func (s *APIRouter) CreateEvictionRun(exp *regexp.Regexp, w http.ResponseWriter,
 }
 
 func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
-	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 8)}
+	router := APIRouter{Implementation: impl, Authorizer: auth, Routes: make([]*api.Route, 9)}
 
 	pattern := regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/this_node$")
 	router.Routes[0] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetThisRaftNode, Name: "adminv1.GetThisRaftNode", Path: "/admin/v1/raft/groups/{group_name}/this_node", Tracer: tracer}
@@ -333,8 +371,11 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
 	router.Routes[6] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionConfig, Name: "adminv1.PutEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config", Tracer: tracer}
 
+	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/disabled$")
+	router.Routes[7] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionDisabled, Name: "adminv1.PutEvictionDisabled", Path: "/admin/v1/raft/groups/{group_name}/eviction/disabled", Tracer: tracer}
+
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/runs$")
-	router.Routes[7] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateEvictionRun, Name: "adminv1.CreateEvictionRun", Path: "/admin/v1/raft/groups/{group_name}/eviction/runs", Tracer: tracer}
+	router.Routes[8] = &api.Route{Method: http.MethodPost, Pattern: pattern, Handler: router.CreateEvictionRun, Name: "adminv1.CreateEvictionRun", Path: "/admin/v1/raft/groups/{group_name}/eviction/runs", Tracer: tracer}
 
 	return &router
 }
