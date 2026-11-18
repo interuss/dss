@@ -31,6 +31,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# === 0. Install Docker ===
+section "Install Docker (if missing)"
+ensure_docker
+
 # === 1. Resolve app_hostnames ===
 section "Resolve app_hostnames"
 declare -A HOST=()
@@ -42,14 +46,16 @@ for name in "${CLUSTERS[@]}"; do
 done
 
 # === 2. Ensure dummy-oauth image exists ===
-section "Build dummy-oauth image (if missing)"
-if ! docker image inspect "$DUMMY_OAUTH_IMAGE" >/dev/null 2>&1; then
+section "Pull or build dummy-oauth image (if missing)"
+if docker image inspect "$DUMMY_OAUTH_IMAGE" >/dev/null 2>&1; then
+    ok "$DUMMY_OAUTH_IMAGE already present"
+elif docker pull "$DUMMY_OAUTH_IMAGE" >"$LOG_DIR/dummy-oauth-pull.log" 2>&1; then
+    ok "pulled $DUMMY_OAUTH_IMAGE"
+else
     info "building from $REPO_ROOT/cmds/dummy-oauth/Dockerfile ..."
     ( cd "$REPO_ROOT" && docker build -f cmds/dummy-oauth/Dockerfile -t "$DUMMY_OAUTH_IMAGE" . ) \
         >"$LOG_DIR/dummy-oauth-build.log" 2>&1
     ok "built $DUMMY_OAUTH_IMAGE"
-else
-    ok "$DUMMY_OAUTH_IMAGE already present"
 fi
 
 # === 3. Start test network + dummy-oauth ===
