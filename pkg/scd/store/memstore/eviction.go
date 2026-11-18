@@ -35,7 +35,7 @@ func (r *repo) DeleteExpired(ctx context.Context, params dssmodels.EvictionParam
 }
 
 func (r *repo) GetEvictionState(_ context.Context) (dssmodels.EvictionState, error) {
-	state := dssmodels.EvictionState{Config: defaultEvictionConfig, LastRun: r.state.LastEviction}
+	state := dssmodels.EvictionState{Config: defaultEvictionConfig, LastRun: r.state.LastEviction, Disabled: r.state.EvictionDisabled}
 	if r.state.EvictionConfig != nil {
 		state.Config = *r.state.EvictionConfig
 	}
@@ -45,4 +45,9 @@ func (r *repo) GetEvictionState(_ context.Context) (dssmodels.EvictionState, err
 func (r *repo) SetEvictionConfig(_ context.Context, config dssmodels.EvictionConfig) (dssmodels.EvictionConfig, error) {
 	r.state.EvictionConfig = &config
 	return config, nil
+}
+
+func (r *repo) SetEvictionDisabled(ctx context.Context, disabled bool) (dssmodels.EvictionState, error) {
+	r.state.EvictionDisabled = disabled
+	return r.GetEvictionState(ctx)
 }

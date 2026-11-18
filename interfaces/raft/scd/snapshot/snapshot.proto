@@ -63,4 +63,6 @@ message Snapshot {
     optional eviction.Config eviction_config = 6;
     // last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
     optional google.protobuf.Timestamp last_eviction = 7;
+    // eviction_disabled holds whether the scheduled cleanup jobs are disabled.
+    bool eviction_disabled = 8;
 }

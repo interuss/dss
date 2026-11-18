@@ -258,6 +258,51 @@ func (x *SetConfigRepoCall) GetConfig() *Config {
 	return nil
 }
 
+type SetDisabledRepoCall struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the scheduled cleanup jobs are disabled.
+	Disabled      bool `protobuf:"varint,1,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetDisabledRepoCall) Reset() {
+	*x = SetDisabledRepoCall{}
+	mi := &file_eviction_eviction_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetDisabledRepoCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetDisabledRepoCall) ProtoMessage() {}
+
+func (x *SetDisabledRepoCall) ProtoReflect() protoreflect.Message {
+	mi := &file_eviction_eviction_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetDisabledRepoCall.ProtoReflect.Descriptor instead.
+func (*SetDisabledRepoCall) Descriptor() ([]byte, []int) {
+	return file_eviction_eviction_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SetDisabledRepoCall) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
 var File_eviction_eviction_proto protoreflect.FileDescriptor
 
 const file_eviction_eviction_proto_rawDesc = "" +
@@ -278,7 +323,9 @@ const file_eviction_eviction_proto_rawDesc = "" +
 	"parameters\"\x12\n" +
 	"\x10GetStateRepoCall\"=\n" +
 	"\x11SetConfigRepoCall\x12(\n" +
-	"\x06config\x18\x01 \x01(\v2\x10.eviction.ConfigR\x06configB+Z)github.com/interuss/dss/pkg/pb/evictionpbb\x06proto3"
+	"\x06config\x18\x01 \x01(\v2\x10.eviction.ConfigR\x06config\"1\n" +
+	"\x13SetDisabledRepoCall\x12\x1a\n" +
+	"\bdisabled\x18\x01 \x01(\bR\bdisabledB+Z)github.com/interuss/dss/pkg/pb/evictionpbb\x06proto3"
 
 var (
 	file_eviction_eviction_proto_rawDescOnce sync.Once
@@ -292,18 +339,19 @@ func file_eviction_eviction_proto_rawDescGZIP() []byte {
 	return file_eviction_eviction_proto_rawDescData
 }
 
-var file_eviction_eviction_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_eviction_eviction_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_eviction_eviction_proto_goTypes = []any{
 	(*Parameters)(nil),            // 0: eviction.Parameters
 	(*Config)(nil),                // 1: eviction.Config
 	(*DeleteExpiredRepoCall)(nil), // 2: eviction.DeleteExpiredRepoCall
 	(*GetStateRepoCall)(nil),      // 3: eviction.GetStateRepoCall
 	(*SetConfigRepoCall)(nil),     // 4: eviction.SetConfigRepoCall
-	(*durationpb.Duration)(nil),   // 5: google.protobuf.Duration
+	(*SetDisabledRepoCall)(nil),   // 5: eviction.SetDisabledRepoCall
+	(*durationpb.Duration)(nil),   // 6: google.protobuf.Duration
 }
 var file_eviction_eviction_proto_depIdxs = []int32{
-	5, // 0: eviction.Parameters.ttl:type_name -> google.protobuf.Duration
-	5, // 1: eviction.Config.interval:type_name -> google.protobuf.Duration
+	6, // 0: eviction.Parameters.ttl:type_name -> google.protobuf.Duration
+	6, // 1: eviction.Config.interval:type_name -> google.protobuf.Duration
 	0, // 2: eviction.Config.parameters:type_name -> eviction.Parameters
 	0, // 3: eviction.DeleteExpiredRepoCall.parameters:type_name -> eviction.Parameters
 	1, // 4: eviction.SetConfigRepoCall.config:type_name -> eviction.Config
@@ -325,7 +373,7 @@ func file_eviction_eviction_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_eviction_eviction_proto_rawDesc), len(file_eviction_eviction_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

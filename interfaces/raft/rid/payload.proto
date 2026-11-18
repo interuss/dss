@@ -43,5 +43,6 @@ message Payload {
         eviction.DeleteExpiredRepoCall delete_expired_repo_call = 100;
         eviction.GetStateRepoCall get_eviction_state_repo_call = 101;
         eviction.SetConfigRepoCall set_eviction_config_repo_call = 102;
+        eviction.SetDisabledRepoCall set_eviction_disabled_repo_call = 103;
     }
 }

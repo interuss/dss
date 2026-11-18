@@ -66,6 +66,7 @@ type Payload struct {
 	//	*Payload_DeleteExpiredRepoCall
 	//	*Payload_GetEvictionStateRepoCall
 	//	*Payload_SetEvictionConfigRepoCall
+	//	*Payload_SetEvictionDisabledRepoCall
 	Payload       isPayload_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -468,6 +469,15 @@ func (x *Payload) GetSetEvictionConfigRepoCall() *evictionpb.SetConfigRepoCall {
 	return nil
 }
 
+func (x *Payload) GetSetEvictionDisabledRepoCall() *evictionpb.SetDisabledRepoCall {
+	if x != nil {
+		if x, ok := x.Payload.(*Payload_SetEvictionDisabledRepoCall); ok {
+			return x.SetEvictionDisabledRepoCall
+		}
+	}
+	return nil
+}
+
 type isPayload_Payload interface {
 	isPayload_Payload()
 }
@@ -641,6 +651,10 @@ type Payload_SetEvictionConfigRepoCall struct {
 	SetEvictionConfigRepoCall *evictionpb.SetConfigRepoCall `protobuf:"bytes,182,opt,name=set_eviction_config_repo_call,json=setEvictionConfigRepoCall,proto3,oneof"`
 }
 
+type Payload_SetEvictionDisabledRepoCall struct {
+	SetEvictionDisabledRepoCall *evictionpb.SetDisabledRepoCall `protobuf:"bytes,183,opt,name=set_eviction_disabled_repo_call,json=setEvictionDisabledRepoCall,proto3,oneof"`
+}
+
 func (*Payload_GetUssAvailabilityOperation) isPayload_Payload() {}
 
 func (*Payload_SetUssAvailabilityOperation) isPayload_Payload() {}
@@ -721,11 +735,13 @@ func (*Payload_GetEvictionStateRepoCall) isPayload_Payload() {}
 
 func (*Payload_SetEvictionConfigRepoCall) isPayload_Payload() {}
 
+func (*Payload_SetEvictionDisabledRepoCall) isPayload_Payload() {}
+
 var File_scd_payload_proto protoreflect.FileDescriptor
 
 const file_scd_payload_proto_rawDesc = "" +
 	"\n" +
-	"\x11scd/payload.proto\x12\x03scd\x1a\x17eviction/eviction.proto\x1a\x16scd/availability.proto\x1a\x14scd/constraint.proto\x1a\x1dscd/operational_intents.proto\x1a\x17scd/subscriptions.proto\"\xd4$\n" +
+	"\x11scd/payload.proto\x12\x03scd\x1a\x17eviction/eviction.proto\x1a\x16scd/availability.proto\x1a\x14scd/constraint.proto\x1a\x1dscd/operational_intents.proto\x1a\x17scd/subscriptions.proto\"\xbc%\n" +
 	"\aPayload\x12g\n" +
 	"\x1eget_uss_availability_operation\x18\x14 \x01(\v2 .scd.GetUssAvailabilityOperationH\x00R\x1bgetUssAvailabilityOperation\x12g\n" +
 	"\x1eset_uss_availability_operation\x18\x15 \x01(\v2 .scd.SetUssAvailabilityOperationH\x00R\x1bsetUssAvailabilityOperation\x12e\n" +
@@ -766,7 +782,8 @@ const file_scd_payload_proto_rawDesc = "" +
 	"\x1dcount_subscriptions_repo_call\x18\xa6\x01 \x01(\v2\x1f.scd.CountSubscriptionsRepoCallH\x00R\x1acountSubscriptionsRepoCall\x12[\n" +
 	"\x18delete_expired_repo_call\x18\xb4\x01 \x01(\v2\x1f.eviction.DeleteExpiredRepoCallH\x00R\x15deleteExpiredRepoCall\x12]\n" +
 	"\x1cget_eviction_state_repo_call\x18\xb5\x01 \x01(\v2\x1a.eviction.GetStateRepoCallH\x00R\x18getEvictionStateRepoCall\x12`\n" +
-	"\x1dset_eviction_config_repo_call\x18\xb6\x01 \x01(\v2\x1b.eviction.SetConfigRepoCallH\x00R\x19setEvictionConfigRepoCallB\t\n" +
+	"\x1dset_eviction_config_repo_call\x18\xb6\x01 \x01(\v2\x1b.eviction.SetConfigRepoCallH\x00R\x19setEvictionConfigRepoCall\x12f\n" +
+	"\x1fset_eviction_disabled_repo_call\x18\xb7\x01 \x01(\v2\x1d.eviction.SetDisabledRepoCallH\x00R\x1bsetEvictionDisabledRepoCallB\t\n" +
 	"\apayloadB&Z$github.com/interuss/dss/pkg/pb/scdpbb\x06proto3"
 
 var (
@@ -824,6 +841,7 @@ var file_scd_payload_proto_goTypes = []any{
 	(*evictionpb.DeleteExpiredRepoCall)(nil),                          // 38: eviction.DeleteExpiredRepoCall
 	(*evictionpb.GetStateRepoCall)(nil),                               // 39: eviction.GetStateRepoCall
 	(*evictionpb.SetConfigRepoCall)(nil),                              // 40: eviction.SetConfigRepoCall
+	(*evictionpb.SetDisabledRepoCall)(nil),                            // 41: eviction.SetDisabledRepoCall
 }
 var file_scd_payload_proto_depIdxs = []int32{
 	1,  // 0: scd.Payload.get_uss_availability_operation:type_name -> scd.GetUssAvailabilityOperation
@@ -866,11 +884,12 @@ var file_scd_payload_proto_depIdxs = []int32{
 	38, // 37: scd.Payload.delete_expired_repo_call:type_name -> eviction.DeleteExpiredRepoCall
 	39, // 38: scd.Payload.get_eviction_state_repo_call:type_name -> eviction.GetStateRepoCall
 	40, // 39: scd.Payload.set_eviction_config_repo_call:type_name -> eviction.SetConfigRepoCall
-	40, // [40:40] is the sub-list for method output_type
-	40, // [40:40] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	41, // 40: scd.Payload.set_eviction_disabled_repo_call:type_name -> eviction.SetDisabledRepoCall
+	41, // [41:41] is the sub-list for method output_type
+	41, // [41:41] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_scd_payload_proto_init() }
@@ -923,6 +942,7 @@ func file_scd_payload_proto_init() {
 		(*Payload_DeleteExpiredRepoCall)(nil),
 		(*Payload_GetEvictionStateRepoCall)(nil),
 		(*Payload_SetEvictionConfigRepoCall)(nil),
+		(*Payload_SetEvictionDisabledRepoCall)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
