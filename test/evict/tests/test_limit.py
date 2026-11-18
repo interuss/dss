@@ -69,9 +69,8 @@ def check_limit(
             sys.exit(1)
         batch_size = BATCH_SIZE
 
-    logger.debug(
-        f"Evicting remaining {name} older than 1s without limit and with batch size of {batch_size}"
-    )
+    batch = f" and with batch size of {batch_size}" if batch_size else ""
+    logger.debug(f"Evicting remaining {name} older than 1s without limit{batch}")
     evict("1s", delete=True, limit=0, batch_size=batch_size)
 
     remaining = [i for i in ids if get(i)]
