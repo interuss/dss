@@ -18,9 +18,9 @@ const (
 // The schedule is computed from the last cleanup job of the group when this node becomes the leader
 // and recomputed when the settings or the last cleanup job are updated (configC is signaled).
 // No job runs while the interval is 0.
-func (s *Store[R]) StartEviction(repo storerepos.Eviction, configC <-chan struct{}) {
+func (s *Store[R]) StartEviction(ctx context.Context, repo storerepos.Eviction, configC <-chan struct{}) {
 	logger := s.logger.With(zap.String("component", "eviction"))
-	s.RunAsLeader(func(ctx context.Context) {
+	s.RunAsLeader(ctx, func(ctx context.Context) {
 		tick := nextEviction(ctx, logger, repo)
 		for {
 			select {

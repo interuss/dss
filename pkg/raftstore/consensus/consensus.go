@@ -875,9 +875,10 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 }
 
 // RunAsLeader runs fn in the background when this node is the leader of the group.
-// The context of fn is canceled when this node stops being the leader or the raft updates consumer exits.
-func (c *Consensus) RunAsLeader(fn func(ctx context.Context)) {
-	c.leader.add(fn)
+// The context of fn derives from ctx and is canceled when this node stops being the leader or the raft updates consumer exits.
+// fn must return once its context is done, otherwise it keeps running after this node stops being the leader.
+func (c *Consensus) RunAsLeader(ctx context.Context, fn func(ctx context.Context)) {
+	c.leader.add(ctx, fn)
 }
 
 // Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, currently knows its leader
