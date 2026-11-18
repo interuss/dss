@@ -148,6 +148,8 @@ jobs:
           echo "NUM_USS=3" >> "$GITHUB_ENV"
           echo "CORE_SERVICE_CONTAINER=ci_infra_1-1-dss_loadbalancer-1" >> "$GITHUB_ENV"
           echo "OAUTH_CONTAINER=ci_infra_1-1-oauth-1" >> "$GITHUB_ENV"
+          echo "EVICT_CONTAINER=ci_infra_1-1-dss-1" >> "$GITHUB_ENV"
+          echo "EVICT_STORE=raft" >> "$GITHUB_ENV"
           echo "DSS_DOCKER_NETWORK=interop_ecosystem_network" >> "$GITHUB_ENV"
       - name: Tear down any pre-existing local DSS instance
         run: make down-locally
@@ -157,9 +159,7 @@ jobs:
         run: make probe-locally
       - name: Run Qualifier against local DSS instance
         run: make qualify-locally
-      # Todo: Re-enable evict tests for raft once evict is implemented there.
       - name: Run evict tests against local DSS instance
-        if: matrix.db != 'raft' && matrix.db != 'raft-cluster'
         run: make evict-locally
       - name: Run security tests against local DSS instance
         run: make security-locally

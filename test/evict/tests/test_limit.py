@@ -21,6 +21,7 @@ def check_limit(
     get_id: Callable[[dict[str, Any]], str],
     get: Callable[[str], dict[str, Any] | None],
     evict: Callable[..., None],
+    supports_batch_size: bool,
 ):
     logger.debug(f"Evicting all {name} older than 1s so only test entities expire")
     evict("1s", delete=True)
@@ -51,24 +52,26 @@ def check_limit(
         )
         sys.exit(1)
 
-    logger.debug(
-        f"Evicting {name} older than 1s with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}"
-    )
-    evict("1s", delete=True, limit=BATCH_LIMIT, batch_size=BATCH_SIZE)
-
-    # With limit=3 and batch_size=2, 2 batches of 2 are deleted (4 entities total)
-    expected_remaining -= 2 * BATCH_SIZE
-    remaining = [i for i in ids if get(i)]
-    if len(remaining) != expected_remaining:
-        logger.error(
-            f"❌ Expected {expected_remaining} {name} to remain after evicting with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}, got {remaining}"
+    batch_size = None
+    if supports_batch_size:
+        logger.debug(
+            f"Evicting {name} older than 1s with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}"
         )
-        sys.exit(1)
+        evict("1s", delete=True, limit=BATCH_LIMIT, batch_size=BATCH_SIZE)
 
-    logger.debug(
-        f"Evicting remaining {name} older than 1s without limit and with batch size of {BATCH_SIZE}"
-    )
-    evict("1s", delete=True, limit=0, batch_size=BATCH_SIZE)
+        # With limit=3 and batch_size=2, 2 batches of 2 are deleted (4 entities total)
+        expected_remaining -= 2 * BATCH_SIZE
+        remaining = [i for i in ids if get(i)]
+        if len(remaining) != expected_remaining:
+            logger.error(
+                f"❌ Expected {expected_remaining} {name} to remain after evicting with a limit of {BATCH_LIMIT} and batch size of {BATCH_SIZE}, got {remaining}"
+            )
+            sys.exit(1)
+        batch_size = BATCH_SIZE
+
+    batch = f" and with batch size of {batch_size}" if batch_size else ""
+    logger.debug(f"Evicting remaining {name} older than 1s without limit{batch}")
+    evict("1s", delete=True, limit=0, batch_size=batch_size)
 
     remaining = [i for i in ids if get(i)]
     if remaining:
@@ -88,6 +91,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
         lambda isa: str(isa["service_area"]["id"]),
         qh.get_rid_ISA,
         eh.evict_rid_ISAs,
+        eh.supports_batch_size,
     )
 
     check_limit(
@@ -97,6 +101,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
         lambda sub: str(sub["subscription"]["id"]),
         qh.get_rid_subscription,
         eh.evict_rid_subscriptions,
+        eh.supports_batch_size,
     )
 
     # Operational intents are spread apart so they don't conflict with each other
@@ -108,6 +113,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
         lambda op_intent: str(op_intent["operational_intent_reference"]["id"]),
         qh.get_scd_op_intent,
         eh.evict_scd_operational_intents,
+        eh.supports_batch_size,
     )
 
     check_limit(
@@ -117,6 +123,7 @@ def test_limit(qh: QueryHelper, eh: EvictHelper):
         lambda sub: str(sub["subscription"]["id"]),
         qh.get_scd_subscription,
         eh.evict_scd_subscriptions,
+        eh.supports_batch_size,
     )
 
     logger.info("✅ Limit test successful :)")

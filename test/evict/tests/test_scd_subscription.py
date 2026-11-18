@@ -40,25 +40,27 @@ def test_scd_subscription(qh: QueryHelper, eh: EvictHelper):
     _ = sys.stdout.flush()
     time.sleep(3)
 
-    logger.debug("Evicting subscriptions older than 1s in dry mode")
-    eh.evict_scd_subscriptions("1s", delete=False)
+    if eh.supports_dry_run:
+        logger.debug("Evicting subscriptions older than 1s in dry mode")
+        eh.evict_scd_subscriptions("1s", delete=False)
 
-    logger.debug("Check that subscription still exists")
-    if not qh.get_scd_subscription(sub_id):
-        logger.error(
-            "❌ Test subscription shall still be present since delete was set to false"
-        )
-        sys.exit(1)
+        logger.debug("Check that subscription still exists")
+        if not qh.get_scd_subscription(sub_id):
+            logger.error(
+                "❌ Test subscription shall still be present since delete was set to false"
+            )
+            sys.exit(1)
 
-    logger.debug("Evicting operational intents older than 1s")
-    eh.evict_scd_operational_intents("1s", delete=True)
+    if eh.selects_entity_types:
+        logger.debug("Evicting operational intents older than 1s")
+        eh.evict_scd_operational_intents("1s", delete=True)
 
-    logger.debug("Check that subscription still exists")
-    if not qh.get_scd_subscription(sub_id):
-        logger.error(
-            "❌ Test subscription shall still be present since we evicted operational intents"
-        )
-        sys.exit(1)
+        logger.debug("Check that subscription still exists")
+        if not qh.get_scd_subscription(sub_id):
+            logger.error(
+                "❌ Test subscription shall still be present since we evicted operational intents"
+            )
+            sys.exit(1)
 
     logger.debug("Evicting subscriptions older than 1s")
     eh.evict_scd_subscriptions("1s", delete=True)
