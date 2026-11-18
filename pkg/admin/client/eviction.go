@@ -46,6 +46,26 @@ func (g *RaftGroup) SetEvictionConfig(ctx context.Context, config *restapi.Evict
 	}
 }
 
+// SetEvictionDisabled disables or enables the scheduled cleanup jobs of the group.
+func (g *RaftGroup) SetEvictionDisabled(ctx context.Context, disabled bool) error {
+	resp, err := g.client.PutEvictionDisabled(ctx, g.name, &restapi.EvictionDisabled{Disabled: disabled})
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to call the admin API at %s", g.socketPath)
+	}
+	switch {
+	case resp.Response204 != nil:
+		return nil
+	case resp.Response400 != nil:
+		return responseError(http.StatusBadRequest, resp.Response400.Message)
+	case resp.Response404 != nil:
+		return responseError(http.StatusNotFound, resp.Response404.Message)
+	case resp.Response500 != nil:
+		return responseError(http.StatusInternalServerError, &resp.Response500.ErrorMessage)
+	default:
+		return stacktrace.NewError("no response received from the admin API")
+	}
+}
+
 // RunEviction runs a cleanup job on the group and returns the number of entities per entity type.
 func (g *RaftGroup) RunEviction(ctx context.Context, params *restapi.EvictionRunParameters) (*restapi.EvictionRunResult, error) {
 	resp, err := g.client.CreateEvictionRun(ctx, g.name, params)

@@ -23,10 +23,6 @@ func get(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return "", err
 		}
-		lastRun := "never"
-		if state.LastRun != nil {
-			lastRun = *state.LastRun
-		}
-		return formatConfig(&state.Config) + "\n  last run: " + lastRun, nil
+		return formatState(state), nil
 	})
 }
