@@ -67,6 +67,9 @@ type EvictionConfig struct {
 	Interval string `json:"interval"`
 
 	Parameters EvictionParameters `json:"parameters"`
+
+	// Time of the last successful cleanup job of the group, absent if none ran.
+	LastRun *string `json:"last_run,omitempty"`
 }
 
 // Parameters of a cleanup job run on demand.

@@ -256,8 +256,10 @@ type Snapshot struct {
 	Subscriptions map[string]*Subscription `protobuf:"bytes,3,rep,name=subscriptions,proto3" json:"subscriptions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
 	EvictionConfig *evictionpb.Config `protobuf:"bytes,4,opt,name=eviction_config,json=evictionConfig,proto3" json:"eviction_config,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
+	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_eviction,json=lastEviction,proto3" json:"last_eviction,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -311,6 +313,13 @@ func (x *Snapshot) GetEvictionConfig() *evictionpb.Config {
 	return nil
 }
 
+func (x *Snapshot) GetLastEviction() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastEviction
+	}
+	return nil
+}
+
 var File_rid_snapshot_snapshot_proto protoreflect.FileDescriptor
 
 const file_rid_snapshot_snapshot_proto_rawDesc = "" +
@@ -349,11 +358,12 @@ const file_rid_snapshot_snapshot_proto_rawDesc = "" +
 	"updated_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x0e\n" +
 	"\f_altitude_hiB\x0e\n" +
-	"\f_altitude_lo\"\xf6\x02\n" +
+	"\f_altitude_lo\"\xb7\x03\n" +
 	"\bSnapshot\x124\n" +
 	"\x04isas\x18\x02 \x03(\v2 .rid.snapshot.Snapshot.IsasEntryR\x04isas\x12O\n" +
 	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x129\n" +
-	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x1aJ\n" +
+	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x12?\n" +
+	"\rlast_eviction\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastEviction\x1aJ\n" +
 	"\tIsasEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\v2\x11.rid.snapshot.ISAR\x05value:\x028\x01\x1a\\\n" +
@@ -393,13 +403,14 @@ var file_rid_snapshot_snapshot_proto_depIdxs = []int32{
 	3,  // 6: rid.snapshot.Snapshot.isas:type_name -> rid.snapshot.Snapshot.IsasEntry
 	4,  // 7: rid.snapshot.Snapshot.subscriptions:type_name -> rid.snapshot.Snapshot.SubscriptionsEntry
 	6,  // 8: rid.snapshot.Snapshot.eviction_config:type_name -> eviction.Config
-	0,  // 9: rid.snapshot.Snapshot.IsasEntry.value:type_name -> rid.snapshot.ISA
-	1,  // 10: rid.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> rid.snapshot.Subscription
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	5,  // 9: rid.snapshot.Snapshot.last_eviction:type_name -> google.protobuf.Timestamp
+	0,  // 10: rid.snapshot.Snapshot.IsasEntry.value:type_name -> rid.snapshot.ISA
+	1,  // 11: rid.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> rid.snapshot.Subscription
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_rid_snapshot_snapshot_proto_init() }

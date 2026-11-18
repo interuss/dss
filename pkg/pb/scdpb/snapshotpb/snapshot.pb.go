@@ -390,8 +390,10 @@ type Snapshot struct {
 	Availabilities map[string]*Availability `protobuf:"bytes,5,rep,name=availabilities,proto3" json:"availabilities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
 	EvictionConfig *evictionpb.Config `protobuf:"bytes,6,opt,name=eviction_config,json=evictionConfig,proto3" json:"eviction_config,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
+	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_eviction,json=lastEviction,proto3" json:"last_eviction,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -459,6 +461,13 @@ func (x *Snapshot) GetEvictionConfig() *evictionpb.Config {
 	return nil
 }
 
+func (x *Snapshot) GetLastEviction() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastEviction
+	}
+	return nil
+}
+
 var File_scd_snapshot_snapshot_proto protoreflect.FileDescriptor
 
 const file_scd_snapshot_snapshot_proto_rawDesc = "" +
@@ -505,13 +514,14 @@ const file_scd_snapshot_snapshot_proto_rawDesc = "" +
 	"\fAvailability\x12=\n" +
 	"\favailability\x18\x01 \x01(\x0e2\x19.scd.UssAvailabilityStateR\favailability\x129\n" +
 	"\n" +
-	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x95\x06\n" +
+	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd6\x06\n" +
 	"\bSnapshot\x12I\n" +
 	"\vconstraints\x18\x02 \x03(\v2'.scd.snapshot.Snapshot.ConstraintsEntryR\vconstraints\x12O\n" +
 	"\rsubscriptions\x18\x03 \x03(\v2).scd.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x12_\n" +
 	"\x13operational_intents\x18\x04 \x03(\v2..scd.snapshot.Snapshot.OperationalIntentsEntryR\x12operationalIntents\x12R\n" +
 	"\x0eavailabilities\x18\x05 \x03(\v2*.scd.snapshot.Snapshot.AvailabilitiesEntryR\x0eavailabilities\x129\n" +
-	"\x0feviction_config\x18\x06 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x1aX\n" +
+	"\x0feviction_config\x18\x06 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x12?\n" +
+	"\rlast_eviction\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\flastEviction\x1aX\n" +
 	"\x10ConstraintsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
 	"\x05value\x18\x02 \x01(\v2\x18.scd.snapshot.ConstraintR\x05value:\x028\x01\x1a\\\n" +
@@ -573,15 +583,16 @@ var file_scd_snapshot_snapshot_proto_depIdxs = []int32{
 	7,  // 14: scd.snapshot.Snapshot.operational_intents:type_name -> scd.snapshot.Snapshot.OperationalIntentsEntry
 	8,  // 15: scd.snapshot.Snapshot.availabilities:type_name -> scd.snapshot.Snapshot.AvailabilitiesEntry
 	14, // 16: scd.snapshot.Snapshot.eviction_config:type_name -> eviction.Config
-	0,  // 17: scd.snapshot.Snapshot.ConstraintsEntry.value:type_name -> scd.snapshot.Constraint
-	1,  // 18: scd.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> scd.snapshot.Subscription
-	2,  // 19: scd.snapshot.Snapshot.OperationalIntentsEntry.value:type_name -> scd.snapshot.OperationalIntent
-	3,  // 20: scd.snapshot.Snapshot.AvailabilitiesEntry.value:type_name -> scd.snapshot.Availability
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	10, // 17: scd.snapshot.Snapshot.last_eviction:type_name -> google.protobuf.Timestamp
+	0,  // 18: scd.snapshot.Snapshot.ConstraintsEntry.value:type_name -> scd.snapshot.Constraint
+	1,  // 19: scd.snapshot.Snapshot.SubscriptionsEntry.value:type_name -> scd.snapshot.Subscription
+	2,  // 20: scd.snapshot.Snapshot.OperationalIntentsEntry.value:type_name -> scd.snapshot.OperationalIntent
+	3,  // 21: scd.snapshot.Snapshot.AvailabilitiesEntry.value:type_name -> scd.snapshot.Availability
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_scd_snapshot_snapshot_proto_init() }
