@@ -177,26 +177,26 @@ func (x *DeleteExpiredRepoCall) GetParameters() *Parameters {
 	return nil
 }
 
-type GetConfigRepoCall struct {
+type GetStateRepoCall struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetConfigRepoCall) Reset() {
-	*x = GetConfigRepoCall{}
+func (x *GetStateRepoCall) Reset() {
+	*x = GetStateRepoCall{}
 	mi := &file_eviction_eviction_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetConfigRepoCall) String() string {
+func (x *GetStateRepoCall) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetConfigRepoCall) ProtoMessage() {}
+func (*GetStateRepoCall) ProtoMessage() {}
 
-func (x *GetConfigRepoCall) ProtoReflect() protoreflect.Message {
+func (x *GetStateRepoCall) ProtoReflect() protoreflect.Message {
 	mi := &file_eviction_eviction_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -208,8 +208,8 @@ func (x *GetConfigRepoCall) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetConfigRepoCall.ProtoReflect.Descriptor instead.
-func (*GetConfigRepoCall) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetStateRepoCall.ProtoReflect.Descriptor instead.
+func (*GetStateRepoCall) Descriptor() ([]byte, []int) {
 	return file_eviction_eviction_proto_rawDescGZIP(), []int{3}
 }
 
@@ -275,8 +275,8 @@ const file_eviction_eviction_proto_rawDesc = "" +
 	"\x15DeleteExpiredRepoCall\x124\n" +
 	"\n" +
 	"parameters\x18\x01 \x01(\v2\x14.eviction.ParametersR\n" +
-	"parameters\"\x13\n" +
-	"\x11GetConfigRepoCall\"=\n" +
+	"parameters\"\x12\n" +
+	"\x10GetStateRepoCall\"=\n" +
 	"\x11SetConfigRepoCall\x12(\n" +
 	"\x06config\x18\x01 \x01(\v2\x10.eviction.ConfigR\x06configB+Z)github.com/interuss/dss/pkg/pb/evictionpbb\x06proto3"
 
@@ -297,7 +297,7 @@ var file_eviction_eviction_proto_goTypes = []any{
 	(*Parameters)(nil),            // 0: eviction.Parameters
 	(*Config)(nil),                // 1: eviction.Config
 	(*DeleteExpiredRepoCall)(nil), // 2: eviction.DeleteExpiredRepoCall
-	(*GetConfigRepoCall)(nil),     // 3: eviction.GetConfigRepoCall
+	(*GetStateRepoCall)(nil),      // 3: eviction.GetStateRepoCall
 	(*SetConfigRepoCall)(nil),     // 4: eviction.SetConfigRepoCall
 	(*durationpb.Duration)(nil),   // 5: google.protobuf.Duration
 }

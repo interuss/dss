@@ -213,11 +213,11 @@ func (c *Client) DeleteRaftGroupMember(ctx context.Context, groupName RaftGroupN
 	return response, err
 }
 
-// Retrieve the eviction settings of a Raft group
-func (c *Client) GetEvictionConfig(ctx context.Context, groupName RaftGroupName) (GetEvictionConfigResponseSet, error) {
-	var response GetEvictionConfigResponseSet
+// Retrieve the eviction settings of a Raft group and the last run of its cleanup jobs
+func (c *Client) GetEvictionState(ctx context.Context, groupName RaftGroupName) (GetEvictionStateResponseSet, error) {
+	var response GetEvictionStateResponseSet
 
-	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction/config"
+	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction"
 
 	resp, err := c.do(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -227,7 +227,7 @@ func (c *Client) GetEvictionConfig(ctx context.Context, groupName RaftGroupName)
 
 	switch resp.StatusCode {
 	case 200:
-		response.Response200 = new(EvictionConfig)
+		response.Response200 = new(EvictionState)
 		err = json.NewDecoder(resp.Body).Decode(response.Response200)
 	case 404:
 		response.Response404 = new(ErrorResponse)

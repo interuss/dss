@@ -31,14 +31,14 @@ func (s *Store[R]) StartEviction(repo storerepos.Eviction, configC <-chan struct
 			case <-tick:
 				ctx := timestamp.NewContext(ctx, time.Now())
 				configCtx, cancel := context.WithTimeout(ctx, evictionConfigTimeout)
-				config, err := repo.GetEvictionConfig(configCtx)
+				state, err := repo.GetEvictionState(configCtx)
 				cancel()
 				if err != nil {
 					logger.Error("failed to get the eviction settings, retrying", zap.Error(err))
 					tick = time.After(evictionRetryDelay)
 					continue
 				}
-				counts, err := repo.DeleteExpired(ctx, config.Parameters)
+				counts, err := repo.DeleteExpired(ctx, state.Config.Parameters)
 				if err != nil {
 					logger.Error("failed to run the scheduled cleanup job, retrying", zap.Error(err))
 					tick = time.After(evictionRetryDelay)
@@ -57,13 +57,13 @@ func (s *Store[R]) StartEviction(repo storerepos.Eviction, configC <-chan struct
 func nextEviction(ctx context.Context, logger *zap.Logger, repo storerepos.Eviction) <-chan time.Time {
 	ctx, cancel := context.WithTimeout(timestamp.NewContext(ctx, time.Now()), evictionConfigTimeout)
 	defer cancel()
-	config, err := repo.GetEvictionConfig(ctx)
+	state, err := repo.GetEvictionState(ctx)
 	if err != nil {
 		logger.Error("failed to get the eviction settings, retrying", zap.Error(err))
 		return time.After(evictionRetryDelay)
 	}
-	if config.Interval == 0 {
+	if state.Config.Interval == 0 {
 		return nil
 	}
-	return time.After(time.Until(config.LastRun.Add(config.Interval)))
+	return time.After(time.Until(state.LastRun.Add(state.Config.Interval)))
 }

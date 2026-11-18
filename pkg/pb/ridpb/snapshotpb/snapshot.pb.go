@@ -255,9 +255,9 @@ type Snapshot struct {
 	// subscriptions holds the stored subscriptions keyed by ID.
 	Subscriptions map[string]*Subscription `protobuf:"bytes,3,rep,name=subscriptions,proto3" json:"subscriptions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
-	EvictionConfig *evictionpb.Config `protobuf:"bytes,4,opt,name=eviction_config,json=evictionConfig,proto3" json:"eviction_config,omitempty"`
+	EvictionConfig *evictionpb.Config `protobuf:"bytes,4,opt,name=eviction_config,json=evictionConfig,proto3,oneof" json:"eviction_config,omitempty"`
 	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
-	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_eviction,json=lastEviction,proto3" json:"last_eviction,omitempty"`
+	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -358,18 +358,20 @@ const file_rid_snapshot_snapshot_proto_rawDesc = "" +
 	"updated_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x0e\n" +
 	"\f_altitude_hiB\x0e\n" +
-	"\f_altitude_lo\"\xb7\x03\n" +
+	"\f_altitude_lo\"\xe7\x03\n" +
 	"\bSnapshot\x124\n" +
 	"\x04isas\x18\x02 \x03(\v2 .rid.snapshot.Snapshot.IsasEntryR\x04isas\x12O\n" +
-	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x129\n" +
-	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x12?\n" +
-	"\rlast_eviction\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastEviction\x1aJ\n" +
+	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x12>\n" +
+	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigH\x00R\x0eevictionConfig\x88\x01\x01\x12D\n" +
+	"\rlast_eviction\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x1aJ\n" +
 	"\tIsasEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\v2\x11.rid.snapshot.ISAR\x05value:\x028\x01\x1a\\\n" +
 	"\x12SubscriptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
-	"\x05value\x18\x02 \x01(\v2\x1a.rid.snapshot.SubscriptionR\x05value:\x028\x01B1Z/github.com/interuss/dss/pkg/pb/ridpb/snapshotpbb\x06proto3"
+	"\x05value\x18\x02 \x01(\v2\x1a.rid.snapshot.SubscriptionR\x05value:\x028\x01B\x12\n" +
+	"\x10_eviction_configB\x10\n" +
+	"\x0e_last_evictionB1Z/github.com/interuss/dss/pkg/pb/ridpb/snapshotpbb\x06proto3"
 
 var (
 	file_rid_snapshot_snapshot_proto_rawDescOnce sync.Once
@@ -420,6 +422,7 @@ func file_rid_snapshot_snapshot_proto_init() {
 	}
 	file_rid_snapshot_snapshot_proto_msgTypes[0].OneofWrappers = []any{}
 	file_rid_snapshot_snapshot_proto_msgTypes[1].OneofWrappers = []any{}
+	file_rid_snapshot_snapshot_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

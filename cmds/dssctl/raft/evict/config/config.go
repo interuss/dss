@@ -32,10 +32,5 @@ func formatConfig(config *restapi.EvictionConfig) string {
 	fmt.Fprintf(&builder, "\n  interval: %s", interval)
 	fmt.Fprintf(&builder, "\n  ttl: %s", config.Parameters.Ttl)
 	fmt.Fprintf(&builder, "\n  limit: %s", limit)
-	lastRun := "never"
-	if config.LastRun != nil {
-		lastRun = *config.LastRun
-	}
-	fmt.Fprintf(&builder, "\n  last run: %s", lastRun)
 	return builder.String()
 }

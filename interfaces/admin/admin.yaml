@@ -136,12 +136,20 @@ components:
           example: 1h
         parameters:
           $ref: '#/components/schemas/EvictionParameters'
+
+    EvictionState:
+      description: Eviction settings of a Raft group and the last run of its cleanup jobs.
+      type: object
+      required:
+        - config
+      properties:
+        config:
+          $ref: '#/components/schemas/EvictionConfig'
         last_run:
           description: >-
             Time of the last successful cleanup job of the group, absent if none ran.
           type: string
           format: date-time
-          readOnly: true
 
     EvictionRunParameters:
       description: Parameters of a cleanup job run on demand.
@@ -375,7 +383,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /admin/v1/raft/groups/{group_name}/eviction/config:
+  /admin/v1/raft/groups/{group_name}/eviction:
     parameters:
       - name: group_name
         in: path
@@ -384,17 +392,17 @@ paths:
         schema:
           $ref: '#/components/schemas/RaftGroupName'
     get:
-      summary: Retrieve the eviction settings of a Raft group
-      operationId: getEvictionConfig
+      summary: Retrieve the eviction settings of a Raft group and the last run of its cleanup jobs
+      operationId: getEvictionState
       tags: [ eviction ]
       responses:
         '200':
           description: >-
-            The eviction settings were retrieved successfully.
+            The eviction state was retrieved successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EvictionConfig'
+                $ref: '#/components/schemas/EvictionState'
         '404':
           description: >-
             This DSS node has no Raft group with this name or the group does not support eviction.
@@ -402,6 +410,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/v1/raft/groups/{group_name}/eviction/config:
+    parameters:
+      - name: group_name
+        in: path
+        required: true
+        description: Name of the Raft group.
+        schema:
+          $ref: '#/components/schemas/RaftGroupName'
     put:
       summary: Replace the eviction settings of a Raft group
       description: >-

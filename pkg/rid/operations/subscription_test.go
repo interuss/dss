@@ -245,7 +245,7 @@ func (r *fakeSubscriptionRepo) DeleteExpired(_ context.Context, _ dssmodels.Evic
 	panic("not implemented")
 }
 
-func (r *fakeSubscriptionRepo) GetEvictionConfig(_ context.Context) (dssmodels.EvictionConfig, error) {
+func (r *fakeSubscriptionRepo) GetEvictionState(_ context.Context) (dssmodels.EvictionState, error) {
 	panic("not implemented")
 }
 

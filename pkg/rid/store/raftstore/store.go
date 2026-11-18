@@ -191,8 +191,8 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		}
 		return counts, nil
 
-	case *ridpb.Payload_GetEvictionConfigRepoCall:
-		return r.Store.GetRepo().GetEvictionConfig(ctx)
+	case *ridpb.Payload_GetEvictionStateRepoCall:
+		return r.Store.GetRepo().GetEvictionState(ctx)
 
 	case *ridpb.Payload_SetEvictionConfigRepoCall:
 		var config dssmodels.EvictionConfig

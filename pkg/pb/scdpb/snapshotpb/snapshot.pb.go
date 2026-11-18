@@ -389,9 +389,9 @@ type Snapshot struct {
 	// availabilities holds the stored USS availabilities keyed by USS Manager.
 	Availabilities map[string]*Availability `protobuf:"bytes,5,rep,name=availabilities,proto3" json:"availabilities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
-	EvictionConfig *evictionpb.Config `protobuf:"bytes,6,opt,name=eviction_config,json=evictionConfig,proto3" json:"eviction_config,omitempty"`
+	EvictionConfig *evictionpb.Config `protobuf:"bytes,6,opt,name=eviction_config,json=evictionConfig,proto3,oneof" json:"eviction_config,omitempty"`
 	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
-	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_eviction,json=lastEviction,proto3" json:"last_eviction,omitempty"`
+	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -514,14 +514,14 @@ const file_scd_snapshot_snapshot_proto_rawDesc = "" +
 	"\fAvailability\x12=\n" +
 	"\favailability\x18\x01 \x01(\x0e2\x19.scd.UssAvailabilityStateR\favailability\x129\n" +
 	"\n" +
-	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd6\x06\n" +
+	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x86\a\n" +
 	"\bSnapshot\x12I\n" +
 	"\vconstraints\x18\x02 \x03(\v2'.scd.snapshot.Snapshot.ConstraintsEntryR\vconstraints\x12O\n" +
 	"\rsubscriptions\x18\x03 \x03(\v2).scd.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x12_\n" +
 	"\x13operational_intents\x18\x04 \x03(\v2..scd.snapshot.Snapshot.OperationalIntentsEntryR\x12operationalIntents\x12R\n" +
-	"\x0eavailabilities\x18\x05 \x03(\v2*.scd.snapshot.Snapshot.AvailabilitiesEntryR\x0eavailabilities\x129\n" +
-	"\x0feviction_config\x18\x06 \x01(\v2\x10.eviction.ConfigR\x0eevictionConfig\x12?\n" +
-	"\rlast_eviction\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\flastEviction\x1aX\n" +
+	"\x0eavailabilities\x18\x05 \x03(\v2*.scd.snapshot.Snapshot.AvailabilitiesEntryR\x0eavailabilities\x12>\n" +
+	"\x0feviction_config\x18\x06 \x01(\v2\x10.eviction.ConfigH\x00R\x0eevictionConfig\x88\x01\x01\x12D\n" +
+	"\rlast_eviction\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x1aX\n" +
 	"\x10ConstraintsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
 	"\x05value\x18\x02 \x01(\v2\x18.scd.snapshot.ConstraintR\x05value:\x028\x01\x1a\\\n" +
@@ -533,7 +533,9 @@ const file_scd_snapshot_snapshot_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1f.scd.snapshot.OperationalIntentR\x05value:\x028\x01\x1a]\n" +
 	"\x13AvailabilitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
-	"\x05value\x18\x02 \x01(\v2\x1a.scd.snapshot.AvailabilityR\x05value:\x028\x01B1Z/github.com/interuss/dss/pkg/pb/scdpb/snapshotpbb\x06proto3"
+	"\x05value\x18\x02 \x01(\v2\x1a.scd.snapshot.AvailabilityR\x05value:\x028\x01B\x12\n" +
+	"\x10_eviction_configB\x10\n" +
+	"\x0e_last_evictionB1Z/github.com/interuss/dss/pkg/pb/scdpb/snapshotpbb\x06proto3"
 
 var (
 	file_scd_snapshot_snapshot_proto_rawDescOnce sync.Once
@@ -601,6 +603,7 @@ func file_scd_snapshot_snapshot_proto_init() {
 		return
 	}
 	file_scd_snapshot_snapshot_proto_msgTypes[2].OneofWrappers = []any{}
+	file_scd_snapshot_snapshot_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

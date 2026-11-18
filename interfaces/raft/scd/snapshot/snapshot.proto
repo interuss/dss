@@ -60,7 +60,7 @@ message Snapshot {
     // availabilities holds the stored USS availabilities keyed by USS Manager.
     map<string, Availability> availabilities = 5;
     // eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
-    eviction.Config eviction_config = 6;
+    optional eviction.Config eviction_config = 6;
     // last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
-    google.protobuf.Timestamp last_eviction = 7;
+    optional google.protobuf.Timestamp last_eviction = 7;
 }

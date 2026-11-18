@@ -8,9 +8,9 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-// EvictionConfig returns the eviction settings of the group.
-func (g *RaftGroup) EvictionConfig(ctx context.Context) (*restapi.EvictionConfig, error) {
-	resp, err := g.client.GetEvictionConfig(ctx, g.name)
+// EvictionState returns the eviction settings of the group and the last run of its cleanup jobs.
+func (g *RaftGroup) EvictionState(ctx context.Context) (*restapi.EvictionState, error) {
+	resp, err := g.client.GetEvictionState(ctx, g.name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to call the admin API at %s", g.socketPath)
 	}

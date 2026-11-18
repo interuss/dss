@@ -12,8 +12,8 @@ func (c *repo) DeleteExpired(_ context.Context, _ dssmodels.EvictionParameters) 
 	return nil, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "DeleteExpired not implemented for sqlstore")
 }
 
-func (c *repo) GetEvictionConfig(_ context.Context) (dssmodels.EvictionConfig, error) {
-	return dssmodels.EvictionConfig{}, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetEvictionConfig not implemented for sqlstore")
+func (c *repo) GetEvictionState(_ context.Context) (dssmodels.EvictionState, error) {
+	return dssmodels.EvictionState{}, stacktrace.NewErrorWithCode(dsserr.NotImplemented, "GetEvictionState not implemented for sqlstore")
 }
 
 func (c *repo) SetEvictionConfig(_ context.Context, _ dssmodels.EvictionConfig) (dssmodels.EvictionConfig, error) {
