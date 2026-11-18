@@ -59,8 +59,7 @@ func TestEvictionParametersRoundTrip(t *testing.T) {
 
 func TestEvictionConfigProtoRoundTrip(t *testing.T) {
 	for name, c := range map[string]EvictionConfig{
-		"scheduled":          {Interval: time.Hour, Parameters: EvictionParameters{TTL: time.Minute, Limit: 2}},
-		"scheduled disabled": {Parameters: EvictionParameters{TTL: time.Minute}},
+		"scheduled": {Interval: time.Hour, Parameters: EvictionParameters{TTL: time.Minute, Limit: 2}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			var got EvictionConfig
@@ -72,6 +71,7 @@ func TestEvictionConfigProtoRoundTrip(t *testing.T) {
 	var got EvictionConfig
 	params := (&EvictionParameters{TTL: time.Minute}).ToProto()
 	require.Error(t, got.FromProto(&evictionpb.Config{Parameters: params}), "a missing interval is invalid")
+	require.Error(t, got.FromProto(&evictionpb.Config{Interval: durationpb.New(0), Parameters: params}), "a zero interval is invalid")
 	require.Error(t, got.FromProto(&evictionpb.Config{Interval: durationpb.New(-time.Hour), Parameters: params}), "a negative interval is invalid")
 	require.Error(t, got.FromProto(&evictionpb.Config{Interval: durationpb.New(time.Hour)}), "missing parameters are invalid")
 }

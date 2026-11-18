@@ -17,7 +17,7 @@ const (
 // StartEviction runs the scheduled cleanup jobs of the group while this node is the leader, according to the eviction settings of repo.
 // The schedule is computed from the last cleanup job of the group when this node becomes the leader
 // and recomputed when the settings or the last cleanup job are updated (configC is signaled).
-// No job runs while the scheduled jobs are disabled or the interval is 0.
+// No job runs while the scheduled jobs are disabled.
 // A job may run twice around a leader change which is acceptable.
 func (s *Store[R]) StartEviction(ctx context.Context, repo storerepos.Eviction, configC <-chan struct{}) {
 	logger := s.logger.With(zap.String("component", "eviction"))
@@ -53,7 +53,7 @@ func (s *Store[R]) StartEviction(ctx context.Context, repo storerepos.Eviction, 
 }
 
 // nextEviction returns a channel receiving when the next cleanup job is due, one interval after the last one or
-// immediately if none ran, or nil if the scheduled jobs are disabled or the interval is 0.
+// immediately if none ran, or nil if the scheduled jobs are disabled.
 // If the settings can't be read, the timer is set to evictionRetryDelay.
 func nextEviction(ctx context.Context, logger *zap.Logger, repo storerepos.Eviction) <-chan time.Time {
 	ctx, cancel := context.WithTimeout(timestamp.NewContext(ctx, time.Now()), evictionConfigTimeout)
@@ -63,7 +63,7 @@ func nextEviction(ctx context.Context, logger *zap.Logger, repo storerepos.Evict
 		logger.Error("failed to get the eviction settings, retrying", zap.Error(err))
 		return time.After(evictionRetryDelay)
 	}
-	if state.Disabled || state.Config.Interval == 0 {
+	if state.Disabled {
 		return nil
 	}
 	// The duration is negative when the job is overdue and time.After then fires immediately.

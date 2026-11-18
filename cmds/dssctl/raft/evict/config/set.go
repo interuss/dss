@@ -16,8 +16,7 @@ var (
 		Use:   "set",
 		Short: "Change the eviction settings of the Raft groups",
 		Long: `Change the eviction settings of the Raft groups. The --<group>_interval, --<group>_ttl and --<group>_limit of a
-group are given together, and the groups without them are left as they are.
-An interval of 0 disables the scheduled cleanup jobs of the group.`,
+group are given together, and the groups without them are left as they are.`,
 		RunE: set,
 	}
 
@@ -40,7 +39,7 @@ func (f *setFlags) register(fs *pflag.FlagSet) {
 	f.ttls = map[string]*time.Duration{}
 	f.limits = map[string]*int64{}
 	for _, group := range raftgroup.EvictionGroupNames {
-		f.intervals[group] = fs.Duration(group+"_interval", 0, fmt.Sprintf("time between two scheduled cleanup jobs of the %s group, 0 to disable them", group))
+		f.intervals[group] = fs.Duration(group+"_interval", 0, fmt.Sprintf("time between two scheduled cleanup jobs of the %s group", group))
 		f.ttls[group] = fs.Duration(group+"_ttl", 0, fmt.Sprintf("time-to-live duration of the entities of the %s group", group))
 		f.limits[group] = fs.Int64(group+"_limit", 0, fmt.Sprintf("maximum number of entities of the %s group deleted per entity type by a cleanup job, 0 for unlimited", group))
 	}
