@@ -253,6 +253,10 @@ func (r *fakeSubscriptionRepo) SetEvictionConfig(_ context.Context, _ dssmodels.
 	panic("not implemented")
 }
 
+func (r *fakeSubscriptionRepo) SetEvictionDisabled(_ context.Context, _ bool) (dssmodels.EvictionState, error) {
+	panic("not implemented")
+}
+
 func TestBadOwner(t *testing.T) {
 	ctx := newTestContext()
 	repo := newFakeSubscriptionRepo()

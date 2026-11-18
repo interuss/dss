@@ -36,6 +36,8 @@ type state struct {
 	EvictionConfig *dssmodels.EvictionConfig
 	// LastEviction is the proposal timestamp of the last successful cleanup job, zero if none ran.
 	LastEviction time.Time
+	// EvictionDisabled holds whether the scheduled cleanup jobs are disabled.
+	EvictionDisabled bool
 }
 
 // constraintRecord is the in-memory representation of a Constraint. The
@@ -240,6 +242,7 @@ func (s state) clone() state {
 		Availabilities:     avails,
 		EvictionConfig:     s.EvictionConfig,
 		LastEviction:       s.LastEviction,
+		EvictionDisabled:   s.EvictionDisabled,
 	}
 }
 

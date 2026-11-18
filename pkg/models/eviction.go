@@ -56,7 +56,8 @@ type EvictionConfig struct {
 type EvictionState struct {
 	Config EvictionConfig
 	// LastRun is the proposal timestamp of the last successful cleanup job, zero if none ran.
-	LastRun time.Time
+	LastRun  time.Time
+	Disabled bool
 }
 
 func (c *EvictionConfig) ToProto() *evictionpb.Config {

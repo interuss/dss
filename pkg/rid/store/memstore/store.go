@@ -32,6 +32,8 @@ type state struct {
 	EvictionConfig *dssmodels.EvictionConfig
 	// LastEviction is the proposal timestamp of the last successful cleanup job, zero if none ran.
 	LastEviction time.Time
+	// EvictionDisabled holds whether the scheduled cleanup jobs are disabled.
+	EvictionDisabled bool
 }
 
 // isaRecord is the in-memory representation of an ISA. It intentionally
@@ -212,7 +214,7 @@ func (s state) clone() state {
 	for id, rec := range s.Subscriptions {
 		subs[id] = rec.clone()
 	}
-	return state{ISAs: isas, Subscriptions: subs, EvictionConfig: s.EvictionConfig, LastEviction: s.LastEviction}
+	return state{ISAs: isas, Subscriptions: subs, EvictionConfig: s.EvictionConfig, LastEviction: s.LastEviction, EvictionDisabled: s.EvictionDisabled}
 }
 
 // Checkpoint ask the repo to store a quick, internal checkpoint with its current state.

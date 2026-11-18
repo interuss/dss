@@ -391,9 +391,11 @@ type Snapshot struct {
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
 	EvictionConfig *evictionpb.Config `protobuf:"bytes,6,opt,name=eviction_config,json=evictionConfig,proto3,oneof" json:"eviction_config,omitempty"`
 	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
-	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastEviction *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
+	// eviction_disabled holds whether the scheduled cleanup jobs are disabled.
+	EvictionDisabled bool `protobuf:"varint,8,opt,name=eviction_disabled,json=evictionDisabled,proto3" json:"eviction_disabled,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -468,6 +470,13 @@ func (x *Snapshot) GetLastEviction() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Snapshot) GetEvictionDisabled() bool {
+	if x != nil {
+		return x.EvictionDisabled
+	}
+	return false
+}
+
 var File_scd_snapshot_snapshot_proto protoreflect.FileDescriptor
 
 const file_scd_snapshot_snapshot_proto_rawDesc = "" +
@@ -514,14 +523,15 @@ const file_scd_snapshot_snapshot_proto_rawDesc = "" +
 	"\fAvailability\x12=\n" +
 	"\favailability\x18\x01 \x01(\x0e2\x19.scd.UssAvailabilityStateR\favailability\x129\n" +
 	"\n" +
-	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x86\a\n" +
+	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xb3\a\n" +
 	"\bSnapshot\x12I\n" +
 	"\vconstraints\x18\x02 \x03(\v2'.scd.snapshot.Snapshot.ConstraintsEntryR\vconstraints\x12O\n" +
 	"\rsubscriptions\x18\x03 \x03(\v2).scd.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x12_\n" +
 	"\x13operational_intents\x18\x04 \x03(\v2..scd.snapshot.Snapshot.OperationalIntentsEntryR\x12operationalIntents\x12R\n" +
 	"\x0eavailabilities\x18\x05 \x03(\v2*.scd.snapshot.Snapshot.AvailabilitiesEntryR\x0eavailabilities\x12>\n" +
 	"\x0feviction_config\x18\x06 \x01(\v2\x10.eviction.ConfigH\x00R\x0eevictionConfig\x88\x01\x01\x12D\n" +
-	"\rlast_eviction\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x1aX\n" +
+	"\rlast_eviction\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x12+\n" +
+	"\x11eviction_disabled\x18\b \x01(\bR\x10evictionDisabled\x1aX\n" +
 	"\x10ConstraintsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
 	"\x05value\x18\x02 \x01(\v2\x18.scd.snapshot.ConstraintR\x05value:\x028\x01\x1a\\\n" +

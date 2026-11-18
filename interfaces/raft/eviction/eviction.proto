@@ -35,3 +35,8 @@ message SetConfigRepoCall {
     // Replaces the stored eviction settings.
     Config config = 1;
 }
+
+message SetDisabledRepoCall {
+    // Whether the scheduled cleanup jobs are disabled.
+    bool disabled = 1;
+}

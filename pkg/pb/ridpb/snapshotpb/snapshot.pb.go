@@ -257,9 +257,11 @@ type Snapshot struct {
 	// eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
 	EvictionConfig *evictionpb.Config `protobuf:"bytes,4,opt,name=eviction_config,json=evictionConfig,proto3,oneof" json:"eviction_config,omitempty"`
 	// last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
-	LastEviction  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastEviction *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_eviction,json=lastEviction,proto3,oneof" json:"last_eviction,omitempty"`
+	// eviction_disabled holds whether the scheduled cleanup jobs are disabled.
+	EvictionDisabled bool `protobuf:"varint,6,opt,name=eviction_disabled,json=evictionDisabled,proto3" json:"eviction_disabled,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -320,6 +322,13 @@ func (x *Snapshot) GetLastEviction() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Snapshot) GetEvictionDisabled() bool {
+	if x != nil {
+		return x.EvictionDisabled
+	}
+	return false
+}
+
 var File_rid_snapshot_snapshot_proto protoreflect.FileDescriptor
 
 const file_rid_snapshot_snapshot_proto_rawDesc = "" +
@@ -358,12 +367,13 @@ const file_rid_snapshot_snapshot_proto_rawDesc = "" +
 	"updated_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x0e\n" +
 	"\f_altitude_hiB\x0e\n" +
-	"\f_altitude_lo\"\xe7\x03\n" +
+	"\f_altitude_lo\"\x94\x04\n" +
 	"\bSnapshot\x124\n" +
 	"\x04isas\x18\x02 \x03(\v2 .rid.snapshot.Snapshot.IsasEntryR\x04isas\x12O\n" +
 	"\rsubscriptions\x18\x03 \x03(\v2).rid.snapshot.Snapshot.SubscriptionsEntryR\rsubscriptions\x12>\n" +
 	"\x0feviction_config\x18\x04 \x01(\v2\x10.eviction.ConfigH\x00R\x0eevictionConfig\x88\x01\x01\x12D\n" +
-	"\rlast_eviction\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x1aJ\n" +
+	"\rlast_eviction\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\flastEviction\x88\x01\x01\x12+\n" +
+	"\x11eviction_disabled\x18\x06 \x01(\bR\x10evictionDisabled\x1aJ\n" +
 	"\tIsasEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\v2\x11.rid.snapshot.ISAR\x05value:\x028\x01\x1a\\\n" +

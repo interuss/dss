@@ -78,6 +78,7 @@ func (r *repo) GetSnapshot() (*raftpb.Snapshot, error) {
 	if !r.state.LastEviction.IsZero() {
 		snap.LastEviction = timestamppb.New(r.state.LastEviction)
 	}
+	snap.EvictionDisabled = r.state.EvictionDisabled
 
 	return &raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_ScdSnapshot{ScdSnapshot: snap}}, nil
 }
@@ -174,6 +175,7 @@ func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
 	if snap.GetLastEviction() != nil {
 		restored.LastEviction = snap.GetLastEviction().AsTime()
 	}
+	restored.EvictionDisabled = snap.GetEvictionDisabled()
 
 	r.state = restored
 	return nil
