@@ -46,7 +46,7 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 	}
 
 	r.consensus = store.Consensus
-	store.StartEviction(ctx, r, r.evictionConfigC)
+	store.StartEviction(r, r.evictionConfigC)
 
 	return store, nil
 }

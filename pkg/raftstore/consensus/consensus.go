@@ -61,7 +61,8 @@ type Consensus struct {
 
 	readyOnce sync.Once
 	readyC    chan struct{} // closed once this node is a member of the group and knows its leader
-	leaderC   chan bool     // receives whether this node is the leader of the group when it changes
+
+	leader leaderRoutines
 
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
@@ -109,10 +110,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		getAppSnapshot: provider,
 		commitC:        commitC,
 
-		stopC:   make(chan struct{}),
-		doneC:   make(chan struct{}),
-		readyC:  make(chan struct{}),
-		leaderC: make(chan bool, 1),
+		stopC:  make(chan struct{}),
+		doneC:  make(chan struct{}),
+		readyC: make(chan struct{}),
 
 		tracker:     newProposalsTracker(),
 		readTracker: newReadIndexTracker(),
@@ -541,11 +541,11 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 	raftNode := c.node.RaftNode()
 	go func() {
 		defer close(c.doneC)
+		defer c.leader.set(false)
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
 
-		leader := false
 		for {
 			select {
 			case <-c.stopC:
@@ -565,14 +565,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 							close(c.readyC)
 						})
 					}
-					if isLeader := softState.RaftState == raft.StateLeader; isLeader != leader {
-						leader = isLeader
-						select {
-						case <-c.leaderC:
-						default:
-						}
-						c.leaderC <- leader
-					}
+					c.leader.set(softState.RaftState == raft.StateLeader)
 				}
 
 				err := c.storage.handleReceivedState(raftUpdate.Snapshot, raftUpdate.HardState, raftUpdate.Entries)
@@ -881,9 +874,10 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 	}
 }
 
-// LeaderC receives whether this node is the leader of the group when it changes.
-func (c *Consensus) LeaderC() <-chan bool {
-	return c.leaderC
+// RunAsLeader runs fn in the background when this node is the leader of the group.
+// The context of fn is canceled when this node stops being the leader or the raft updates consumer exits.
+func (c *Consensus) RunAsLeader(fn func(ctx context.Context)) {
+	c.leader.add(fn)
 }
 
 // Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, currently knows its leader
