@@ -62,6 +62,8 @@ type Consensus struct {
 	readyOnce sync.Once
 	readyC    chan struct{} // closed once this node is a member of the group and knows its leader
 
+	leader leaderRoutines
+
 	tracker     *proposalsTracker
 	readTracker *readIndexTracker
 
@@ -539,6 +541,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 	raftNode := c.node.RaftNode()
 	go func() {
 		defer close(c.doneC)
+		defer c.leader.set(false)
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
@@ -555,11 +558,14 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					return
 				}
 
-				if softState := raftUpdate.SoftState; softState != nil && softState.Lead != raft.None {
-					c.readyOnce.Do(func() {
-						c.logger.Info("ready to serve requests", zap.Uint64("leaderID", softState.Lead))
-						close(c.readyC)
-					})
+				if softState := raftUpdate.SoftState; softState != nil {
+					if softState.Lead != raft.None {
+						c.readyOnce.Do(func() {
+							c.logger.Info("ready to serve requests", zap.Uint64("leaderID", softState.Lead))
+							close(c.readyC)
+						})
+					}
+					c.leader.set(softState.RaftState == raft.StateLeader)
 				}
 
 				err := c.storage.handleReceivedState(raftUpdate.Snapshot, raftUpdate.HardState, raftUpdate.Entries)
@@ -866,6 +872,13 @@ func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
 			return Membership{}, ctx.Err()
 		}
 	}
+}
+
+// RunAsLeader runs fn in the background when this node is the leader of the group.
+// The context of fn derives from ctx and is canceled when this node stops being the leader or the raft updates consumer exits.
+// fn must return once its context is done, otherwise it keeps running after this node stops being the leader.
+func (c *Consensus) RunAsLeader(ctx context.Context, fn func(ctx context.Context)) {
+	c.leader.add(ctx, fn)
 }
 
 // Ready returns whether this node can serve requests, i.e. it is a member of the Raft group, currently knows its leader

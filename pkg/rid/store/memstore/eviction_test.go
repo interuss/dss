@@ -10,9 +10,9 @@ import (
 )
 
 func TestEvictionConfigNotSet(t *testing.T) {
-	got, err := setUpStore(t).GetEvictionConfig(context.Background())
+	got, err := setUpStore(t).GetEvictionState(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, defaultEvictionConfig, got)
+	require.Equal(t, defaultEvictionConfig, got.Config)
 }
 
 func TestSetEvictionConfig(t *testing.T) {
@@ -27,7 +27,7 @@ func TestSetEvictionConfig(t *testing.T) {
 	replacement := dssmodels.EvictionConfig{Interval: time.Minute, Parameters: dssmodels.EvictionParameters{TTL: time.Hour, Limit: 3}}
 	_, err = r.SetEvictionConfig(ctx, replacement)
 	require.NoError(t, err)
-	stored, err := r.GetEvictionConfig(ctx)
+	stored, err := r.GetEvictionState(ctx)
 	require.NoError(t, err)
-	require.Equal(t, replacement, stored)
+	require.Equal(t, replacement, stored.Config)
 }

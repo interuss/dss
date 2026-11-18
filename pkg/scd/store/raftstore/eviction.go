@@ -15,9 +15,9 @@ func (r *repo) DeleteExpired(ctx context.Context, params dssmodels.EvictionParam
 	}}))
 }
 
-func (r *repo) GetEvictionConfig(ctx context.Context) (dssmodels.EvictionConfig, error) {
-	return r.consensus.HandleReadPayload[dssmodels.EvictionConfig](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetEvictionConfigRepoCall{
-		GetEvictionConfigRepoCall: &evictionpb.GetConfigRepoCall{},
+func (r *repo) GetEvictionState(ctx context.Context) (dssmodels.EvictionState, error) {
+	return r.consensus.HandleReadPayload[dssmodels.EvictionState](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_GetEvictionStateRepoCall{
+		GetEvictionStateRepoCall: &evictionpb.GetStateRepoCall{},
 	}}))
 }
 

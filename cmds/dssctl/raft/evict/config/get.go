@@ -19,10 +19,14 @@ func get(cmd *cobra.Command, _ []string) error {
 	}
 
 	return raftgroup.ForEach(groups, func(g raftgroup.Group) (string, error) {
-		config, err := g.EvictionConfig(cmd.Context())
+		state, err := g.EvictionState(cmd.Context())
 		if err != nil {
 			return "", err
 		}
-		return formatConfig(config), nil
+		lastRun := "never"
+		if state.LastRun != nil {
+			lastRun = *state.LastRun
+		}
+		return formatConfig(&state.Config) + "\n  last run: " + lastRun, nil
 	})
 }

@@ -24,6 +24,8 @@ import (
 type repo struct {
 	consensus *consensus.Consensus
 	*memstore.Store[repos.Repository]
+	// evictionConfigC is signaled when the eviction settings or the last cleanup job are updated.
+	evictionConfigC chan struct{}
 }
 
 func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repository], error) {
@@ -37,13 +39,14 @@ func Init(ctx context.Context, logger *zap.Logger) (*raftstore.Store[repos.Repos
 		return nil, stacktrace.Propagate(err, "failed to initialize rid memstore")
 	}
 
-	r := &repo{Store: memStore}
+	r := &repo{Store: memStore, evictionConfigC: make(chan struct{}, 1)}
 	store, err := raftstore.Init(ctx, logger.With(zap.String("service", "rid")), params, r, operations.Registry)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize rid raftstore")
 	}
 
 	r.consensus = store.Consensus
+	store.StartEviction(ctx, r, r.evictionConfigC)
 
 	return store, nil
 }
@@ -178,17 +181,33 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if err := params.FromProto(payload.DeleteExpiredRepoCall.GetParameters()); err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid eviction parameters")
 		}
-		return r.Store.GetRepo().DeleteExpired(ctx, params)
+		counts, err := r.Store.GetRepo().DeleteExpired(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		select {
+		case r.evictionConfigC <- struct{}{}:
+		default:
+		}
+		return counts, nil
 
-	case *ridpb.Payload_GetEvictionConfigRepoCall:
-		return r.Store.GetRepo().GetEvictionConfig(ctx)
+	case *ridpb.Payload_GetEvictionStateRepoCall:
+		return r.Store.GetRepo().GetEvictionState(ctx)
 
 	case *ridpb.Payload_SetEvictionConfigRepoCall:
 		var config dssmodels.EvictionConfig
 		if err := config.FromProto(payload.SetEvictionConfigRepoCall.GetConfig()); err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid eviction config")
 		}
-		return r.Store.GetRepo().SetEvictionConfig(ctx, config)
+		stored, err := r.Store.GetRepo().SetEvictionConfig(ctx, config)
+		if err != nil {
+			return nil, err
+		}
+		select {
+		case r.evictionConfigC <- struct{}{}:
+		default:
+		}
+		return stored, nil
 
 	default:
 		return nil, stacktrace.NewError("unknown request: %q", proposal.Name())

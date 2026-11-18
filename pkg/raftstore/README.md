@@ -99,6 +99,12 @@ node. Attempting this action on multiple nodes will create independent Raft grou
 - **Removal:** A node stops when it applies its own removal, and its state becomes `removed`.
 - **Persistence:** The peer URLs of the members and of the removed nodes are replicated state: they are rebuilt from the configuration changes of the log and stored in snapshots alongside the application state.
 
+## Eviction
+
+Expired entities are deleted by cleanup jobs run by the leader of each Raft group which regularly issues a `DeleteExpiredRepoCall` repository request with per-store parameters (TTL and limit). The parameters are passed by the proposer to ensure deterministic behavior.
+
+The eviction settings can be read, along with the last cleanup job, with `GET /admin/v1/raft/groups/{group_name}/eviction` and replaced with `PUT /admin/v1/raft/groups/{group_name}/eviction/config`, and a job can run on demand with `POST /admin/v1/raft/groups/{group_name}/eviction/runs`. The `dssctl raft evict` command can be used to interact with the API.
+
 ## Future Work
 
 - **No background WAL cleanup:** Old, WAL segment files that are no longer needed are unlocked (`ReleaseLockTo`) but not actively deleted by a cleanup goroutine yet. See the `TODO` in [consensus/storage.go](consensus/storage.go).

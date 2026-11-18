@@ -12,7 +12,7 @@ var (
 	GetRaftGroupSecurity          = []api.AuthorizationOption{}
 	CreateRaftGroupMemberSecurity = []api.AuthorizationOption{}
 	DeleteRaftGroupMemberSecurity = []api.AuthorizationOption{}
-	GetEvictionConfigSecurity     = []api.AuthorizationOption{}
+	GetEvictionStateSecurity      = []api.AuthorizationOption{}
 	PutEvictionConfigSecurity     = []api.AuthorizationOption{}
 	CreateEvictionRunSecurity     = []api.AuthorizationOption{}
 )
@@ -166,7 +166,7 @@ type DeleteRaftGroupMemberResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
-type GetEvictionConfigRequest struct {
+type GetEvictionStateRequest struct {
 	// Name of the Raft group.
 	GroupName RaftGroupName
 
@@ -174,13 +174,13 @@ type GetEvictionConfigRequest struct {
 	Auth api.AuthorizationResult
 }
 
-const GetEvictionConfigOperationID = "adminv1.GetEvictionConfig"
+const GetEvictionStateOperationID = "adminv1.GetEvictionState"
 
-func (request *GetEvictionConfigRequest) OperationID() string { return GetEvictionConfigOperationID }
+func (request *GetEvictionStateRequest) OperationID() string { return GetEvictionStateOperationID }
 
-type GetEvictionConfigResponseSet struct {
-	// The eviction settings were retrieved successfully.
-	Response200 *EvictionConfig
+type GetEvictionStateResponseSet struct {
+	// The eviction state was retrieved successfully.
+	Response200 *EvictionState
 
 	// This DSS node has no Raft group with this name or the group does not support eviction.
 	Response404 *ErrorResponse
@@ -277,8 +277,8 @@ type Implementation interface {
 	// The ID of the removed node is retired permanently: it can never be added again to the group. A voter cannot be removed if the group would be left with fewer than 3 voters. The request returns once the change is adopted by the group.
 	DeleteRaftGroupMember(ctx context.Context, req *DeleteRaftGroupMemberRequest) DeleteRaftGroupMemberResponseSet
 
-	// Retrieve the eviction settings of a Raft group
-	GetEvictionConfig(ctx context.Context, req *GetEvictionConfigRequest) GetEvictionConfigResponseSet
+	// Retrieve the eviction settings of a Raft group and the last run of its cleanup jobs
+	GetEvictionState(ctx context.Context, req *GetEvictionStateRequest) GetEvictionStateResponseSet
 
 	// Replace the eviction settings of a Raft group
 	// ---

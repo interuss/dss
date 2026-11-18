@@ -69,6 +69,14 @@ type EvictionConfig struct {
 	Parameters EvictionParameters `json:"parameters"`
 }
 
+// Eviction settings of a Raft group and the last run of its cleanup jobs.
+type EvictionState struct {
+	Config EvictionConfig `json:"config"`
+
+	// Time of the last successful cleanup job of the group, absent if none ran.
+	LastRun *string `json:"last_run,omitempty"`
+}
+
 // Parameters of a cleanup job run on demand.
 type EvictionRunParameters struct {
 	// Eviction parameters of the job. When absent, the parameters of the eviction settings of the group are used.

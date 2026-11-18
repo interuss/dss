@@ -14,6 +14,7 @@ import (
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	storerepos "github.com/interuss/dss/pkg/store/repos"
+	"github.com/interuss/dss/pkg/timestamp"
 	"github.com/interuss/stacktrace"
 	"go.uber.org/zap"
 )
@@ -49,7 +50,8 @@ func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout t
 	})
 
 	server := &http.Server{
-		Handler:           http.TimeoutHandler(handler, timeout, `{"message":"request timeout"}`),
+		// The eviction handlers create Raft proposals which need to be timestamped.
+		Handler:           http.TimeoutHandler(timestamp.Middleware(handler), timeout, `{"message":"request timeout"}`),
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       15 * time.Second,
 	}

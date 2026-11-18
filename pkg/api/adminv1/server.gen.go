@@ -204,9 +204,9 @@ func (s *APIRouter) DeleteRaftGroupMember(exp *regexp.Regexp, w http.ResponseWri
 	api.WriteJSON(w, 500, api.InternalServerErrorBody{ErrorMessage: "Handler implementation did not set a response"})
 }
 
-func (s *APIRouter) GetEvictionConfig(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
-	var req GetEvictionConfigRequest
-	var response GetEvictionConfigResponseSet
+func (s *APIRouter) GetEvictionState(exp *regexp.Regexp, w http.ResponseWriter, r *http.Request) {
+	var req GetEvictionStateRequest
+	var response GetEvictionStateResponseSet
 
 	// Parse path parameters
 	pathMatch := exp.FindStringSubmatch(r.URL.Path)
@@ -215,7 +215,7 @@ func (s *APIRouter) GetEvictionConfig(exp *regexp.Regexp, w http.ResponseWriter,
 	// Call implementation
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	response = s.Implementation.GetEvictionConfig(ctx, &req)
+	response = s.Implementation.GetEvictionState(ctx, &req)
 
 	// Write response to client
 	if response.Response200 != nil {
@@ -327,8 +327,8 @@ func MakeAPIRouter(impl Implementation, auth api.Authorizer) *APIRouter {
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/members/(?P<node_id>[^/]*)$")
 	router.Routes[4] = &api.Route{Method: http.MethodDelete, Pattern: pattern, Handler: router.DeleteRaftGroupMember, Name: "adminv1.DeleteRaftGroupMember", Path: "/admin/v1/raft/groups/{group_name}/members/{node_id}", Tracer: tracer}
 
-	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
-	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetEvictionConfig, Name: "adminv1.GetEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config", Tracer: tracer}
+	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction$")
+	router.Routes[5] = &api.Route{Method: http.MethodGet, Pattern: pattern, Handler: router.GetEvictionState, Name: "adminv1.GetEvictionState", Path: "/admin/v1/raft/groups/{group_name}/eviction", Tracer: tracer}
 
 	pattern = regexp.MustCompile("^/admin/v1/raft/groups/(?P<group_name>[^/]*)/eviction/config$")
 	router.Routes[6] = &api.Route{Method: http.MethodPut, Pattern: pattern, Handler: router.PutEvictionConfig, Name: "adminv1.PutEvictionConfig", Path: "/admin/v1/raft/groups/{group_name}/eviction/config", Tracer: tracer}

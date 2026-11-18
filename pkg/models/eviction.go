@@ -52,6 +52,13 @@ type EvictionConfig struct {
 	Parameters EvictionParameters
 }
 
+// EvictionState contains the eviction settings of a Raft group and the last run of its cleanup jobs.
+type EvictionState struct {
+	Config EvictionConfig
+	// LastRun is the proposal timestamp of the last successful cleanup job, zero if none ran.
+	LastRun time.Time
+}
+
 func (c *EvictionConfig) ToProto() *evictionpb.Config {
 	return &evictionpb.Config{
 		Interval:   durationpb.New(c.Interval),

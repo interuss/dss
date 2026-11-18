@@ -17,19 +17,23 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *Server) GetEvictionConfig(ctx context.Context, req *restapi.GetEvictionConfigRequest) restapi.GetEvictionConfigResponseSet {
+func (s *Server) GetEvictionState(ctx context.Context, req *restapi.GetEvictionStateRequest) restapi.GetEvictionStateResponseSet {
 	eviction, err := s.eviction(req.GroupName)
 	if err != nil {
-		return restapi.GetEvictionConfigResponseSet{Response404: &restapi.ErrorResponse{
+		return restapi.GetEvictionStateResponseSet{Response404: &restapi.ErrorResponse{
 			Message: dsserr.Handle(ctx, err)}}
 	}
 
-	config, err := eviction.GetEvictionConfig(ctx)
+	state, err := eviction.GetEvictionState(ctx)
 	if err != nil {
-		return restapi.GetEvictionConfigResponseSet{Response500: &api.InternalServerErrorBody{
-			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get the eviction config of the %s raft group", req.GroupName))}}
+		return restapi.GetEvictionStateResponseSet{Response500: &api.InternalServerErrorBody{
+			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get the eviction state of the %s raft group", req.GroupName))}}
 	}
-	return restapi.GetEvictionConfigResponseSet{Response200: toEvictionConfig(config)}
+	result := &restapi.EvictionState{Config: *toEvictionConfig(state.Config)}
+	if !state.LastRun.IsZero() {
+		result.LastRun = new(state.LastRun.Format(time.RFC3339))
+	}
+	return restapi.GetEvictionStateResponseSet{Response200: result}
 }
 
 func (s *Server) PutEvictionConfig(ctx context.Context, req *restapi.PutEvictionConfigRequest) restapi.PutEvictionConfigResponseSet {
@@ -84,12 +88,12 @@ func (s *Server) CreateEvictionRun(ctx context.Context, req *restapi.CreateEvict
 				Message: dsserr.Handle(ctx, err)}}
 		}
 	} else {
-		config, err := eviction.GetEvictionConfig(ctx)
+		state, err := eviction.GetEvictionState(ctx)
 		if err != nil {
 			return restapi.CreateEvictionRunResponseSet{Response500: &api.InternalServerErrorBody{
 				ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not get the eviction config of the %s raft group", req.GroupName))}}
 		}
-		params = config.Parameters
+		params = state.Config.Parameters
 	}
 
 	counts, err := eviction.DeleteExpired(ctx, params)

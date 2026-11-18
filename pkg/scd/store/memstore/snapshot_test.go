@@ -34,9 +34,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	dst := setUpStore(t)
 	require.NoError(t, dst.RestoreFromSnapshot(encodeDecode(t, data)))
 
-	gotConfig, err := dst.GetEvictionConfig(ctx)
+	gotState, err := dst.GetEvictionState(ctx)
 	require.NoError(t, err)
-	require.Equal(t, config, gotConfig)
+	require.Equal(t, config, gotState.Config)
 
 	opt := cmpopts.EquateApproxTime(0)
 
@@ -90,9 +90,9 @@ func TestRestoreFromSnapshotReplacesState(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, dst.RestoreFromSnapshot(data))
 
-	config, err := dst.GetEvictionConfig(ctx)
+	state, err := dst.GetEvictionState(ctx)
 	require.NoError(t, err)
-	require.Equal(t, defaultEvictionConfig, config)
+	require.Equal(t, defaultEvictionConfig, state.Config)
 
 	count, err := dst.CountConstraints(ctx)
 	require.NoError(t, err)
