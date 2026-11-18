@@ -21,7 +21,7 @@ To pool a set of DSS instances with the Raft store:
    existing node adds it.
 
 The day-2 operations on the pool (adding or removing nodes, replacing a
-node) are described in [pooling operations](../../operations/pooling.md);
+node) are described in [pooling operations](../../operations/pooling.md#raft-store);
 the nodes are restarted as described in
 [modifying a deployment](../../operations/modifying-deployment.md#restarting-nodes).
 
@@ -165,9 +165,18 @@ instances creating the pool at the same time as other participants).
    should list all the nodes of the pool
    ([inspecting the membership](../../operations/pooling.md#inspecting-the-membership)).
 
-Without the automatic bootstrap, the first node of the pool is bootstrapped
-and the other nodes are added manually with the `dssctl raft` commands: see
-[pooling operations](../../operations/pooling.md).
+Alternatively, you can do the bootstrap manually with the `dssctl` CLI (see
+[pooling operations](../../operations/pooling.md#raft-store) for how to run `dssctl`
+against a node of the pool):
+
+```shell
+dssctl raft bootstrap
+dssctl raft add --url https://<ENDPOINT>
+```
+
+`bootstrap` is run on the first node: it bootstraps the three Raft groups
+with itself as their only member.  `add` is then run once for each other node
+of the pool, from any member of the pool.
 
 ### If you are joining an existing pool
 
@@ -198,8 +207,7 @@ empty data directory and wait to be added to the pool by an existing node.
 Proceed to [services deployment](../services/index.md).
 
 Once the pool is formed, its day-2 operations are described in
-[pooling operations](../../operations/pooling.md).
+[pooling operations](../../operations/pooling.md#raft-store).
 
 !!! note
-    The eviction cron jobs that the deployment tools provide for the SQL
-    datastores are not deployed yet for the Raft store.
+    Eviction of the expired data is not implemented yet for the Raft store.

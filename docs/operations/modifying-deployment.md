@@ -46,9 +46,9 @@ the persistent volume `raft-data` of its pod, mounted at `/raft_data`.  A
 restarted node reloads it and rejoins the pool: it replays its log, or
 receives a snapshot from a peer if it has been down too long.
 
-The nodes of an instance are restarted with a single command; the stateful
+The nodes of a participant are restarted with a single command; the stateful
 set rolls them back one at a time, in pod order, waiting for a node to be
-ready — back to `member` — before restarting the next one:
+ready before restarting the next one:
 
 ```shell
 kubectl --context $CLUSTER_CONTEXT rollout restart statefulset/core-service --namespace $NAMESPACE

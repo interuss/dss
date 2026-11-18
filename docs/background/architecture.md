@@ -100,10 +100,35 @@ groups (one group per USS) of two nodes per USS.
 With the Raft store, the resiliency is obtained from the quorum of the Raft
 voters instead of the replication of a database: a group of `2N+1` voters
 tolerates the loss of `N` of them, and a group that cannot reach a majority of
-its voters stops serving writes until one is back.  A restarted or re-added
-node receives the data of the pool (it replays its log, or receives a
-snapshot from a peer) and rejoins, so no data is lost as long as a majority
+its voters stops serving reads and writes until one is back.  A restarted or
+re-added node receives the data of the pool (it replays its log, or receives
+a snapshot from a peer) and rejoins, so no data is lost as long as a majority
 of the voters was available.
+
+The table below summarizes survivable failures with 3 DSS instances of 2
+nodes each.  Each system state is summarized by three groups (one group per
+USS) of two nodes per USS.  Each Raft group then has 6 voters, and its
+quorum is 4 of them.  When the quorum is lost, the pool stops serving but no
+data is lost: it resumes when a majority of the voters is back.
+
+* 🟩 : Functional node has no recent changes in functionality
+* 🟥 : Non-functional node in down USS has no recent changes in functionality
+* 🟧 : Non-functional node due to USS upgrade or maintenance has no recent changes in functionality
+* 🔴 : Node becomes non-functional due to a USS going down
+* 🟠 : Node becomes non-functional due to USS upgrade or maintenance
+
+| Pre-existing conditions  | New failures | Survivable?
+| --- | --- | ---
+| (🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟩 ) | (🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟠 ) | 🟢 Yes
+|                                    | (🟩 , 🟩 ) (🟩 , 🟠 ) (🟩 , 🟠 ) | 🟢 Yes
+|                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟩 ) | 🟢 Yes
+|                                    | (🟩 , 🟩 ) (🟩 , 🟠 ) (🟠 , 🟠 ) | 🔴 No
+|                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟠 ) | 🔴 No
+|                                    | (🔴 , 🔴 ) (🔴 , 🔴 ) (🟩 , 🟩 ) | 🔴 No
+| (🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟧 ) | (🟩 , 🟩 ) (🟩 , 🟠 ) (🟩 , 🟧 ) | 🟢 Yes
+|                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟧 ) | 🔴 No
+| (🟩 , 🟩 ) (🟩 , 🟩 ) (🟥 , 🟥 ) | (🟩 , 🟩 ) (🟩 , 🟠 ) (🟥 , 🟥 ) | 🔴 No
+|                                    | (🟩 , 🟩 ) (🔴 , 🔴 ) (🟥 , 🟥 ) | 🔴 No
 
 ## Sizing
 
