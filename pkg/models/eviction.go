@@ -50,6 +50,8 @@ type EvictionConfig struct {
 	// Interval is the time between two scheduled cleanup jobs, 0 disables them.
 	Interval   time.Duration
 	Parameters EvictionParameters
+	// LastRun is the proposal timestamp of the last successful cleanup job, zero if none ran.
+	LastRun time.Time
 }
 
 func (c *EvictionConfig) ToProto() *evictionpb.Config {

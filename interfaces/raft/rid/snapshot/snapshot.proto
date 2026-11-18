@@ -40,4 +40,6 @@ message Snapshot {
     map<string, Subscription> subscriptions = 3;
     // eviction_config holds the eviction settings, unset until they are first set: the defaults are used until then.
     eviction.Config eviction_config = 4;
+    // last_eviction is the proposal timestamp of the last successful cleanup job, unset if none ran.
+    google.protobuf.Timestamp last_eviction = 5;
 }

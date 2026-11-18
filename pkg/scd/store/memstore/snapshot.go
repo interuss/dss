@@ -75,6 +75,9 @@ func (r *repo) GetSnapshot() (*raftpb.Snapshot, error) {
 	if r.state.EvictionConfig != nil {
 		snap.EvictionConfig = r.state.EvictionConfig.ToProto()
 	}
+	if !r.state.LastEviction.IsZero() {
+		snap.LastEviction = timestamppb.New(r.state.LastEviction)
+	}
 
 	return &raftpb.Snapshot{AppSnapshot: &raftpb.Snapshot_ScdSnapshot{ScdSnapshot: snap}}, nil
 }
@@ -167,6 +170,9 @@ func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
 		if err := restored.EvictionConfig.FromProto(snap.GetEvictionConfig()); err != nil {
 			return stacktrace.Propagate(err, "invalid eviction config in snapshot")
 		}
+	}
+	if snap.GetLastEviction() != nil {
+		restored.LastEviction = snap.GetLastEviction().AsTime()
 	}
 
 	r.state = restored

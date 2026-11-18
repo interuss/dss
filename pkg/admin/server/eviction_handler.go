@@ -122,13 +122,17 @@ func (s *Server) eviction(name restapi.RaftGroupName) (storerepos.Eviction, erro
 }
 
 func toEvictionConfig(config dssmodels.EvictionConfig) *restapi.EvictionConfig {
-	return &restapi.EvictionConfig{
+	result := &restapi.EvictionConfig{
 		Interval: config.Interval.String(),
 		Parameters: restapi.EvictionParameters{
 			Ttl:   config.Parameters.TTL.String(),
 			Limit: new(int64(config.Parameters.Limit)),
 		},
 	}
+	if !config.LastRun.IsZero() {
+		result.LastRun = new(config.LastRun.Format(time.RFC3339))
+	}
+	return result
 }
 
 // fromEvictionConfig converts and validates config, or returns a dsserr.BadRequest error.

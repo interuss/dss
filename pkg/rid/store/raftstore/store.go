@@ -24,7 +24,7 @@ import (
 type repo struct {
 	consensus *consensus.Consensus
 	*memstore.Store[repos.Repository]
-	// evictionConfigC is signaled when the eviction settings are updated.
+	// evictionConfigC is signaled when the eviction settings or the last cleanup job are updated.
 	evictionConfigC chan struct{}
 }
 
@@ -181,7 +181,15 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if err := params.FromProto(payload.DeleteExpiredRepoCall.GetParameters()); err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Invalid eviction parameters")
 		}
-		return r.Store.GetRepo().DeleteExpired(ctx, params)
+		counts, err := r.Store.GetRepo().DeleteExpired(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		select {
+		case r.evictionConfigC <- struct{}{}:
+		default:
+		}
+		return counts, nil
 
 	case *ridpb.Payload_GetEvictionConfigRepoCall:
 		return r.Store.GetRepo().GetEvictionConfig(ctx)

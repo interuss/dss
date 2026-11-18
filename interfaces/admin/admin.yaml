@@ -136,6 +136,12 @@ components:
           example: 1h
         parameters:
           $ref: '#/components/schemas/EvictionParameters'
+        last_run:
+          description: >-
+            Time of the last successful cleanup job of the group, absent if none ran.
+          type: string
+          format: date-time
+          readOnly: true
 
     EvictionRunParameters:
       description: Parameters of a cleanup job run on demand.

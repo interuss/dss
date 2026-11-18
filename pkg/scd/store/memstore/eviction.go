@@ -6,6 +6,7 @@ import (
 
 	"github.com/interuss/dss/pkg/memstore"
 	dssmodels "github.com/interuss/dss/pkg/models"
+	"github.com/interuss/dss/pkg/timestamp"
 )
 
 // defaultEvictionConfig is used while the eviction settings are not set.
@@ -25,17 +26,24 @@ func newEviction(r *repo) *memstore.Eviction {
 }
 
 func (r *repo) DeleteExpired(ctx context.Context, params dssmodels.EvictionParameters) (map[string]int, error) {
-	return r.eviction.DeleteExpired(ctx, params)
+	counts, err := r.eviction.DeleteExpired(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	r.state.LastEviction = timestamp.MustFromContext(ctx)
+	return counts, nil
 }
 
 func (r *repo) GetEvictionConfig(_ context.Context) (dssmodels.EvictionConfig, error) {
-	if r.state.EvictionConfig == nil {
-		return defaultEvictionConfig, nil
+	config := defaultEvictionConfig
+	if r.state.EvictionConfig != nil {
+		config = *r.state.EvictionConfig
 	}
-	return *r.state.EvictionConfig, nil
+	config.LastRun = r.state.LastEviction
+	return config, nil
 }
 
-func (r *repo) SetEvictionConfig(_ context.Context, config dssmodels.EvictionConfig) (dssmodels.EvictionConfig, error) {
+func (r *repo) SetEvictionConfig(ctx context.Context, config dssmodels.EvictionConfig) (dssmodels.EvictionConfig, error) {
 	r.state.EvictionConfig = &config
-	return config, nil
+	return r.GetEvictionConfig(ctx)
 }
