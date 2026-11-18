@@ -18,6 +18,7 @@ const (
 // The schedule is computed from the last cleanup job of the group when this node becomes the leader
 // and recomputed when the settings or the last cleanup job are updated (configC is signaled).
 // No job runs while the interval is 0.
+// A job may run twice around a leader change which is acceptable.
 func (s *Store[R]) StartEviction(ctx context.Context, repo storerepos.Eviction, configC <-chan struct{}) {
 	logger := s.logger.With(zap.String("component", "eviction"))
 	s.RunAsLeader(ctx, func(ctx context.Context) {
@@ -28,8 +29,8 @@ func (s *Store[R]) StartEviction(ctx context.Context, repo storerepos.Eviction, 
 				return
 			case <-configC:
 				tick = nextEviction(ctx, logger, repo)
-			case <-tick:
-				ctx := timestamp.NewContext(ctx, time.Now())
+			case now := <-tick:
+				ctx := timestamp.NewContext(ctx, now)
 				configCtx, cancel := context.WithTimeout(ctx, evictionConfigTimeout)
 				state, err := repo.GetEvictionState(configCtx)
 				cancel()
@@ -65,5 +66,6 @@ func nextEviction(ctx context.Context, logger *zap.Logger, repo storerepos.Evict
 	if state.Config.Interval == 0 {
 		return nil
 	}
+	// The duration is negative when the job is overdue and time.After then fires immediately.
 	return time.After(time.Until(state.LastRun.Add(state.Config.Interval)))
 }
