@@ -396,5 +396,4 @@ it receives a snapshot from the pool and catches up on the entries since.
 
 Proceed to [services deployment](../services/index.md).
 
-!!! note
-    Eviction of the expired data is not implemented yet for the Raft store.
+TODO: Document the eviction for the Raft store.
