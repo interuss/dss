@@ -118,7 +118,7 @@ func TestDeleteSubscription(t *testing.T) {
 			name:         "subscription-is-returned-if-returned-from-store",
 			id:           dssmodels.ID(uuid.New().String()),
 			version:      testdata.Version,
-			subscription: &ridmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}},
+			subscription: &ridmodels.Subscription{},
 		},
 		{
 			name:     "error-is-returned-if-returned-from-store",
@@ -174,16 +174,14 @@ func TestCreateSubscription(t *testing.T) {
 			callbacks: restapi.SubscriptionCallbacks{IdentificationServiceAreaUrl: &testdata.CallbackURL},
 			extents:   testdata.LoopVolume4D,
 			wantSubscription: &ridmodels.Subscription{
-				ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				Owner: "foo",
-				URL:   "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-				},
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				Owner:      "foo",
+				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
 			},
 		},
 		{
@@ -224,25 +222,22 @@ func TestCreateSubscription(t *testing.T) {
 func TestCreateSubscriptionResponseIncludesISAs(t *testing.T) {
 	isas := []*ridmodels.IdentificationServiceArea{
 		{
-			ID:            dssmodels.ID("8265221b-9528-4d45-900d-59a148e13850"),
-			Owner:         dssmodels.Owner("me-myself-and-i"),
-			URL:           "https://no/place/like/home",
-			CellsVolume4D: &dssmodels.CellsVolume4D{},
+			ID:    dssmodels.ID("8265221b-9528-4d45-900d-59a148e13850"),
+			Owner: dssmodels.Owner("me-myself-and-i"),
+			URL:   "https://no/place/like/home",
 		},
 	}
 
 	cells := mustPolygonToCellIDs(&testdata.LoopPolygon)
 	sub := &ridmodels.Subscription{
-		ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-		Owner: "foo",
-		URL:   string(testdata.CallbackURL),
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-			EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-			AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-			AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-			Cells:      cells,
-		},
+		ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+		Owner:      "foo",
+		URL:        string(testdata.CallbackURL),
+		StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+		EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+		AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+		AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
+		Cells:      cells,
 	}
 
 	ms := &mockStore{}
@@ -287,7 +282,7 @@ func TestGetSubscription(t *testing.T) {
 		{
 			name:         "subscription-is-returned-if-returned-from-app",
 			id:           dssmodels.ID(uuid.New().String()),
-			subscription: &ridmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}},
+			subscription: &ridmodels.Subscription{},
 		},
 		{
 			name:    "error-is-returned-if-returned-from-app",
@@ -358,7 +353,6 @@ func TestSearchSubscriptions(t *testing.T) {
 				Owner:             dssmodels.Owner(testdata.Owner),
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				CellsVolume4D:     &dssmodels.CellsVolume4D{},
 			},
 		}, error(nil),
 	)
@@ -390,16 +384,14 @@ func TestCreateISA(t *testing.T) {
 			extents:    testdata.LoopVolume4D,
 			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
 			wantISA: &ridmodels.IdentificationServiceArea{
-				ID:    "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				URL:   "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				Owner: "foo",
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-				},
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				Owner:      "foo",
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 			},
 		},
 		{
@@ -464,18 +456,16 @@ func TestUpdateISA(t *testing.T) {
 			flightsURL: "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
 			version:    testdata.Version,
 			wantISA: &ridmodels.IdentificationServiceArea{
-				ID:      "4348c8e5-0b1c-43cf-9114-2e67a4532765",
-				URL:     "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
-				Owner:   "foo",
-				Writer:  "locality value",
-				Version: testdata.Version,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
-					StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
-					EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
-					AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
-					AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
-				},
+				ID:         "4348c8e5-0b1c-43cf-9114-2e67a4532765",
+				URL:        "https://testdummy.interuss.org/interuss/dss/pkg/geo/testdata/testdata",
+				Owner:      "foo",
+				Writer:     "locality value",
+				Version:    testdata.Version,
+				Cells:      mustPolygonToCellIDs(&testdata.LoopPolygon),
+				StartTime:  mustTimestamp(testdata.LoopVolume4D.TimeStart),
+				EndTime:    mustTimestamp(testdata.LoopVolume4D.TimeEnd),
+				AltitudeHi: (*float32)(testdata.LoopVolume3D.AltitudeHi),
+				AltitudeLo: (*float32)(testdata.LoopVolume3D.AltitudeLo),
 			},
 		},
 		{
@@ -550,11 +540,10 @@ func TestDeleteIdentificationServiceArea(t *testing.T) {
 	ms.On("Transact", mock.Anything, mock.Anything).Return(
 		&operations.ISAResult{
 			ISA: &ridmodels.IdentificationServiceArea{
-				ID:            id,
-				Owner:         dssmodels.Owner("me-myself-and-i"),
-				URL:           "https://no/place/like/home",
-				Version:       testdata.Version,
-				CellsVolume4D: &dssmodels.CellsVolume4D{},
+				ID:      id,
+				Owner:   dssmodels.Owner("me-myself-and-i"),
+				URL:     "https://no/place/like/home",
+				Version: testdata.Version,
 			},
 			Subscriptions: []*ridmodels.Subscription{
 				{
@@ -587,10 +576,9 @@ func TestSearchIdentificationServiceAreas(t *testing.T) {
 	mr.On("SearchISAs", mock.Anything, mock.Anything, mock.Anything, (*time.Time)(nil)).Return(
 		[]*ridmodels.IdentificationServiceArea{
 			{
-				ID:            dssmodels.ID(uuid.New().String()),
-				Owner:         dssmodels.Owner("me-myself-and-i"),
-				URL:           "https://no/place/like/home",
-				CellsVolume4D: &dssmodels.CellsVolume4D{},
+				ID:    dssmodels.ID(uuid.New().String()),
+				Owner: dssmodels.Owner("me-myself-and-i"),
+				URL:   "https://no/place/like/home",
 			},
 		}, error(nil),
 	)

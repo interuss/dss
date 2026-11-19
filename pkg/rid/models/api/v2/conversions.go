@@ -106,22 +106,22 @@ func FromVolume3D(vol3 *restapi.Volume3D) (*dssmodels.Volume3D, error) {
 }
 
 // CellsVolume4DFromRest converts RID v2 REST model to CellsVolume4D
-func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
+func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (dssmodels.CellsVolume4D, error) {
 	cells, err := cellsFromVolume3D(&vol4.Volume)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing spatial volume of Volume4D")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error parsing spatial volume of Volume4D")
 	}
 
 	altitudeLo, err := FromAltitude(vol4.Volume.AltitudeLower)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing lower altitude of Volume3D")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error parsing lower altitude of Volume3D")
 	}
 	altitudeHi, err := FromAltitude(vol4.Volume.AltitudeUpper)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing upper altitude of Volume3D")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error parsing upper altitude of Volume3D")
 	}
 
-	result := &dssmodels.CellsVolume4D{
+	result := dssmodels.CellsVolume4D{
 		Cells:      cells,
 		AltitudeLo: altitudeLo,
 		AltitudeHi: altitudeHi,
@@ -129,11 +129,11 @@ func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, er
 
 	result.StartTime, err = FromTime(vol4.TimeStart)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing start time of Volume4D")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error parsing start time of Volume4D")
 	}
 	result.EndTime, err = FromTime(vol4.TimeEnd)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing end time of Volume4D")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error parsing end time of Volume4D")
 	}
 
 	return result, nil

@@ -95,9 +95,7 @@ func TestInsertISA(t *testing.T) {
 			sa := &ridmodels.IdentificationServiceArea{
 				ID:    dssmodels.ID(uuid.New().String()),
 				Owner: dssmodels.Owner(uuid.New().String()),
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells: s2.CellUnion{12494535935418957824},
-				},
+				Cells: s2.CellUnion{12494535935418957824},
 			}
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
@@ -135,14 +133,12 @@ func TestDeleteISA(t *testing.T) {
 	insertedSubscriptions := make([]*ridmodels.Subscription, 0, 2)
 	for range 2 {
 		s, err := insertSubscription(ctx, repo, &ridmodels.Subscription{
-			ID:    dssmodels.ID(uuid.New().String()),
-			Owner: "owner",
-			URL:   "https://no/place/like/home",
-			CellsVolume4D: &dssmodels.CellsVolume4D{
-				StartTime: &startTime,
-				EndTime:   &endTime,
-				Cells:     s2.CellUnion{12494535935418957824},
-			},
+			ID:        dssmodels.ID(uuid.New().String()),
+			Owner:     "owner",
+			URL:       "https://no/place/like/home",
+			StartTime: &startTime,
+			EndTime:   &endTime,
+			Cells:     s2.CellUnion{12494535935418957824},
 		})
 		require.NoError(t, err)
 		insertedSubscriptions = append(insertedSubscriptions, s)
@@ -153,14 +149,12 @@ func TestDeleteISA(t *testing.T) {
 
 	// Insert the ISA.
 	insertResult, err := insertISA(ctx, repo, &ridmodels.IdentificationServiceArea{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: dssmodels.Owner(uuid.New().String()),
-		URL:   "https://no/place/like/home/for/flights",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{12494535935418957824},
-		},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
+		URL:       "https://no/place/like/home/for/flights",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{12494535935418957824},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, insertResult)
@@ -239,13 +233,11 @@ func TestUpdateISA(t *testing.T) {
 
 			// Insert a pre-existing ISA to simulate updating from something.
 			existing, err := repo.InsertISA(ctx, &ridmodels.IdentificationServiceArea{
-				ID:    id,
-				Owner: owner,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-					Cells:     s2.CellUnion{12494535935418957824},
-				},
+				ID:        id,
+				Owner:     owner,
+				StartTime: &r.updateFromStartTime,
+				EndTime:   &r.updateFromEndTime,
+				Cells:     s2.CellUnion{12494535935418957824},
 			})
 			require.NoError(t, err)
 
@@ -253,9 +245,7 @@ func TestUpdateISA(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: existing.Version,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells: s2.CellUnion{12494535935418957824},
-				},
+				Cells:   s2.CellUnion{12494535935418957824},
 			}
 			if !r.startTime.IsZero() {
 				sa.StartTime = &r.startTime
@@ -295,13 +285,11 @@ func TestISAUpdateIdxCells(t *testing.T) {
 	// into a single cell. We don't support this currently, so let's make sure
 	// this doesn't happen.
 	insertResult, err := insertISA(ctx, repo, &ridmodels.IdentificationServiceArea{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: "owner",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
-		},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, insertResult)
@@ -311,28 +299,24 @@ func TestISAUpdateIdxCells(t *testing.T) {
 	// with the soon to be new version of the isa. both should increase their
 	// notification index.
 	_, err = insertSubscription(ctx, repo, &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: "owner",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{17106221850767130624, 17106221919486607360},
-		},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221850767130624, 17106221919486607360},
 	})
 	require.NoError(t, err)
 
 	_, err = insertSubscription(ctx, repo, &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: "owner",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{17106221953846345728},
-		},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     "owner",
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221953846345728},
 	})
 	require.NoError(t, err)
 
-	isa.CellsVolume4D = &dssmodels.CellsVolume4D{
+	isa.CellsVolume4D = dssmodels.CellsVolume4D{
 		StartTime: isa.StartTime,
 		EndTime:   isa.EndTime,
 		Cells:     s2.CellUnion{17106221953846345728},

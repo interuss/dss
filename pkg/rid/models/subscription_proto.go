@@ -14,9 +14,6 @@ func (sub *Subscription) ToProto() (*ridpb.Subscription, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 	}
-	if sub.CellsVolume4D == nil {
-		return nil, stacktrace.NewError("missing volume of Subscription %s", sub.ID)
-	}
 	return &ridpb.Subscription{
 		Id:     id,
 		Url:    sub.URL,
@@ -37,15 +34,12 @@ func (sub *Subscription) FromProto(pb *ridpb.Subscription) error {
 	if pb.GetVolume() == nil {
 		return stacktrace.NewError("missing volume of Subscription %s", id)
 	}
-	volume := new(dssmodels.CellsVolume4D)
-	volume.FromProto(pb.GetVolume())
-
 	*sub = Subscription{
-		ID:            id,
-		URL:           pb.GetUrl(),
-		Owner:         dssmodels.Owner(pb.GetOwner()),
-		Writer:        pb.GetWriter(),
-		CellsVolume4D: volume,
+		ID:     id,
+		URL:    pb.GetUrl(),
+		Owner:  dssmodels.Owner(pb.GetOwner()),
+		Writer: pb.GetWriter(),
 	}
+	sub.CellsVolume4D.FromProto(pb.GetVolume())
 	return nil
 }

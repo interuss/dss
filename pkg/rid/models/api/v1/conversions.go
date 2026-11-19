@@ -39,13 +39,13 @@ func FromVolume4D(vol4 *restapi.Volume4D) (*dssmodels.Volume4D, error) {
 }
 
 // CellsVolume4DFromRest converts RID v1 REST model to CellsVolume4D
-func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
+func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (dssmodels.CellsVolume4D, error) {
 	cells, err := FromGeoPolygon(&vol4.SpatialVolume.Footprint).CalculateCovering()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error calculating footprint covering")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error calculating footprint covering")
 	}
 
-	result := &dssmodels.CellsVolume4D{
+	result := dssmodels.CellsVolume4D{
 		Cells:      cells,
 		AltitudeLo: (*float32)(vol4.SpatialVolume.AltitudeLo),
 		AltitudeHi: (*float32)(vol4.SpatialVolume.AltitudeHi),
@@ -54,7 +54,7 @@ func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, er
 	if vol4.TimeStart != nil {
 		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeStart)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting start time")
+			return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error converting start time")
 		}
 		result.StartTime = &ts
 	}
@@ -62,7 +62,7 @@ func CellsVolume4DFromRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, er
 	if vol4.TimeEnd != nil {
 		ts, err := time.Parse(time.RFC3339Nano, *vol4.TimeEnd)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error converting end time")
+			return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error converting end time")
 		}
 		result.EndTime = &ts
 	}

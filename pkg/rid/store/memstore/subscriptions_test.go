@@ -30,13 +30,11 @@ var (
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
 				Writer:            writer,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime: &startTime,
-					EndTime:   &endTime,
-					Cells: s2.CellUnion{
-						s2.CellID(overflow),
-						12494535935418957824,
-					},
+				StartTime:         &startTime,
+				EndTime:           &endTime,
+				Cells: s2.CellUnion{
+					s2.CellID(overflow),
+					12494535935418957824,
 				},
 			},
 		},
@@ -47,12 +45,10 @@ var (
 				Owner:             "me",
 				URL:               "https://no/place/like/home",
 				NotificationIndex: 42,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime: &startTime,
-					EndTime:   &endTime,
-					Cells: s2.CellUnion{
-						12494535935418957824,
-					},
+				StartTime:         &startTime,
+				EndTime:           &endTime,
+				Cells: s2.CellUnion{
+					12494535935418957824,
 				},
 			},
 		},
@@ -205,12 +201,10 @@ func TestStoreExpiredSubscription(t *testing.T) {
 	sub := &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
 		Owner: dssmodels.Owner("original owner"),
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells: s2.CellUnion{s2.CellID(12494535866699481088)},
+		Cells: s2.CellUnion{s2.CellID(12494535866699481088)},
 
-			StartTime: &startTime,
-			EndTime:   &endTime,
-		},
+		StartTime: &startTime,
+		EndTime:   &endTime,
 	}
 	_, err := repo.InsertSubscription(ctx, sub)
 	require.NoError(t, err)
@@ -246,11 +240,9 @@ func TestStoreSubscriptionWithNoGeoData(t *testing.T) {
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: dssmodels.Owner("original owner"),
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			EndTime: &endTime,
-		},
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		EndTime: &endTime,
 	}
 	_, err := repo.InsertSubscription(ctx, sub)
 	require.Error(t, err)
@@ -354,7 +346,7 @@ func TestDeleteExpiredSubscriptions(t *testing.T) {
 		{id: "00000000-0000-0000-0000-000000000001", end: &expiredEnd},
 	} {
 		in := *subscriptionsPool[0].input
-		in.CellsVolume4D = &dssmodels.CellsVolume4D{Cells: in.Cells, StartTime: &start, EndTime: sub.end}
+		in.CellsVolume4D = dssmodels.CellsVolume4D{Cells: in.Cells, StartTime: &start, EndTime: sub.end}
 		in.ID = sub.id
 		_, err := repo.InsertSubscription(ctx, &in)
 		require.NoError(t, err)
