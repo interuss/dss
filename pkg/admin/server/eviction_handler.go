@@ -132,14 +132,13 @@ func (s *Server) PutEvictionDisabled(ctx context.Context, req *restapi.PutEvicti
 			Message: dsserr.Handle(ctx, stacktrace.PropagateWithCode(req.BodyParseError, dsserr.BadRequest, "Malformed params"))}}
 	}
 
-	state, err := eviction.SetEvictionDisabled(ctx, req.Body.Disabled)
-	if err != nil {
+	if err := eviction.SetEvictionDisabled(ctx, req.Body.Disabled); err != nil {
 		return restapi.PutEvictionDisabledResponseSet{Response500: &api.InternalServerErrorBody{
 			ErrorMessage: *dsserr.Handle(ctx, stacktrace.Propagate(err, "Could not set whether the eviction of the %s raft group is disabled", req.GroupName))}}
 	}
 
 	s.Logger.Info("set eviction status", zap.String("group", string(req.GroupName)), zap.Bool("disabled", req.Body.Disabled))
-	return restapi.PutEvictionDisabledResponseSet{Response200: toEvictionState(state)}
+	return restapi.PutEvictionDisabledResponseSet{Response204: &api.EmptyResponseBody{}}
 }
 
 func toEvictionState(state dssmodels.EvictionState) *restapi.EvictionState {

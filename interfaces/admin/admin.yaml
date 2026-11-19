@@ -487,12 +487,8 @@ paths:
             schema:
               $ref: '#/components/schemas/EvictionDisabled'
       responses:
-        '200':
-          description: The scheduled cleanup jobs were disabled or enabled. The eviction state is returned.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EvictionState'
+        '204':
+          description: The scheduled cleanup jobs were disabled or enabled.
         '400':
           description: >-
             The request was not properly formed.

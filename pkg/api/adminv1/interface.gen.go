@@ -243,8 +243,8 @@ func (request *PutEvictionDisabledRequest) OperationID() string {
 }
 
 type PutEvictionDisabledResponseSet struct {
-	// The scheduled cleanup jobs were disabled or enabled. The eviction state is returned.
-	Response200 *EvictionState
+	// The scheduled cleanup jobs were disabled or enabled.
+	Response204 *api.EmptyResponseBody
 
 	// The request was not properly formed.
 	Response400 *ErrorResponse

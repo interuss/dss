@@ -290,8 +290,8 @@ func (s *APIRouter) PutEvictionDisabled(exp *regexp.Regexp, w http.ResponseWrite
 	response = s.Implementation.PutEvictionDisabled(ctx, &req)
 
 	// Write response to client
-	if response.Response200 != nil {
-		api.WriteJSON(w, 200, response.Response200)
+	if response.Response204 != nil {
+		api.WriteJSON(w, 204, response.Response204)
 		return
 	}
 	if response.Response400 != nil {

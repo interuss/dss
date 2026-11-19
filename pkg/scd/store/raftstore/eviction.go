@@ -27,8 +27,9 @@ func (r *repo) SetEvictionConfig(ctx context.Context, config dssmodels.EvictionC
 	}}))
 }
 
-func (r *repo) SetEvictionDisabled(ctx context.Context, disabled bool) (dssmodels.EvictionState, error) {
-	return r.consensus.HandleWritePayload[dssmodels.EvictionState](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SetEvictionDisabledRepoCall{
+func (r *repo) SetEvictionDisabled(ctx context.Context, disabled bool) error {
+	_, err := r.consensus.HandleWritePayload[any](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SetEvictionDisabledRepoCall{
 		SetEvictionDisabledRepoCall: &evictionpb.SetDisabledRepoCall{Disabled: disabled},
 	}}))
+	return err
 }

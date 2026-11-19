@@ -293,9 +293,8 @@ func (c *Client) PutEvictionDisabled(ctx context.Context, groupName RaftGroupNam
 	defer func() { _ = resp.Body.Close() }()
 
 	switch resp.StatusCode {
-	case 200:
-		response.Response200 = new(EvictionState)
-		err = json.NewDecoder(resp.Body).Decode(response.Response200)
+	case 204:
+		response.Response204 = &api.EmptyResponseBody{}
 	case 400:
 		response.Response400 = new(ErrorResponse)
 		err = json.NewDecoder(resp.Body).Decode(response.Response400)
