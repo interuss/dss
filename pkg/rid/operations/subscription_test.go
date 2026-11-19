@@ -253,7 +253,7 @@ func (r *fakeSubscriptionRepo) SetEvictionConfig(_ context.Context, _ dssmodels.
 	panic("not implemented")
 }
 
-func (r *fakeSubscriptionRepo) SetEvictionDisabled(_ context.Context, _ bool) (dssmodels.EvictionState, error) {
+func (r *fakeSubscriptionRepo) SetEvictionDisabled(_ context.Context, _ bool) error {
 	panic("not implemented")
 }
 

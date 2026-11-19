@@ -276,6 +276,40 @@ func (c *Client) PutEvictionConfig(ctx context.Context, groupName RaftGroupName,
 	return response, err
 }
 
+// Disable or enable the scheduled cleanup jobs of a Raft group
+func (c *Client) PutEvictionDisabled(ctx context.Context, groupName RaftGroupName, body *EvictionDisabled) (PutEvictionDisabledResponseSet, error) {
+	var response PutEvictionDisabledResponseSet
+
+	path := "/admin/v1/raft/groups/" + url.PathEscape(fmt.Sprint(groupName)) + "/eviction/disabled"
+
+	var requestBody any
+	if body != nil {
+		requestBody = body
+	}
+	resp, err := c.do(ctx, http.MethodPut, path, requestBody)
+	if err != nil {
+		return response, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	switch resp.StatusCode {
+	case 204:
+		response.Response204 = &api.EmptyResponseBody{}
+	case 400:
+		response.Response400 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response400)
+	case 404:
+		response.Response404 = new(ErrorResponse)
+		err = json.NewDecoder(resp.Body).Decode(response.Response404)
+	case 500:
+		response.Response500 = new(api.InternalServerErrorBody)
+		err = json.NewDecoder(resp.Body).Decode(response.Response500)
+	default:
+		err = fmt.Errorf("unexpected response status %s", resp.Status)
+	}
+	return response, err
+}
+
 // Run a cleanup job on a Raft group
 func (c *Client) CreateEvictionRun(ctx context.Context, groupName RaftGroupName, body *EvictionRunParameters) (CreateEvictionRunResponseSet, error) {
 	var response CreateEvictionRunResponseSet

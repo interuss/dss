@@ -75,6 +75,14 @@ type EvictionState struct {
 
 	// Time of the last successful cleanup job of the group, absent if none ran.
 	LastRun *string `json:"last_run,omitempty"`
+
+	// Whether the scheduled cleanup jobs are disabled.
+	Disabled *bool `json:"disabled,omitempty"`
+}
+
+// Whether the scheduled cleanup jobs of a Raft group are disabled. The eviction settings are kept either way.
+type EvictionDisabled struct {
+	Disabled bool `json:"disabled"`
 }
 
 // Parameters of a cleanup job run on demand.

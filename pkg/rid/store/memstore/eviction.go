@@ -44,7 +44,7 @@ func (r *repo) SetEvictionConfig(_ context.Context, config dssmodels.EvictionCon
 	return config, nil
 }
 
-func (r *repo) SetEvictionDisabled(ctx context.Context, disabled bool) (dssmodels.EvictionState, error) {
+func (r *repo) SetEvictionDisabled(_ context.Context, disabled bool) error {
 	r.state.EvictionDisabled = disabled
-	return r.GetEvictionState(ctx)
+	return nil
 }

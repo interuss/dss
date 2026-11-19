@@ -14,6 +14,7 @@ var (
 	DeleteRaftGroupMemberSecurity = []api.AuthorizationOption{}
 	GetEvictionStateSecurity      = []api.AuthorizationOption{}
 	PutEvictionConfigSecurity     = []api.AuthorizationOption{}
+	PutEvictionDisabledSecurity   = []api.AuthorizationOption{}
 	CreateEvictionRunSecurity     = []api.AuthorizationOption{}
 )
 
@@ -73,7 +74,7 @@ type CreateRaftGroupResponseSet struct {
 }
 
 type GetRaftGroupRequest struct {
-	// Name of the Raft group of interest.
+	// Name of the Raft group.
 	GroupName RaftGroupName
 
 	// The result of attempting to authorize this request
@@ -221,6 +222,40 @@ type PutEvictionConfigResponseSet struct {
 	Response500 *api.InternalServerErrorBody
 }
 
+type PutEvictionDisabledRequest struct {
+	// Name of the Raft group.
+	GroupName RaftGroupName
+
+	// The data contained in the body of this request, if it parsed correctly
+	Body *EvictionDisabled
+
+	// The error encountered when attempting to parse the body of this request
+	BodyParseError error
+
+	// The result of attempting to authorize this request
+	Auth api.AuthorizationResult
+}
+
+const PutEvictionDisabledOperationID = "adminv1.PutEvictionDisabled"
+
+func (request *PutEvictionDisabledRequest) OperationID() string {
+	return PutEvictionDisabledOperationID
+}
+
+type PutEvictionDisabledResponseSet struct {
+	// The scheduled cleanup jobs were disabled or enabled.
+	Response204 *api.EmptyResponseBody
+
+	// The request was not properly formed.
+	Response400 *ErrorResponse
+
+	// This DSS node has no Raft group with this name or the group does not support eviction.
+	Response404 *ErrorResponse
+
+	// Auto-generated internal server error response
+	Response500 *api.InternalServerErrorBody
+}
+
 type CreateEvictionRunRequest struct {
 	// Name of the Raft group.
 	GroupName RaftGroupName
@@ -284,6 +319,11 @@ type Implementation interface {
 	// ---
 	// The settings replace the previous ones as a whole. The request returns once the change is adopted by the group.
 	PutEvictionConfig(ctx context.Context, req *PutEvictionConfigRequest) PutEvictionConfigResponseSet
+
+	// Disable or enable the scheduled cleanup jobs of a Raft group
+	// ---
+	// The eviction settings are kept. The request returns once the change is adopted by the group.
+	PutEvictionDisabled(ctx context.Context, req *PutEvictionDisabledRequest) PutEvictionDisabledResponseSet
 
 	// Run a cleanup job on a Raft group
 	// ---
