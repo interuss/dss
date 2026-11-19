@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	restapi "github.com/interuss/dss/pkg/api/scdv1"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func TestOIRPayloadRoundTrip(t *testing.T) {
 		return &validOIRParams{
 			ID:    dssmodels.ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a"),
 			State: scdmodels.OperationalIntentStateAccepted,
-			Volume: &dssmodels.CellsVolume4D{
+			Volume: dssmodels.CellsVolume4D{
 				Cells:      s2.CellUnion{s2.CellIDFromToken("89c25")},
 				StartTime:  &start,
 				EndTime:    &end,
@@ -63,7 +62,4 @@ func TestOIRPayloadRoundTrip(t *testing.T) {
 			assert.Equal(t, request, decoded)
 		})
 	}
-
-	_, err := Registry[restapi.CreateOperationalIntentReferenceOperationID].EncodePayload(&createOIRPayload{Manager: "uss1", Params: &validOIRParams{ID: full.ID}})
-	require.Error(t, err)
 }

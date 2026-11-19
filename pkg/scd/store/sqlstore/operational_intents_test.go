@@ -39,13 +39,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub1ID,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime:  &start1,
-			EndTime:    &end1,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-			Cells:      cells,
-		},
+		StartTime:      &start1,
+		EndTime:        &end1,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
+		Cells:          cells,
 	}
 	oi2 = &scdmodels.OperationalIntent{
 		ID:             oi2ID,
@@ -54,13 +52,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub2ID,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime:  &start2,
-			EndTime:    &end2,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-			Cells:      cells,
-		},
+		StartTime:      &start2,
+		EndTime:        &end2,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
+		Cells:          cells,
 	}
 	oi3 = &scdmodels.OperationalIntent{
 		ID:             oi3ID,
@@ -69,13 +65,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub3ID,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime:  &start3,
-			EndTime:    &end3,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-			Cells:      cells,
-		},
+		StartTime:      &start3,
+		EndTime:        &end3,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
+		Cells:          cells,
 	}
 )
 

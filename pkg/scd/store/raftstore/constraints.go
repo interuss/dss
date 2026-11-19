@@ -10,11 +10,7 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
-	if cellsVolume == nil {
-		return nil, stacktrace.NewError("missing volume")
-	}
-
+func (r *repo) SearchConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
 	return r.consensus.HandleReadPayload[[]*scdmodels.Constraint](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SearchConstraintsRepoCall{
 		SearchConstraintsRepoCall: &scdpb.SearchConstraintsRepoCall{Volume: cellsVolume.ToProto()},
 	}}))

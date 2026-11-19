@@ -16,7 +16,7 @@ func TestConstraintProtoRoundTrip(t *testing.T) {
 	start := time.Date(2026, 10, 28, 9, 30, 0, 0, time.UTC)
 	end := start.Add(time.Hour)
 	lo, hi := float32(10), float32(120)
-	volume := &dssmodels.CellsVolume4D{
+	volume := dssmodels.CellsVolume4D{
 		Cells:      s2.CellUnion{s2.CellIDFromToken("89c25"), s2.CellIDFromToken("89c27")},
 		StartTime:  &start,
 		EndTime:    &end,
@@ -56,15 +56,12 @@ func TestConstraintProtoErrors(t *testing.T) {
 	_, err := missing.ToProto()
 	require.Error(t, err)
 
-	_, err = (&Constraint{ID: dssmodels.ID("not-a-uuid"), CellsVolume4D: &dssmodels.CellsVolume4D{}}).ToProto()
-	require.Error(t, err)
-
-	_, err = (&Constraint{ID: dssmodels.ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a")}).ToProto()
+	_, err = (&Constraint{ID: dssmodels.ID("not-a-uuid")}).ToProto()
 	require.Error(t, err)
 
 	var constraint Constraint
 	require.Error(t, constraint.FromProto(nil))
-	require.Error(t, constraint.FromProto(&scdpb.Constraint{Id: []byte{1, 2, 3}, Volume: (&dssmodels.CellsVolume4D{}).ToProto()}))
+	require.Error(t, constraint.FromProto(&scdpb.Constraint{Id: []byte{1, 2, 3}, Volume: dssmodels.CellsVolume4D{}.ToProto()}))
 	id, err := dssmodels.ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a").ToProto()
 	require.NoError(t, err)
 	require.Error(t, constraint.FromProto(&scdpb.Constraint{Id: id}))

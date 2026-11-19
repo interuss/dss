@@ -15,7 +15,7 @@ type Constraint struct {
 	Version         VersionNumber
 	OVN             OVN
 	USSBaseURL      string
-	*dssmodels.CellsVolume4D
+	dssmodels.CellsVolume4D
 }
 
 // ToRest converts the Constraint to its SCD v1 REST model API format

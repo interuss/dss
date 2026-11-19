@@ -68,7 +68,7 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 	for rows.Next() {
 		var (
 			o         = &scdmodels.OperationalIntent{}
-			volume    = new(dssmodels.CellsVolume4D)
+			volume    dssmodels.CellsVolume4D
 			updatedAt time.Time
 		)
 		err := rows.Scan(
@@ -271,7 +271,7 @@ func (s *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return operation, nil
 }
 
-func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	var (
 		operationsIntersectingVolumeQuery = fmt.Sprintf(`
 			SELECT
@@ -314,7 +314,7 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 }
 
 // SearchOperations implements repos.Operation.SearchOperations.
-func (s *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+func (s *repo) SearchOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	return s.searchOperationalIntents(ctx, s.q, cellsVolume)
 }
 

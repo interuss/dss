@@ -311,7 +311,7 @@ func executePutConstraint(ctx context.Context, repo repos.Repository, request ds
 }
 
 type queryConstraintsPayload struct {
-	AreaOfInterest *dssmodels.CellsVolume4D
+	AreaOfInterest dssmodels.CellsVolume4D
 	Manager        dssmodels.Manager
 }
 
@@ -320,7 +320,7 @@ func (p *queryConstraintsPayload) OperationID() string {
 }
 
 // NewQueryConstraintsPayload builds the payload for a Constraints query.
-func NewQueryConstraintsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+func NewQueryConstraintsPayload(areaOfInterest dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
 	return &queryConstraintsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
 }
 
@@ -328,9 +328,6 @@ func encodeQueryConstraints(request dssstore.OperationRequest) (*raftpb.Payload,
 	payload, ok := request.(*queryConstraintsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryConstraintReferencesOperationID)
-	}
-	if payload.AreaOfInterest == nil {
-		return nil, stacktrace.NewError("missing area of interest")
 	}
 	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QueryConstraintReferencesOperation{
 		QueryConstraintReferencesOperation: &scdpb.QueryConstraintReferencesOperation{
@@ -348,7 +345,7 @@ func decodeQueryConstraints(payload *raftpb.Payload) (dssstore.OperationRequest,
 	if req.GetAreaOfInterest() == nil {
 		return nil, stacktrace.NewError("missing area of interest")
 	}
-	decoded := &queryConstraintsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded := &queryConstraintsPayload{Manager: dssmodels.Manager(req.GetManager())}
 	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
 	return decoded, nil
 }
