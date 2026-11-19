@@ -74,8 +74,7 @@ pool before the nodes can be added to it.
 
 1. Generate the certificates of the `N` raft nodes.  `--nodes-public-address`
    is the public address of a node, where `<ID>` is replaced by the node
-   number (0-based, the order of the pods of the deployment) and `<TYPE>` is
-   replaced by `raft`:
+   number (0-based, the order of the pods of the deployment):
 
     ```shell
     ./dss-certs.py --name <NAME> --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE \
@@ -169,9 +168,10 @@ This DSS instance creates the pool (it is the first instance, or one of the
 instances creating the pool at the same time as other participants).
 
 1. In the deployment configuration of this instance, enable the
-   **automatic bootstrap** feature (for example
-   `raft_automatic_bootstrap` in the terraform variables, or
-   `raft.automaticBootstrap` in the helm chart).
+   **automatic bootstrap** feature: `raft_automatic_bootstrap` in the
+   terraform variables, `raft.automaticBootstrap` in the helm chart, or
+   `automaticBootstrap` in the `raft` section of the tanka `main.jsonnet`
+   (set automatically from the terraform variables).
 
     !!! note
         The automatic bootstrap must be enabled on **one** participant only:
@@ -387,7 +387,8 @@ it receives a snapshot from the pool and catches up on the entries since.
 * Verify the membership on at least two participants of the pool: every
   member of a group holds the same membership once the change is adopted.
 * If a participant leaves the pool entirely, the remaining participants
-  should eventually remove its CA from their pool of CAs.
+  should eventually remove its CA from their pool of CAs: see
+  [leaving a pool](../../decommissioning/depooling-raft.md).
 * The certificates must be rotated independently of the membership: see
   [certificates](#certificates).
 

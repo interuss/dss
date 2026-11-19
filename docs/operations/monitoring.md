@@ -159,42 +159,12 @@ A dashboard is automatically deployed by Helm and Tanka. If you use you own graf
 You can use the `enable_dss_metrics` option in Terraform, `dss.conf.enableDssMetrics` in Helm, or `enableDssMetrics` in Tanka to activate it when using these.
 This will also automatically enable collection by Prometheus if used.
 
-### Tracing
-
-Use flag `--enable_tracing` to enable tracing.
-
-Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include [Jaeger](https://www.jaegertracing.io/), [OpenObserve](https://github.com/openobserve/openobserve), [Grafana Tempo](https://grafana.com/docs/tempo/latest/), and [SigNoz](https://github.com/SigNoz/signoz). Multiple SaaS solutions are also available (including some of the previously mentioned tools).
-
-You need to use the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to configure it. Point it toward your server by following its specific documentation.
-
-[Other variables for telemetry](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) (and [variables in general](https://opentelemetry.io/docs/languages/sdk-configuration/general/)) supported by the Go language are available as well if needed.
-
-For local debugging, enable the `with-monitoring` profile in the standalone
-Docker Compose deployment:
-
-```bash
-COMPOSE_PROFILES=with-monitoring ./build/dev/run_locally.sh
-```
-
-This enables DSS metrics and tracing and starts Prometheus, Grafana, and Jaeger.
-Grafana is available at http://localhost:3000 with the DSS dashboard already
-configured (use `admin` for both the username and password), Prometheus is
-available at http://localhost:9090, and Jaeger is available at
-http://localhost:16686.
-
-See the [standalone local instance documentation](https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md#monitoring)
-for more details.
-
-## Raft store metrics
+#### Raft store
 
 When the DSS instance runs the
 [Raft store](../deployment/pooling/raft.md), the core-service exposes
 additional `raft_*` metrics on the same metrics endpoint, describing the state
-of the three Raft groups (`aux`, `rid`, `scd`) of the node.  They are enabled
-like the other DSS metrics: `enable_dss_metrics` in Terraform,
-`dss.conf.enableDssMetrics` in Helm, `enableDssMetrics` in Tanka, or the
-`--enable_metrics` flag; when using the deployment tools, collection by
-Prometheus is enabled with them.
+of the three Raft groups (`aux`, `rid`, `scd`) of the node.
 
 A **Raft** dashboard is automatically deployed by Helm and Tanka, alongside
 the other DSS dashboards. If you use your own Grafana instance, it can be found
@@ -240,3 +210,29 @@ warning by the node, at most one line per reason every 5 seconds):
 | `invalid_date` | The peer certificate has expired or is not valid yet |
 | `bad_certificate` | Any other invalid peer certificate |
 | `other` | Any other failure |
+
+### Tracing
+
+Use flag `--enable_tracing` to enable tracing.
+
+Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include [Jaeger](https://www.jaegertracing.io/), [OpenObserve](https://github.com/openobserve/openobserve), [Grafana Tempo](https://grafana.com/docs/tempo/latest/), and [SigNoz](https://github.com/SigNoz/signoz). Multiple SaaS solutions are also available (including some of the previously mentioned tools).
+
+You need to use the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to configure it. Point it toward your server by following its specific documentation.
+
+[Other variables for telemetry](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) (and [variables in general](https://opentelemetry.io/docs/languages/sdk-configuration/general/)) supported by the Go language are available as well if needed.
+
+For local debugging, enable the `with-monitoring` profile in the standalone
+Docker Compose deployment:
+
+```bash
+COMPOSE_PROFILES=with-monitoring ./build/dev/run_locally.sh
+```
+
+This enables DSS metrics and tracing and starts Prometheus, Grafana, and Jaeger.
+Grafana is available at http://localhost:3000 with the DSS dashboard already
+configured (use `admin` for both the username and password), Prometheus is
+available at http://localhost:9090, and Jaeger is available at
+http://localhost:16686.
+
+See the [standalone local instance documentation](https://github.com/interuss/dss/blob/master/build/dev/standalone_instance.md#monitoring)
+for more details.
