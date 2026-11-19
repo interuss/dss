@@ -466,7 +466,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 		Handler:           handler,
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      10 * time.Second,
+		WriteTimeout:      *timeout + 5*time.Second,
 		IdleTimeout:       30 * time.Second,
 	}
 
