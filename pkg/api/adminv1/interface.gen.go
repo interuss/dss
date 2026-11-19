@@ -74,7 +74,7 @@ type CreateRaftGroupResponseSet struct {
 }
 
 type GetRaftGroupRequest struct {
-	// Name of the Raft group of interest.
+	// Name of the Raft group.
 	GroupName RaftGroupName
 
 	// The result of attempting to authorize this request

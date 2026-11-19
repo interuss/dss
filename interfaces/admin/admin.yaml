@@ -4,6 +4,15 @@ info:
   version: 0.1.0
 
 components:
+  parameters:
+    GroupName:
+      name: group_name
+      in: path
+      required: true
+      description: Name of the Raft group.
+      schema:
+        $ref: '#/components/schemas/RaftGroupName'
+
   schemas:
     ErrorResponse:
       type: object
@@ -206,12 +215,7 @@ components:
 paths:
   /admin/v1/raft/groups/{group_name}/this_node:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     get:
       summary: Describe this DSS node in a Raft group
       description: >-
@@ -275,12 +279,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group of interest.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     get:
       summary: Retrieve the specified Raft group, as known by this DSS node
       operationId: getRaftGroup
@@ -303,12 +302,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/members:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     post:
       summary: Add a node to a Raft group, as a voter
       description: >-
@@ -359,12 +353,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/members/{node_id}:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
       - name: node_id
         in: path
         required: true
@@ -398,12 +387,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/eviction:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     get:
       summary: Retrieve the eviction settings of a Raft group and the last run of its cleanup jobs
       operationId: getEvictionState
@@ -426,12 +410,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/eviction/config:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     put:
       summary: Replace the eviction settings of a Raft group
       description: >-
@@ -468,12 +447,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/eviction/disabled:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     put:
       summary: Disable or enable the scheduled cleanup jobs of a Raft group
       description: >-
@@ -506,12 +480,7 @@ paths:
 
   /admin/v1/raft/groups/{group_name}/eviction/runs:
     parameters:
-      - name: group_name
-        in: path
-        required: true
-        description: Name of the Raft group.
-        schema:
-          $ref: '#/components/schemas/RaftGroupName'
+      - $ref: '#/components/parameters/GroupName'
     post:
       summary: Run a cleanup job on a Raft group
       description: >-
