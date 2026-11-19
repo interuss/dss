@@ -162,8 +162,8 @@ func toEvictionConfig(config dssmodels.EvictionConfig) *restapi.EvictionConfig {
 // fromEvictionConfig converts and validates config, or returns a dsserr.BadRequest error.
 func fromEvictionConfig(config *restapi.EvictionConfig) (dssmodels.EvictionConfig, error) {
 	interval, err := time.ParseDuration(config.Interval)
-	if err != nil || interval < 0 {
-		return dssmodels.EvictionConfig{}, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid interval %q, expected a duration of 0 or more", config.Interval)
+	if err != nil || interval <= 0 {
+		return dssmodels.EvictionConfig{}, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Invalid interval %q, expected a positive duration", config.Interval)
 	}
 	params, err := fromEvictionParameters(&config.Parameters)
 	if err != nil {

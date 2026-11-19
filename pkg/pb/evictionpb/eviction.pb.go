@@ -80,7 +80,7 @@ func (x *Parameters) GetLimit() int64 {
 // Config contains the eviction settings of a Raft group, stored in its state: each group has its own.
 type Config struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Time between two scheduled cleanup jobs, 0 disables them.
+	// Time between two scheduled cleanup jobs, positive.
 	Interval      *durationpb.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
 	Parameters    *Parameters          `protobuf:"bytes,2,opt,name=parameters,proto3" json:"parameters,omitempty"`
 	unknownFields protoimpl.UnknownFields

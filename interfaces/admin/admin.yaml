@@ -432,7 +432,7 @@ paths:
                 $ref: '#/components/schemas/EvictionConfig'
         '400':
           description: >-
-            The request was not properly formed, e.g. an invalid duration, a negative interval, a non-positive TTL or a negative limit.
+            The request was not properly formed, e.g. an invalid duration, a non-positive interval or TTL or a negative limit.
           content:
             application/json:
               schema:

@@ -47,7 +47,7 @@ func (p *EvictionParameters) FromProto(pb *evictionpb.Parameters) error {
 
 // EvictionConfig contains the eviction settings of a Raft group.
 type EvictionConfig struct {
-	// Interval is the time between two scheduled cleanup jobs, 0 disables them.
+	// Interval is the time between two scheduled cleanup jobs.
 	Interval   time.Duration
 	Parameters EvictionParameters
 }
@@ -73,8 +73,8 @@ func (c *EvictionConfig) FromProto(pb *evictionpb.Config) error {
 		return stacktrace.Propagate(err, "invalid interval")
 	}
 	interval := pb.GetInterval().AsDuration()
-	if interval < 0 {
-		return stacktrace.NewError("interval must not be negative, got %s", interval)
+	if interval <= 0 {
+		return stacktrace.NewError("interval must be positive, got %s", interval)
 	}
 	var params EvictionParameters
 	if err := params.FromProto(pb.GetParameters()); err != nil {

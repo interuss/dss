@@ -212,7 +212,7 @@ type PutEvictionConfigResponseSet struct {
 	// The eviction settings were replaced. They are returned as stored.
 	Response200 *EvictionConfig
 
-	// The request was not properly formed, e.g. an invalid duration, a negative interval, a non-positive TTL or a negative limit.
+	// The request was not properly formed, e.g. an invalid duration, a non-positive interval or TTL or a negative limit.
 	Response400 *ErrorResponse
 
 	// This DSS node has no Raft group with this name or the group does not support eviction.

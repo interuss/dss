@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ func formatState(state *restapi.EvictionState) string {
 
 func formatConfig(config *restapi.EvictionConfig, disabled bool) string {
 	interval := config.Interval
-	if d, err := time.ParseDuration(interval); (err == nil && d == 0) || disabled {
+	if disabled {
 		interval += " (scheduled cleanup jobs disabled)"
 	}
 	limit := "unlimited"
