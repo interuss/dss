@@ -26,12 +26,10 @@ def check_limit(
     logger.debug(f"Evicting all {name} older than 1s so only test entities expire")
     evict("1s", delete=True)
 
-    t = datetime.now(UTC) + timedelta(seconds=1)
-
     logger.debug(f"Creating {ENTITY_COUNT} test {name}")
     ids: list[str] = []
     for _ in range(ENTITY_COUNT):
-        entity = create(t)
+        entity = create(datetime.now(UTC) + timedelta(seconds=1))
         if not entity:
             logger.error(f"❌ Unable to create {name}")
             sys.exit(1)
