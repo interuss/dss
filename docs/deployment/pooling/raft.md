@@ -19,17 +19,14 @@ To pool a set of DSS instances with the Raft store:
 3. [Forming the pool](#forming-the-pool): the first participant bootstraps
    the Raft groups with its own nodes; whenever a new node joins the pool, an
    existing node adds it.
-
-The day-2 operations on the pool (adding or removing nodes, replacing a
-node) are described in [pooling operations](../../operations/pooling.md#raft-store);
-the nodes are restarted as described in
-[modifying a deployment](../../operations/modifying-deployment.md#restarting-nodes).
+4. [Managing the pool](#managing-the-pool): the day-2 operations on the
+   pool: adding, removing and replacing nodes.
 
 ## Prerequisites
 
 * A running Kubernetes platform deployed as
   [infrastructure](../infrastructure/index.md)
-* A recent version of python 3 to run the 
+* A recent version of python 3 to run the
   [`dss-certs.py` script](https://github.com/interuss/dss/blob/master/deploy/operations/certificates-management/dss-certs.py),
   in the `deploy/operations/certificates-management` folder of this
   repository.
@@ -97,7 +94,7 @@ pool before the nodes can be added to it.
     Run `apply` again after every modification of the certificates (pool CA
     added or removed, new `--nodes-count`).  The nodes read their certificate
     and the CA bundle only at startup, so after the secret is updated they
-    must be [restarted](../../operations/modifying-deployment.md#restarting-nodes).
+    must be [restarted](#restarting-the-nodes).
 
 ### Adding the certificates of a new organization to an existing pool
 
@@ -116,7 +113,7 @@ must accept the CA of this DSS instance.
     ./dss-certs.py --name <OTHER_NAME> --cluster-context <OTHER_CLUSTER_CONTEXT> --namespace <OTHER_NAMESPACE> apply
     ```
 
-   and [restarts its nodes](../../operations/modifying-deployment.md#restarting-nodes):
+   and [restarts its nodes](#restarting-the-nodes):
    the nodes read the CA bundle only at startup, so they must be restarted to
    accept the new CA.
 
@@ -128,6 +125,41 @@ must accept the CA of this DSS instance.
 !!! danger
     Do not proceed until every participant of the existing pool has positively
     confirmed that its DSS instance accepts the CA of this DSS instance.
+
+### Restarting the nodes
+
+The data of a node (its identity, its Raft log and its snapshots) is stored on
+the persistent volume `raft-data` of its pod, mounted at `/raft_data`.  A
+restarted node reloads it and rejoins the pool: it replays its log, or
+receives a snapshot from a peer if it has been down too long.
+
+The nodes of a participant are restarted with a single command; the stateful
+set restarts them one at a time, in reverse pod order (from the highest node
+number to the lowest), waiting for a node to be ready before restarting the
+next one:
+
+```shell
+kubectl --context $CLUSTER_CONTEXT rollout restart statefulset/core-service --namespace $NAMESPACE
+```
+
+(With the helm chart, the statefulset is named `<release>-core-service`, e.g.
+`dss-core-service`.)
+
+!!! warning
+    Do not restart the nodes of the pool all at once, for instance with all
+    the participants restarting their nodes at the same time after a CA
+    update: a group that loses the majority of its voters stops serving reads
+    and writes.  Coordinate the restarts so that a majority of the voters of
+    each group stays up.
+
+Use this to restart the nodes whenever the `dss.raft.certs` secret has been
+updated (see [certificates](#certificates)).
+
+If the data directory of a node is lost or corrupted, the node must not be
+started with an empty one: it would regenerate its identity and simply wait to
+be added to the pool, while the pool still remembers its previous one.  Remove
+the old identity from the pool, delete the data directory, restart the node
+and add it back to the pool: see [replacing a node](#replacing-a-node).
 
 ## Forming the pool
 
@@ -163,11 +195,11 @@ instances creating the pool at the same time as other participants).
 1. Check that the nodes have joined the pool: `dssctl raft node` on one of
    them should report `member` in every Raft group, and `dssctl raft list`
    should list all the nodes of the pool
-   ([inspecting the membership](../../operations/pooling.md#inspecting-the-membership)).
+   ([inspecting the membership](#inspecting-the-membership)).
 
 Alternatively, you can do the bootstrap manually with the `dssctl` CLI (see
-[pooling operations](../../operations/pooling.md#raft-store) for how to run `dssctl`
-against a node of the pool):
+[running dssctl](#running-dssctl) for how to run `dssctl` against a node of
+the pool):
 
 ```shell
 dssctl raft bootstrap
@@ -194,20 +226,174 @@ empty data directory and wait to be added to the pool by an existing node.
    [services deployment](../services/index.md).
 
 1. An existing node adds the nodes of this instance to the pool, one at a
-   time: see [adding a node](../../operations/pooling.md#adding-a-node).
+   time: see [adding a node](#adding-a-node).
    Once a node is added, the change is known to every member of the pool: no
    other participant has to do anything for the membership.
 
 1. Verify that the new nodes are `member` in every Raft group on this
    instance and on the existing instances
-   ([inspecting the membership](../../operations/pooling.md#inspecting-the-membership)).
+   ([inspecting the membership](#inspecting-the-membership)).
+
+## Managing the pool
+
+This section describes how to manage the membership of a pool.  A DSS node
+running the Raft store is a member of three Raft groups (one per service:
+`aux`, `rid` and `scd`), each with its own membership.  Adding a node to the
+pool means adding it to the three groups; the same applies to removal.  The
+membership is managed with the `dssctl raft` commands, which talk to the
+admin API of a node over the Unix socket it serves at `--admin_socket`
+(default `/run/dss/admin.sock`).  Any node of the pool can be used: a
+participant may manage the pool through any node it can reach.
+
+Restarting the nodes, for instance after updating their certificates, is
+described in [restarting the nodes](#restarting-the-nodes).
+
+### Running dssctl
+
+`dssctl` is in the DSS image, inside every core-service pod:
+
+```shell
+kubectl --context $CLUSTER_CONTEXT exec --namespace $NAMESPACE -it $POD -- dssctl raft <command>
+```
+
+where `$POD` is the name of a core-service pod of any node of the pool
+(`<release>-core-service-0` with the helm chart, e.g. `dss-core-service-0`, or
+`core-service-0` with the tanka files).
+
+Common options:
+
+| Option | Description |
+| :--- | :--- |
+| `--groups` | Comma-separated list of the Raft groups to act on (`aux`, `rid`, `scd`); all of them if not set. |
+| `--admin_socket` | Path of the admin socket of the node, matching its `--admin_socket`; default `/run/dss/admin.sock`. |
+| `--admin_timeout` | Timeout of each request to the admin API; default 1m. |
+
+A command is executed **independently for each selected group**: it may
+succeed for some groups and fail for others.  When that happens, rerun the
+command with `--groups` limited to the failed groups.
+
+### Inspecting the membership
+
+`dssctl raft node` describes the node serving the admin API in each of its
+groups: its state (`waiting`, `member` or `removed`), its ID and its URL.
+
+```shell
+dssctl raft node
+# aux: member (ID 2213958870532660157, https://0.raft.dss.example.com:2407)
+# rid: member (ID 1263815311569516745, https://0.raft.dss.example.com:2407)
+# scd: member (ID 4401297763280950187, https://0.raft.dss.example.com:2407)
+```
+
+`dssctl raft list` lists, for each group, the nodes that are or were members
+of it, sorted by URL (so that the groups list the nodes in the same order),
+with the current leader marked:
+
+```shell
+dssctl raft list
+# aux:
+#   ID                    URL                                       ROLE
+#   2213958870532660157   https://0.raft.dss.example.com:2407       leader
+#   1263815311569516745   https://1.raft.dss.example.com:2407       voter
+#   4401297763280950187   https://2.raft.dss.example.com:2407       voter
+#   removed IDs: [5740029381146209443]
+```
+
+A node has a different ID in each group: the IDs are generated when the node
+starts for the first time with an empty data directory and are stored in it.
+
+### Adding a node
+
+A node is added to the pool one at a time, from any member of the pool.  The
+node to add must:
+
+* be **running and waiting**, i.e. started with an empty data directory (a
+  node that was never added to the pool, or whose data directory was deleted);
+* have its participant's CA in the CA bundle of every member of the pool,
+  otherwise the TLS handshake between the members and the node fails
+  (see [certificates](#certificates));
+* be reachable by the members at its `--raft_peer_url` (its `ENDPOINT`);
+* use a URL that is not already used by another member of the pool.
+
+```shell
+dssctl raft add --url https://<ENDPOINT>
+# aux: added node 993958870532660157 (https://3.raft.dss.example.com:2407)
+# rid: added node 463815311569516745 (https://3.raft.dss.example.com:2407)
+# scd: added node 2401297763280950187 (https://3.raft.dss.example.com:2407)
+```
+
+The member reads the ID of the node to add from the node itself, on its Raft
+listener; the node then learns the configuration and the data of the group
+from the leader.  The added node joins directly as a **voter**: as soon as the
+command returns, it counts in the quorum of the group.  The command returns
+once the change is adopted by the group.
+
+Verify the addition with `dssctl raft list` on the node used and on at least
+one other participant's node: the new node should be `member` in every group.
+
+### Removing a node
+
+A node is removed one at a time, from any member of the pool:
+
+```shell
+dssctl raft remove --url https://<ENDPOINT>
+# aux: removed node 993958870532660157
+# rid: removed node 463815311569516745
+# scd: removed node 2401297763280950187
+```
+
+or, for a single group selected with `--groups`, by its ID in that group:
+
+```shell
+dssctl raft remove --groups aux --node_id 993958870532660157
+```
+
+Properties of a removal:
+
+* A removed node **stops itself** when the removal is applied and its state
+  becomes `removed`.  It does not need to be reachable for the removal to
+  succeed.
+* The ID of a removed node is **retired permanently**: it can never be added
+  back to the group.  A node that is removed and re-added comes back with a
+  new ID (see [Replacing a node](#replacing-a-node)).
+* A voter cannot be removed if the group would be left with **fewer than
+  three voters**.
+* Removing a voter changes the quorum immediately, and removing the current
+  leader triggers an election.
+
+Verify the removal with `dssctl raft list`: the node is gone from the members
+and its ID is in the list of removed IDs.
+
+### Replacing a node
+
+If a node must come back at the **same URL** with a new data directory
+(typically after its data directory was lost or corrupted):
+
+1. With four voters or more in each group: remove the node
+   (`dssctl raft remove --url https://<ENDPOINT>`), delete the data directory
+   of the pod (the `raft-data` persistent volume), restart the pod (it
+   generates new IDs and waits) and add it back (`dssctl raft add --url
+   https://<ENDPOINT>`).
+
+1. With exactly three voters in a group, the group cannot go below the minimum
+   of three voters, so the node must be restarted with a **different**
+   `--raft_peer_url` (a new `ENDPOINT`) and added to the groups **before** its
+   old identity is removed.
+
+In both cases the node comes back as a new node, with new IDs in every group:
+it receives a snapshot from the pool and catches up on the entries since.
+
+### After a membership change
+
+* Verify the membership on at least two participants of the pool: every
+  member of a group holds the same membership once the change is adopted.
+* If a participant leaves the pool entirely, the remaining participants
+  should eventually remove its CA from their pool of CAs.
+* The certificates must be rotated independently of the membership: see
+  [certificates](#certificates).
 
 ## Next steps
 
 Proceed to [services deployment](../services/index.md).
-
-Once the pool is formed, its day-2 operations are described in
-[pooling operations](../../operations/pooling.md#raft-store).
 
 !!! note
     Eviction of the expired data is not implemented yet for the Raft store.
