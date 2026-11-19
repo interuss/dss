@@ -40,6 +40,7 @@ func TestValidateConfChange(t *testing.T) {
 		{name: "add without URL", change: add(6), node: member{}, voters: voters, wantErr: true},
 		{name: "add with URL without port", change: add(6), node: member{URL: "http://node6"}, voters: voters, wantErr: true},
 		{name: "add with the URL of a member", change: add(6), node: member{URL: "http://node2:9011"}, voters: voters, wantErr: true, wantCode: dsserr.AlreadyExists},
+		{name: "add with another scheme than the members", change: add(6), node: member{URL: "https://node6:9011"}, voters: voters, wantErr: true},
 		{name: "add with the URL of a removed node", change: add(6), node: member{URL: "http://node5:9011"}, voters: voters},
 		{name: "remove member", change: remove(4), voters: voters},
 		{name: "remove removed ID", change: remove(5), voters: voters, wantErr: true},

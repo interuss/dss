@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"net/url"
 	"sync"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
@@ -135,12 +136,16 @@ func (m *membership) validateConfChange(change *raftpb.ConfChangeSingle, mem mem
 		if isMember {
 			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "node %d is already a member of the group", change.GetNodeId())
 		}
-		if _, err := types.NewURLs([]string{mem.URL}); err != nil {
+		urls, err := types.NewURLs([]string{mem.URL})
+		if err != nil {
 			return stacktrace.NewErrorWithCode(dsserr.BadRequest, "invalid URL %q for node %d: %v", mem.URL, change.GetNodeId(), err)
 		}
 		for id, other := range m.members {
 			if other.URL == mem.URL {
 				return stacktrace.NewErrorWithCode(dsserr.AlreadyExists, "the URL %q of node %d is already used by member %d", mem.URL, change.GetNodeId(), id)
+			}
+			if otherURL, err := url.Parse(other.URL); err != nil || otherURL.Scheme != urls[0].Scheme {
+				return stacktrace.NewErrorWithCode(dsserr.BadRequest, "the URL %q of node %d does not use the scheme of member %d at %q: nodes with and without --raft_insecure cannot be in the same group", mem.URL, change.GetNodeId(), id, other.URL)
 			}
 		}
 
