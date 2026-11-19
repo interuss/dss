@@ -16,12 +16,20 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
-	Cmd.AddCommand(getCmd, setCmd)
+	Cmd.AddCommand(getCmd, setCmd, disableCmd, enableCmd)
 }
 
-func formatConfig(config *restapi.EvictionConfig) string {
+func formatState(state *restapi.EvictionState) string {
+	lastRun := "never"
+	if state.LastRun != nil {
+		lastRun = *state.LastRun
+	}
+	return formatConfig(&state.Config, state.Disabled != nil && *state.Disabled) + "\n  last run: " + lastRun
+}
+
+func formatConfig(config *restapi.EvictionConfig, disabled bool) string {
 	interval := config.Interval
-	if d, err := time.ParseDuration(interval); err == nil && d == 0 {
+	if d, err := time.ParseDuration(interval); (err == nil && d == 0) || disabled {
 		interval += " (scheduled cleanup jobs disabled)"
 	}
 	limit := "unlimited"

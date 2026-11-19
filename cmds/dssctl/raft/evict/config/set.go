@@ -88,6 +88,6 @@ func set(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return "", err
 		}
-		return formatConfig(stored), nil
+		return formatConfig(stored, false), nil
 	})
 }
