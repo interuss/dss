@@ -140,7 +140,9 @@ func (c *cachedObservation) Observe(ctx context.Context, o ometric.Int64Observer
 		return nil
 	}
 	// Metric collection does not go through timestamp.Middleware so we need to stamp the context.
-	v, err := c.fetch(timestamp.NewContext(ctx, time.Now()))
+	fetchCtx, cancel := context.WithTimeout(timestamp.NewContext(ctx, time.Now()), 5*time.Second)
+	defer cancel()
+	v, err := c.fetch(fetchCtx)
 	if err != nil {
 		return err
 	}
