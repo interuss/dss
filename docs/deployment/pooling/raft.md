@@ -395,5 +395,3 @@ it receives a snapshot from the pool and catches up on the entries since.
 ## Next steps
 
 Proceed to [services deployment](../services/index.md).
-
-TODO: Document the eviction for the Raft store.
