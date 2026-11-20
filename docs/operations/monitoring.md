@@ -159,6 +159,58 @@ A dashboard is automatically deployed by Helm and Tanka. If you use you own graf
 You can use the `enable_dss_metrics` option in Terraform, `dss.conf.enableDssMetrics` in Helm, or `enableDssMetrics` in Tanka to activate it when using these.
 This will also automatically enable collection by Prometheus if used.
 
+#### Raft store
+
+When the DSS instance runs the
+[Raft store](../deployment/pooling/raft.md), the core-service exposes
+additional `raft_*` metrics on the same metrics endpoint, describing the state
+of the three Raft groups (`aux`, `rid`, `scd`) of the node.
+
+A **Raft** dashboard is automatically deployed by Helm and Tanka, alongside
+the other DSS dashboards. If you use your own Grafana instance, it can be found
+[there](https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/raft.json).
+It gives, per Raft group:
+
+* the current state of the group: state, leader, term, and the history of the
+  leadership changes,
+* the replication progress: commit index vs applied index, the apply lag, the
+  lag of each follower,
+* the health of the links to the peers: latency (current, average, min, max,
+  standard deviation) and the AppendEntries success/failure counts, reported
+  by the leader,
+* the storage: the number of log entries, the applied index since the last
+  snapshot, the snapshot durations and frequency,
+* the load: the proposal duration, the pending proposals (writes and reads)
+  and the proposal rate.
+
+The complete list of the metrics is in the
+[raftstore source](https://github.com/interuss/dss/tree/master/pkg/raftstore).
+The metrics below are the ones worth alerting on:
+
+| Metric | Description | Alert criteria |
+| :--- | :--- | :--- |
+| `raft_peer_tls_handshake_failures_total{reason}` | Connections from Raft peers rejected during the TLS handshake, per node. | Sustained growth: a participant's CA is not (or no longer) trusted by the pool; the possible reasons are listed below. |
+| `raft_trusted_ca_not_after_seconds{subject, serial}` | Expiry (seconds since the Unix epoch) of each CA of the trusted bundle, per node. | A CA is close to its expiry: rotate it before it expires (see [certificates](../deployment/pooling/raft.md#certificates)). |
+| `raft_is_leader{group, node_id}` / `raft_state{group, node_id, state}` | Leadership and state of each group, per node. | A group with no leader on any node, or frequent state transitions (elections). |
+| `raft_follower_lag_entries{group, node_id, peer_id}` | Number of committed entries a follower has not received yet (commit index minus its match index), reported by the leader. | A follower that is not catching up. |
+| `raft_proposals_pending{group, node_id, type}` | Number of pending write (or read) proposals of the node. | A persistent backlog: the node is not keeping up with the traffic of the pool. |
+| `raft_proposal_duration_seconds{group, node_id, type}` | Duration of the proposals of the node. | Sustained increase of the write latency of the pool. |
+| `raft_peer_send_fail_total{group, node_id, peer_id}` | Cumulative number of failed messages sent to a peer, reported by the leader. | Growth: the link to the peer is broken or saturated. |
+
+`raft_peer_tls_handshake_failures_total` counts every rejection, with one of
+the following `reason` values (each rejected connection is also logged as a
+warning by the node, at most one line per reason every 5 seconds):
+
+| Reason | Meaning |
+| :--- | :--- |
+| `not_tls` | The peer does not use TLS |
+| `closed` | The peer closed the connection during the handshake |
+| `remote_rejected` | The peer does not trust the certificate of this node |
+| `unknown_authority` | The peer certificate is not signed by a CA of the bundle |
+| `invalid_date` | The peer certificate has expired or is not valid yet |
+| `bad_certificate` | Any other invalid peer certificate |
+| `other` | Any other failure |
+
 ### Tracing
 
 Use flag `--enable_tracing` to enable tracing.
