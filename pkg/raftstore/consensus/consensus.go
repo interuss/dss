@@ -184,6 +184,37 @@ func (c *Consensus) startNode(newNode func() raft.Node) (bool, node.State) {
 // stops the Raft node and closes its WAL. Call it only once.
 func (c *Consensus) Stop(ctx context.Context) error {
 	c.logger.Info("stopping consensus")
+	if raftNode, state := c.node.Get(); state == node.Member {
+		if status := raftNode.Status(); status.RaftState == raft.StateLeader {
+			var transferee, match uint64
+			for id, pr := range status.Progress {
+				if id != c.nodeID && !pr.IsLearner && pr.RecentActive && pr.Match >= match {
+					transferee, match = id, pr.Match
+				}
+			}
+			if transferee == raft.None {
+				c.logger.Warn("no active voter to transfer the leadership to before stopping")
+			} else {
+				c.logger.Info("transferring leadership before stopping", zap.Uint64("transferee", transferee))
+				transferCtx, cancel := context.WithTimeout(ctx, 2*time.Duration(c.config.ElectionTick)*c.tickInterval)
+				raftNode.TransferLeadership(transferCtx, c.nodeID, transferee)
+				for transferCtx.Err() == nil {
+					st := raftNode.Status()
+					// no transfer pending and a leader is known
+					if (st.RaftState != raft.StateLeader || st.LeadTransferee == raft.None) && st.Lead != raft.None {
+						break
+					}
+					time.Sleep(c.tickInterval)
+				}
+				cancel()
+				if lead := raftNode.Status().Lead; lead == transferee {
+					c.logger.Info("leadership transferred", zap.Uint64("leader", lead))
+				} else {
+					c.logger.Warn("leadership transfer failed", zap.Uint64("transferee", transferee), zap.Uint64("leader", lead))
+				}
+			}
+		}
+	}
 	if err := c.metricsRegistration.Unregister(); err != nil {
 		c.logger.Error("failed to unregister raft metrics", zap.Error(err))
 	}
