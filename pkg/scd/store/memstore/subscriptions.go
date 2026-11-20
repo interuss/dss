@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -58,8 +59,9 @@ func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume *dssmodels.Cel
 	for rec := range subscriptions {
 		out = append(out, rec.toModel())
 
-		if len(out) >= dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
-			break
+		if len(out) > dssmodels.MaxResultLimit {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
+				"More than %d subscriptions match, reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
 		}
 	}
 	return out, nil
