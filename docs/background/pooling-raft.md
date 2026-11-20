@@ -74,5 +74,5 @@ following those instructions.
   with `https` peer URLs.
     - Do not specify `--raft_insecure`.
 - All the nodes of the pool must use the same `--raft_cluster_id`.
-- All DSS instances in the pool should point their ntpd at the same NTP servers,
+- All DSS instances in the pool must point their ntpd at the same NTP servers,
   for instance those of the [NTP Pool Project](https://www.ntppool.org/en/).
