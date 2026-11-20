@@ -45,6 +45,7 @@ type Consensus struct {
 
 	tickInterval     time.Duration
 	snapshotInterval uint64
+	purge            params.PurgeParameters
 
 	node *node.NodeState
 
@@ -104,6 +105,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		config:           config,
 		tickInterval:     connectParams.TickInterval,
 		snapshotInterval: connectParams.SnapshotIntervalEntries,
+		purge:            connectParams.Purge,
 		node:             node.NewNodeState(),
 
 		storage:        storage,
@@ -196,23 +198,25 @@ func (c *Consensus) Stop(ctx context.Context) error {
 	c.logger.Info("transport stopped")
 	c.endpoint.close()
 
-	var err error
 	// only a member still runs a raft node and its consumer
 	if raftNode, state := c.node.Get(); state == node.Member {
 		select {
 		case <-c.doneC:
 		case <-ctx.Done():
-			err = stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
+			raftNode.Stop()
+			// return so that the WAL stays open
+			// closing it releases the flocks protecting the segments from the purge still running
+			return stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
 		}
 		raftNode.Stop()
 		c.logger.Info("raft node stopped")
 	}
 
-	if walErr := c.storage.wal.Close(); walErr != nil {
-		return errors.Join(err, stacktrace.Propagate(walErr, "failed to close the WAL"))
+	if err := c.storage.wal.Close(); err != nil {
+		return stacktrace.Propagate(err, "failed to close the WAL")
 	}
 	c.logger.Info("WAL closed")
-	return err
+	return nil
 }
 
 // HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
@@ -542,6 +546,17 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 	go func() {
 		defer close(c.doneC)
 		defer c.leader.set(false)
+		defer func() {
+			if _, state := c.node.Get(); state != node.Removed {
+				return
+			}
+			// to start again as a waiting node
+			if err := c.storage.archive(c.nodeID); err != nil {
+				c.logger.Error("failed to archive the local state", zap.Error(err))
+			}
+		}()
+		c.storage.startPurge(c.purge)
+		defer c.storage.stopPurge()
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
@@ -615,10 +630,6 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					// TODO: let the store do this through Stop, which needs a signal from here
 					c.transport.Stop()
 					raftNode.Stop()
-					// to start again as a waiting node
-					if err := c.storage.archive(c.nodeID); err != nil {
-						c.logger.Error("failed to archive the local state", zap.Error(err))
-					}
 					return
 				}
 				if err != nil {
