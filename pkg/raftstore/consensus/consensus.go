@@ -229,7 +229,7 @@ func read[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Res
 
 	var zero Result
 
-	raftNode, err := c.readyNode()
+	raftNode, err := c.readyNode(ctx)
 	if err != nil {
 		return zero, err
 	}
@@ -285,7 +285,7 @@ func write[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Re
 
 	var zero Result
 
-	raftNode, err := c.readyNode()
+	raftNode, err := c.readyNode(ctx)
 	if err != nil {
 		return zero, err
 	}
@@ -902,10 +902,18 @@ func (c *Consensus) Ready() bool {
 
 }
 
-// readyNode returns the raft node, or a dsserr.Unavailable error if this node cannot serve requests.
-func (c *Consensus) readyNode() (raft.Node, error) {
-	if !c.Ready() {
-		return nil, stacktrace.NewErrorWithCode(dsserr.Unavailable, "this node is not ready to serve requests, its Raft group has no leader or is stopped")
+// readyNode returns the raft node, waiting up to an election timeout for this node to be ready,
+// or a dsserr.Unavailable error if this node cannot serve requests.
+func (c *Consensus) readyNode(ctx context.Context) (raft.Node, error) {
+	timeout := time.After(time.Duration(c.config.ElectionTick) * c.tickInterval)
+	for !c.Ready() {
+		select {
+		case <-time.After(c.tickInterval):
+		case <-timeout:
+			return nil, stacktrace.NewErrorWithCode(dsserr.Unavailable, "this node is not ready to serve requests, its Raft group has no leader or is stopped")
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	}
 	return c.node.Member()
 }
