@@ -78,9 +78,11 @@ type Snapshot struct {
 	//	*Snapshot_AuxSnapshot
 	//	*Snapshot_RidSnapshot
 	//	*Snapshot_ScdSnapshot
-	AppSnapshot   isSnapshot_AppSnapshot `protobuf_oneof:"app_snapshot"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	AppSnapshot isSnapshot_AppSnapshot `protobuf_oneof:"app_snapshot"`
+	// Unix nanoseconds timestamp of the proposals applied within the deduplication window, by proposal ID.
+	AppliedProposals map[string]int64 `protobuf:"bytes,6,rep,name=applied_proposals,json=appliedProposals,proto3" json:"applied_proposals,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Snapshot) Reset() {
@@ -161,6 +163,13 @@ func (x *Snapshot) GetScdSnapshot() *snapshotpb2.Snapshot {
 	return nil
 }
 
+func (x *Snapshot) GetAppliedProposals() map[string]int64 {
+	if x != nil {
+		return x.AppliedProposals
+	}
+	return nil
+}
+
 type isSnapshot_AppSnapshot interface {
 	isSnapshot_AppSnapshot()
 }
@@ -189,19 +198,23 @@ const file_snapshot_proto_rawDesc = "" +
 	"\n" +
 	"\x0esnapshot.proto\x12\x17dss.raftstore.consensus\x1a\x1caux_/snapshot/snapshot.proto\x1a\x1brid/snapshot/snapshot.proto\x1a\x1bscd/snapshot/snapshot.proto\"#\n" +
 	"\x06Member\x12\x19\n" +
-	"\bpeer_url\x18\x01 \x01(\tR\apeerUrl\"\x9f\x04\n" +
+	"\bpeer_url\x18\x01 \x01(\tR\apeerUrl\"\xca\x05\n" +
 	"\bSnapshot\x12H\n" +
 	"\amembers\x18\x01 \x03(\v2..dss.raftstore.consensus.Snapshot.MembersEntryR\amembers\x12H\n" +
 	"\aremoved\x18\x02 \x03(\v2..dss.raftstore.consensus.Snapshot.RemovedEntryR\aremoved\x12;\n" +
 	"\faux_snapshot\x18\x03 \x01(\v2\x16.aux.snapshot.SnapshotH\x00R\vauxSnapshot\x12;\n" +
 	"\frid_snapshot\x18\x04 \x01(\v2\x16.rid.snapshot.SnapshotH\x00R\vridSnapshot\x12;\n" +
-	"\fscd_snapshot\x18\x05 \x01(\v2\x16.scd.snapshot.SnapshotH\x00R\vscdSnapshot\x1a[\n" +
+	"\fscd_snapshot\x18\x05 \x01(\v2\x16.scd.snapshot.SnapshotH\x00R\vscdSnapshot\x12d\n" +
+	"\x11applied_proposals\x18\x06 \x03(\v27.dss.raftstore.consensus.Snapshot.AppliedProposalsEntryR\x10appliedProposals\x1a[\n" +
 	"\fMembersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x125\n" +
 	"\x05value\x18\x02 \x01(\v2\x1f.dss.raftstore.consensus.MemberR\x05value:\x028\x01\x1a[\n" +
 	"\fRemovedEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x125\n" +
-	"\x05value\x18\x02 \x01(\v2\x1f.dss.raftstore.consensus.MemberR\x05value:\x028\x01B\x0e\n" +
+	"\x05value\x18\x02 \x01(\v2\x1f.dss.raftstore.consensus.MemberR\x05value:\x028\x01\x1aC\n" +
+	"\x15AppliedProposalsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01B\x0e\n" +
 	"\fapp_snapshotB'Z%github.com/interuss/dss/pkg/pb/raftpbb\x06proto3"
 
 var (
@@ -216,29 +229,31 @@ func file_snapshot_proto_rawDescGZIP() []byte {
 	return file_snapshot_proto_rawDescData
 }
 
-var file_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_snapshot_proto_goTypes = []any{
 	(*Member)(nil),               // 0: dss.raftstore.consensus.Member
 	(*Snapshot)(nil),             // 1: dss.raftstore.consensus.Snapshot
 	nil,                          // 2: dss.raftstore.consensus.Snapshot.MembersEntry
 	nil,                          // 3: dss.raftstore.consensus.Snapshot.RemovedEntry
-	(*snapshotpb.Snapshot)(nil),  // 4: aux.snapshot.Snapshot
-	(*snapshotpb1.Snapshot)(nil), // 5: rid.snapshot.Snapshot
-	(*snapshotpb2.Snapshot)(nil), // 6: scd.snapshot.Snapshot
+	nil,                          // 4: dss.raftstore.consensus.Snapshot.AppliedProposalsEntry
+	(*snapshotpb.Snapshot)(nil),  // 5: aux.snapshot.Snapshot
+	(*snapshotpb1.Snapshot)(nil), // 6: rid.snapshot.Snapshot
+	(*snapshotpb2.Snapshot)(nil), // 7: scd.snapshot.Snapshot
 }
 var file_snapshot_proto_depIdxs = []int32{
 	2, // 0: dss.raftstore.consensus.Snapshot.members:type_name -> dss.raftstore.consensus.Snapshot.MembersEntry
 	3, // 1: dss.raftstore.consensus.Snapshot.removed:type_name -> dss.raftstore.consensus.Snapshot.RemovedEntry
-	4, // 2: dss.raftstore.consensus.Snapshot.aux_snapshot:type_name -> aux.snapshot.Snapshot
-	5, // 3: dss.raftstore.consensus.Snapshot.rid_snapshot:type_name -> rid.snapshot.Snapshot
-	6, // 4: dss.raftstore.consensus.Snapshot.scd_snapshot:type_name -> scd.snapshot.Snapshot
-	0, // 5: dss.raftstore.consensus.Snapshot.MembersEntry.value:type_name -> dss.raftstore.consensus.Member
-	0, // 6: dss.raftstore.consensus.Snapshot.RemovedEntry.value:type_name -> dss.raftstore.consensus.Member
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	5, // 2: dss.raftstore.consensus.Snapshot.aux_snapshot:type_name -> aux.snapshot.Snapshot
+	6, // 3: dss.raftstore.consensus.Snapshot.rid_snapshot:type_name -> rid.snapshot.Snapshot
+	7, // 4: dss.raftstore.consensus.Snapshot.scd_snapshot:type_name -> scd.snapshot.Snapshot
+	4, // 5: dss.raftstore.consensus.Snapshot.applied_proposals:type_name -> dss.raftstore.consensus.Snapshot.AppliedProposalsEntry
+	0, // 6: dss.raftstore.consensus.Snapshot.MembersEntry.value:type_name -> dss.raftstore.consensus.Member
+	0, // 7: dss.raftstore.consensus.Snapshot.RemovedEntry.value:type_name -> dss.raftstore.consensus.Member
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_snapshot_proto_init() }
@@ -257,7 +272,7 @@ func file_snapshot_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_snapshot_proto_rawDesc), len(file_snapshot_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

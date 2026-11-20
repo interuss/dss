@@ -31,6 +31,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const dedupWindow = time.Minute
+
 // errSelfRemoved is returned by the raft updates consumer when this node applies its own removal from the group.
 var errSelfRemoved = stacktrace.NewError("this node was removed from the Raft group")
 
@@ -69,6 +71,14 @@ type Consensus struct {
 
 	// confChangeC holds a token while a config change proposed by this node is in flight.
 	confChangeC chan struct{}
+
+	// leaderChangeC is closed and replaced every time a new leader is known.
+	leaderChangeMu sync.Mutex
+	leaderChangeC  chan struct{}
+
+	// appliedProposals maps the ID of the proposals applied within dedupWindow of newestProposal to their timestamp.
+	appliedProposals map[string]time.Time
+	newestProposal   time.Time
 
 	membership membership
 	confState  *raftpb.ConfState
@@ -119,6 +129,9 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 
 		confChangeC: make(chan struct{}, 1),
 
+		leaderChangeC:    make(chan struct{}),
+		appliedProposals: map[string]time.Time{},
+
 		membership: membership{
 			nodeID:  nodeID,
 			members: map[uint64]member{},
@@ -149,6 +162,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to restore membership")
 		}
+		consensus.appliedProposals, consensus.newestProposal = initSnapshot.AppliedProposals, initSnapshot.NewestProposal
 		consensus.commitC <- EntryCommit{Snapshot: initSnapshot.AppSnapshot}
 	}
 
@@ -297,29 +311,51 @@ func write[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Re
 
 	applied := c.tracker.track(proposal.ID)
 
-	err = raftNode.Propose(ctx, buf)
-	if err != nil {
-		c.tracker.untrack(proposal.ID, ProposalResult{Error: err})
-		return zero, stacktrace.Propagate(err, "failed to propose value to Raft")
-	}
+	retryDelay := 2 * time.Duration(c.config.ElectionTick) * c.tickInterval
+	for {
+		c.leaderChangeMu.Lock()
+		leaderChanged := c.leaderChangeC
+		c.leaderChangeMu.Unlock()
 
-	select {
-	case res := <-applied:
-		if res.Error != nil {
-			return zero, res.Error
+		err = raftNode.Propose(ctx, buf)
+		for errors.Is(err, raft.ErrProposalDropped) && ctx.Err() == nil {
+			time.Sleep(c.tickInterval)
+			err = raftNode.Propose(ctx, buf)
 		}
-		if res.Result == nil {
-			return zero, nil
+		if err != nil {
+			c.tracker.untrack(proposal.ID, ProposalResult{Error: err})
+			return zero, stacktrace.Propagate(err, "failed to propose value to Raft")
 		}
-		result, ok := res.Result.(Result)
-		if !ok {
-			return zero, stacktrace.NewError("unexpected result type for %q: got %T", proposal.Name(), res.Result)
-		}
-		return result, nil
 
-	case <-ctx.Done():
-		c.tracker.untrack(proposal.ID, ProposalResult{Error: ctx.Err()})
-		return zero, ctx.Err()
+		retry := time.NewTimer(retryDelay)
+		select {
+		case res := <-applied:
+			retry.Stop()
+			if res.Error != nil {
+				return zero, res.Error
+			}
+			if res.Result == nil {
+				return zero, nil
+			}
+			result, ok := res.Result.(Result)
+			if !ok {
+				return zero, stacktrace.NewError("unexpected result type for %q: got %T", proposal.Name(), res.Result)
+			}
+			return result, nil
+
+		case <-ctx.Done():
+			retry.Stop()
+			c.tracker.untrack(proposal.ID, ProposalResult{Error: ctx.Err()})
+			return zero, ctx.Err()
+
+		case <-leaderChanged:
+			retry.Stop()
+			c.logger.Debug("leader changed, proposing again", zap.String("proposal_id", proposal.ID))
+
+		case <-retry.C:
+			retryDelay *= 2
+			c.logger.Debug("proposal not applied in time, proposing again", zap.String("proposal_id", proposal.ID))
+		}
 	}
 }
 
@@ -546,6 +582,8 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
 
+		lead := raft.None
+
 		for {
 			select {
 			case <-c.stopC:
@@ -566,6 +604,13 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						})
 					}
 					c.leader.set(softState.RaftState == raft.StateLeader)
+					if softState.Lead != raft.None && softState.Lead != lead {
+						c.leaderChangeMu.Lock()
+						close(c.leaderChangeC)
+						c.leaderChangeC = make(chan struct{})
+						c.leaderChangeMu.Unlock()
+					}
+					lead = softState.Lead
 				}
 
 				err := c.storage.handleReceivedState(raftUpdate.Snapshot, raftUpdate.HardState, raftUpdate.Entries)
@@ -592,6 +637,7 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 						c.logger.Error("failed to restore membership", zap.Error(err))
 						return
 					}
+					c.appliedProposals, c.newestProposal = env.AppliedProposals, env.NewestProposal
 					c.commitC <- EntryCommit{Snapshot: env.AppSnapshot}
 
 					c.confState = raftUpdate.Snapshot.GetMetadata().GetConfState()
@@ -706,6 +752,24 @@ func (c *Consensus) submitNormalEntryToStorage(data []byte, wg *sync.WaitGroup) 
 	proposal, err := decodeProposal(data)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to decode committed proposal")
+	}
+
+	if _, ok := c.appliedProposals[proposal.ID]; ok {
+		c.logger.Debug("skipping duplicate proposal", zap.String("proposal_id", proposal.ID))
+		return nil
+	}
+	if proposal.Timestamp.Before(c.newestProposal.Add(-dedupWindow)) {
+		c.tracker.untrack(proposal.ID, ProposalResult{Error: stacktrace.NewErrorWithCode(dsserr.Unavailable, "proposal %s is older than the deduplication window", proposal.ID)})
+		return nil
+	}
+	c.appliedProposals[proposal.ID] = proposal.Timestamp
+	if proposal.Timestamp.After(c.newestProposal) {
+		c.newestProposal = proposal.Timestamp
+		for id, ts := range c.appliedProposals {
+			if ts.Before(c.newestProposal.Add(-dedupWindow)) {
+				delete(c.appliedProposals, id)
+			}
+		}
 	}
 
 	applyDoneC := make(chan ProposalResult, 1)
@@ -1042,6 +1106,9 @@ type snapshot struct {
 	Removed memberMap
 	// AppSnapshot holds the application snapshot.
 	AppSnapshot *proposalpb.Snapshot
+	// AppliedProposals maps the ID of the proposals applied within dedupWindow of NewestProposal to their timestamp.
+	AppliedProposals map[string]time.Time
+	NewestProposal   time.Time
 }
 
 // encodeSnapshot encodes the application snapshot with the current membership state into the snapshot data.
@@ -1056,6 +1123,10 @@ func (c *Consensus) encodeSnapshot() ([]byte, error) {
 
 	env.Members = c.membership.members.toProto()
 	env.Removed = c.membership.removed.toProto()
+	env.AppliedProposals = make(map[string]int64, len(c.appliedProposals))
+	for id, ts := range c.appliedProposals {
+		env.AppliedProposals[id] = ts.UnixNano()
+	}
 
 	data, err := proto.Marshal(env)
 	if err != nil {
@@ -1076,6 +1147,14 @@ func decodeSnapshot(data []byte) (snapshot, error) {
 	snap := snapshot{AppSnapshot: &env}
 	snap.Members.fromProto(env.GetMembers())
 	snap.Removed.fromProto(env.GetRemoved())
+	snap.AppliedProposals = make(map[string]time.Time, len(env.GetAppliedProposals()))
+	for id, ns := range env.GetAppliedProposals() {
+		ts := time.Unix(0, ns).UTC()
+		snap.AppliedProposals[id] = ts
+		if ts.After(snap.NewestProposal) {
+			snap.NewestProposal = ts
+		}
+	}
 	return snap, nil
 }
 

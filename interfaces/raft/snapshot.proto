@@ -22,4 +22,7 @@ message Snapshot {
         rid.snapshot.Snapshot rid_snapshot = 4;
         scd.snapshot.Snapshot scd_snapshot = 5;
     }
+
+    // Unix nanoseconds timestamp of the proposals applied within the deduplication window, by proposal ID.
+    map<string, int64> applied_proposals = 6;
 }
