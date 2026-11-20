@@ -11,8 +11,11 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/interuss/dss/pkg/logging"
+	params "github.com/interuss/dss/pkg/raftstore/params"
 	"github.com/interuss/stacktrace"
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
@@ -21,6 +24,11 @@ import (
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
+)
+
+const (
+	walSuffix  = "wal"
+	snapSuffix = "snap"
 )
 
 // storage persists the Raft log and snapshots and manages the raft in-memory storage.
@@ -37,6 +45,11 @@ type storage struct {
 	snapper *snap.Snapshotter
 
 	snapshotCatchUpEntries uint64
+
+	purgeStopC     chan struct{}
+	purgeStopOnce  sync.Once
+	walPurgeDoneC  <-chan struct{}
+	snapPurgeDoneC <-chan struct{}
 }
 
 // identity identifies the node in its Raft group. It is generated and persisted in the metadata of the WAL on the first
@@ -49,11 +62,11 @@ type identity struct {
 // and applies them to the Raft memory storage. On the first start, the WAL is created with a newly generated node ID.
 // It returns the initialized storage, the ID of the node, a boolean indicating whether the storage holds Raft state or
 // an error.
-func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapshotCatchUpEntries uint64) (*storage, uint64, bool, error) {
+func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapshotCatchUpEntries uint64, purge params.PurgeParameters) (*storage, uint64, bool, error) {
 	logger = logging.WithValuesFromContext(ctx, logger)
 
 	// load the latest snapshot
-	snapshotPath := path.Join(dataDir, "snap")
+	snapshotPath := path.Join(dataDir, snapSuffix)
 	if !fileutil.Exist(snapshotPath) {
 		err := os.MkdirAll(snapshotPath, 0o750)
 		if err != nil {
@@ -61,7 +74,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 		}
 	}
 
-	walPath := path.Join(dataDir, "wal")
+	walPath := path.Join(dataDir, walSuffix)
 
 	snapper := snap.New(logger, snapshotPath)
 
@@ -159,7 +172,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 
 	logger.Info("Loaded previous hardstate and entries to Raft memory storage", zap.Any("hard-state", state), zap.Int("entries-number", len(entries)))
 
-	return &storage{
+	s := &storage{
 		logger:      logger,
 		walPath:     walPath,
 		snapPath:    snapshotPath,
@@ -172,8 +185,10 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 		snapper: snapper,
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
-		// If existing entries, hard state or snapshot were loaded, the storage holds Raft state.
-	}, id.NodeID, !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
+	}
+	s.startPurge(purge)
+	// If existing entries, hard state or snapshot were loaded, the storage holds Raft state.
+	return s, id.NodeID, !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
 }
 
 // generateNodeID returns a random, non-zero node ID.
@@ -208,9 +223,69 @@ func loadSnapshot(logger *zap.Logger, walPath string, snapshotter *snap.Snapshot
 	return snapshot, nil
 }
 
+func (s *storage) startPurge(p params.PurgeParameters) {
+	s.purgeStopC = make(chan struct{})
+	s.purgeWALs(p.MaxWALs, p.Interval)
+	s.purgeSnapshots(p.MaxSnapshots, p.Interval)
+}
+
+// purgeWALs deletes the oldest WAL segments beyond maxFiles, except those still locked by the WAL.
+func (s *storage) purgeWALs(maxFiles uint, interval time.Duration) {
+	if maxFiles == 0 {
+		return
+	}
+	doneC, errC := fileutil.PurgeFileWithDoneNotify(s.logger, s.walPath, walSuffix, maxFiles, interval, s.purgeStopC)
+	s.walPurgeDoneC = doneC
+	go func() {
+		<-doneC
+		select {
+		case err := <-errC:
+			s.logger.Error("stopped purging old WAL segments", zap.Error(err))
+		default:
+		}
+	}()
+}
+
+// purgeSnapshots deletes the oldest snapshots beyond maxFiles.
+func (s *storage) purgeSnapshots(maxFiles uint, interval time.Duration) {
+	if maxFiles == 0 {
+		return
+	}
+	doneC, errC := fileutil.PurgeFileWithoutFlock(s.logger, s.snapPath, snapSuffix, maxFiles, interval, s.purgeStopC)
+	s.snapPurgeDoneC = doneC
+	go func() {
+		<-doneC
+		select {
+		case err := <-errC:
+			s.logger.Error("stopped purging old snapshots", zap.Error(err))
+		default:
+		}
+	}()
+}
+
+// stopPurge stops the purge started by startPurge and waits for it to exit.
+func (s *storage) stopPurge() {
+	s.purgeStopOnce.Do(func() {
+		close(s.purgeStopC)
+		if s.walPurgeDoneC != nil {
+			<-s.walPurgeDoneC
+		}
+		if s.snapPurgeDoneC != nil {
+			<-s.snapPurgeDoneC
+		}
+	})
+}
+
+// close stops the purge before closing the WAL, which releases the flocks protecting the segments from it.
+func (s *storage) close() error {
+	s.stopPurge()
+	return s.wal.Close()
+}
+
 // archive moves the WAL and snapshot files to archive/<node ID>, which the raft lib doesn't read, so that the node starts
 // as a waiting node with a new ID next time.
 func (s *storage) archive(nodeID uint64) error {
+	s.stopPurge()
 	dest := path.Join(s.archivePath, strconv.FormatUint(nodeID, 10))
 	for _, dir := range []struct{ path, pattern string }{{s.walPath, "*.wal"}, {s.snapPath, "*.snap"}} {
 		files, err := filepath.Glob(path.Join(dir.path, dir.pattern))
@@ -246,17 +321,7 @@ func (s *storage) save(snapshot *raftpb.Snapshot) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot to wal")
 	}
-
-	// ReleaseLockTo releases the os-level flock locks held on WAL segment files
-	// for entries covered by the snapshot and that are no longer needed.
-	// We only call this on success. If saving the snapshot failed above, the files
-	// are still needed and must remain locked.
-	//
-	// In etcd's implementation this call marks files eligible for deletion
-	// by a background cleanup goroutine which we do not have yet.
-	//
-	// TODO: add a separate goroutine to cleanup old files
-	return s.wal.ReleaseLockTo(snapshot.GetMetadata().GetIndex())
+	return nil
 }
 
 // triggerSnapshot creates a snapshot holding data at appliedIndex, persists it and compacts the log.
@@ -270,6 +335,9 @@ func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfSta
 	err = s.save(snap)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot")
+	}
+	if err := s.wal.ReleaseLockTo(snap.GetMetadata().GetIndex()); err != nil {
+		return stacktrace.Propagate(err, "failed to release the WAL")
 	}
 
 	compactIndex := uint64(1)
@@ -308,9 +376,17 @@ func (s *storage) handleReceivedState(snapshot *raftpb.Snapshot, hardState *raft
 	}
 
 	if !raft.IsEmptySnap(snapshot) {
+		// the hard state must be on disk before the purge can delete the released segments
+		// (see https://github.com/etcd-io/etcd/issues/10219)
+		if err := s.wal.Sync(); err != nil {
+			return stacktrace.Propagate(err, "failed to sync the WAL")
+		}
 		err := s.ApplySnapshot(snapshot)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to apply snapshot")
+		}
+		if err := s.wal.ReleaseLockTo(snapshot.GetMetadata().GetIndex()); err != nil {
+			return stacktrace.Propagate(err, "failed to release the WAL")
 		}
 	}
 

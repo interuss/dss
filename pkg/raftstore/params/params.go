@@ -30,6 +30,10 @@ const (
 
 	defaultMaxSizePerMsg   = 1024 * 1024
 	defaultMaxInflightMsgs = 4096 / 8
+
+	defaultMaxWALs       = 5
+	defaultMaxSnapshots  = 5
+	defaultPurgeInterval = 30 * time.Second
 )
 
 type (
@@ -57,12 +61,21 @@ type (
 		MaxSizePerMsg   uint64
 		MaxInflightMsgs int
 
+		Purge PurgeParameters
+
 		// TLSCertFile, TLSKeyFile and TLSCAFile configure mutual TLS between Raft nodes. They are required unless Insecure is set.
 		TLSCertFile string
 		TLSKeyFile  string
 		TLSCAFile   string
 		// Insecure runs Raft between nodes over plain HTTP, without authentication, instead of mutual TLS.
 		Insecure bool
+	}
+
+	// PurgeParameters bound the number of WAL segment and snapshot files kept on disk.
+	PurgeParameters struct {
+		MaxWALs      uint
+		MaxSnapshots uint
+		Interval     time.Duration
 	}
 )
 
@@ -131,6 +144,10 @@ func init() {
 		"Ticks between leader heartbeats. Effective interval = raft_heartbeat_tick x raft_tick_interval. Must be less than raft_election_tick. Lower values detect follower loss faster but increase network traffic.")
 	flag.Uint64Var(&connectParameters.MaxSizePerMsg, "raft_max_size_per_msg", defaultMaxSizePerMsg, "Maximum bytes in a single Raft message sent to a peer. Smaller values lower the recovery cost but increase the number of messages sent, affecting throughput during replication.")
 	flag.IntVar(&connectParameters.MaxInflightMsgs, "raft_max_inflight_msgs", defaultMaxInflightMsgs, "Maximum number of in-flight Raft messages during optimistic replication phase. This should be set to avoid overflowing the transport layer sending buffer.")
+
+	flag.UintVar(&connectParameters.Purge.MaxWALs, "raft_max_wals", defaultMaxWALs, "Maximum number of WAL segment files to retain per Raft group (0 is unlimited). Only the segments covered by a snapshot are deleted.")
+	flag.UintVar(&connectParameters.Purge.MaxSnapshots, "raft_max_snapshots", defaultMaxSnapshots, "Maximum number of snapshot files to retain per Raft group (0 is unlimited).")
+	flag.DurationVar(&connectParameters.Purge.Interval, "raft_purge_interval", defaultPurgeInterval, "Interval between two deletions of the WAL segment and snapshot files exceeding --raft_max_wals and --raft_max_snapshots.")
 
 	flag.StringVar(&connectParameters.TLSCertFile, "raft_tls_cert_file", "", "PEM certificate of this node, presented to the other Raft nodes. Required with --raft_tls_key_file and --raft_tls_ca_file for mutual TLS between Raft nodes, unless --raft_insecure is set. Peer URLs must then use https.")
 	flag.StringVar(&connectParameters.TLSKeyFile, "raft_tls_key_file", "", "PEM private key of --raft_tls_cert_file.")

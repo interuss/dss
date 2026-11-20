@@ -82,7 +82,7 @@ type Consensus struct {
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() (*proposalpb.Snapshot, error), commitC chan<- EntryCommit) (*Consensus, error) {
-	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries)
+	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries, connectParams.Purge)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
 	}
@@ -208,7 +208,7 @@ func (c *Consensus) Stop(ctx context.Context) error {
 		c.logger.Info("raft node stopped")
 	}
 
-	if walErr := c.storage.wal.Close(); walErr != nil {
+	if walErr := c.storage.close(); walErr != nil {
 		return errors.Join(err, stacktrace.Propagate(walErr, "failed to close the WAL"))
 	}
 	c.logger.Info("WAL closed")
