@@ -308,9 +308,7 @@ func (s *storage) save(snapshot *raftpb.Snapshot) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot to wal")
 	}
-
-	// unlocks the WAL segments covered by the snapshot so that the purge can delete them
-	return s.wal.ReleaseLockTo(snapshot.GetMetadata().GetIndex())
+	return nil
 }
 
 // triggerSnapshot creates a snapshot holding data at appliedIndex, persists it and compacts the log.
@@ -324,6 +322,9 @@ func (s *storage) triggerSnapshot(appliedIndex uint64, confState *raftpb.ConfSta
 	err = s.save(snap)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to save snapshot")
+	}
+	if err := s.wal.ReleaseLockTo(snap.GetMetadata().GetIndex()); err != nil {
+		return stacktrace.Propagate(err, "failed to release the WAL")
 	}
 
 	compactIndex := uint64(1)
@@ -362,9 +363,17 @@ func (s *storage) handleReceivedState(snapshot *raftpb.Snapshot, hardState *raft
 	}
 
 	if !raft.IsEmptySnap(snapshot) {
+		// the hard state must be on disk before the purge can delete the released segments
+		// (see https://github.com/etcd-io/etcd/issues/10219)
+		if err := s.wal.Sync(); err != nil {
+			return stacktrace.Propagate(err, "failed to sync the WAL")
+		}
 		err := s.ApplySnapshot(snapshot)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to apply snapshot")
+		}
+		if err := s.wal.ReleaseLockTo(snapshot.GetMetadata().GetIndex()); err != nil {
+			return stacktrace.Propagate(err, "failed to release the WAL")
 		}
 	}
 

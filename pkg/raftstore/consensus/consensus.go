@@ -198,23 +198,25 @@ func (c *Consensus) Stop(ctx context.Context) error {
 	c.logger.Info("transport stopped")
 	c.endpoint.close()
 
-	var err error
 	// only a member still runs a raft node and its consumer
 	if raftNode, state := c.node.Get(); state == node.Member {
 		select {
 		case <-c.doneC:
 		case <-ctx.Done():
-			err = stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
+			raftNode.Stop()
+			// return so that the WAL stays open
+			// closing it releases the flocks protecting the segments from the purge still running
+			return stacktrace.Propagate(ctx.Err(), "the raft updates consumer did not exit")
 		}
 		raftNode.Stop()
 		c.logger.Info("raft node stopped")
 	}
 
-	if walErr := c.storage.wal.Close(); walErr != nil {
-		return errors.Join(err, stacktrace.Propagate(walErr, "failed to close the WAL"))
+	if err := c.storage.wal.Close(); err != nil {
+		return stacktrace.Propagate(err, "failed to close the WAL")
 	}
 	c.logger.Info("WAL closed")
-	return err
+	return nil
 }
 
 // HandleReadPayload blocks until the read-only proposal is served via ReadIndex or until ctx is cancelled.
