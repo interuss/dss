@@ -46,6 +46,7 @@ following requirements are met:
 These requirements are met differently depending on the data store used:
 - [YugabyteDB](./pooling-yugabyte.md)
 - [CockroachDB](./pooling-crdb.md)
+- [Raft store](./pooling-raft.md) (experimental)
 
 ## Creating a new pool
 All DSS instances are equal peers, and any set of DSS instance can be chosen to
