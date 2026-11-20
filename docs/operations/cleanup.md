@@ -2,6 +2,11 @@
 
 Data will accumulate over time in the database if client USSs do not remove their expired entities, and this can lead to lower performance due to quantity of stale entities.  For this reason, InterUSS recommends periodically cleaning up no-longer-relevant entities if USS clients do not always clean up after themselves.
 
+The cleanup is done differently depending on the datastore used:
+
+- [CockroachDB and YugabyteDB](#cockroachdb-and-yugabytedb)
+- [Raft store](#raft-store)
+
 ## Why and when to run the cleanup
 
 Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:
@@ -11,12 +16,14 @@ Expired entities (operational intents past their end time, stale subscriptions, 
 
 There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long clients may legitimately need to query historical entities.
 
-The defaults shipped with the deployment tooling (`30m` TTL on RID running hourly, `2688h` ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.
+## CockroachDB and YugabyteDB
+
+The defaults shipped with the deployment tooling (`30m` TTL on RID running hourly, `2688h` ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria of [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup).
 
 Additionally, it is important to note that in a DSS pool, all DSS instances should be running the cleanup, even though it removes entities belonging to all instances.
 First, out of governance concerns, as this avoids an undesirable asymmetry between DSS instances. And second, doing so brings redundancy across the pool, in case one of the instances fails to properly perform the cleanup.
 
-## Performance impact
+### Performance impact
 
 Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subscriptions) is evicted with a single statement. Entity types are deleted independently, so contention or failure on one does not affect the others. There is no risk of data inconsistency in this case - the cleanup may simply be retried.
 
@@ -27,7 +34,7 @@ To mitigate contention:
 - Use `--rid_batch_size`/`--scd_batch_size` to split the deletion into smaller batches, and/or `--rid_limit`/`--scd_limit` to bound the total number of entities deleted per run.
 - Within a DSS pool, offset the cleanup schedules of the different instances to avoid having them running concurrently.
 
-## How to run the cleanup
+### How to run the cleanup
 
 The `evict` subcommand of `db-manager` is a CLI tool that lists and deletes expired entities in the DSS store.
 It supports cleanup of the following entity types: SCD operational intents, SCD subscriptions, RID identification service areas (ISAs), and RID subscriptions.
@@ -36,7 +43,7 @@ All cleanups are global operations that remove expired entities across all DSS i
 
 The usage of this tool is preferably automated by specifying appropriate values in Terraform deployment variables to schedule regular cleanups via a Kubernetes `CronJob`. But if necessary, it can be invoked manually.
 
-### Automated regular cleanup via Kubernetes `CronJob`
+#### Automated regular cleanup via Kubernetes `CronJob`
 
 The supported Terraform-based deployments include the RID and SCD eviction cron jobs. Those are shipped with safe defaults but should probably be tuned to your DSS pool:
 
@@ -44,12 +51,12 @@ The supported Terraform-based deployments include the RID and SCD eviction cron 
 - SCD: disabled by default, schedule `<min> 2 * * *`, TTL of 2688 hours (2 x 56 days).
 
 Where `<min>` is a minute (`0`–`59`) deterministically derived from the DSS instance's `locality` when `schedule` is left empty (`""`).
-As noted in [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
+As noted in [CockroachDB and YugabyteDB](#cockroachdb-and-yugabytedb) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
 
 When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
 See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for details. To change these parameters on an existing deployment, see [Modifying a deployment](modifying-deployment.md).
 
-### Manual ad-hoc cleanup via CLI `db-manager` tool
+#### Manual ad-hoc cleanup via CLI `db-manager` tool
 
 !!! warning
     Using this tool incorrectly may result in **loss of data**.
@@ -130,8 +137,6 @@ groups and are, therefore, shared by the whole pool.  As a consequence:
 
 - The cleanup runs once per interval for the whole pool. The current leader of
   each group runs its scheduled cleanup job.
-  The recommendation above that all DSS instances run the cleanup, and that
-  their schedules be offset, does not apply.
 - A change of the eviction settings made by one participant applies to every
   DSS instance of the pool.  Changes should be done with the other participants of the pool according to their own procedures for changes.
 
