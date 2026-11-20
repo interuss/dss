@@ -2,3 +2,4 @@ nav:
   - "Overview": index.md
   - "With CockroachDB": crdb.md
   - "With YugabyteDB": yugabyte.md
+  - "With Raft store (experimental)": raft.md
