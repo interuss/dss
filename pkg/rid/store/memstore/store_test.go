@@ -2,15 +2,19 @@ package memstore
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"slices"
 	"testing"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
 	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 )
@@ -152,4 +156,28 @@ func TestCheckpointIsolatesNotificationIndex(t *testing.T) {
 	restored, err := repo.GetSubscription(ctx, sub.ID)
 	require.NoError(t, err)
 	require.Equal(t, sub.NotificationIndex, restored.NotificationIndex)
+}
+
+func TestSearchMoreThanMaxResultLimit(t *testing.T) {
+	ctx := timestamp.NewContext(context.Background(), fakeClock.Now())
+	r := setUpStore(t)
+	start := fakeClock.Now()
+	end := start.Add(time.Hour)
+	cells := s2.CellUnion{s2.CellID(17106221850767130624)}
+	for i := range dssmodels.MaxResultLimit + 1 {
+		id := dssmodels.ID(fmt.Sprintf("00000185-e36d-40be-8d38-%012d", i))
+		volume := &dssmodels.CellsVolume4D{StartTime: &start, EndTime: &end, Cells: cells}
+
+		_, err := r.InsertISA(ctx, &ridmodels.IdentificationServiceArea{ID: id, Owner: "me", URL: "https://uss", CellsVolume4D: volume})
+		require.NoError(t, err)
+
+		_, err = r.InsertSubscription(ctx, &ridmodels.Subscription{ID: id, Owner: "me", URL: "https://uss", CellsVolume4D: volume})
+		require.NoError(t, err)
+	}
+
+	_, err := r.SearchISAs(ctx, cells, &start, nil)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+
+	_, err = r.SearchSubscriptions(ctx, cells)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
 }
