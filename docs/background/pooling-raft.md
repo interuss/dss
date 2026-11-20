@@ -28,7 +28,7 @@ the other participants.  The URL of a node must be unique in the pool.
 The list of members of a Raft group are replicated by the group
 and a node becomes a member only when an existing member adds it.
 
-An existing member add a new node with `dssctl raft add --url <its --raft_peer_url>`.
+An existing member adds a new node with `dssctl raft add --url <its --raft_peer_url>`.
 Once the change is adopted, every member of the group knows the URL of the new node,
 and the new node learns the members and the data of the group from its leader. 
 
