@@ -12,8 +12,8 @@ reduce the risks of outages.
 The removal of a node is a change of the membership of the pool, agreed and
 recorded by the other nodes: it is done with
 [dssctl raft remove](../deployment/pooling/raft.md#removing-a-node), from
-any member of the pool.  As with any membership change, it is done **one node
-at a time**, and a voter cannot be removed if a Raft group would be left with
+any member of the pool.  As with any membership change, it is done one node
+at a time, and a voter cannot be removed if a Raft group would be left with
 fewer than three voters.  If the pool is that small, the departing participant
 cannot leave it: the pool must grow first.
 
@@ -67,6 +67,3 @@ can be destroyed like any other DSS instance:
 
 * [Terraform](./terraform.md)
 * [Minikube](./minikube.md)
-
-Make sure the persistent volumes of the instance are deleted with it: they
-hold the data of the nodes, which is only useful to the pool.
