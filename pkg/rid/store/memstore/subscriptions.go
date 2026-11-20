@@ -146,8 +146,7 @@ func (r *repo) searchSubscriptions(ctx context.Context, cells s2.CellUnion, owne
 		out = append(out, rec.toModel())
 
 		if len(out) > dssmodels.MaxResultLimit {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
-				"More than %d subscriptions match, reduce the size of the requested area", dssmodels.MaxResultLimit)
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d subscriptions match", dssmodels.MaxResultLimit)
 		}
 	}
 	return out, nil

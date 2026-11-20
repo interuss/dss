@@ -152,11 +152,10 @@ func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmod
 		}
 		matched = append(matched, rec)
 	}
-	slices.SortFunc(matched, func(a, b *operationalIntentRecord) int { return cmp.Compare(a.ID, b.ID) })
 	if len(matched) > dssmodels.MaxResultLimit {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
-			"More than %d operational intents match, reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d operational intents match", dssmodels.MaxResultLimit)
 	}
+	slices.SortFunc(matched, func(a, b *operationalIntentRecord) int { return cmp.Compare(a.ID, b.ID) })
 	return r.buildOperationalIntents(ctx, matched)
 }
 

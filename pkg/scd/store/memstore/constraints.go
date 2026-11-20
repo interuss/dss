@@ -41,11 +41,10 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 		}
 		matched = append(matched, rec)
 	}
-	slices.SortFunc(matched, func(a, b *constraintRecord) int { return cmp.Compare(a.ID, b.ID) })
 	if len(matched) > dssmodels.MaxResultLimit {
-		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
-			"More than %d constraints match, reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d constraints match", dssmodels.MaxResultLimit)
 	}
+	slices.SortFunc(matched, func(a, b *constraintRecord) int { return cmp.Compare(a.ID, b.ID) })
 
 	var out []*scdmodels.Constraint
 	for _, rec := range matched {

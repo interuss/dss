@@ -2,15 +2,18 @@ package memstore
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/golang/geo/s2"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/timestamp"
+	"github.com/interuss/stacktrace"
 	"github.com/stretchr/testify/require"
 )
 
@@ -204,4 +207,39 @@ func TestCheckpointIsolatesNotificationIndex(t *testing.T) {
 	restored, err := r.GetSubscription(ctx, subscriptionId)
 	require.NoError(t, err)
 	require.Equal(t, sub.NotificationIndex, restored.NotificationIndex)
+}
+
+func limitID(i int) dssmodels.ID {
+	return dssmodels.ID(fmt.Sprintf("00000185-e36d-40be-8d38-%012d", i))
+}
+
+func TestSearchMoreThanMaxResultLimit(t *testing.T) {
+	ctx := writeCtx()
+	r := setUpStore(t)
+	for i := range dssmodels.MaxResultLimit + 1 {
+		oi := sampleOperationalIntent()
+		oi.ID = limitID(i)
+		_, err := r.UpsertOperationalIntent(ctx, oi)
+		require.NoError(t, err)
+
+		c := sampleConstraint()
+		c.ID = limitID(i)
+		_, err = r.UpsertConstraint(ctx, c)
+		require.NoError(t, err)
+
+		s := sampleSubscription()
+		s.ID = limitID(i)
+		_, err = r.UpsertSubscription(ctx, s)
+		require.NoError(t, err)
+	}
+	volume := cellsVolume4D(cells, nil, nil, nil, nil)
+
+	_, err := r.SearchOperationalIntents(ctx, volume)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+
+	_, err = r.SearchConstraints(ctx, volume)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+
+	_, err = r.SearchSubscriptions(ctx, volume)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
 }

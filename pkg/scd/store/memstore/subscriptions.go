@@ -60,8 +60,7 @@ func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume *dssmodels.Cel
 		out = append(out, rec.toModel())
 
 		if len(out) > dssmodels.MaxResultLimit {
-			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest,
-				"More than %d subscriptions match, reduce the size of the requested area or time range", dssmodels.MaxResultLimit)
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d subscriptions match", dssmodels.MaxResultLimit)
 		}
 	}
 	return out, nil
