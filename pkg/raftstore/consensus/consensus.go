@@ -45,6 +45,7 @@ type Consensus struct {
 
 	tickInterval     time.Duration
 	snapshotInterval uint64
+	purge            params.PurgeParameters
 
 	node *node.NodeState
 
@@ -104,6 +105,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		config:           config,
 		tickInterval:     connectParams.TickInterval,
 		snapshotInterval: connectParams.SnapshotIntervalEntries,
+		purge:            connectParams.Purge,
 		node:             node.NewNodeState(),
 
 		storage:        storage,
@@ -542,6 +544,17 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 	go func() {
 		defer close(c.doneC)
 		defer c.leader.set(false)
+		defer func() {
+			if _, state := c.node.Get(); state != node.Removed {
+				return
+			}
+			// to start again as a waiting node
+			if err := c.storage.archive(c.nodeID); err != nil {
+				c.logger.Error("failed to archive the local state", zap.Error(err))
+			}
+		}()
+		c.storage.startPurge(c.purge)
+		defer c.storage.stopPurge()
 
 		ticker := time.NewTicker(tickInterval)
 		defer ticker.Stop()
@@ -615,10 +628,6 @@ func (c *Consensus) startRaftUpdatesConsumer(tickInterval time.Duration, snapsho
 					// TODO: let the store do this through Stop, which needs a signal from here
 					c.transport.Stop()
 					raftNode.Stop()
-					// to start again as a waiting node
-					if err := c.storage.archive(c.nodeID); err != nil {
-						c.logger.Error("failed to archive the local state", zap.Error(err))
-					}
 					return
 				}
 				if err != nil {
