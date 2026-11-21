@@ -24,16 +24,14 @@ func (rec *subscriptionRecord) toModel() *scdmodels.Subscription {
 		NotifyForOperationalIntents: rec.NotifyForOperationalIntents,
 		NotifyForConstraints:        rec.NotifyForConstraints,
 		ImplicitSubscription:        rec.ImplicitSubscription,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: new(rec.StartTime),
-			EndTime:   new(rec.EndTime),
-			Cells:     slices.Clone(rec.Cells),
-		},
+		StartTime:                   new(rec.StartTime),
+		EndTime:                     new(rec.EndTime),
+		Cells:                       slices.Clone(rec.Cells),
 	}
 }
 
 // subscriptionsInCellsVolume yields the subscriptions intersecting cellsVolume.
-func (r *repo) subscriptionsInCellsVolume(cellsVolume *dssmodels.CellsVolume4D) iter.Seq[*subscriptionRecord] {
+func (r *repo) subscriptionsInCellsVolume(cellsVolume dssmodels.CellsVolume4D) iter.Seq[*subscriptionRecord] {
 	want := cellSet(cellsVolume.Cells)
 
 	return func(yield func(*subscriptionRecord) bool) {
@@ -51,7 +49,7 @@ func (r *repo) subscriptionsInCellsVolume(cellsVolume *dssmodels.CellsVolume4D) 
 	}
 }
 
-func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (r *repo) SearchSubscriptions(_ context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	subscriptions := r.subscriptionsInCellsVolume(cellsVolume)
 
 	var out []*scdmodels.Subscription
@@ -123,17 +121,17 @@ func (r *repo) deleteOperationalIntentsOfSubscriptions(ids []dssmodels.ID) {
 	})
 }
 
-func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (r *repo) IncrementNotificationIndicesForOperationalIntents(_ context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	return r.incrementNotificationIndices(cellsVolume, func(rec *subscriptionRecord) bool { return rec.NotifyForOperationalIntents })
 }
 
-func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (r *repo) IncrementNotificationIndicesForConstraints(_ context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	return r.incrementNotificationIndices(cellsVolume, func(rec *subscriptionRecord) bool { return rec.NotifyForConstraints })
 }
 
 // incrementNotificationIndices increments the notification index of each subscription
 // intersecting cellsVolume and asking for the notifications selected by notified.
-func (r *repo) incrementNotificationIndices(cellsVolume *dssmodels.CellsVolume4D, notified func(*subscriptionRecord) bool) ([]*scdmodels.Subscription, error) {
+func (r *repo) incrementNotificationIndices(cellsVolume dssmodels.CellsVolume4D, notified func(*subscriptionRecord) bool) ([]*scdmodels.Subscription, error) {
 	subscriptions := r.subscriptionsInCellsVolume(cellsVolume)
 
 	var out []*scdmodels.Subscription

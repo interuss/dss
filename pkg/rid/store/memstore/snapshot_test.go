@@ -106,12 +106,10 @@ func TestSnapshotPreservesAltitudes(t *testing.T) {
 			ctx := timestamp.NewContext(context.Background(), fakeClock.Now())
 			src := setUpStore(t)
 			isa := *serviceArea
-			isa.CellsVolume4D = isa.Clone()
 			isa.AltitudeLo, isa.AltitudeHi = alts[0], alts[1]
 			_, err := src.InsertISA(ctx, &isa)
 			require.NoError(t, err)
 			sub := *subscriptionsPool[0].input
-			sub.CellsVolume4D = sub.Clone()
 			sub.AltitudeLo, sub.AltitudeHi = alts[0], alts[1]
 			_, err = src.InsertSubscription(ctx, &sub)
 			require.NoError(t, err)

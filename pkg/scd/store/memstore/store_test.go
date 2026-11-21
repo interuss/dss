@@ -88,8 +88,8 @@ func sampleAvailability() *scdmodels.UssAvailabilityStatus {
 }
 
 // cellsVolume4D builds a SpatialTemporalcellsVolume covering the provided cells.
-func cellsVolume4D(cu s2.CellUnion, start, end *time.Time, altLo, altHi *float32) *dssmodels.CellsVolume4D {
-	return &dssmodels.CellsVolume4D{
+func cellsVolume4D(cu s2.CellUnion, start, end *time.Time, altLo, altHi *float32) dssmodels.CellsVolume4D {
+	return dssmodels.CellsVolume4D{
 		Cells:      cu,
 		StartTime:  start,
 		EndTime:    end,

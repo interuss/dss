@@ -29,7 +29,7 @@ func newTestContext() context.Context {
 }
 
 func insertSubscription(ctx context.Context, repo repos.Repository, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	req, err := NewInsertSubscriptionPayload(s.ID, s.Owner, s.URL, "test-locality", &dssmodels.CellsVolume4D{
+	req, err := NewInsertSubscriptionPayload(s.ID, s.Owner, s.URL, "test-locality", dssmodels.CellsVolume4D{
 		Cells:      s.Cells,
 		StartTime:  s.StartTime,
 		EndTime:    s.EndTime,
@@ -50,7 +50,7 @@ func insertSubscription(ctx context.Context, repo repos.Repository, s *ridmodels
 }
 
 func updateSubscription(ctx context.Context, repo repos.Repository, s *ridmodels.Subscription) (*ridmodels.Subscription, error) {
-	req, err := NewUpdateSubscriptionPayload(s.ID, s.Owner, s.URL, "test-locality", s.Version, &dssmodels.CellsVolume4D{
+	req, err := NewUpdateSubscriptionPayload(s.ID, s.Owner, s.URL, "test-locality", s.Version, dssmodels.CellsVolume4D{
 		Cells:      s.Cells,
 		StartTime:  s.StartTime,
 		EndTime:    s.EndTime,
@@ -264,9 +264,7 @@ func TestBadOwner(t *testing.T) {
 	sub := &ridmodels.Subscription{
 		ID:    dssmodels.ID(uuid.New().String()),
 		Owner: "orig Owner",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
-		},
+		Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 	}
 
 	sub, err := insertSubscription(ctx, repo, sub)
@@ -290,13 +288,11 @@ func TestSubscriptionUpdateCells(t *testing.T) {
 	// into a single cell. We don't support this currently, so let's make sure
 	// this doesn't happen.
 	sub, err := insertSubscription(ctx, repo, &ridmodels.Subscription{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: owner,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
-		},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     owner,
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells:     s2.CellUnion{17106221850767130624, 17106221885126868992, 17106221919486607360},
 	})
 
 	require.NoError(t, err)
@@ -363,9 +359,7 @@ func TestInsertSubscriptionsWithTimes(t *testing.T) {
 			s := &ridmodels.Subscription{
 				ID:    id,
 				Owner: owner,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
-				},
+				Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -453,13 +447,11 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 
 			// Insert a pre-existing subscription to simulate updating from something.
 			existing, err := repo.InsertSubscription(ctx, &ridmodels.Subscription{
-				ID:    id,
-				Owner: owner,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					StartTime: &r.updateFromStartTime,
-					EndTime:   &r.updateFromEndTime,
-					Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
-				},
+				ID:        id,
+				Owner:     owner,
+				StartTime: &r.updateFromStartTime,
+				EndTime:   &r.updateFromEndTime,
+				Cells:     s2.CellUnion{s2.CellID(17106221850767130624)},
 			})
 			require.NoError(t, err)
 
@@ -467,9 +459,7 @@ func TestUpdateSubscriptionsWithTimes(t *testing.T) {
 				ID:      id,
 				Owner:   owner,
 				Version: existing.Version,
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells: s2.CellUnion{s2.CellID(17106221850767130624)},
-				},
+				Cells:   s2.CellUnion{s2.CellID(17106221850767130624)},
 			}
 			if !r.startTime.IsZero() {
 				s.StartTime = &r.startTime
@@ -505,12 +495,10 @@ func TestInsertTooManySubscription(t *testing.T) {
 	// and provided cellIDs.
 	makeSubscription := func(cellIDs []uint64) *ridmodels.Subscription {
 		s := &ridmodels.Subscription{
-			ID:    dssmodels.ID(uuid.New().String()),
-			Owner: dssmodels.Owner("bob"),
-			CellsVolume4D: &dssmodels.CellsVolume4D{
-				StartTime: &startTime,
-				EndTime:   &endTime,
-			},
+			ID:        dssmodels.ID(uuid.New().String()),
+			Owner:     dssmodels.Owner("bob"),
+			StartTime: &startTime,
+			EndTime:   &endTime,
 		}
 
 		s.Cells = make(s2.CellUnion, len(cellIDs))

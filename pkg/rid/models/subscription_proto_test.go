@@ -16,7 +16,7 @@ func TestSubscriptionProtoRoundTrip(t *testing.T) {
 	start := time.Date(2026, 10, 28, 9, 30, 0, 0, time.UTC)
 	end := start.Add(time.Hour)
 	lo, hi := float32(10), float32(120)
-	volume := &dssmodels.CellsVolume4D{
+	volume := dssmodels.CellsVolume4D{
 		Cells:      s2.CellUnion{s2.CellIDFromToken("89c25"), s2.CellIDFromToken("89c27")},
 		StartTime:  &start,
 		EndTime:    &end,
@@ -59,15 +59,12 @@ func TestSubscriptionProtoErrors(t *testing.T) {
 	_, err := missing.ToProto()
 	require.Error(t, err)
 
-	_, err = (&Subscription{ID: dssmodels.ID("not-a-uuid"), CellsVolume4D: &dssmodels.CellsVolume4D{}}).ToProto()
-	require.Error(t, err)
-
-	_, err = (&Subscription{ID: dssmodels.ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a")}).ToProto()
+	_, err = (&Subscription{ID: dssmodels.ID("not-a-uuid")}).ToProto()
 	require.Error(t, err)
 
 	var sub Subscription
 	require.Error(t, sub.FromProto(nil))
-	require.Error(t, sub.FromProto(&ridpb.Subscription{Id: []byte{1, 2, 3}, Volume: (&dssmodels.CellsVolume4D{}).ToProto()}))
+	require.Error(t, sub.FromProto(&ridpb.Subscription{Id: []byte{1, 2, 3}, Volume: dssmodels.CellsVolume4D{}.ToProto()}))
 	id, err := dssmodels.ID("0b6e0ddb-0b3f-4e1f-8c6e-3b9a3c9f5e2a").ToProto()
 	require.NoError(t, err)
 	require.Error(t, sub.FromProto(&ridpb.Subscription{Id: id}))

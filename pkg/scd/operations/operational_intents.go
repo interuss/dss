@@ -288,7 +288,7 @@ func executeGetOperationalIntentReference(ctx context.Context, repo repos.Reposi
 }
 
 type queryOIRsPayload struct {
-	AreaOfInterest *dssmodels.CellsVolume4D
+	AreaOfInterest dssmodels.CellsVolume4D
 	Manager        dssmodels.Manager
 }
 
@@ -297,7 +297,7 @@ func (p *queryOIRsPayload) OperationID() string {
 }
 
 // NewQueryOIRsPayload builds the payload for an Operational Intent References query.
-func NewQueryOIRsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+func NewQueryOIRsPayload(areaOfInterest dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
 	return &queryOIRsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
 }
 
@@ -305,9 +305,6 @@ func encodeQueryOIRs(request dssstore.OperationRequest) (*raftpb.Payload, error)
 	payload, ok := request.(*queryOIRsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QueryOperationalIntentReferencesOperationID)
-	}
-	if payload.AreaOfInterest == nil {
-		return nil, stacktrace.NewError("missing area of interest")
 	}
 	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QueryOperationalIntentReferencesOperation{
 		QueryOperationalIntentReferencesOperation: &scdpb.QueryOperationalIntentReferencesOperation{
@@ -325,7 +322,7 @@ func decodeQueryOIRs(payload *raftpb.Payload) (dssstore.OperationRequest, error)
 	if req.GetAreaOfInterest() == nil {
 		return nil, stacktrace.NewError("missing area of interest")
 	}
-	decoded := &queryOIRsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded := &queryOIRsPayload{Manager: dssmodels.Manager(req.GetManager())}
 	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
 	return decoded, nil
 }
@@ -405,7 +402,7 @@ type validOIRParams struct {
 	OVN                  scdmodels.OVN
 	NewOVN               scdmodels.OVN
 	State                scdmodels.OperationalIntentState
-	Volume               *dssmodels.CellsVolume4D
+	Volume               dssmodels.CellsVolume4D
 	SubscriptionID       dssmodels.ID
 	USSBaseURL           string
 	ImplicitSubscription struct {
@@ -423,9 +420,6 @@ func (vp *validOIRParams) toProto() (*scdpb.OperationalIntentParams, error) {
 	id, err := vp.ID.ToProto()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
-	}
-	if vp.Volume == nil {
-		return nil, stacktrace.NewError("missing volume of OperationalIntent %s", vp.ID)
 	}
 	state, err := vp.State.ToProto()
 	if err != nil {
@@ -469,7 +463,6 @@ func (vp *validOIRParams) fromProto(pb *scdpb.OperationalIntentParams) error {
 	if pb.GetVolume() == nil {
 		return stacktrace.NewError("missing volume of OperationalIntent %s", decoded.ID)
 	}
-	decoded.Volume = new(dssmodels.CellsVolume4D)
 	decoded.Volume.FromProto(pb.GetVolume())
 	if err := decoded.NewOVN.FromProto(pb.GetNewOvn()); err != nil {
 		return err
@@ -1090,7 +1083,7 @@ func executePutOperationalIntentReference(ctx context.Context, repo repos.Reposi
 		}
 	}
 
-	var notifyCellsVol4D *dssmodels.CellsVolume4D
+	var notifyCellsVol4D dssmodels.CellsVolume4D
 	if old == nil {
 		notifyCellsVol4D = validParams.Volume
 	} else {

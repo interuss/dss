@@ -24,7 +24,7 @@ func (rec *constraintRecord) toModel() *scdmodels.Constraint {
 	}
 }
 
-func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
+func (r *repo) SearchConstraints(_ context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
 	want := cellSet(cellsVolume.Cells)
 	if len(want) == 0 {
 		return []*scdmodels.Constraint{}, nil

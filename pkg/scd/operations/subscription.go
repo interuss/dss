@@ -277,7 +277,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 		// Find relevant Operations
 		var relevantOperations []*scdmodels.OperationalIntent
 		if len(sub.Cells) > 0 {
-			ops, err := repo.SearchOperationalIntents(ctx, &dssmodels.CellsVolume4D{
+			ops, err := repo.SearchOperationalIntents(ctx, dssmodels.CellsVolume4D{
 				Cells:      sub.Cells,
 				StartTime:  sub.StartTime,
 				EndTime:    sub.EndTime,
@@ -303,7 +303,7 @@ func executePutSubscription(ctx context.Context, repo repos.Repository, request 
 
 	if sub.NotifyForConstraints {
 		// Query relevant Constraints
-		constraints, err := repo.SearchConstraints(ctx, &dssmodels.CellsVolume4D{
+		constraints, err := repo.SearchConstraints(ctx, dssmodels.CellsVolume4D{
 			Cells:      sub.Cells,
 			StartTime:  sub.StartTime,
 			EndTime:    sub.EndTime,
@@ -517,7 +517,7 @@ func executeGetSubscription(ctx context.Context, repo repos.Repository, request 
 }
 
 type querySubscriptionsPayload struct {
-	AreaOfInterest *dssmodels.CellsVolume4D
+	AreaOfInterest dssmodels.CellsVolume4D
 	Manager        dssmodels.Manager
 }
 
@@ -526,7 +526,7 @@ func (p *querySubscriptionsPayload) OperationID() string {
 }
 
 // NewQuerySubscriptionsPayload builds the payload for a Subscriptions query.
-func NewQuerySubscriptionsPayload(areaOfInterest *dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
+func NewQuerySubscriptionsPayload(areaOfInterest dssmodels.CellsVolume4D, manager dssmodels.Manager) dssstore.OperationRequest {
 	return &querySubscriptionsPayload{AreaOfInterest: areaOfInterest, Manager: manager}
 }
 
@@ -534,9 +534,6 @@ func encodeQuerySubscriptions(request dssstore.OperationRequest) (*raftpb.Payloa
 	payload, ok := request.(*querySubscriptionsPayload)
 	if !ok {
 		return nil, stacktrace.NewError("unexpected request type %T for operation %q", request, restapi.QuerySubscriptionsOperationID)
-	}
-	if payload.AreaOfInterest == nil {
-		return nil, stacktrace.NewError("missing area of interest")
 	}
 	return ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_QuerySubscriptionsOperation{
 		QuerySubscriptionsOperation: &scdpb.QuerySubscriptionsOperation{
@@ -554,7 +551,7 @@ func decodeQuerySubscriptions(payload *raftpb.Payload) (dssstore.OperationReques
 	if req.GetAreaOfInterest() == nil {
 		return nil, stacktrace.NewError("missing area of interest")
 	}
-	decoded := &querySubscriptionsPayload{AreaOfInterest: new(dssmodels.CellsVolume4D), Manager: dssmodels.Manager(req.GetManager())}
+	decoded := &querySubscriptionsPayload{Manager: dssmodels.Manager(req.GetManager())}
 	decoded.AreaOfInterest.FromProto(req.GetAreaOfInterest())
 	return decoded, nil
 }

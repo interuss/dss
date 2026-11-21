@@ -14,9 +14,6 @@ func (c *Constraint) ToProto() (*scdpb.Constraint, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid Constraint ID")
 	}
-	if c.CellsVolume4D == nil {
-		return nil, stacktrace.NewError("missing volume of Constraint %s", c.ID)
-	}
 	return &scdpb.Constraint{
 		Id:         id,
 		Manager:    c.Manager.String(),
@@ -36,14 +33,11 @@ func (c *Constraint) FromProto(pb *scdpb.Constraint) error {
 	if pb.GetVolume() == nil {
 		return stacktrace.NewError("missing volume of Constraint %s", id)
 	}
-	volume := new(dssmodels.CellsVolume4D)
-	volume.FromProto(pb.GetVolume())
-
 	*c = Constraint{
-		ID:            id,
-		Manager:       dssmodels.Manager(pb.GetManager()),
-		USSBaseURL:    pb.GetUssBaseUrl(),
-		CellsVolume4D: volume,
+		ID:         id,
+		Manager:    dssmodels.Manager(pb.GetManager()),
+		USSBaseURL: pb.GetUssBaseUrl(),
 	}
+	c.CellsVolume4D.FromProto(pb.GetVolume())
 	return nil
 }

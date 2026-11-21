@@ -19,17 +19,15 @@ var (
 	_           repos.ISA = &repo{}
 	overflow              = uint64(17106221850767130624) // face 5 L13 overflows
 	serviceArea           = &ridmodels.IdentificationServiceArea{
-		ID:     dssmodels.ID(uuid.New().String()),
-		Owner:  dssmodels.Owner(uuid.New().String()),
-		URL:    "https://no/place/like/home/for/flights",
-		Writer: writer,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			StartTime: &startTime,
-			EndTime:   &endTime,
-			Cells: s2.CellUnion{
-				s2.CellID(overflow),
-				s2.CellID(17106221850767130624),
-			},
+		ID:        dssmodels.ID(uuid.New().String()),
+		Owner:     dssmodels.Owner(uuid.New().String()),
+		URL:       "https://no/place/like/home/for/flights",
+		Writer:    writer,
+		StartTime: &startTime,
+		EndTime:   &endTime,
+		Cells: s2.CellUnion{
+			s2.CellID(overflow),
+			s2.CellID(17106221850767130624),
 		},
 	}
 )
@@ -222,11 +220,9 @@ func TestStoreISAWithNoGeoData(t *testing.T) {
 
 	endTime := fakeClock.Now().Add(24 * time.Hour)
 	sub := &ridmodels.IdentificationServiceArea{
-		ID:    dssmodels.ID(uuid.New().String()),
-		Owner: dssmodels.Owner("original owner"),
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			EndTime: &endTime,
-		},
+		ID:      dssmodels.ID(uuid.New().String()),
+		Owner:   dssmodels.Owner("original owner"),
+		EndTime: &endTime,
 	}
 	_, err := repo.InsertISA(ctx, sub)
 	require.Error(t, err)
@@ -313,7 +309,7 @@ func TestDeleteExpiredISAs(t *testing.T) {
 		{id: "00000000-0000-0000-0000-000000000001", end: &expiredEnd},
 	} {
 		in := *serviceArea
-		in.CellsVolume4D = &dssmodels.CellsVolume4D{Cells: serviceArea.Cells, StartTime: &start, EndTime: isa.end}
+		in.CellsVolume4D = dssmodels.CellsVolume4D{Cells: serviceArea.Cells, StartTime: &start, EndTime: isa.end}
 		in.ID = isa.id
 		_, err := repo.InsertISA(ctx, &in)
 		require.NoError(t, err)

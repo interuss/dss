@@ -70,7 +70,7 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 	var cids []int64
 	for rows.Next() {
 		var (
-			s         = &scdmodels.Subscription{CellsVolume4D: &dssmodels.CellsVolume4D{}}
+			s         = &scdmodels.Subscription{}
 			updatedAt time.Time
 			version   int
 		)
@@ -258,7 +258,7 @@ func (c *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 }
 
 // Implements SubscriptionStore.SearchSubscriptions
-func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT
@@ -290,7 +290,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.C
 // IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in cellsVolume that
 // want operational intent notifications, increments their notification index and returns
 // them with the new index..
-func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 
 	var query string
 
@@ -339,7 +339,7 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 // IncrementNotificationIndicesForConstraints finds the Subscriptions in cellsVolume that want
 // constraint notifications, increments their notification index and returns them with the
 // new index.
-func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
+func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 
 	var query string
 

@@ -14,9 +14,6 @@ func (isa *IdentificationServiceArea) ToProto() (*ridpb.IdentificationServiceAre
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid ISA ID")
 	}
-	if isa.CellsVolume4D == nil {
-		return nil, stacktrace.NewError("missing volume of ISA %s", isa.ID)
-	}
 	return &ridpb.IdentificationServiceArea{
 		Id:     id,
 		Url:    isa.URL,
@@ -37,15 +34,12 @@ func (isa *IdentificationServiceArea) FromProto(pb *ridpb.IdentificationServiceA
 	if pb.GetVolume() == nil {
 		return stacktrace.NewError("missing volume of ISA %s", id)
 	}
-	volume := new(dssmodels.CellsVolume4D)
-	volume.FromProto(pb.GetVolume())
-
 	*isa = IdentificationServiceArea{
-		ID:            id,
-		URL:           pb.GetUrl(),
-		Owner:         dssmodels.Owner(pb.GetOwner()),
-		Writer:        pb.GetWriter(),
-		CellsVolume4D: volume,
+		ID:     id,
+		URL:    pb.GetUrl(),
+		Owner:  dssmodels.Owner(pb.GetOwner()),
+		Writer: pb.GetWriter(),
 	}
+	isa.CellsVolume4D.FromProto(pb.GetVolume())
 	return nil
 }

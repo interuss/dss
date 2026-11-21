@@ -23,28 +23,28 @@ func FromTime(t *restapi.Time) (*time.Time, error) {
 	return dssmodels.TimeFromRest(t.Value, t.Format)
 }
 
-func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D, error) {
-	filter := &dssmodels.CellsVolume4D{}
+func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (dssmodels.CellsVolume4D, error) {
+	filter := dssmodels.CellsVolume4D{}
 
 	startTime, err := FromTime(vol4.TimeStart)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error converting start time")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error converting start time")
 	}
 	filter.StartTime = startTime
 
 	endTime, err := FromTime(vol4.TimeEnd)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error converting end time")
+		return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Error converting end time")
 	}
 	filter.EndTime = endTime
 
 	if filter.StartTime != nil && filter.EndTime != nil && filter.StartTime.After(*filter.EndTime) {
-		return nil, stacktrace.NewError("Start time cannot be after end time")
+		return dssmodels.CellsVolume4D{}, stacktrace.NewError("Start time cannot be after end time")
 	}
 
 	altLo, altHi, err := altitudeBoundsFromSCDRest(&vol4.Volume)
 	if err != nil {
-		return nil, err
+		return dssmodels.CellsVolume4D{}, err
 	}
 	filter.AltitudeLo = altLo
 	filter.AltitudeHi = altHi
@@ -58,10 +58,10 @@ func CellsVolume4DFromSCDRest(vol4 *restapi.Volume4D) (*dssmodels.CellsVolume4D,
 	return filter, nil
 }
 
-type CellsVolume4DValidator func(*dssmodels.CellsVolume4D) error
+type CellsVolume4DValidator func(dssmodels.CellsVolume4D) error
 
 func WithRequireCellsTimeBounds() CellsVolume4DValidator {
-	return func(v *dssmodels.CellsVolume4D) error {
+	return func(v dssmodels.CellsVolume4D) error {
 		if v.StartTime == nil {
 			return stacktrace.NewError("Missing start time")
 		}
@@ -73,7 +73,7 @@ func WithRequireCellsTimeBounds() CellsVolume4DValidator {
 }
 
 func WithRequireCellsEndTimeAfter(now time.Time) CellsVolume4DValidator {
-	return func(v *dssmodels.CellsVolume4D) error {
+	return func(v dssmodels.CellsVolume4D) error {
 		if v.EndTime != nil && v.EndTime.Before(now) {
 			return stacktrace.NewError("End time may not be in the past")
 		}
@@ -82,7 +82,7 @@ func WithRequireCellsEndTimeAfter(now time.Time) CellsVolume4DValidator {
 }
 
 func WithRequireCellsAltitudeBounds() CellsVolume4DValidator {
-	return func(v *dssmodels.CellsVolume4D) error {
+	return func(v dssmodels.CellsVolume4D) error {
 		if v.AltitudeLo == nil {
 			return stacktrace.NewError("Missing lower altitude")
 		}
@@ -93,12 +93,12 @@ func WithRequireCellsAltitudeBounds() CellsVolume4DValidator {
 	}
 }
 
-func UnionCellsVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...CellsVolume4DValidator) (*dssmodels.CellsVolume4D, error) {
-	cellsVolumes := make([]*dssmodels.CellsVolume4D, len(vol4s))
+func UnionCellsVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...CellsVolume4DValidator) (dssmodels.CellsVolume4D, error) {
+	cellsVolumes := make([]dssmodels.CellsVolume4D, len(vol4s))
 	for idx, vol4 := range vol4s {
 		cellsVolume, err := CellsVolume4DFromSCDRest(&vol4)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
+			return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Failed to parse volume %d", idx)
 		}
 		cellsVolumes[idx] = cellsVolume
 	}
@@ -106,7 +106,7 @@ func UnionCellsVolume4DFromSCDRest(vol4s []restapi.Volume4D, validators ...Cells
 
 	for _, validator := range validators {
 		if err := validator(union); err != nil {
-			return nil, stacktrace.Propagate(err, "Invalid volume union")
+			return dssmodels.CellsVolume4D{}, stacktrace.Propagate(err, "Invalid volume union")
 		}
 	}
 

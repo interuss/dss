@@ -260,10 +260,8 @@ func TestCellsVolume4DFromSCDRest(t *testing.T) {
 			actual, err := CellsVolume4DFromSCDRest(testCase.rest)
 			if testCase.wantErr {
 				require.Error(t, err)
-				if actual != nil {
-					assert.Equal(t, testCase.wantStart, actual.StartTime)
-					assert.Equal(t, testCase.wantEnd, actual.EndTime)
-				}
+				assert.Equal(t, testCase.wantStart, actual.StartTime)
+				assert.Equal(t, testCase.wantEnd, actual.EndTime)
 				return
 			}
 			require.NoError(t, err)

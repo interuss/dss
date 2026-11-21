@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	dssmodels "github.com/interuss/dss/pkg/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,14 +14,12 @@ func TestValidateDependentOpAltitudes(t *testing.T) {
 	end := start.Add(time.Hour)
 
 	op := &OperationalIntent{
-		ID: "00000185-e36d-40be-8d38-beca6ca31002",
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  &start,
-			EndTime:    &end,
-			AltitudeLo: new(float32(10)),
-			AltitudeHi: new(float32(50)),
-		},
+		ID:         "00000185-e36d-40be-8d38-beca6ca31002",
+		Cells:      cells,
+		StartTime:  &start,
+		EndTime:    &end,
+		AltitudeLo: new(float32(10)),
+		AltitudeHi: new(float32(50)),
 	}
 
 	testCases := []struct {
@@ -43,13 +40,11 @@ func TestValidateDependentOpAltitudes(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			sub := &Subscription{
-				CellsVolume4D: &dssmodels.CellsVolume4D{
-					Cells:      cells,
-					StartTime:  &start,
-					EndTime:    &end,
-					AltitudeLo: testCase.lo,
-					AltitudeHi: testCase.hi,
-				},
+				Cells:      cells,
+				StartTime:  &start,
+				EndTime:    &end,
+				AltitudeLo: testCase.lo,
+				AltitudeHi: testCase.hi,
 			}
 
 			err := sub.ValidateDependentOp(op)

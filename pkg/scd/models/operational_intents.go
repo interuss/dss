@@ -77,7 +77,7 @@ type OperationalIntent struct {
 	PastOVNs        []OVN
 	USSBaseURL      string
 	SubscriptionID  *dssmodels.ID
-	*dssmodels.CellsVolume4D
+	dssmodels.CellsVolume4D
 }
 
 func (s OperationalIntentState) String() string {

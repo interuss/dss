@@ -31,7 +31,7 @@ type Subscription struct {
 	NotifyForOperationalIntents bool
 	NotifyForConstraints        bool
 	ImplicitSubscription        bool
-	*dssmodels.CellsVolume4D
+	dssmodels.CellsVolume4D
 }
 
 // ToRest converts the Subscription to its SCD v1 REST model API format

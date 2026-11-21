@@ -16,7 +16,7 @@ func TestOperationalIntentProtoRoundTrip(t *testing.T) {
 	start := time.Date(2026, 10, 28, 9, 30, 0, 0, time.UTC)
 	end := start.Add(time.Hour)
 	lo, hi := float32(10), float32(120)
-	volume := &dssmodels.CellsVolume4D{
+	volume := dssmodels.CellsVolume4D{
 		Cells:      s2.CellUnion{s2.CellIDFromToken("89c25"), s2.CellIDFromToken("89c27")},
 		StartTime:  &start,
 		EndTime:    &end,
@@ -65,21 +65,18 @@ func TestOperationalIntentProtoErrors(t *testing.T) {
 	_, err := missing.ToProto()
 	require.Error(t, err)
 
-	_, err = (&OperationalIntent{ID: badID, CellsVolume4D: &dssmodels.CellsVolume4D{}}).ToProto()
+	_, err = (&OperationalIntent{ID: badID}).ToProto()
 	require.Error(t, err)
 
-	_, err = (&OperationalIntent{ID: validID}).ToProto()
+	_, err = (&OperationalIntent{ID: validID, SubscriptionID: &badID}).ToProto()
 	require.Error(t, err)
 
-	_, err = (&OperationalIntent{ID: validID, SubscriptionID: &badID, CellsVolume4D: &dssmodels.CellsVolume4D{}}).ToProto()
-	require.Error(t, err)
-
-	_, err = (&OperationalIntent{ID: validID, State: "Bogus", CellsVolume4D: &dssmodels.CellsVolume4D{}}).ToProto()
+	_, err = (&OperationalIntent{ID: validID, State: "Bogus"}).ToProto()
 	require.Error(t, err)
 
 	id, err := validID.ToProto()
 	require.NoError(t, err)
-	volume := (&dssmodels.CellsVolume4D{}).ToProto()
+	volume := dssmodels.CellsVolume4D{}.ToProto()
 
 	var op OperationalIntent
 	require.Error(t, op.FromProto(nil))
