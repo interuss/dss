@@ -1,1 +1,0 @@
-Monitoring tools have been moved to the [`monitoring` repository](https://github.com/interuss/monitoring).
