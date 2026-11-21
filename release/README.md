@@ -112,3 +112,25 @@ Done when `release/output/<version>.zip` exists/
 This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster. The `personal/` config of each successfully destroyed cluster is removed.
 
 Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log. Finally, check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
+
+## Compatibility matrix
+
+```shell
+./release/scripts/run-compat-matrix.sh
+```
+
+This tests which upgrade paths are possible between released DSS versions, so that the compatibility matrix of the documentation can be updated. It runs locally and does not need the clusters.
+
+The list of versions to test is the `VERSIONS` array at the top of the script, ordered from oldest to newest. The version being released must be added to it.
+
+Any local DSS instance must be stopped first with `make stop-locally`, otherwise it interferes with the stack started by the script.
+
+For each pair of versions A (older) to B (newer), the script starts a local stack with a single datastore shared by two `core-service` instances, one running version A and the other version B. The datastore is migrated to the latest schema of version B. Pairs where B is older than A are not tested and reported as not evaluated.
+
+Each pair is then validated by running the prober against both instances and the USS qualifier against the pool, from `MONITORING_IMAGE`. A pair passes only if the three runs pass.
+
+A local `dummy-oauth` image is built if it is not already present. The docker compose stack and the qualifier configuration are in [compat/](compat).
+
+Done when it prints a summary matrix in the terminal, followed by a Markdown compatibility matrix to copy into [docs/operations/upgrades.md](../docs/operations/upgrades.md) and the GitHub release notes.
+
+Container logs are available in `release/logs` and qualifier reports in `release/uss_qualifier_output/compat`.
