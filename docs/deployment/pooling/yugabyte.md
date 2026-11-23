@@ -10,6 +10,13 @@ Should this DSS beeing part of a pool, the script also provide some helpers to m
 
 To run the script, just run `./dss-certs.py`. The python script don't require any dependencies, just a recent version of python 3.
 
+!!! note
+    When the infrastructure is deployed with Terraform, a `dss-certs.sh` helper
+    is generated in `/build/workspace/${cluster_context}`. It calls
+    `dss-certs.py` with `--name`, `--organization`, `--cluster-context`,
+    `--namespace`, `--nodes-public-address` and `--nodes-count` already set,
+    e.g. `./dss-certs.sh init`.
+
 ### Quick start guide
 
 #### Single DSS instance in minikube`
@@ -22,7 +29,7 @@ To run the script, just run `./dss-certs.py`. The python script don't require an
 * Creation of the 3 DSS instances certificates
 * `./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default init`
 * `./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 init`
-* `./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace ns3 init`
+* `./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 init`
 * Copy instance 2 and 3 CA certificates to the instance 1
 * `./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca`
 * `./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca`
@@ -150,10 +157,10 @@ It's possible to have one DSS instance as starting point. In that case,
 !!! info
     Quick reminder for CA management:
 
-    Each DSS instance should use `./dss-certs.sh init` To get the CA that should
-    be sent to others instances, use `./dss-certs.sh get-ca` To import the CA of
-    others DSS instance, use `./dss-certs.sh add-pool-ca` Finally, apply
-    certificates on the kubernetes cluster with `./dss-certs.sh apply`
+    Each DSS instance should use `./dss-certs.py ... init` To get the CA that should
+    be sent to others instances, use `./dss-certs.py ... get-ca` To import the CA of
+    others DSS instance, use `./dss-certs.py ... add-pool-ca` Finally, apply
+    certificates on the kubernetes cluster with `./dss-certs.py ... apply`
 
 Ensure placement info is how you want it. See the section below for placement
 requirements.
@@ -165,20 +172,20 @@ will be joining an existing cluster, they will need to request all CAs that
 the pool is currently using (any one member of the pool may provide it). The
 joining USS will also need a list of Yugabyte node addresses.
 
-The joining USS must create his own CA with `./dss-certs.sh init` and retrieve
-it with `./dss-certs.sh get-ca`. This certificate must be provided to each
-existing DSS instance in the pool that will import it with `./dss-certs.sh
-add-pool-ca` and `./dss-certs.sh apply`.
+The joining USS must create his own CA with `./dss-certs.py ... init` and retrieve
+it with `./dss-certs.py ... get-ca`. This certificate must be provided to each
+existing DSS instance in the pool that will import it with `./dss-certs.py ...
+add-pool-ca` and `./dss-certs.py ... apply`.
 
 One of existing DSS instance shall provide to the joining USS all existing
-certificate, using `./dss-certs.sh get-pool-ca`. The joining USS can import them
-with `./dss-certs.sh add-pool-ca` and finally apply certificates with
-`./dss-certs.sh apply`. As an alternative, each DSS instance can provide its
+certificate, using `./dss-certs.py ... get-pool-ca`. The joining USS can import them
+with `./dss-certs.py ... add-pool-ca` and finally apply certificates with
+`./dss-certs.py ... apply`. As an alternative, each DSS instance can provide its
 individual CA.
 
 Participants shall ensure they work with a coherent set of certificate by
 comparing the pool CA hash. It is displayed after adding certificates or using
-the `./dss-certs.sh list-pool-ca`.
+the `./dss-certs.py ... list-pool-ca`.
 
 When CAs have been exchanged and configured everywhere, the joining participant
 can bring his system online (e.g. by applying helm charts onto his cluster). The
