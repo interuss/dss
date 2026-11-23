@@ -211,4 +211,4 @@ group).
 
 !!! warning
     Unlike `db-manager evict`, `dssctl raft evict run` has no preview mode: it
-    deletes the expired entities directly, on every node of the pool.
+    deletes the expired entities directly.
