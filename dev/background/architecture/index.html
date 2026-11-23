@@ -636,6 +636,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/pooling/raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With Raft store (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1429,6 +1457,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../decommissioning/depooling-raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leaving a Raft store pool (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../decommissioning/terraform/" class="md-nav__link">
         
   
@@ -1652,10 +1708,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#cochroachdb" class="md-nav__link">
+  <a href="#cockroachdb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CochroachDB
+        CockroachDB
       
     </span>
   </a>
@@ -1674,10 +1730,49 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#survivability" class="md-nav__link">
     <span class="md-ellipsis">
       
         Survivability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Survivability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cockroachdb_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CockroachDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raft-store_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
       
     </span>
   </a>
@@ -1934,10 +2029,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#cochroachdb" class="md-nav__link">
+  <a href="#cockroachdb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CochroachDB
+        CockroachDB
       
     </span>
   </a>
@@ -1956,10 +2051,49 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#survivability" class="md-nav__link">
     <span class="md-ellipsis">
       
         Survivability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Survivability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cockroachdb_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CockroachDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raft-store_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
       
     </span>
   </a>
@@ -2069,11 +2203,11 @@
 multiple organizations to each host one DSS instance that is interoperable with
 each other organization's DSS instance.  A DSS pool with three participating
 organizations (USSs) will have an architecture similar to the diagram below.</p>
-<p><em><strong>Note</strong> that the diagrams below shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets.</em></p>
+<p><em><strong>Note</strong> that the diagrams below shows 2 stateful sets per DSS instance.  Currently, the helm and tanka deployments produce 3 stateful sets per DSS instance.  However, after Issue #481 is resolved, this is expected to be reduced to 2 stateful sets.  With the Raft store, the instance has a single stateful set: the core-service.</em></p>
 <h3 id="certificates">Certificates<a class="headerlink" href="#certificates" title="Permanent link">¶</a></h3>
-<p>This diagram shows how certificates are shared. It applies to both CockroachDB and Yugabyte deployments.</p>
+<p>This diagram shows how certificates are shared. It applies to CockroachDB, YugabyteDB and Raft store deployments.</p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_certs.png" data-desc-position="bottom"><img alt="Pool architecture diagram" src="../../assets/generated/pool_architecture_certs.png"></a></p>
-<h3 id="cochroachdb">CochroachDB<a class="headerlink" href="#cochroachdb" title="Permanent link">¶</a></h3>
+<h3 id="cockroachdb">CockroachDB<a class="headerlink" href="#cockroachdb" title="Permanent link">¶</a></h3>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture.png" data-desc-position="bottom"><img alt="Pool architecture diagram" src="../../assets/generated/pool_architecture.png"></a></p>
 <h3 id="yugabyte">Yugabyte<a class="headerlink" href="#yugabyte" title="Permanent link">¶</a></h3>
 <p>Detail on an instance level
@@ -2082,14 +2216,28 @@ organizations (USSs) will have an architecture similar to the diagram below.</p>
 <a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_yugabyte.png" data-desc-position="bottom"><img alt="Pool architecture diagram with Yugabyte" src="../../assets/generated/pool_architecture_yugabyte.png"></a></p>
 <p>To reduce the number of required public load balancers, we do use an intermediate reverse proxy to expose the ports of Yugabyte master and tserver on a shared public IP per stateful set instance.
 Usual Kubernetes load balancers can't assign connection based on ports out of the box, so we use the reverse proxy to dispatch connections on both services depending on the connected port.</p>
-<h3 id="survivability">Survivability<a class="headerlink" href="#survivability" title="Permanent link">¶</a></h3>
+<h3 id="raft-store">Raft store<a class="headerlink" href="#raft-store" title="Permanent link">¶</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Experimental</p>
+<p>The Raft store is experimental: its implementation is still in progress.</p>
+</div>
+<p>With the Raft store, the datastore is not a separate cluster, the core-service
+nodes of the DSS instances are the datastore of the pool.  Each node keeps the
+data of the pool (its identity, its Raft log and its snapshots) on its own
+persistent volume and replicates it directly with the other nodes of the pool
+through the Raft consensus protocol:</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/pool_architecture_raft.png" data-desc-position="bottom"><img alt="Pool architecture diagram with the Raft store" src="../../assets/generated/pool_architecture_raft.png"></a></p>
+<h2 id="survivability">Survivability<a class="headerlink" href="#survivability" title="Permanent link">¶</a></h2>
 <p>One of the primary design considerations of the DSS is to be very resilient to
-failures.  This resiliency is obtained primarily from the behavior of the
+failures.</p>
+<h3 id="cockroachdb_1">CockroachDB<a class="headerlink" href="#cockroachdb_1" title="Permanent link">¶</a></h3>
+<p>This resiliency is obtained primarily from the behavior of the
 underlying CockroachDB database technology and how we configure it. To meet these
 survivability objectives, see <a href="../survivability-crdb/">CockroachDB Pool Survivability</a> for how to configure
 the CockroachDB pool with replica placement constraints.</p>
-<p>The diagram below shows the result of failures (bringing a node down for maintenance,
-or having an entire USS go down) from different starting points, assuming 3 replicas.</p>
+<p>The diagram below shows the result of failures (bringing a node down for
+maintenance, or having an entire USS go down) from different starting points,
+assuming 3 replicas.</p>
 <p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../../assets/generated/survivability_3x2.png" data-desc-position="bottom"><img alt="Survivability diagram" src="../../assets/generated/survivability_3x2.png"></a></p>
 <p>The table below summarizes survivable failures with 3 DSS instances configured according
 to the architecture described above.  Each system state is summarized by three
@@ -2212,6 +2360,87 @@ groups (one group per USS) of two nodes per USS.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="raft-store_1">Raft store<a class="headerlink" href="#raft-store_1" title="Permanent link">¶</a></h3>
+<p>With the Raft store, the resiliency is obtained from the quorum of the Raft
+voters instead of the replication of a database: a group of <code>2N+1</code> voters
+tolerates the loss of <code>N</code> of them, and a group that cannot reach a majority of
+its voters stops serving reads and writes until one is back.  A restarted or
+re-added node receives the data of the pool (it replays its log, or receives
+a snapshot from a peer) and rejoins, so no data is lost as long as a majority
+of the voters was available.</p>
+<p>The table below summarizes survivable failures with 3 DSS instances of 2
+nodes each.  Each system state is summarized by three groups (one group per
+USS) of two nodes per USS.  Each Raft group then has 6 voters, and its
+quorum is 4 of them.  When the quorum is lost, the pool stops serving but no
+data is lost: it resumes when a majority of the voters is back.</p>
+<ul>
+<li>🟩 : Functional node has no recent changes in functionality</li>
+<li>🟥 : Non-functional node in down USS has no recent changes in functionality</li>
+<li>🟧 : Non-functional node due to USS upgrade or maintenance has no recent changes in functionality</li>
+<li>🔴 : Node becomes non-functional due to a USS going down</li>
+<li>🟠 : Node becomes non-functional due to USS upgrade or maintenance</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Pre-existing conditions</th>
+<th>New failures</th>
+<th>Survivable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟩 )</td>
+<td>(🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟠 )</td>
+<td>🟢 Yes</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🟩 , 🟠 ) (🟩 , 🟠 )</td>
+<td>🟢 Yes</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟩 )</td>
+<td>🟢 Yes</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🟩 , 🟠 ) (🟠 , 🟠 )</td>
+<td>🔴 No</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟠 )</td>
+<td>🔴 No</td>
+</tr>
+<tr>
+<td></td>
+<td>(🔴 , 🔴 ) (🔴 , 🔴 ) (🟩 , 🟩 )</td>
+<td>🔴 No</td>
+</tr>
+<tr>
+<td>(🟩 , 🟩 ) (🟩 , 🟩 ) (🟩 , 🟧 )</td>
+<td>(🟩 , 🟩 ) (🟩 , 🟠 ) (🟩 , 🟧 )</td>
+<td>🟢 Yes</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🔴 , 🔴 ) (🟩 , 🟧 )</td>
+<td>🔴 No</td>
+</tr>
+<tr>
+<td>(🟩 , 🟩 ) (🟩 , 🟩 ) (🟥 , 🟥 )</td>
+<td>(🟩 , 🟩 ) (🟩 , 🟠 ) (🟥 , 🟥 )</td>
+<td>🔴 No</td>
+</tr>
+<tr>
+<td></td>
+<td>(🟩 , 🟩 ) (🔴 , 🔴 ) (🟥 , 🟥 )</td>
+<td>🔴 No</td>
+</tr>
+</tbody>
+</table>
 <h2 id="sizing">Sizing<a class="headerlink" href="#sizing" title="Permanent link">¶</a></h2>
 <p>Resources needed are described <a href="../sizing/">in the sizing section</a></p>
 
@@ -2234,7 +2463,7 @@ groups (one group per USS) of two nodes per USS.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 11, 2026 10:23:17 UTC">November 11, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 09:46:10 UTC">November 23, 2026</span>
   </span>
 
     

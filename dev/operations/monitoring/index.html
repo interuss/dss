@@ -636,6 +636,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/pooling/raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With Raft store (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1182,6 +1210,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1586,6 +1631,34 @@
     
   
     Leaving a YugabyteDB pool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decommissioning/depooling-raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leaving a Raft store pool (experimental)
   
 
     
@@ -2076,6 +2149,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2318,6 +2408,118 @@ Grafana Dashboards. Enabling Prometheus Federation is optional.</p>
 <p>A dashboard is automatically deployed by Helm and Tanka. If you use you own grafana instance, it can be found <a href="https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/dss.json">there</a>.</p>
 <p>You can use the <code>enable_dss_metrics</code> option in Terraform, <code>dss.conf.enableDssMetrics</code> in Helm, or <code>enableDssMetrics</code> in Tanka to activate it when using these.
 This will also automatically enable collection by Prometheus if used.</p>
+<h4 id="raft-store">Raft store<a class="headerlink" href="#raft-store" title="Permanent link">¶</a></h4>
+<p>When the DSS instance runs the
+<a href="../../deployment/pooling/raft/">Raft store</a>, the core-service exposes
+additional <code>raft_*</code> metrics on the same metrics endpoint, describing the state
+of the three Raft groups (<code>aux</code>, <code>rid</code>, <code>scd</code>) of the node.</p>
+<p>A Raft dashboard is automatically deployed by Helm and Tanka, alongside
+the other DSS dashboards. If you use your own Grafana instance, it can be found
+<a href="https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/raft.json">there</a>.
+It gives, per Raft group:</p>
+<ul>
+<li>the current state of the group: state, leader, term, and the history of the
+  leadership changes,</li>
+<li>the replication progress: commit index vs applied index, the apply lag, the
+  lag of each follower,</li>
+<li>the health of the links to the peers: latency (current, average, min, max,
+  standard deviation) and the AppendEntries success/failure counts, reported
+  by the leader,</li>
+<li>the storage: the number of log entries, the applied index since the last
+  snapshot, the snapshot durations and frequency,</li>
+<li>the load: the proposal duration, the pending proposals (writes and reads)
+  and the proposal rate.</li>
+</ul>
+<p>The complete list of the metrics is in the
+<a href="https://github.com/interuss/dss/tree/master/pkg/raftstore">raftstore source</a>.
+The metrics below are the ones worth alerting on:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Metric</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Alert criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>raft_peer_tls_handshake_failures_total{reason}</code></td>
+<td style="text-align: left;">Connections from Raft peers rejected during the TLS handshake, per node.</td>
+<td style="text-align: left;">Sustained growth: a participant's CA is not (or no longer) trusted by the pool; the possible reasons are listed below.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_trusted_ca_not_after_seconds{subject, serial}</code></td>
+<td style="text-align: left;">Expiry (seconds since the Unix epoch) of each CA of the trusted bundle, per node.</td>
+<td style="text-align: left;">A CA is close to its expiry: rotate it before it expires (see <a href="../../deployment/pooling/raft/#certificates">certificates</a>).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_is_leader{group, node_id}</code> / <code>raft_state{group, node_id, state}</code></td>
+<td style="text-align: left;">Leadership and state of each group, per node.</td>
+<td style="text-align: left;">A group with no leader on any node, or frequent state transitions (elections).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_follower_lag_entries{group, node_id, peer_id}</code></td>
+<td style="text-align: left;">Number of committed entries a follower has not received yet (commit index minus its match index), reported by the leader.</td>
+<td style="text-align: left;">A follower that is not catching up.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_proposals_pending{group, node_id, type}</code></td>
+<td style="text-align: left;">Number of pending write (or read) proposals of the node.</td>
+<td style="text-align: left;">A persistent backlog: the node is not keeping up with the traffic of the pool.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_proposal_duration_seconds{group, node_id, type}</code></td>
+<td style="text-align: left;">Duration of the proposals of the node.</td>
+<td style="text-align: left;">Sustained increase of the read or write latency of the pool.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>raft_peer_send_fail_total{group, node_id, peer_id}</code></td>
+<td style="text-align: left;">Cumulative number of failed messages sent to a peer, reported by the leader.</td>
+<td style="text-align: left;">Growth: the link to the peer is broken or saturated.</td>
+</tr>
+</tbody>
+</table>
+<p><code>raft_peer_tls_handshake_failures_total</code> counts every rejection, with one of
+the following <code>reason</code> values (each rejected connection is also logged as a
+warning by the node, at most one line per reason every 5 seconds):</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Reason</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>not_tls</code></td>
+<td style="text-align: left;">The peer does not use TLS</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>closed</code></td>
+<td style="text-align: left;">The peer closed the connection during the handshake</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>remote_rejected</code></td>
+<td style="text-align: left;">The peer does not trust the certificate of this node</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>unknown_authority</code></td>
+<td style="text-align: left;">The peer certificate is not signed by a CA of the bundle</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>invalid_date</code></td>
+<td style="text-align: left;">The peer certificate has expired or is not valid yet</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>bad_certificate</code></td>
+<td style="text-align: left;">Any other invalid peer certificate</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>other</code></td>
+<td style="text-align: left;">Any other failure</td>
+</tr>
+</tbody>
+</table>
 <h3 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">¶</a></h3>
 <p>Use flag <code>--enable_tracing</code> to enable tracing.</p>
 <p>Traces can be sent to any OpenTelemetry-compliant service. Self-hostable examples include <a href="https://www.jaegertracing.io/">Jaeger</a>, <a href="https://github.com/openobserve/openobserve">OpenObserve</a>, <a href="https://grafana.com/docs/tempo/latest/">Grafana Tempo</a>, and <a href="https://github.com/SigNoz/signoz">SigNoz</a>. Multiple SaaS solutions are also available (including some of the previously mentioned tools).</p>
@@ -2354,7 +2556,7 @@ for more details.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 30, 2026 14:48:00 UTC">October 30, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 09:46:10 UTC">November 23, 2026</span>
   </span>
 
     

@@ -49,6 +49,10 @@
          <lastmod>2026-11-23</lastmod>
     </url>
     <url>
+         <loc>https://interuss.github.io/dss/dev/decommissioning/depooling-raft/</loc>
+         <lastmod>2026-11-23</lastmod>
+    </url>
+    <url>
          <loc>https://interuss.github.io/dss/dev/decommissioning/depooling-yugabyte/</loc>
          <lastmod>2026-11-23</lastmod>
     </url>
@@ -86,6 +90,10 @@
     </url>
     <url>
          <loc>https://interuss.github.io/dss/dev/deployment/pooling/crdb/</loc>
+         <lastmod>2026-11-23</lastmod>
+    </url>
+    <url>
+         <loc>https://interuss.github.io/dss/dev/deployment/pooling/raft/</loc>
          <lastmod>2026-11-23</lastmod>
     </url>
     <url>
