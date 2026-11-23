@@ -8,7 +8,7 @@ database and exposes a few REST services: [ASTM remote ID](../../interfaces/rid)
 
 ## Usage
 
-For production deployment of this executable, see [the deployment documentation](../../build/README.md).
+For production deployment of this executable, see [the deployment documentation](https://interuss.github.io/dss/dev/deployment/).
 
 For experimentation on a local machine, see [the standalone instance documentation](../../build/dev/standalone_instance.md).
 

@@ -4,7 +4,7 @@ local dss = import '../dss.libsonnet';
 local metadataBase = import '../metadata_base.libsonnet';
 
 // All VAR_* values below must be replaced with appropriate values; see
-// dss/build/README.md for more information.
+// https://interuss.github.io/dss/dev/deployment/services/ for more information.
 
 local metadata = metadataBase {
   namespace: 'VAR_NAMESPACE',
