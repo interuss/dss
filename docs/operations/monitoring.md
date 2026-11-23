@@ -166,7 +166,7 @@ When the DSS instance runs the
 additional `raft_*` metrics on the same metrics endpoint, describing the state
 of the three Raft groups (`aux`, `rid`, `scd`) of the node.
 
-A **Raft** dashboard is automatically deployed by Helm and Tanka, alongside
+A Raft dashboard is automatically deployed by Helm and Tanka, alongside
 the other DSS dashboards. If you use your own Grafana instance, it can be found
 [there](https://github.com/interuss/dss/blob/master/deploy/services/tanka/grafana_dashboards/raft.json).
 It gives, per Raft group:
@@ -194,7 +194,7 @@ The metrics below are the ones worth alerting on:
 | `raft_is_leader{group, node_id}` / `raft_state{group, node_id, state}` | Leadership and state of each group, per node. | A group with no leader on any node, or frequent state transitions (elections). |
 | `raft_follower_lag_entries{group, node_id, peer_id}` | Number of committed entries a follower has not received yet (commit index minus its match index), reported by the leader. | A follower that is not catching up. |
 | `raft_proposals_pending{group, node_id, type}` | Number of pending write (or read) proposals of the node. | A persistent backlog: the node is not keeping up with the traffic of the pool. |
-| `raft_proposal_duration_seconds{group, node_id, type}` | Duration of the proposals of the node. | Sustained increase of the write latency of the pool. |
+| `raft_proposal_duration_seconds{group, node_id, type}` | Duration of the proposals of the node. | Sustained increase of the read or write latency of the pool. |
 | `raft_peer_send_fail_total{group, node_id, peer_id}` | Cumulative number of failed messages sent to a peer, reported by the leader. | Growth: the link to the peer is broken or saturated. |
 
 `raft_peer_tls_handshake_failures_total` counts every rejection, with one of

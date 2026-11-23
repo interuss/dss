@@ -37,7 +37,7 @@ This checklist outlines the major decisions and steps required to deploy a non-l
 
 ### Preparation
 
-* [ ] Decide on the datastore you will use (CockroachDB, YugabyteDB or the experimental Raft store). **All participants in a DSS Pool must use the same datastore**, so plan accordingly.
+* [ ] Decide on the datastore you will use (CockroachDB, YugabyteDB or the experimental Raft store). All participants in a DSS Pool must use the same datastore, so plan accordingly.
 * [ ] Decide how and where you will deploy [the infrastructure](./infrastructure/index.md) of your DSS instances:
     * This repository provides Terraform configurations for [Amazon Web Services (EKS)](infrastructure/aws.md) and [Google Cloud (GKE)](infrastructure/google.md) to deploy a Kubernetes cluster (the infrastructure into which the Services will be deployed).
 * [ ] Decide how and where you will deploy [the services](./services/index.md) of your DSS instances:

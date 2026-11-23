@@ -44,7 +44,7 @@ In the instructions below:
 * `N` is the number of DSS nodes of this instance.
 
 !!! note
-    **All participants of a DSS pool must use the same datastore.**  A pool
+    All participants of a DSS pool must use the same datastore.  A pool
     cannot mix nodes running the Raft store and nodes running a SQL datastore.
 
 ## Certificates
@@ -168,15 +168,18 @@ This DSS instance creates the pool (it is the first instance, or one of the
 instances creating the pool at the same time as other participants).
 
 1. In the deployment configuration of this instance, enable the
-   **automatic bootstrap** feature: `raft_automatic_bootstrap` in the
+   automatic bootstrap feature: `raft_automatic_bootstrap` in the
    terraform variables, `raft.automaticBootstrap` in the helm chart, or
    `automaticBootstrap` in the `raft` section of the tanka `main.jsonnet`
    (set automatically from the terraform variables).
 
     !!! note
-        The automatic bootstrap must be enabled on **one** participant only:
+        The automatic bootstrap must be enabled on one participant only:
         if several nodes bootstrap at the same time, independent pools are
-        created.
+        created.  It should be disabled again once the pool is formed: with
+        it still enabled, a node that starts with an empty data directory
+        would bootstrap a new pool instead of waiting to be added back to
+        the existing one.
 
 1. If other participants create their instances at the same time, list the
    `ENDPOINT` of their nodes in the `automaticBootstrapNodes` setting of this
@@ -215,12 +218,18 @@ of the pool, from any member of the pool.
 This DSS instance joins a pool that already exists.  Its nodes start with an
 empty data directory and wait to be added to the pool by an existing node.
 
-1. Keep the **automatic bootstrap** feature disabled in the deployment
+1. Keep the automatic bootstrap feature disabled in the deployment
    configuration of this instance.
 
 1. Complete the [certificates of this instance](#creating-the-certificates-of-your-organization)
    and make sure that the existing participants accept its CA (see
    [adding the certificates of a new organization](#adding-the-certificates-of-a-new-organization-to-an-existing-pool)).
+
+1. Make sure the `--raft_cluster_id` of this instance is the same as the
+   one of the existing pool: `raft_cluster_id` in the terraform variables,
+   `raft.clusterID` in the helm chart values, or `clusterID` in the `raft`
+   section of the tanka `main.jsonnet` (default `1`).  A node with a
+   different ID cannot join the pool.
 
 1. Deploy the services as described in
    [services deployment](../services/index.md).
@@ -268,7 +277,7 @@ Common options:
 | `--admin_socket` | Path of the admin socket of the node, matching its `--admin_socket`; default `/run/dss/admin.sock`. |
 | `--admin_timeout` | Timeout of each request to the admin API; default 1m. |
 
-A command is executed **independently for each selected group**: it may
+A command is executed independently for each selected group: it may
 succeed for some groups and fail for others.  When that happens, rerun the
 command with `--groups` limited to the failed groups.
 
@@ -306,7 +315,7 @@ starts for the first time with an empty data directory and are stored in it.
 A node is added to the pool one at a time, from any member of the pool.  The
 node to add must:
 
-* be **running and waiting**, i.e. started with an empty data directory (a
+* be running and waiting, i.e. started with an empty data directory (a
   node that was never added to the pool, or whose data directory was deleted);
 * have its participant's CA in the CA bundle of every member of the pool,
   otherwise the TLS handshake between the members and the node fails
@@ -323,7 +332,7 @@ dssctl raft add --url https://<ENDPOINT>
 
 The member reads the ID of the node to add from the node itself, on its Raft
 listener; the node then learns the configuration and the data of the group
-from the leader.  The added node joins directly as a **voter**: as soon as the
+from the leader.  The added node joins directly as a voter: as soon as the
 command returns, it counts in the quorum of the group.  The command returns
 once the change is adopted by the group.
 
@@ -349,14 +358,14 @@ dssctl raft remove --groups aux --node_id 993958870532660157
 
 Properties of a removal:
 
-* A removed node **stops itself** when the removal is applied and its state
+* A removed node stops itself when the removal is applied and its state
   becomes `removed`.  It does not need to be reachable for the removal to
   succeed.
-* The ID of a removed node is **retired permanently**: it can never be added
+* The ID of a removed node is retired permanently: it can never be added
   back to the group.  A node that is removed and re-added comes back with a
   new ID (see [Replacing a node](#replacing-a-node)).
-* A voter cannot be removed if the group would be left with **fewer than
-  three voters**.
+* A voter cannot be removed if the group would be left with fewer than
+  three voters.
 * Removing a voter changes the quorum immediately, and removing the current
   leader triggers an election.
 
@@ -365,7 +374,7 @@ and its ID is in the list of removed IDs.
 
 ### Replacing a node
 
-If a node must come back at the **same URL** with a new data directory
+If a node must come back at the same URL with a new data directory
 (typically after its data directory was lost or corrupted):
 
 1. With four voters or more in each group: remove the node
@@ -375,8 +384,8 @@ If a node must come back at the **same URL** with a new data directory
    https://<ENDPOINT>`).
 
 1. With exactly three voters in a group, the group cannot go below the minimum
-   of three voters, so the node must be restarted with a **different**
-   `--raft_peer_url` (a new `ENDPOINT`) and added to the groups **before** its
+   of three voters, so the node must be restarted with a different
+   `--raft_peer_url` (a new `ENDPOINT`) and added to the groups before its
    old identity is removed.
 
 In both cases the node comes back as a new node, with new IDs in every group:
