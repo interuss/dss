@@ -39,7 +39,8 @@ func NewTLSInfo(connectParams params.ConnectParameters, logger *zap.Logger) etcd
 }
 
 // newListener listens on addr, with mutual TLS unless tlsInfo is empty. The TLS handshake completes before a
-// connection is handed to the Raft handler. Each connection rejected during the handshake is logged and counted.
+// connection is handed to the Raft handler. Each connection rejected during the handshake is logged and counted,
+// except the ones closed by the peer.
 func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) (net.Listener, error) {
 	if tlsInfo.Empty() {
 		return (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
@@ -58,6 +59,10 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 	lastLogged := map[string]time.Time{}
 	removed := map[string]int{}
 	tlsInfo.HandshakeFailure = func(conn *tls.Conn, err error) {
+		// The health check of a load balancer connects and closes without sending anything, so we ignore it.
+		if errors.Is(err, io.EOF) {
+			return
+		}
 		reason := handshakeFailureReason(err)
 		failures.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
 		mu.Lock()
@@ -81,9 +86,6 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 func handshakeFailureReason(err error) string {
 	if _, ok := errors.AsType[tls.RecordHeaderError](err); ok {
 		return "not_tls"
-	}
-	if errors.Is(err, io.EOF) {
-		return "closed"
 	}
 	if err.Error() == "remote error: tls: bad certificate" {
 		return "remote_rejected"

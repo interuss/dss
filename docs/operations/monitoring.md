@@ -204,12 +204,14 @@ warning by the node, at most one line per reason every 5 seconds):
 | Reason | Meaning |
 | :--- | :--- |
 | `not_tls` | The peer does not use TLS |
-| `closed` | The peer closed the connection during the handshake |
 | `remote_rejected` | The peer does not trust the certificate of this node |
 | `unknown_authority` | The peer certificate is not signed by a CA of the bundle |
 | `invalid_date` | The peer certificate has expired or is not valid yet |
 | `bad_certificate` | Any other invalid peer certificate |
 | `other` | Any other failure |
+
+A connection closed by the peer during the handshake, like the health check of
+a load balancer, is neither logged nor counted.
 
 ### Tracing
 
