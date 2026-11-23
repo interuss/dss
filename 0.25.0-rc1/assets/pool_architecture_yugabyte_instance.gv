@@ -1,0 +1,52 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture_yugabyte_instance.png pool_architecture_yugabyte_instance.gv
+digraph G {
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    DSSClient [label="DSS client"]
+
+    LoadBalancer1 [label="TLS termination +\nload balancer",color=1]
+    CoreService1a [label="Core Service",color=2];
+    CoreService1b [label="Core Service",color=2];
+    YBDBM1a [label="YBDB Master 1A",color=3];
+    YBDBM1b [label="YBDB Master 1B",color=3];
+    YBDBT1a [label="YBDB TServer 1A",color=4];
+    YBDBT1b [label="YBDB TServer 1B",color=4];
+    YBLoadBalancer1a [label="TCP Reverse Proxies A",color=5]
+    YBLoadBalancer1b [label="TCP Reverse Proxies B",color=5]
+
+    subgraph cluster_0 {
+        label="USS1's DSS instance"
+        subgraph cluster_1 {
+            label="Replica A";
+            CoreService1a -> YBDBT1a;
+            YBDBM1a;
+            YBLoadBalancer1a -> YBDBM1a;
+            YBLoadBalancer1a -> YBDBT1a;
+            YBDBM1a -> YBDBT1a [dir=both];
+            { rank=sink; YBLoadBalancer1a; }
+        }
+        subgraph cluster_2 {
+            label="Replica B";
+            CoreService1b -> YBDBT1b;
+            YBDBM1b;
+            YBLoadBalancer1b -> YBDBM1b;
+            YBLoadBalancer1b -> YBDBT1b;
+            YBDBM1b -> YBDBT1b [dir=both];
+            { rank=sink; YBLoadBalancer1b; }
+        }
+        CoreService1b -> YBDBT1a;
+        CoreService1a -> YBDBT1b;
+        LoadBalancer1 -> CoreService1a
+        LoadBalancer1 -> CoreService1b
+
+        YBDBM1a -> YBDBT1b [dir=both];
+        YBDBM1b -> YBDBT1a [dir=both];
+        YBDBM1a -> YBDBM1b [dir=both];
+        YBDBT1a -> YBDBT1b [dir=both];
+    }
+
+    DSSClient -> LoadBalancer1;
+
+}
