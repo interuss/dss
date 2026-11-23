@@ -2277,21 +2277,16 @@
 <h2 id="first-or-only-dss-instance">First or only DSS instance<a class="headerlink" href="#first-or-only-dss-instance" title="Permanent link">¶</a></h2>
 <p>If this DSS instance will be the first and/or only DSS instance in the pool, follow the instructions in this section.</p>
 <p>Use <a href="https://github.com/interuss/dss/blob/master/build/make-certs.py"><code>make-certs.py</code> script</a> to create certificates for
-    the CockroachDB nodes in this DSS instance:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>    ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
-        --node-address &lt;ADDRESS&gt; &lt;ADDRESS&gt; &lt;ADDRESS&gt; ...
-
-1.  Note: If you are creating multiple DSS instances at once and joining
-    them together, you may want to copy the nth instance's `ca.crt` into
-    the rest of the instances, such that ca.crt is the same across all
-    instances.
+the CockroachDB nodes in this DSS instance:</p>
+<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>./make-certs.py --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE --node-address &lt;ADDRESS&gt; &lt;ADDRESS&gt; &lt;ADDRESS&gt; ...
 </code></pre></div></td></tr></tbody></table></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are creating multiple DSS instances at once and joining
+them together, you may want to copy the nth instance's <code>ca.crt</code> into
+the rest of the instances, such that ca.crt is the same across all
+instances.</p>
+</div>
 <p>Proceed to "Apply certs" section below.</p>
 <h2 id="joining-an-existing-pool">Joining an existing pool<a class="headerlink" href="#joining-an-existing-pool" title="Permanent link">¶</a></h2>
 <p>If this DSS instance is joining an existing pool, follow the instructions in this section.</p>
@@ -2303,12 +2298,8 @@
 </ul>
 <h3 id="generate-certs">Generate certs<a class="headerlink" href="#generate-certs" title="Permanent link">¶</a></h3>
 <p>Use <a href="https://github.com/interuss/dss/blob/master/build/make-certs.py"><code>make-certs.py</code> script</a> to create certificates for
-    the CockroachDB nodes in this DSS instance:</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>    ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
-        --node-address &lt;ADDRESS&gt; &lt;ADDRESS&gt; &lt;ADDRESS&gt; ...
-        --ca-cert-to-join &lt;CA_CERT_FILE&gt;
+the CockroachDB nodes in this DSS instance:</p>
+<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>./make-certs.py --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE --node-address &lt;ADDRESS&gt; &lt;ADDRESS&gt; &lt;ADDRESS&gt; ... --ca-cert-to-join &lt;CA_CERT_FILE&gt;
 </code></pre></div></td></tr></tbody></table></div>
 <h3 id="adopt-certs">Adopt certs<a class="headerlink" href="#adopt-certs" title="Permanent link">¶</a></h3>
 <p>Before services are deployed to this DSS instance, all existing participants in the pool must update their DSS instances to accept the certificates of this DSS instance (just generated).</p>
@@ -2324,7 +2315,8 @@
    instance joining the pool.</li>
 <li>Upload the new ca.crt to its cluster using <code>./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE</code> (see top of page for <code>$CLUSTER_CONTEXT</code> and <code>$NAMESPACE</code>)</li>
 <li>Restart their CockroachDB pods to recognize the updated ca.crt:
-   <code>kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE</code></li>
+   <code>kubectl --context $CLUSTER_CONTEXT rollout restart statefulset/cockroachdb --namespace $NAMESPACE</code>
+   (With the helm chart, the statefulset is named <code>dss-cockroachdb</code>.)</li>
 <li>Inform the prospective pool participant when the CockroachDB pods have finished restarting (typically around 10 minutes)</li>
 </ol>
 <h2 id="apply-certs">Apply certs<a class="headerlink" href="#apply-certs" title="Permanent link">¶</a></h2>
@@ -2333,7 +2325,7 @@
 <a href="https://github.com/interuss/dss/blob/master/build/apply-certs.sh"><code>apply-certs.sh</code> script</a>
 to create secrets on the Kubernetes cluster containing the certificates and
 keys generated in the previous step.</p>
-<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>    ./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE
+<div class="language-text highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE
 </code></pre></div></td></tr></tbody></table></div>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">¶</a></h2>
 <p>Proceed to <a href="../../services/">services deployment</a>.</p>
@@ -2357,7 +2349,7 @@ keys generated in the previous step.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 22, 2026 02:49:15 UTC">September 22, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 15:13:13 UTC">November 23, 2026</span>
   </span>
 
     
