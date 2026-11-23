@@ -32,15 +32,15 @@ In the instructions below:
 If this DSS instance will be the first and/or only DSS instance in the pool, follow the instructions in this section.
 
 Use [`make-certs.py` script](https://github.com/interuss/dss/blob/master/build/make-certs.py) to create certificates for
-    the CockroachDB nodes in this DSS instance:
+the CockroachDB nodes in this DSS instance:
 
-        ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
-            --node-address <ADDRESS> <ADDRESS> <ADDRESS> ...
+    ./make-certs.py --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE --node-address <ADDRESS> <ADDRESS> <ADDRESS> ...
 
-    1.  Note: If you are creating multiple DSS instances at once and joining
-        them together, you may want to copy the nth instance's `ca.crt` into
-        the rest of the instances, such that ca.crt is the same across all
-        instances.
+!!! note
+    If you are creating multiple DSS instances at once and joining
+    them together, you may want to copy the nth instance's `ca.crt` into
+    the rest of the instances, such that ca.crt is the same across all
+    instances.
 
 Proceed to "Apply certs" section below.
 
@@ -58,11 +58,9 @@ Before certs for this DSS instance can be generated, the following information m
 ### Generate certs
 
 Use [`make-certs.py` script](https://github.com/interuss/dss/blob/master/build/make-certs.py) to create certificates for
-    the CockroachDB nodes in this DSS instance:
+the CockroachDB nodes in this DSS instance:
 
-        ./make-certs.py --cluster $CLUSTER_CONTEXT --namespace $NAMESPACE
-            --node-address <ADDRESS> <ADDRESS> <ADDRESS> ...
-            --ca-cert-to-join <CA_CERT_FILE>
+    ./make-certs.py --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE --node-address <ADDRESS> <ADDRESS> <ADDRESS> ... --ca-cert-to-join <CA_CERT_FILE>
 
 ### Adopt certs
 
@@ -81,7 +79,8 @@ When a participant seeking to deploy a DSS instance into an existing pool reques
    instance joining the pool.
 1. Upload the new ca.crt to its cluster using `./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE` (see top of page for `$CLUSTER_CONTEXT` and `$NAMESPACE`)
 1. Restart their CockroachDB pods to recognize the updated ca.crt:
-   `kubectl rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+   `kubectl --context $CLUSTER_CONTEXT rollout restart statefulset/cockroachdb --namespace $NAMESPACE`
+   (With the helm chart, the statefulset is named `dss-cockroachdb`.)
 1. Inform the prospective pool participant when the CockroachDB pods have finished restarting (typically around 10 minutes)
 
 ## Apply certs
@@ -92,7 +91,7 @@ Regardless of how certs were generated, apply/deploy them to the
 to create secrets on the Kubernetes cluster containing the certificates and
 keys generated in the previous step.
 
-        ./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE
+    ./apply-certs.sh $CLUSTER_CONTEXT $NAMESPACE
 
 ## Next steps
 
