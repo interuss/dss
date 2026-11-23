@@ -79,6 +79,26 @@ for ds in "${datastores[@]}"; do
             ( cd "$goo_ws" && ./dss-certs.sh apply ) >>"$goo_log" 2>&1
             ok "apply $goo_name"
             ;;
+        raft)
+            section "Raft certs ($aws_name ↔ $goo_name)"
+            ( cd "$aws_ws" && { ./dss-certs.sh init || true; } && ./dss-certs.sh generate-raft-nodes ) >"$aws_log" 2>&1
+            ok "init $aws_name"
+            ( cd "$goo_ws" && { ./dss-certs.sh init || true; } && ./dss-certs.sh generate-raft-nodes ) >"$goo_log" 2>&1
+            ok "init $goo_name"
+
+            ( cd "$goo_ws" && ./dss-certs.sh get-ca ) \
+                | ( cd "$aws_ws" && ./dss-certs.sh add-pool-ca ) >>"$aws_log" 2>&1
+            ok "$aws_name trusts $goo_name"
+
+            ( cd "$aws_ws" && ./dss-certs.sh get-ca ) \
+                | ( cd "$goo_ws" && ./dss-certs.sh add-pool-ca ) >>"$goo_log" 2>&1
+            ok "$goo_name trusts $aws_name"
+
+            ( cd "$aws_ws" && ./dss-certs.sh apply ) >>"$aws_log" 2>&1
+            ok "apply $aws_name"
+            ( cd "$goo_ws" && ./dss-certs.sh apply ) >>"$goo_log" 2>&1
+            ok "apply $goo_name"
+            ;;
         crdb)
             section "CockroachDB certs ($aws_name ↔ $goo_name)"
             ( cd "$aws_ws" && ./make-certs.sh ) >"$aws_log" 2>&1

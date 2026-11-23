@@ -1,6 +1,6 @@
 # DSS release candidate validation procedure
 
-This procedure validates the image of a DSS release candidate. It deploys it in two DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
+This procedure validates the image of a DSS release candidate. It deploys it in three DSS pools, one per datastore, each with one DSS instance on AWS and one on Google Cloud. It then runs the prober, the USS qualifier and the benchmarker against them, and packages the results.
 
 This folder contains script helpers, deployment configurations, and test configurations to be run on DSS images for each release.
 Scripts are not expected to be robust; in case of an error, manual intervention will be needed. They are only intended to assist someone with sufficient technical knowledge.
@@ -11,6 +11,8 @@ Scripts are not expected to be robust; in case of an error, manual intervention 
 | `release-google-dss-crdb` | Google Cloud (`us-central-1-a`) | CockroachDB | Helm          | 3 × `n2-standard-4` |
 | `release-aws-dss-ybdb`    | AWS (`us-east-2`)               | Yugabyte    | Tanka         | 3 × `m5.xlarge`     |
 | `release-google-dss-ybdb` | Google Cloud (`us-central-1-a`) | Yugabyte    | Helm          | 3 × `n2-standard-4` |
+| `release-aws-dss-raft`    | AWS (`us-east-2`)               | Raft        | Tanka         | 3 × `m5.xlarge`     |
+| `release-google-dss-raft` | Google Cloud (`us-central-1-a`) | Raft        | Helm          | 3 × `n2-standard-4` |
 
 The clusters are defined in [infrastructure/](infrastructure), and the tests in [tests/](tests).
 
@@ -82,9 +84,9 @@ Docker is installed by the scripts if missing.
 ./release/scripts/spawn-clusters.sh
 ```
 
-This runs terraform apply on the four clusters in parallel and configurations are stored in `personal/`. Existing configs in `personal/` are not removed: the script asks whether to proceed, then whether to overwrite their module and tfvars (terraform state is kept).
+This runs terraform apply on the six clusters in parallel and configurations are stored in `personal/`. Existing configs in `personal/` are not removed: the script asks whether to proceed, then whether to overwrite their module and tfvars (terraform state is kept).
 
-Done when it prints `All 4 clusters up`. If some issues are encountered during the deployment, it is possible to perform a `terraform apply` in the `personal/*` folders.
+Done when it prints `All 6 clusters up`. If some issues are encountered during the deployment, it is possible to perform a `terraform apply` in the `personal/*` folders.
 
 ### 2. Configure clusters
 
@@ -92,9 +94,9 @@ Done when it prints `All 4 clusters up`. If some issues are encountered during t
 ./release/scripts/configure-clusters.sh
 ```
 
-This fetches the Kubernetes credentials, generates new certificates, and makes the two instances of each pool trust each other.
+This fetches the Kubernetes credentials, generates new certificates, and makes the two instances of each pool trust each other. The Raft groups are formed automatically by the AWS instance of the raft pool once the services are deployed.
 
-Done when it prints `All 4 clusters prepared`.
+Done when it prints `All 6 clusters prepared`.
 
 After this step, services are ready to be deployed.
 
@@ -104,9 +106,9 @@ After this step, services are ready to be deployed.
 ./release/scripts/deploy-services.sh
 ```
 
-This deploys the DSS instances, then waits until https://<DSS>/healthy returns ok on the four instances. While it waits, it lists the pods that are not ready.
+This deploys the DSS instances, then waits until https://<DSS>/healthy returns ok on the six instances. While it waits, it lists the pods that are not ready.
 
-Done when it prints `All 4 clusters healthy`.
+Done when it prints `All 6 clusters healthy`.
 
 ### 4. Run the functional tests
 
@@ -116,7 +118,7 @@ On the test machine:
 ./release/scripts/run-tests.sh
 ```
 
-This starts a local dummy OAuth server on port 8085. It then runs the prober against each instance, and the USS qualifier configurations crdb and ybdb against each pool.
+This starts a local dummy OAuth server on port 8085. It then runs the prober against each instance, and the USS qualifier configurations crdb, ybdb and raft against each pool.
 
 Done when it prints `ALL PASSED`. If it prints `FAILED`, the image did not pass validation. Keep the logs, and continue to step 6 to collect the results.
 
@@ -128,7 +130,7 @@ On the test machine:
 ./release/scripts/run-benchmarks.sh
 ```
 
-This starts a local dummy OAuth server on port 8085. It then runs each [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker) configuration `tests/benchmarker/<test>_<pool>.jsonnet`, which applies a test (`congested_area`, `separated_ops`, `typical_load`, `isas_uncontended`) to one pool (`crdb` or `ybdb`, see [tests/benchmarker/library](tests/benchmarker/library)). Pools are benchmarked in parallel, and the configurations of a pool sequentially; a pool stops at its first failed configuration. Do not run it at the same time as step 4.
+This starts a local dummy OAuth server on port 8085. It then runs each [benchmarker](https://github.com/interuss/monitoring/tree/main/monitoring/benchmarker) configuration `tests/benchmarker/<test>_<pool>.jsonnet`, which applies a test (`congested_area`, `separated_ops`, `typical_load`, `isas_uncontended`) to one pool (`crdb`, `ybdb` or `raft`, see [tests/benchmarker/library](tests/benchmarker/library)). Pools are benchmarked in parallel, and the configurations of a pool sequentially; a pool stops at its first failed configuration. Do not run it at the same time as step 4.
 
 Done when it prints `ALL DONE`. Logs of each pool are written to release/logs/<pool>.benchmarker.log, and each configuration writes to `tests/benchmarker/output/<test>_<pool>/`.
 
@@ -158,7 +160,7 @@ Then terminate the test machine.
 
 This uninstalls the services, deletes the persistent volumes, then runs terraform destroy on each cluster. The `personal/` config of each successfully destroyed cluster is removed.
 
-Done when it prints `All 4 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log. Finally, check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
+Done when it prints `All 6 clusters destroyed` with no warning. If there was a warning, check <cluster>.uninstall.log and <cluster>.destroy.log. Finally, check the AWS and Google Cloud consoles for leftover resources, especially load balancers and disks.
 
 ## Compatibility matrix
 
