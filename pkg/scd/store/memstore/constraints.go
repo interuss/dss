@@ -5,6 +5,7 @@ import (
 	"context"
 	"slices"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
 	"github.com/interuss/dss/pkg/scd/repos"
@@ -40,10 +41,10 @@ func (r *repo) SearchConstraints(_ context.Context, cellsVolume *dssmodels.Cells
 		}
 		matched = append(matched, rec)
 	}
-	slices.SortFunc(matched, func(a, b *constraintRecord) int { return cmp.Compare(a.ID, b.ID) })
-	if len(matched) > dssmodels.MaxResultLimit { // mirror SQL "LIMIT MaxResultLimit"
-		matched = matched[:dssmodels.MaxResultLimit]
+	if len(matched) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d constraints match", dssmodels.MaxResultLimit)
 	}
+	slices.SortFunc(matched, func(a, b *constraintRecord) int { return cmp.Compare(a.ID, b.ID) })
 
 	var out []*scdmodels.Constraint
 	for _, rec := range matched {

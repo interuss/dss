@@ -145,8 +145,8 @@ func (r *repo) searchSubscriptions(ctx context.Context, cells s2.CellUnion, owne
 	for rec := range r.liveSubscriptionsInCells(now, cells, owner) {
 		out = append(out, rec.toModel())
 
-		if len(out) > dssmodels.MaxResultLimit { // This mimics sqlstore behaviour, but it's not very good.
-			break
+		if len(out) > dssmodels.MaxResultLimit {
+			return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d subscriptions match", dssmodels.MaxResultLimit)
 		}
 	}
 	return out, nil
