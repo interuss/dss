@@ -13,7 +13,7 @@ Before beginning infrastructure deployment, follow the following steps:
     - Note that kubectl can alternatively be installed via the Google Cloud SDK
      `gcloud` shell if using Google Cloud.
 
-- Review the [database cleanup documentation](../../operations/cleanup.md) to decide on the eviction parameters to use.
+- Review the [database cleanup documentation](../../operations/cleanup.md) to decide on the eviction parameters to use: the [CockroachDB and YugabyteDB](../../operations/cleanup.md#cockroachdb-and-yugabytedb) section or the [Raft store](../../operations/cleanup.md#raft-store) section, depending on your datastore.
 
 ## Deployment Options
 

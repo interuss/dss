@@ -2,6 +2,11 @@
 
 Data will accumulate over time in the database if client USSs do not remove their expired entities, and this can lead to lower performance due to quantity of stale entities.  For this reason, InterUSS recommends periodically cleaning up no-longer-relevant entities if USS clients do not always clean up after themselves.
 
+The cleanup is done differently depending on the datastore used:
+
+- [CockroachDB and YugabyteDB](#cockroachdb-and-yugabytedb)
+- [Raft store](#raft-store)
+
 ## Why and when to run the cleanup
 
 Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:
@@ -11,12 +16,14 @@ Expired entities (operational intents past their end time, stale subscriptions, 
 
 There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long clients may legitimately need to query historical entities.
 
-The defaults shipped with the deployment tooling (`30m` TTL on RID running hourly, `2688h` ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.
+## CockroachDB and YugabyteDB
+
+The defaults shipped with the deployment tooling (`30m` TTL on RID running hourly, `2688h` ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria of [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup).
 
 Additionally, it is important to note that in a DSS pool, all DSS instances should be running the cleanup, even though it removes entities belonging to all instances.
 First, out of governance concerns, as this avoids an undesirable asymmetry between DSS instances. And second, doing so brings redundancy across the pool, in case one of the instances fails to properly perform the cleanup.
 
-## Performance impact
+### Performance impact
 
 Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subscriptions) is evicted with a single statement. Entity types are deleted independently, so contention or failure on one does not affect the others. There is no risk of data inconsistency in this case - the cleanup may simply be retried.
 
@@ -27,7 +34,7 @@ To mitigate contention:
 - Use `--rid_batch_size`/`--scd_batch_size` to split the deletion into smaller batches, and/or `--rid_limit`/`--scd_limit` to bound the total number of entities deleted per run.
 - Within a DSS pool, offset the cleanup schedules of the different instances to avoid having them running concurrently.
 
-## How to run the cleanup
+### How to run the cleanup
 
 The `evict` subcommand of `db-manager` is a CLI tool that lists and deletes expired entities in the DSS store.
 It supports cleanup of the following entity types: SCD operational intents, SCD subscriptions, RID identification service areas (ISAs), and RID subscriptions.
@@ -36,7 +43,7 @@ All cleanups are global operations that remove expired entities across all DSS i
 
 The usage of this tool is preferably automated by specifying appropriate values in Terraform deployment variables to schedule regular cleanups via a Kubernetes `CronJob`. But if necessary, it can be invoked manually.
 
-### Automated regular cleanup via Kubernetes `CronJob`
+#### Automated regular cleanup via Kubernetes `CronJob`
 
 The supported Terraform-based deployments include the RID and SCD eviction cron jobs. Those are shipped with safe defaults but should probably be tuned to your DSS pool:
 
@@ -44,12 +51,12 @@ The supported Terraform-based deployments include the RID and SCD eviction cron 
 - SCD: disabled by default, schedule `<min> 2 * * *`, TTL of 2688 hours (2 x 56 days).
 
 Where `<min>` is a minute (`0`–`59`) deterministically derived from the DSS instance's `locality` when `schedule` is left empty (`""`).
-As noted in [Why and when to run the cleanup](#why-and-when-to-run-the-cleanup) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
+As noted in [CockroachDB and YugabyteDB](#cockroachdb-and-yugabytedb) all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.
 
 When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
 See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for details. To change these parameters on an existing deployment, see [Modifying a deployment](modifying-deployment.md).
 
-### Manual ad-hoc cleanup via CLI `db-manager` tool
+#### Manual ad-hoc cleanup via CLI `db-manager` tool
 
 !!! warning
     Using this tool incorrectly may result in **loss of data**.
@@ -100,3 +107,108 @@ Additional information:
 - `--rid_ttl` and `--scd_ttl` accept durations formatted as [Go `time.Duration` strings](https://pkg.go.dev/time#ParseDuration), e.g. `24h`.
 - `--timeout` accepts the same duration format and bounds the total execution time of the command.
 - The datastore connection flags match those of the `core-service` command.
+
+## Raft store
+
+!!! warning "Experimental"
+    The Raft store is experimental: its implementation is still in progress and
+    the procedures in this section may change.
+
+With the Raft store, the cleanup is not done by db-manager but by the core-service nodes.
+The eviction settings of the deployment tooling have no effect as no CronJob is deployed.
+
+### How the cleanup works with the Raft store
+
+The cleanup is done per Raft group: `rid` (ISAs and subscriptions) and `scd`
+(operational intents and subscriptions).  Each of these groups has its own
+eviction settings:
+
+| Setting  | Description                                                                              | Default for `rid` | Default for `scd`     |
+| :------- | :--------------------------------------------------------------------------------------- | :---------------- | :-------------------- |
+| interval | Time between two scheduled cleanup jobs                                                  | `1h`              | `24h`                 |
+| ttl      | Time after their end time after which entities are expired                               | `30m`             | `2688h` (2 x 56 days) |
+| limit    | Maximum number of entities deleted per entity type by a cleanup job, `0` for unlimited   | `0`               | `0`                   |
+
+The scheduled cleanup jobs are enabled by default for both groups.
+
+The eviction settings, whether the scheduled cleanup jobs are disabled and the
+time of the last cleanup job are replicated by the Raft
+groups and are, therefore, shared by the whole pool.  As a consequence:
+
+- The cleanup runs once per interval for the whole pool. The current leader of
+  each group runs its scheduled cleanup job.
+- A change of the eviction settings made by one participant applies to every
+  DSS instance of the pool.  Changes should be done with the other participants of the pool according to their own procedures for changes.
+
+A cleanup job is due one interval after the last successful one, or
+immediately if none ran yet.  The schedule survives restarts and leadership
+changes. The new leader resumes it from the time of the last job.  A job may
+run twice around a leadership change, which has no other effect than deleting
+the entities expired in between.  A failed job is retried after 10 seconds.
+
+The expiration threshold of a job is computed from the clock of the node
+proposing it, and every node of the pool deletes the same entities.
+
+### Managing the cleanup with dssctl
+
+The cleanup is managed with the `dssctl raft evict` commands, run against any
+node of the pool as described in
+[running dssctl](../deployment/pooling/raft.md#running-dssctl).
+
+The commands act on both `rid` and `scd` groups, unless restricted with
+`--groups` (e.g. `--groups scd`), except `config set`, which ignores
+`--groups` and acts on the groups whose settings are given.  A command is
+executed independently for each group: it may succeed for one group and fail
+for the other.  When that happens, rerun the command with `--groups` limited
+to the failed group (with `config set`, with only the settings of the failed
+group).
+
+1. Display the eviction settings, whether the scheduled cleanup jobs are
+   disabled and the time of the last cleanup job of each group:
+
+   ```shell
+   dssctl raft evict config get
+   # rid:
+   #   interval: 1h0m0s
+   #   ttl: 30m0s
+   #   limit: unlimited
+   #   last run: 2026-11-20T09:12:03Z
+   # scd:
+   #   interval: 24h0m0s
+   #   ttl: 2688h0m0s
+   #   limit: unlimited
+   #   last run: 2026-11-20T02:00:41Z
+   ```
+2. Once agreed with the other participants of the pool, change the eviction
+   settings of a group.  The interval, TTL and limit of a group are given
+   together, and a group without them is left as it is:
+
+   ```shell
+   dssctl raft evict config set --scd_interval 24h --scd_ttl 2688h --scd_limit 1000
+   ```
+
+   The new settings apply to the next scheduled cleanup job, which is due one
+   new interval after the last cleanup job.
+3. If needed, disable or enable the scheduled cleanup jobs of a group.  The
+   eviction settings are kept while the scheduled cleanup jobs are disabled:
+
+   ```shell
+   dssctl raft evict config disable --groups scd
+   dssctl raft evict config enable --groups scd
+   ```
+4. If needed, run a cleanup job immediately, with the TTL and limit of the
+   eviction settings of each group, or with a TTL and a limit given together
+   for a group:
+
+   ```shell
+   dssctl raft evict run
+   dssctl raft evict run --groups scd --scd_ttl 4000h --scd_limit 1000
+   # scd: deleted 152 operational_intents, 12 subscriptions
+   ```
+
+   A cleanup job run this way counts as the last cleanup job: the next
+   scheduled one is due one interval after it.
+
+!!! warning
+    Unlike `db-manager evict`, `dssctl raft evict run` has no preview mode: it
+    deletes the expired entities directly.
