@@ -49,6 +49,8 @@ The release notes should contain at least the following sections:
 
 ## Important information
 
+* Volumes defined with circles now have the same area limits as volumes defined with polygons (2500 km²).
+
 ## Minimal database schema version
 
 | Schema | CockroachDB | Yugabyte |
