@@ -16,9 +16,18 @@ It contains scripts to operate the cluster and setup the services.
 
 1. Go to the new workspace `/build/workspace/${cluster_context}`.
 2. Run `./get-credentials.sh` to login to kubernetes. You can now access the cluster with `kubectl`.
-3. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
-4. Run `tk apply .` to deploy the services to kubernetes. (This may take up to 30 min)
-5. Wait for services to initialize:
+3. Deploy the services to kubernetes.
+
+    === "Tanka"
+        1. Go to the tanka workspace in `/deploy/services/tanka/workspace/${cluster_context}`.
+        1. Run `tk apply .`.
+
+    === "Helm"
+        1. Go to `/deploy/services/helm-charts/dss`.
+        1. Run `helm dep update --kube-context=${cluster_context}`.
+        1. Run `helm install --kube-context=${cluster_context} -f /build/workspace/${cluster_context}/helm_values.yml dss .`.
+
+4. Wait for services to initialize:
     - On AWS, load balancers and certificates are created by Kubernetes Operators. Therefore, it may take few minutes (~5min) to get the services up and running and generate the certificate. To track this progress, go to the following pages and check that:
         - On the [EKS page](https://eu-west-1.console.aws.amazon.com/eks/home), the status of the kubernetes cluster should be `Active`.
         - On the [EC2 page](https://eu-west-1.console.aws.amazon.com/ec2/home#LoadBalancers:), the load balancers (1 for the gateway, 1 per cockroach nodes) are in the state `Active`.
@@ -29,7 +38,7 @@ It contains scripts to operate the cluster and setup the services.
         - Under Frontend for Details, the Certificate column for HTTPS protocol will have an icon next to it which will change to a green checkmark when provisioning is complete.
         - Click on the certificate link to see provisioning progress.
         - If everything indicates OK and you still receive a cipher mismatch error message when attempting to visit /healthy, wait an additional 5 minutes before attempting to troubleshoot further.
-6. Verify that basic services are functioning by navigating to https://your-gateway-domain.example.com/healthy.
+5. Verify that basic services are functioning by navigating to https://your-gateway-domain.example.com/healthy.
 
 ## Next steps
 
