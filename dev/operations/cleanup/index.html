@@ -1084,6 +1084,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cockroachdb-and-yugabytedb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CockroachDB and YugabyteDB
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CockroachDB and YugabyteDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#performance-impact" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1093,8 +1105,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#how-to-run-the-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1122,6 +1134,50 @@
     <span class="md-ellipsis">
       
         Manual ad-hoc cleanup via CLI db-manager tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Raft store">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-cleanup-works-with-the-raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the cleanup works with the Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managing-the-cleanup-with-dssctl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing the cleanup with dssctl
       
     </span>
   </a>
@@ -1995,6 +2051,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cockroachdb-and-yugabytedb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CockroachDB and YugabyteDB
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CockroachDB and YugabyteDB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#performance-impact" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2004,8 +2072,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#how-to-run-the-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2033,6 +2101,50 @@
     <span class="md-ellipsis">
       
         Manual ad-hoc cleanup via CLI db-manager tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raft store
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Raft store">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-cleanup-works-with-the-raft-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the cleanup works with the Raft store
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managing-the-cleanup-with-dssctl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing the cleanup with dssctl
       
     </span>
   </a>
@@ -2127,6 +2239,11 @@
 
 <h1 id="database-cleanup">Database cleanup<a class="headerlink" href="#database-cleanup" title="Permanent link">¶</a></h1>
 <p>Data will accumulate over time in the database if client USSs do not remove their expired entities, and this can lead to lower performance due to quantity of stale entities.  For this reason, InterUSS recommends periodically cleaning up no-longer-relevant entities if USS clients do not always clean up after themselves.</p>
+<p>The cleanup is done differently depending on the datastore used:</p>
+<ul>
+<li><a href="#cockroachdb-and-yugabytedb">CockroachDB and YugabyteDB</a></li>
+<li><a href="#raft-store">Raft store</a></li>
+</ul>
 <h2 id="why-and-when-to-run-the-cleanup">Why and when to run the cleanup<a class="headerlink" href="#why-and-when-to-run-the-cleanup" title="Permanent link">¶</a></h2>
 <p>Expired entities (operational intents past their end time, stale subscriptions, ISAs whose lifetime has elapsed) can accumulate over time in the datastore if not cleaned up by clients. While the DSS keeps functioning correctly with some stale rows present, excessive accumulation can impact:</p>
 <ul>
@@ -2134,10 +2251,11 @@
 <li>Query performance: indexes get larger, range scans on <code>operational_intents</code> / <code>subscriptions</code> / <code>identification_service_areas</code> degrade.</li>
 </ul>
 <p>There is no single correct interval or TTL. Reasonable values depend on context and must be defined per DSS pool, taking into account: traffic volume and entity churn, regulatory or contractual data-retention requirements applicable to your jurisdiction, the storage capacity of the datastore cluster, and how long clients may legitimately need to query historical entities.</p>
-<p>The defaults shipped with the deployment tooling (<code>30m</code> TTL on RID running hourly, <code>2688h</code> ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria above.</p>
+<h2 id="cockroachdb-and-yugabytedb">CockroachDB and YugabyteDB<a class="headerlink" href="#cockroachdb-and-yugabytedb" title="Permanent link">¶</a></h2>
+<p>The defaults shipped with the deployment tooling (<code>30m</code> TTL on RID running hourly, <code>2688h</code> ≈ 112-day TTL on SCD running nightly when enabled) are starting points, not recommendations. Validate production values against the criteria of <a href="#why-and-when-to-run-the-cleanup">Why and when to run the cleanup</a>.</p>
 <p>Additionally, it is important to note that in a DSS pool, all DSS instances should be running the cleanup, even though it removes entities belonging to all instances.
 First, out of governance concerns, as this avoids an undesirable asymmetry between DSS instances. And second, doing so brings redundancy across the pool, in case one of the instances fails to properly perform the cleanup.</p>
-<h2 id="performance-impact">Performance impact<a class="headerlink" href="#performance-impact" title="Permanent link">¶</a></h2>
+<h3 id="performance-impact">Performance impact<a class="headerlink" href="#performance-impact" title="Permanent link">¶</a></h3>
 <p>Each entity type (SCD operational intents, SCD subscriptions, RID ISAs, RID subscriptions) is evicted with a single statement. Entity types are deleted independently, so contention or failure on one does not affect the others. There is no risk of data inconsistency in this case - the cleanup may simply be retried.</p>
 <p>To mitigate contention:</p>
 <ul>
@@ -2146,23 +2264,23 @@ First, out of governance concerns, as this avoids an undesirable asymmetry betwe
 <li>Use <code>--rid_batch_size</code>/<code>--scd_batch_size</code> to split the deletion into smaller batches, and/or <code>--rid_limit</code>/<code>--scd_limit</code> to bound the total number of entities deleted per run.</li>
 <li>Within a DSS pool, offset the cleanup schedules of the different instances to avoid having them running concurrently.</li>
 </ul>
-<h2 id="how-to-run-the-cleanup">How to run the cleanup<a class="headerlink" href="#how-to-run-the-cleanup" title="Permanent link">¶</a></h2>
+<h3 id="how-to-run-the-cleanup">How to run the cleanup<a class="headerlink" href="#how-to-run-the-cleanup" title="Permanent link">¶</a></h3>
 <p>The <code>evict</code> subcommand of <code>db-manager</code> is a CLI tool that lists and deletes expired entities in the DSS store.
 It supports cleanup of the following entity types: SCD operational intents, SCD subscriptions, RID identification service areas (ISAs), and RID subscriptions.
 Expiration of entities is preferably determined through their end times. In the unusual event that an end time is not available, the last update time is used instead.
 All cleanups are global operations that remove expired entities across all DSS instances in the pool, regardless of which instance created them.</p>
 <p>The usage of this tool is preferably automated by specifying appropriate values in Terraform deployment variables to schedule regular cleanups via a Kubernetes <code>CronJob</code>. But if necessary, it can be invoked manually.</p>
-<h3 id="automated-regular-cleanup-via-kubernetes-cronjob">Automated regular cleanup via Kubernetes <code>CronJob</code><a class="headerlink" href="#automated-regular-cleanup-via-kubernetes-cronjob" title="Permanent link">¶</a></h3>
+<h4 id="automated-regular-cleanup-via-kubernetes-cronjob">Automated regular cleanup via Kubernetes <code>CronJob</code><a class="headerlink" href="#automated-regular-cleanup-via-kubernetes-cronjob" title="Permanent link">¶</a></h4>
 <p>The supported Terraform-based deployments include the RID and SCD eviction cron jobs. Those are shipped with safe defaults but should probably be tuned to your DSS pool:</p>
 <ul>
 <li>RID: enabled by default, schedule: <code>&lt;min&gt; * * * *</code>, TTL of 30 minutes;</li>
 <li>SCD: disabled by default, schedule <code>&lt;min&gt; 2 * * *</code>, TTL of 2688 hours (2 x 56 days).</li>
 </ul>
 <p>Where <code>&lt;min&gt;</code> is a minute (<code>0</code>–<code>59</code>) deterministically derived from the DSS instance's <code>locality</code> when <code>schedule</code> is left empty (<code>""</code>).
-As noted in <a href="#why-and-when-to-run-the-cleanup">Why and when to run the cleanup</a> all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.</p>
+As noted in <a href="#cockroachdb-and-yugabytedb">CockroachDB and YugabyteDB</a> all DSS instances in a pool should run the cleanup: this default offsets the schedules across instances so they are unlikely to run concurrently.</p>
 <p>When deploying via Terraform modules, the parameters are configurable with module variables starting with "evict_".
 See <a href="https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md">TFVARS.gen.md</a> for details. To change these parameters on an existing deployment, see <a href="../modifying-deployment/">Modifying a deployment</a>.</p>
-<h3 id="manual-ad-hoc-cleanup-via-cli-db-manager-tool">Manual ad-hoc cleanup via CLI <code>db-manager</code> tool<a class="headerlink" href="#manual-ad-hoc-cleanup-via-cli-db-manager-tool" title="Permanent link">¶</a></h3>
+<h4 id="manual-ad-hoc-cleanup-via-cli-db-manager-tool">Manual ad-hoc cleanup via CLI <code>db-manager</code> tool<a class="headerlink" href="#manual-ad-hoc-cleanup-via-cli-db-manager-tool" title="Permanent link">¶</a></h4>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Using this tool incorrectly may result in <strong>loss of data</strong>.
@@ -2240,6 +2358,131 @@ Notably, ensure the clock on the system this tool is run on is reasonably accura
 <li><code>--timeout</code> accepts the same duration format and bounds the total execution time of the command.</li>
 <li>The datastore connection flags match those of the <code>core-service</code> command.</li>
 </ul>
+<h2 id="raft-store">Raft store<a class="headerlink" href="#raft-store" title="Permanent link">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Experimental</p>
+<p>The Raft store is experimental: its implementation is still in progress and
+the procedures in this section may change.</p>
+</div>
+<p>With the Raft store, the cleanup is not done by db-manager but by the core-service nodes.
+The eviction settings of the deployment tooling have no effect as no CronJob is deployed.</p>
+<h3 id="how-the-cleanup-works-with-the-raft-store">How the cleanup works with the Raft store<a class="headerlink" href="#how-the-cleanup-works-with-the-raft-store" title="Permanent link">¶</a></h3>
+<p>The cleanup is done per Raft group: <code>rid</code> (ISAs and subscriptions) and <code>scd</code>
+(operational intents and subscriptions).  Each of these groups has its own
+eviction settings:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Setting</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Default for <code>rid</code></th>
+<th style="text-align: left;">Default for <code>scd</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">interval</td>
+<td style="text-align: left;">Time between two scheduled cleanup jobs</td>
+<td style="text-align: left;"><code>1h</code></td>
+<td style="text-align: left;"><code>24h</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">ttl</td>
+<td style="text-align: left;">Time after their end time after which entities are expired</td>
+<td style="text-align: left;"><code>30m</code></td>
+<td style="text-align: left;"><code>2688h</code> (2 x 56 days)</td>
+</tr>
+<tr>
+<td style="text-align: left;">limit</td>
+<td style="text-align: left;">Maximum number of entities deleted per entity type by a cleanup job, <code>0</code> for unlimited</td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>The scheduled cleanup jobs are enabled by default for both groups.</p>
+<p>The eviction settings, whether the scheduled cleanup jobs are disabled and the
+time of the last cleanup job are replicated by the Raft
+groups and are, therefore, shared by the whole pool.  As a consequence:</p>
+<ul>
+<li>The cleanup runs once per interval for the whole pool. The current leader of
+  each group runs its scheduled cleanup job.</li>
+<li>A change of the eviction settings made by one participant applies to every
+  DSS instance of the pool.  Changes should be done with the other participants of the pool according to their own procedures for changes.</li>
+</ul>
+<p>A cleanup job is due one interval after the last successful one, or
+immediately if none ran yet.  The schedule survives restarts and leadership
+changes. The new leader resumes it from the time of the last job.  A job may
+run twice around a leadership change, which has no other effect than deleting
+the entities expired in between.  A failed job is retried after 10 seconds.</p>
+<p>The expiration threshold of a job is computed from the clock of the node
+proposing it, and every node of the pool deletes the same entities.</p>
+<h3 id="managing-the-cleanup-with-dssctl">Managing the cleanup with dssctl<a class="headerlink" href="#managing-the-cleanup-with-dssctl" title="Permanent link">¶</a></h3>
+<p>The cleanup is managed with the <code>dssctl raft evict</code> commands, run against any
+node of the pool as described in
+<a href="../../deployment/pooling/raft/#running-dssctl">running dssctl</a>.</p>
+<p>The commands act on both <code>rid</code> and <code>scd</code> groups, unless restricted with
+<code>--groups</code> (e.g. <code>--groups scd</code>), except <code>config set</code>, which ignores
+<code>--groups</code> and acts on the groups whose settings are given.  A command is
+executed independently for each group: it may succeed for one group and fail
+for the other.  When that happens, rerun the command with <code>--groups</code> limited
+to the failed group (with <code>config set</code>, with only the settings of the failed
+group).</p>
+<ol>
+<li>Display the eviction settings, whether the scheduled cleanup jobs are
+   disabled and the time of the last cleanup job of each group:</li>
+</ol>
+<p></p><div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-1-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-1-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-1-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-1-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-1-10">10</a></span>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>config<span class="w"> </span>get
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="c1"># rid:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="c1">#   interval: 1h0m0s</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1">#   ttl: 30m0s</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1">#   limit: unlimited</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="c1">#   last run: 2026-11-20T09:12:03Z</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="c1"># scd:</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="c1">#   interval: 24h0m0s</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="c1">#   ttl: 2688h0m0s</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="c1">#   limit: unlimited</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="c1">#   last run: 2026-11-20T02:00:41Z</span>
+</code></pre></div></td></tr></tbody></table></div>
+2. Once agreed with the other participants of the pool, change the eviction
+   settings of a group.  The interval, TTL and limit of a group are given
+   together, and a group without them is left as it is:<p></p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--scd_interval<span class="w"> </span>24h<span class="w"> </span>--scd_ttl<span class="w"> </span>2688h<span class="w"> </span>--scd_limit<span class="w"> </span><span class="m">1000</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>The new settings apply to the next scheduled cleanup job, which is due one
+   new interval after the last cleanup job.
+3. If needed, disable or enable the scheduled cleanup jobs of a group.  The
+   eviction settings are kept while the scheduled cleanup jobs are disabled:</p>
+<p></p><div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span>
+<span class="normal"><a href="#__codelineno-3-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>config<span class="w"> </span>disable<span class="w"> </span>--groups<span class="w"> </span>scd
+<a id="__codelineno-3-2" name="__codelineno-3-2"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>config<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--groups<span class="w"> </span>scd
+</code></pre></div></td></tr></tbody></table></div>
+4. If needed, run a cleanup job immediately, with the TTL and limit of the
+   eviction settings of each group, or with a TTL and a limit given together
+   for a group:<p></p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span>
+<span class="normal"><a href="#__codelineno-4-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>run
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>evict<span class="w"> </span>run<span class="w"> </span>--groups<span class="w"> </span>scd<span class="w"> </span>--scd_ttl<span class="w"> </span>4000h<span class="w"> </span>--scd_limit<span class="w"> </span><span class="m">1000</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="c1"># scd: deleted 152 operational_intents, 12 subscriptions</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>A cleanup job run this way counts as the last cleanup job: the next
+   scheduled one is due one interval after it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Unlike <code>db-manager evict</code>, <code>dssctl raft evict run</code> has no preview mode: it
+deletes the expired entities directly.</p>
+</div>
 
 
 
@@ -2260,7 +2503,7 @@ Notably, ensure the clock on the system this tool is run on is reasonably accura
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 9, 2026 11:00:27 UTC">November 9, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 10:04:33 UTC">November 23, 2026</span>
   </span>
 
     
