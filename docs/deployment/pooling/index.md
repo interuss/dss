@@ -14,3 +14,4 @@ instance:
 
 - [CockroachDB pooling](./crdb.md)
 - [YugabyteDB pooling](./yugabyte.md)
+- [Raft store pooling](./raft.md) (experimental)
