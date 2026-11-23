@@ -210,9 +210,6 @@ warning by the node, at most one line per reason every 5 seconds):
 | `bad_certificate` | Any other invalid peer certificate |
 | `other` | Any other failure |
 
-A connection closed by the peer during the handshake, like the health check of
-a load balancer, is neither logged nor counted.
-
 ### Tracing
 
 Use flag `--enable_tracing` to enable tracing.

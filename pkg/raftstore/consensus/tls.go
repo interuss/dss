@@ -39,8 +39,7 @@ func NewTLSInfo(connectParams params.ConnectParameters, logger *zap.Logger) etcd
 }
 
 // newListener listens on addr, with mutual TLS unless tlsInfo is empty. The TLS handshake completes before a
-// connection is handed to the Raft handler. Each connection rejected during the handshake is logged and counted,
-// except the ones closed by the peer.
+// connection is handed to the Raft handler. Each connection rejected during the handshake is logged and counted.
 func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo, logger *zap.Logger) (net.Listener, error) {
 	if tlsInfo.Empty() {
 		return (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
@@ -59,7 +58,7 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 	lastLogged := map[string]time.Time{}
 	removed := map[string]int{}
 	tlsInfo.HandshakeFailure = func(conn *tls.Conn, err error) {
-		// The health check of a load balancer connects and closes without sending anything, so we ignore it.
+		// Ignore closed connections (like health check of a load balancer)
 		if errors.Is(err, io.EOF) {
 			return
 		}
