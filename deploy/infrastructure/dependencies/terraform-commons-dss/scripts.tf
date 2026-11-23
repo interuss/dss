@@ -24,6 +24,7 @@ resource "local_file" "dss_certs" {
   content = templatefile("${path.module}/templates/dss-certs.sh.tmp", {
     cluster_context = var.kubernetes_context_name
     namespace       = var.kubernetes_namespace
+    organization    = var.certificates_organization
     nodes_address   = var.datastore_type == "raft" ? "<ID>.${var.db_hostname_suffix}" : "<ID>.<TYPE>.${var.db_hostname_suffix}"
     node_count      = var.node_count
   })

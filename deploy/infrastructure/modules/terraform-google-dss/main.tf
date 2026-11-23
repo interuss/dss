@@ -67,6 +67,7 @@ module "terraform-commons-dss" {
   raft_storage_size                    = var.raft_storage_size
   raft_automatic_bootstrap             = var.raft_automatic_bootstrap
   raft_automatic_bootstrap_nodes       = var.raft_automatic_bootstrap_nodes
+  certificates_organization            = var.certificates_organization
   node_count                           = var.node_count
   kubernetes_api_endpoint              = module.terraform-google-kubernetes.kubernetes_api_endpoint
   crdb_internal_nodes                  = module.terraform-google-kubernetes.crdb_addresses
