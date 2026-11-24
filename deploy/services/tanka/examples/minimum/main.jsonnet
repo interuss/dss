@@ -22,29 +22,44 @@ local metadata = metadataBase {
     hostnameSuffix: 'VAR_DB_HOSTNAME_SUFFIX',
     nodeIPs: ['VAR_CRDB_NODE_IP1', 'VAR_CRDB_NODE_IP2', 'VAR_CRDB_NODE_IP3'],
     shouldInit: false, // <-- This boolean value is VAR_SHOULD_INIT
-    JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE1' ],
+    JoinExisting: ['VAR_CRDB_EXTERNAL_NODE1', 'VAR_CRDB_EXTERNAL_NODE2', 'VAR_CRDB_EXTERNAL_NODE3' ],
     storageClass: 'VAR_STORAGE_CLASS',
   },
   yugabyte+: {
     image: 'VAR_YUGABYTE_DOCKER_IMAGE_NAME',
     storageClass: 'VAR_STORAGE_CLASS',
-    masterNodeIPs: ['VAR_YUGABYTE_MASTER_IP1', 'VAR_YUGABYTE_MASTER_IP2', 'VAR_YUGABYTE_MASTER_IP3'],
-    tserverNodeIPs: ['VAR_YUGABYTE_TSERVER_IP1', 'VAR_YUGABYTE_TSERVER_IP2', 'VAR_YUGABYTE_TSERVER_IP3'],
+    masterNodeIPs: ['VAR_YUGABYTE_MASTER_NODE_IP1', 'VAR_YUGABYTE_MASTER_NODE_IP2', 'VAR_YUGABYTE_MASTER_NODE_IP3'],
+    tserverNodeIPs: ['VAR_YUGABYTE_TSERVER_NODE_IP1', 'VAR_YUGABYTE_TSERVER_NODE_IP2', 'VAR_YUGABYTE_TSERVER_NODE_IP3'],
     masterAddresses: ['VAR_YUGABYTE_MASTER_ADDRESS1', 'VAR_YUGABYTE_MASTER_ADDRESS2', 'VAR_YUGABYTE_MASTER_ADDRESS3'],
     master: {
-      rpc_bind_addresses: "VAR_YUGABYTE_MASTER_RPC_BIND_ADDRESSES",
-      server_broadcast_addresses: "VAR_YUGABYTE_MASTER_SERVER_BROADCAST_ADDRESSES",
+      rpc_bind_addresses: "VAR_YUGABYTE_MASTER_BIND_ADDRESS",
+      server_broadcast_addresses: "VAR_YUGABYTE_MASTER_BIND_ADDRESS",
     },
     tserver: {
-      rpc_bind_addresses: "VAR_YUGABYTE_TSERVER_RPC_BIND_ADDRESSES",
-      server_broadcast_addresses: "VAR_YUGABYTE_TSERVER_SERVER_BROADCAST_ADDRESSES",
+      rpc_bind_addresses: "VAR_YUGABYTE_TSERVER_BIND_ADDRESS",
+      server_broadcast_addresses: "VAR_YUGABYTE_TSERVER_BIND_ADDRESS",
     },
     fix_27367_issue: false, // <- This boolean value is VAR_YUGABYTE_FIX_27367_ISSUE
     light_resources: false, // <- This boolean value is VAR_YUGABYTE_LIGHT_RESOURCES
     placement: {
-      cloud: 'VAR_YUGABYTE_PLACEMENT_CLOUD',
-      region: 'VAR_YUGABYTE_PLACEMENT_REGION',
-      zone: 'VAR_YUGABYTE_PLACEMENT_ZONE',
+      cloud: 'VAR_YUGABYTE_CLOUD',
+      region: 'VAR_YUGABYTE_REGION',
+      zone: 'VAR_YUGABYTE_ZONE',
+    },
+  },
+  raft+: {
+    nodes: [
+      { endpoint: 'VAR_RAFT_NODE_ENDPOINT1', ip: 'VAR_RAFT_NODE_IP1' },
+      { endpoint: 'VAR_RAFT_NODE_ENDPOINT2', ip: 'VAR_RAFT_NODE_IP2' },
+      { endpoint: 'VAR_RAFT_NODE_ENDPOINT3', ip: 'VAR_RAFT_NODE_IP3' },
+    ],
+    clusterID: 1, // <-- This integer value is VAR_RAFT_CLUSTER_ID
+    tlsSecret: 'VAR_RAFT_TLS_SECRET',
+    automaticBootstrap: false, // <-- This boolean value is VAR_RAFT_AUTOMATIC_BOOTSTRAP
+    automaticBootstrapNodes: ['VAR_RAFT_AUTOMATIC_BOOTSTRAP_NODE1'],
+    storage+: {
+      size: 'VAR_RAFT_STORAGE_SIZE',
+      storageClass: 'VAR_STORAGE_CLASS',
     },
   },
   backend+: {
@@ -82,7 +97,7 @@ local metadata = metadataBase {
       subscriptions: true, // <-- this boolean value is VAR_EVICT_SCD_ENABLE_SUBSCRIPTIONS
     },
     rid+: {
-      enable_cron: true, // <-- this boolean value is VAR_EVICT_ENABLE_SCD_CRON
+      enable_cron: true, // <-- this boolean value is VAR_EVICT_ENABLE_RID_CRON
       schedule: "VAR_EVICT_RID_SCHEDULE",
       ttl: "VAR_EVICT_RID_TTL",
       timeout: "VAR_EVICT_RID_TIMEOUT",
