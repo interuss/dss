@@ -31,6 +31,13 @@ To pool a set of DSS instances with the Raft store:
   in the `deploy/operations/certificates-management` folder of this
   repository.
 
+!!! note
+    When the infrastructure is deployed with Terraform, a `dss-certs.sh` helper
+    is generated in `/build/workspace/${cluster_context}`. It calls
+    `dss-certs.py` with `--name`, `--organization`, `--cluster-context`,
+    `--namespace`, `--nodes-public-address` and `--nodes-count` already set,
+    e.g. `./dss-certs.sh init`.
+
 In the instructions below:
 
 * `$CLUSTER_CONTEXT` is the name of the Kubernetes cluster deployed as
