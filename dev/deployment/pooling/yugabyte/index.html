@@ -2617,6 +2617,14 @@
 <p>The <code>dss-certs.py</code> helps you manage the set of certificates used for your DSS deployment.</p>
 <p>Should this DSS beeing part of a pool, the script also provide some helpers to manage the set of CA certificates in the pool.</p>
 <p>To run the script, just run <code>./dss-certs.py</code>. The python script don't require any dependencies, just a recent version of python 3.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When the infrastructure is deployed with Terraform, a <code>dss-certs.sh</code> helper
+is generated in <code>/build/workspace/${cluster_context}</code>. It calls
+<code>dss-certs.py</code> with <code>--name</code>, <code>--organization</code>, <code>--cluster-context</code>,
+<code>--namespace</code>, <code>--nodes-public-address</code> and <code>--nodes-count</code> already set,
+e.g. <code>./dss-certs.sh init</code>.</p>
+</div>
 <h3 id="quick-start-guide">Quick start guide<a class="headerlink" href="#quick-start-guide" title="Permanent link">¶</a></h3>
 <h4 id="single-dss-instance-in-minikube">Single DSS instance in minikube`<a class="headerlink" href="#single-dss-instance-in-minikube" title="Permanent link">¶</a></h4>
 <ul>
@@ -2628,7 +2636,7 @@
 <li>Creation of the 3 DSS instances certificates</li>
 <li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default init</code></li>
 <li><code>./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 init</code></li>
-<li><code>./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace ns3 init</code></li>
+<li><code>./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 init</code></li>
 <li>Copy instance 2 and 3 CA certificates to the instance 1</li>
 <li><code>./dss-certs.py --name dss-instance-2 --cluster-context dss-local-cluster --namespace ns2 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca</code></li>
 <li><code>./dss-certs.py --name dss-instance-3 --cluster-context dss-local-cluster --namespace ns3 get-ca | ./dss-certs.py --name dss-instance-1 --cluster-context dss-local-cluster --namespace default add-pool-ca</code></li>
@@ -2711,10 +2719,10 @@ must be exchanged.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>Quick reminder for CA management:</p>
-<p>Each DSS instance should use <code>./dss-certs.sh init</code> To get the CA that should
-be sent to others instances, use <code>./dss-certs.sh get-ca</code> To import the CA of
-others DSS instance, use <code>./dss-certs.sh add-pool-ca</code> Finally, apply
-certificates on the kubernetes cluster with <code>./dss-certs.sh apply</code></p>
+<p>Each DSS instance should use <code>./dss-certs.py ... init</code> To get the CA that should
+be sent to others instances, use <code>./dss-certs.py ... get-ca</code> To import the CA of
+others DSS instance, use <code>./dss-certs.py ... add-pool-ca</code> Finally, apply
+certificates on the kubernetes cluster with <code>./dss-certs.py ... apply</code></p>
 </div>
 <p>Ensure placement info is how you want it. See the section below for placement
 requirements.</p>
@@ -2723,18 +2731,18 @@ requirements.</p>
 will be joining an existing cluster, they will need to request all CAs that
 the pool is currently using (any one member of the pool may provide it). The
 joining USS will also need a list of Yugabyte node addresses.</p>
-<p>The joining USS must create his own CA with <code>./dss-certs.sh init</code> and retrieve
-it with <code>./dss-certs.sh get-ca</code>. This certificate must be provided to each
-existing DSS instance in the pool that will import it with <code>./dss-certs.sh
-add-pool-ca</code> and <code>./dss-certs.sh apply</code>.</p>
+<p>The joining USS must create his own CA with <code>./dss-certs.py ... init</code> and retrieve
+it with <code>./dss-certs.py ... get-ca</code>. This certificate must be provided to each
+existing DSS instance in the pool that will import it with <code>./dss-certs.py ...
+add-pool-ca</code> and <code>./dss-certs.py ... apply</code>.</p>
 <p>One of existing DSS instance shall provide to the joining USS all existing
-certificate, using <code>./dss-certs.sh get-pool-ca</code>. The joining USS can import them
-with <code>./dss-certs.sh add-pool-ca</code> and finally apply certificates with
-<code>./dss-certs.sh apply</code>. As an alternative, each DSS instance can provide its
+certificate, using <code>./dss-certs.py ... get-pool-ca</code>. The joining USS can import them
+with <code>./dss-certs.py ... add-pool-ca</code> and finally apply certificates with
+<code>./dss-certs.py ... apply</code>. As an alternative, each DSS instance can provide its
 individual CA.</p>
 <p>Participants shall ensure they work with a coherent set of certificate by
 comparing the pool CA hash. It is displayed after adding certificates or using
-the <code>./dss-certs.sh list-pool-ca</code>.</p>
+the <code>./dss-certs.py ... list-pool-ca</code>.</p>
 <p>When CAs have been exchanged and configured everywhere, the joining participant
 can bring his system online (e.g. by applying helm charts onto his cluster). The
 <code>yugabyte_external_nodes</code> setting shall be set <strong>before</strong> starting the Yugabyte
@@ -2798,7 +2806,7 @@ requirements.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 8, 2026 16:34:22 UTC">January 8, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 24, 2026 10:02:49 UTC">November 24, 2026</span>
   </span>
 
     
