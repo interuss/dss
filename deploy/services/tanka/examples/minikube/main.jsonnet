@@ -14,7 +14,7 @@ local metadata = metadataBase {
   enableDssMetrics: false,
   datastore: 'yugabyte',
   datastoreMaxOpenConns: 4,
-  locality: 'minikube',
+  locality: 'zone=minikube',
   cockroach+: {
     image: 'cockroachdb/cockroach:v24.1.3',
     nodeIPs: ['', '', ''],

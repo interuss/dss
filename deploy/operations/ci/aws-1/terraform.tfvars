@@ -15,7 +15,7 @@ image               = "docker.io/interuss/dss:latest"
 should_init         = true
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss-ci"
-locality            = "interuss_dss-ci-aws-ue1"
+locality            = "zone=interuss_dss-ci-aws-ue1"
 crdb_external_nodes = []
 
 # The following variables are injected using the TF_VAR_name method.

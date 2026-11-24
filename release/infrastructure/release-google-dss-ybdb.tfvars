@@ -27,7 +27,7 @@ should_init = false
 # CockroachDB
 crdb_image_tag      = "v24.1.3"
 crdb_cluster_name   = "interuss-example"
-locality            = "interuss_dss-dev-uc1a"
+locality            = "zone=interuss_dss-dev-uc1a"
 crdb_external_nodes = []
 
 datastore_type = "yugabyte"

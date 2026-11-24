@@ -462,10 +462,11 @@ For docker hub private repository, use <code>docker.io</code> as <code>DOCKER_RE
 </td>
             </tr><tr>
                 <td>locality (<code>string</code>)</td>
-                <td><p>Unique name for your DSS instance. Currently, we recommend &quot;&lt;ORG_NAME&gt;_&lt;CLUSTER_NAME&gt;&quot;,
-and the = character is not allowed. However, any unique (among all other participating
-DSS instances) value is acceptable.</p>
-<p>Example: &lt;ORGNAME_CLUSTER_NAME&gt;</p>
+                <td><p>Unique name for your DSS instance, in the form &quot;zone=<ID>&quot;. Currently, we recommend
+&quot;zone=&lt;ORG_NAME&gt;_&lt;CLUSTER_NAME&gt;&quot;. However, any unique (among all other participating
+DSS instances) <ID> is acceptable.
+With CockroachDB, this value is passed as is to the --locality flag of the nodes.</p>
+<p>Example: zone=&lt;ORGNAME_CLUSTER_NAME&gt;</p>
 </td>
             </tr><tr>
                 <td>node_count (<code>number</code>)</td>
