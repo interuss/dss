@@ -204,7 +204,6 @@ warning by the node, at most one line per reason every 5 seconds):
 | Reason | Meaning |
 | :--- | :--- |
 | `not_tls` | The peer does not use TLS |
-| `closed` | The peer closed the connection during the handshake |
 | `remote_rejected` | The peer does not trust the certificate of this node |
 | `unknown_authority` | The peer certificate is not signed by a CA of the bundle |
 | `invalid_date` | The peer certificate has expired or is not valid yet |

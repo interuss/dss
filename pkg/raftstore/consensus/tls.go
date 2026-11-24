@@ -58,6 +58,10 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 	lastLogged := map[string]time.Time{}
 	removed := map[string]int{}
 	tlsInfo.HandshakeFailure = func(conn *tls.Conn, err error) {
+		// Ignore closed connections (like health check of a load balancer)
+		if errors.Is(err, io.EOF) {
+			return
+		}
 		reason := handshakeFailureReason(err)
 		failures.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
 		mu.Lock()
@@ -81,9 +85,6 @@ func newListener(ctx context.Context, addr string, tlsInfo etcdtransport.TLSInfo
 func handshakeFailureReason(err error) string {
 	if _, ok := errors.AsType[tls.RecordHeaderError](err); ok {
 		return "not_tls"
-	}
-	if errors.Is(err, io.EOF) {
-		return "closed"
 	}
 	if err.Error() == "remote error: tls: bad certificate" {
 		return "remote_rejected"
