@@ -70,6 +70,7 @@ module "terraform-commons-dss" {
   raft_storage_size                    = var.raft_storage_size
   raft_automatic_bootstrap             = var.raft_automatic_bootstrap
   raft_automatic_bootstrap_nodes       = var.raft_automatic_bootstrap_nodes
+  certificates_organization            = var.certificates_organization
   crdb_internal_nodes                  = module.terraform-aws-kubernetes.crdb_addresses
   yugabyte_internal_masters_nodes      = module.terraform-aws-kubernetes.yugabyte_masters_addresses
   yugabyte_internal_tservers_nodes     = module.terraform-aws-kubernetes.yugabyte_tservers_addresses

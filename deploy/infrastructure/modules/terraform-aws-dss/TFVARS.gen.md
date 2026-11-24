@@ -158,6 +158,14 @@ Leave empty to disable record creation.</p>
 <p>Example: <code>Z0123456789ABCDEFGHIJ</code></p>
 </td>
             </tr><tr>
+                <td>certificates_organization (<code>string</code>)</td>
+                <td><p>Name of the organization operating this DSS instance, passed as --organization to dss-certs.py by the
+generated dss-certs.sh helper. The combination of the kubernetes context name and this organization
+shall be unique in the pool.</p>
+<p>Only used with the yugabyte and raft datastores.</p>
+<p>Example: <code>InterUSS</code></p>
+<br/>Default value: <code>"default_orga"</code></td>
+            </tr><tr>
                 <td>cluster_name (<code>string</code>)</td>
                 <td><p>Name of the kubernetes cluster that will host this DSS instance (should generally describe the DSS instance being hosted)</p>
 <p>Example: <code>dss-che-1</code></p>

@@ -85,6 +85,7 @@ COMMONS_DSS_VARIABLES = GLOBAL_VARIABLES + [
     "raft_storage_size",
     "raft_automatic_bootstrap",
     "raft_automatic_bootstrap_nodes",
+    "certificates_organization",
     "evict_enable_scd_cron",
     "evict_scd_schedule",
     "evict_scd_ttl",
