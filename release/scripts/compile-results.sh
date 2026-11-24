@@ -159,11 +159,11 @@ EOF
     # --- benchmarker output ---
     bench_dst="$ds_dir/benchmarker"
     mkdir -p "$bench_dst"
-    [[ -f "$bench_log" ]] && cp "$bench_log" "$bench_dst/benchmarker.log"
     for src in "$BENCH_OUT"/*_"$short"; do
         [[ -d "$src" ]] || { warn "missing: $BENCH_OUT/*_$short"; continue; }
         test_name=$(basename "$src" "_$short")
-        cp -R "$src" "$bench_dst/$test_name"
+        mkdir -p "$bench_dst/$test_name"
+        find "$src" -maxdepth 1 -name '*.png' -exec cp {} "$bench_dst/$test_name/" \;
         n=$(find "$bench_dst/$test_name" -type f | wc -l)
         printf '  + benchmarker/%s/  (%d files)\n' "$test_name" "$n"
     done
