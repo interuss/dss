@@ -24,50 +24,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Member struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PeerUrl       string                 `protobuf:"bytes,1,opt,name=peer_url,json=peerUrl,proto3" json:"peer_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Member) Reset() {
-	*x = Member{}
-	mi := &file_snapshot_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Member) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Member) ProtoMessage() {}
-
-func (x *Member) ProtoReflect() protoreflect.Message {
-	mi := &file_snapshot_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Member.ProtoReflect.Descriptor instead.
-func (*Member) Descriptor() ([]byte, []int) {
-	return file_snapshot_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Member) GetPeerUrl() string {
-	if x != nil {
-		return x.PeerUrl
-	}
-	return ""
-}
-
 // Snapshot wraps the application snapshot with the membership state.
 type Snapshot struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
@@ -85,7 +41,7 @@ type Snapshot struct {
 
 func (x *Snapshot) Reset() {
 	*x = Snapshot{}
-	mi := &file_snapshot_proto_msgTypes[1]
+	mi := &file_snapshot_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +53,7 @@ func (x *Snapshot) String() string {
 func (*Snapshot) ProtoMessage() {}
 
 func (x *Snapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_snapshot_proto_msgTypes[1]
+	mi := &file_snapshot_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +66,7 @@ func (x *Snapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Snapshot.ProtoReflect.Descriptor instead.
 func (*Snapshot) Descriptor() ([]byte, []int) {
-	return file_snapshot_proto_rawDescGZIP(), []int{1}
+	return file_snapshot_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Snapshot) GetMembers() map[uint64]*Member {
@@ -187,9 +143,7 @@ var File_snapshot_proto protoreflect.FileDescriptor
 
 const file_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x0esnapshot.proto\x12\x17dss.raftstore.consensus\x1a\x1caux_/snapshot/snapshot.proto\x1a\x1brid/snapshot/snapshot.proto\x1a\x1bscd/snapshot/snapshot.proto\"#\n" +
-	"\x06Member\x12\x19\n" +
-	"\bpeer_url\x18\x01 \x01(\tR\apeerUrl\"\x9f\x04\n" +
+	"\x0esnapshot.proto\x12\x17dss.raftstore.consensus\x1a\x1caux_/snapshot/snapshot.proto\x1a\vgroup.proto\x1a\x1brid/snapshot/snapshot.proto\x1a\x1bscd/snapshot/snapshot.proto\"\x9f\x04\n" +
 	"\bSnapshot\x12H\n" +
 	"\amembers\x18\x01 \x03(\v2..dss.raftstore.consensus.Snapshot.MembersEntryR\amembers\x12H\n" +
 	"\aremoved\x18\x02 \x03(\v2..dss.raftstore.consensus.Snapshot.RemovedEntryR\aremoved\x12;\n" +
@@ -216,24 +170,24 @@ func file_snapshot_proto_rawDescGZIP() []byte {
 	return file_snapshot_proto_rawDescData
 }
 
-var file_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_snapshot_proto_goTypes = []any{
-	(*Member)(nil),               // 0: dss.raftstore.consensus.Member
-	(*Snapshot)(nil),             // 1: dss.raftstore.consensus.Snapshot
-	nil,                          // 2: dss.raftstore.consensus.Snapshot.MembersEntry
-	nil,                          // 3: dss.raftstore.consensus.Snapshot.RemovedEntry
-	(*snapshotpb.Snapshot)(nil),  // 4: aux.snapshot.Snapshot
-	(*snapshotpb1.Snapshot)(nil), // 5: rid.snapshot.Snapshot
-	(*snapshotpb2.Snapshot)(nil), // 6: scd.snapshot.Snapshot
+	(*Snapshot)(nil),             // 0: dss.raftstore.consensus.Snapshot
+	nil,                          // 1: dss.raftstore.consensus.Snapshot.MembersEntry
+	nil,                          // 2: dss.raftstore.consensus.Snapshot.RemovedEntry
+	(*snapshotpb.Snapshot)(nil),  // 3: aux.snapshot.Snapshot
+	(*snapshotpb1.Snapshot)(nil), // 4: rid.snapshot.Snapshot
+	(*snapshotpb2.Snapshot)(nil), // 5: scd.snapshot.Snapshot
+	(*Member)(nil),               // 6: dss.raftstore.consensus.Member
 }
 var file_snapshot_proto_depIdxs = []int32{
-	2, // 0: dss.raftstore.consensus.Snapshot.members:type_name -> dss.raftstore.consensus.Snapshot.MembersEntry
-	3, // 1: dss.raftstore.consensus.Snapshot.removed:type_name -> dss.raftstore.consensus.Snapshot.RemovedEntry
-	4, // 2: dss.raftstore.consensus.Snapshot.aux_snapshot:type_name -> aux.snapshot.Snapshot
-	5, // 3: dss.raftstore.consensus.Snapshot.rid_snapshot:type_name -> rid.snapshot.Snapshot
-	6, // 4: dss.raftstore.consensus.Snapshot.scd_snapshot:type_name -> scd.snapshot.Snapshot
-	0, // 5: dss.raftstore.consensus.Snapshot.MembersEntry.value:type_name -> dss.raftstore.consensus.Member
-	0, // 6: dss.raftstore.consensus.Snapshot.RemovedEntry.value:type_name -> dss.raftstore.consensus.Member
+	1, // 0: dss.raftstore.consensus.Snapshot.members:type_name -> dss.raftstore.consensus.Snapshot.MembersEntry
+	2, // 1: dss.raftstore.consensus.Snapshot.removed:type_name -> dss.raftstore.consensus.Snapshot.RemovedEntry
+	3, // 2: dss.raftstore.consensus.Snapshot.aux_snapshot:type_name -> aux.snapshot.Snapshot
+	4, // 3: dss.raftstore.consensus.Snapshot.rid_snapshot:type_name -> rid.snapshot.Snapshot
+	5, // 4: dss.raftstore.consensus.Snapshot.scd_snapshot:type_name -> scd.snapshot.Snapshot
+	6, // 5: dss.raftstore.consensus.Snapshot.MembersEntry.value:type_name -> dss.raftstore.consensus.Member
+	6, // 6: dss.raftstore.consensus.Snapshot.RemovedEntry.value:type_name -> dss.raftstore.consensus.Member
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
 	7, // [7:7] is the sub-list for extension type_name
@@ -246,7 +200,8 @@ func file_snapshot_proto_init() {
 	if File_snapshot_proto != nil {
 		return
 	}
-	file_snapshot_proto_msgTypes[1].OneofWrappers = []any{
+	file_group_proto_init()
+	file_snapshot_proto_msgTypes[0].OneofWrappers = []any{
 		(*Snapshot_AuxSnapshot)(nil),
 		(*Snapshot_RidSnapshot)(nil),
 		(*Snapshot_ScdSnapshot)(nil),
@@ -257,7 +212,7 @@ func file_snapshot_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_snapshot_proto_rawDesc), len(file_snapshot_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

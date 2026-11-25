@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -326,7 +325,7 @@ func write[Result any](ctx context.Context, c *Consensus, proposal Proposal) (Re
 // member describes a member of the group.
 // It is passed as the context of the config changes adding a node.
 type member struct {
-	URL string `json:"url,omitempty"`
+	URL string
 }
 
 func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, nodeURL *url.URL, tlsInfo etcdtransport.TLSInfo) error {
@@ -731,12 +730,12 @@ func (c *Consensus) applyConfigChange(data []byte) error {
 	c.confState = raftNode.ApplyConfChange(cc)
 
 	if cc.GetType() == raftpb.ConfChangeAddNode {
-		var m member
-		err = json.Unmarshal(cc.GetContext(), &m)
+		var m proposalpb.Member
+		err = proto.Unmarshal(cc.GetContext(), &m)
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to unmarshal context of config change adding node %d", cc.GetNodeId())
 		}
-		c.membership.addNode(cc.GetNodeId(), m)
+		c.membership.addNode(cc.GetNodeId(), member{URL: m.GetPeerUrl()})
 	}
 	return nil
 }
@@ -765,7 +764,7 @@ func (c *Consensus) entriesToApply(entries []*raftpb.Entry) ([]*raftpb.Entry, er
 // It carries the information needed to apply the config change.
 type confChangeContext struct {
 	// ID is used to track the proposal until it is applied.
-	ID string `json:"id"`
+	ID string
 	member
 }
 
@@ -841,7 +840,7 @@ func (c *Consensus) Node() (node.Info, error) {
 // Bootstrap starts a new Raft group with this node as its only member, and blocks until this node is its leader (bootstrap is completed)
 // or ctx is cancelled. Only a waiting node can bootstrap a group, otherwise a dsserr.AlreadyExists error is returned.
 func (c *Consensus) Bootstrap(ctx context.Context) (Membership, error) {
-	selfCtx, err := json.Marshal(member{URL: c.publicURL})
+	selfCtx, err := proto.Marshal(&proposalpb.Member{PeerUrl: c.publicURL})
 	if err != nil {
 		return Membership{}, stacktrace.Propagate(err, "failed to marshal the context of this node")
 	}
@@ -943,7 +942,7 @@ func (c *Consensus) proposeConfChange(ctx context.Context, change *raftpb.ConfCh
 
 	cctx.ID = uuid.New().String()
 
-	ctxBuf, err := json.Marshal(cctx)
+	ctxBuf, err := proto.Marshal(&proposalpb.ConfChangeContext{Id: cctx.ID, Member: &proposalpb.Member{PeerUrl: cctx.URL}})
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to marshal config change context")
 	}
@@ -984,9 +983,11 @@ func (c *Consensus) applyConfigChangeV2(data []byte) error {
 
 	var cctx confChangeContext
 	if len(cc.GetContext()) > 0 {
-		if err := json.Unmarshal(cc.GetContext(), &cctx); err != nil {
+		var pbCtx proposalpb.ConfChangeContext
+		if err := proto.Unmarshal(cc.GetContext(), &pbCtx); err != nil {
 			return stacktrace.Propagate(err, "failed to unmarshal config change context")
 		}
+		cctx = confChangeContext{ID: pbCtx.GetId(), URL: pbCtx.GetMember().GetPeerUrl()}
 	}
 
 	if len(cc.GetChanges()) != 1 {

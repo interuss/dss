@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package dss.raftstore.consensus;
+
+option go_package = "github.com/interuss/dss/pkg/pb/raftpb";
+
+message Member {
+    string peer_url = 1;
+}
+
+// ConfChangeContext is used as the raftpb.ConfChangeV2.Context.
+// It carries the information needed to apply the config change.
+message ConfChangeContext {
+    // id is used to track the proposal until it is applied.
+    string id = 1;
+    Member member = 2;
+}

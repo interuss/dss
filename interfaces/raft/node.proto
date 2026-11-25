@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package dss.raftstore.consensus;
+
+option go_package = "github.com/interuss/dss/pkg/pb/raftpb";
+
+// Identity identifies the node in its Raft group.
+// It is generated and persisted in the metadata of the WAL on the first start
+// so that the node keeps it across restarts.
+message Identity {
+    uint64 node_id = 1;
+}
+
+enum NodeState {
+    NODE_STATE_UNSPECIFIED = 0;
+    NODE_STATE_WAITING = 1;
+    NODE_STATE_MEMBER = 2;
+    NODE_STATE_REMOVED = 3;
+}
+
+// NodeInfo describes a DSS node in a Raft group. It is what the DSS nodes exchange on the Raft listener.
+message NodeInfo {
+    uint64 id = 1;
+    string url = 2;
+    NodeState state = 3;
+}
