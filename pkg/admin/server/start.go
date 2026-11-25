@@ -12,6 +12,7 @@ import (
 
 	"github.com/interuss/dss/pkg/api"
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
+	"github.com/interuss/dss/pkg/logging"
 	"github.com/interuss/dss/pkg/raftstore/consensus"
 	storerepos "github.com/interuss/dss/pkg/store/repos"
 	"github.com/interuss/dss/pkg/timestamp"
@@ -21,8 +22,9 @@ import (
 
 // Start serves the admin API on the Unix socket at socketPath, with requests failing after timeout and the context of
 // the handlers expiring after handlerTimeout.
+// The full requests and responses are logged if dump is set.
 // The directory of the socket is created if needed. A leftover socket at socketPath is replaced.
-func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout time.Duration, handlerTimeout time.Duration, raftGroups map[string]*consensus.Consensus, evictions map[string]storerepos.Eviction) (*http.Server, error) {
+func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout time.Duration, handlerTimeout time.Duration, dump bool, raftGroups map[string]*consensus.Consensus, evictions map[string]storerepos.Eviction) (*http.Server, error) {
 	socketDir := filepath.Dir(socketPath)
 	if err := os.MkdirAll(socketDir, 0o700); err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create the directory of the admin socket at %s", socketDir)
@@ -51,7 +53,7 @@ func Start(ctx context.Context, logger *zap.Logger, socketPath string, timeout t
 
 	server := &http.Server{
 		// The eviction handlers create Raft proposals which need to be timestamped.
-		Handler:           http.TimeoutHandler(timestamp.Middleware(handler), timeout, `{"message":"request timeout"}`),
+		Handler:           logging.HTTPMiddleware(logger, dump, http.TimeoutHandler(timestamp.Middleware(handler), timeout, `{"message":"request timeout"}`)),
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       15 * time.Second,
 	}

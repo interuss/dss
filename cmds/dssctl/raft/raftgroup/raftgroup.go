@@ -71,7 +71,7 @@ func SelectedEviction(fs *pflag.FlagSet) ([]Group, error) {
 func New(names []string) ([]Group, error) {
 	result := make([]Group, 0, len(names))
 	for _, name := range names {
-		group, err := client.NewRaftGroup(admin.Socket, name, admin.Timeout)
+		group, err := client.NewRaftGroup(admin.Socket, name, admin.Timeout, admin.DumpRequests)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "invalid --admin_socket")
 		}
