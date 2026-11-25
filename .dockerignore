@@ -4,5 +4,7 @@ build/workspace
 **/coverdata
 !build/dev/startup/coverdata/.gitkeep
 release/uss_qualifier_output
+!release/uss_qualifier_output/.gitignore
 release/output
+!release/output/.gitignore
 raft_data
