@@ -45,6 +45,8 @@ else
   echo "Building image ${TAG}"
   docker image build . -t "${TAG}"
 
+  build/check-image-version.sh "${TAG}"
+
   echo "Pushing docker image ${TAG}..."
   docker image push "${TAG}"
 
