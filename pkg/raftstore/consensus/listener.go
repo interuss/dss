@@ -36,17 +36,26 @@ func StartListener(ctx context.Context, logger *zap.Logger, addr string, tlsInfo
 		return stacktrace.NewError("the Raft listener is already started")
 	}
 
+	l, _, err := startServerListener(ctx, logger, addr, tlsInfo, onError)
+	if err != nil {
+		return err
+	}
+	raftListener = l
+	return nil
+}
+
+func startServerListener(ctx context.Context, logger *zap.Logger, addr string, tlsInfo etcdtransport.TLSInfo, onError func(error)) (*listener, string, error) {
 	ln, err := newListener(ctx, addr, tlsInfo, logger)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to listen on %s", addr)
+		return nil, "", stacktrace.Propagate(err, "failed to listen on %s", addr)
 	}
+	boundAddr := ln.Addr().String()
 
 	l := &listener{
-		logger:   logger.With(zap.String("address", addr)),
+		logger:   logger.With(zap.String("address", boundAddr)),
 		handlers: map[types.ID]http.Handler{},
 	}
 	l.server = &http.Server{Handler: l}
-	raftListener = l
 
 	go func() {
 		err := l.server.Serve(ln)
@@ -57,7 +66,7 @@ func StartListener(ctx context.Context, logger *zap.Logger, addr string, tlsInfo
 	}()
 
 	l.logger.Info("raft listener started")
-	return nil
+	return l, boundAddr, nil
 }
 
 // StopListener shuts down the listener started by StartListener.

@@ -82,6 +82,14 @@ type Consensus struct {
 }
 
 func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() (*proposalpb.Snapshot, error), commitC chan<- EntryCommit) (*Consensus, error) {
+	l, err := getListener()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to get the listener")
+	}
+	return newConsensus(ctx, logger, connectParams, provider, commitC, l)
+}
+
+func newConsensus(ctx context.Context, logger *zap.Logger, connectParams params.ConnectParameters, provider func() (*proposalpb.Snapshot, error), commitC chan<- EntryCommit, l *listener) (*Consensus, error) {
 	storage, nodeID, hasState, err := newStorage(ctx, logger.With(zap.String("component", "storage")), connectParams.DataDir, connectParams.SnapshotCatchupEntries)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize storage")
@@ -126,7 +134,7 @@ func NewConsensus(ctx context.Context, logger *zap.Logger, connectParams params.
 		},
 	}
 
-	err = consensus.initTransport(ctx, nodeID, connectParams.GroupClusterID, nodeUrl, NewTLSInfo(connectParams, logger))
+	err = consensus.initTransport(ctx, nodeID, connectParams.GroupClusterID, nodeUrl, NewTLSInfo(connectParams, logger), l)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to initialize transport")
 	}
@@ -329,7 +337,7 @@ type member struct {
 	URL string `json:"url,omitempty"`
 }
 
-func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, nodeURL *url.URL, tlsInfo etcdtransport.TLSInfo) error {
+func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID uint64, nodeURL *url.URL, tlsInfo etcdtransport.TLSInfo, l *listener) error {
 	nodeIDStr := fmt.Sprintf("%d", nodeID)
 	if tlsInfo.Empty() {
 		c.logger.Warn("--raft_insecure is set: Raft nodes do not authenticate each other and connection is not encrypted. Don't use this node in production environments.")
@@ -365,10 +373,6 @@ func (c *Consensus) initTransport(ctx context.Context, nodeID uint64, clusterID 
 		return err
 	}
 
-	l, err := getListener()
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to get the listener")
-	}
 	err = l.register(transport.ClusterID, c.endpoint.handler(transport.Handler()))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to register the transport to the listener")
