@@ -16,13 +16,6 @@ func ridAppSnapshot() *proposalpb.Snapshot {
 	}}}
 }
 
-func consensusWithSnapshot(members, removed memberMap, provider func() (*proposalpb.Snapshot, error)) *Consensus {
-	return &Consensus{
-		membership:     membership{members: members, removed: removed},
-		getAppSnapshot: provider,
-	}
-}
-
 func TestSnapshotRoundTrip(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -42,9 +35,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := consensusWithSnapshot(tt.members, tt.removed, func() (*proposalpb.Snapshot, error) { return ridAppSnapshot(), nil })
-
-			data, err := c.encodeSnapshot()
+			data, err := encodeSnapshot(tt.members, tt.removed, func() (*proposalpb.Snapshot, error) { return ridAppSnapshot(), nil })
 			require.NoError(t, err)
 			got, err := decodeSnapshot(data)
 			require.NoError(t, err)
@@ -59,15 +50,15 @@ func TestSnapshotRoundTrip(t *testing.T) {
 func TestEncodeSnapshotErrors(t *testing.T) {
 	members := memberMap{1: {URL: "https://node1:9011"}}
 
-	_, err := consensusWithSnapshot(members, memberMap{}, func() (*proposalpb.Snapshot, error) {
+	_, err := encodeSnapshot(members, memberMap{}, func() (*proposalpb.Snapshot, error) {
 		return nil, errors.New("snapshot failed")
-	}).encodeSnapshot()
+	})
 	require.Error(t, err)
 
-	_, err = consensusWithSnapshot(members, memberMap{}, func() (*proposalpb.Snapshot, error) {
+	_, err = encodeSnapshot(members, memberMap{}, func() (*proposalpb.Snapshot, error) {
 		// No AppSnapshot
 		return &proposalpb.Snapshot{}, nil
-	}).encodeSnapshot()
+	})
 	require.Error(t, err)
 }
 

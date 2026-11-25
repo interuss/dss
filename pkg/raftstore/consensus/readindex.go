@@ -75,3 +75,9 @@ func (r *readIndexTracker) untrack(id string) {
 
 	delete(r.pending, id)
 }
+
+func (r *readIndexTracker) pendingCount() int {
+	r.Lock()
+	defer r.Unlock()
+	return len(r.pending)
+}

@@ -33,15 +33,30 @@ type Proposal struct {
 	Payload   *raftpb.Payload
 }
 
-func (c *Consensus) newProposal(ctx context.Context, payload *raftpb.Payload) Proposal {
+func newProposal(ctx context.Context, nodeID uint64, payload *raftpb.Payload) Proposal {
 	timestamp := timestamp.MustFromContext(ctx)
 
 	return Proposal{
 		ID:        uuid.New().String(),
-		NodeID:    c.nodeID,
+		NodeID:    nodeID,
 		Timestamp: timestamp.UTC(),
 		Payload:   payload,
 	}
+}
+
+func unwrapProposalResult[Result any](proposalName string, res ProposalResult) (Result, error) {
+	var zero Result
+	if res.Error != nil {
+		return zero, res.Error
+	}
+	if res.Result == nil {
+		return zero, nil
+	}
+	result, ok := res.Result.(Result)
+	if !ok {
+		return zero, stacktrace.NewError("unexpected result type for %q: got %T", proposalName, res.Result)
+	}
+	return result, nil
 }
 
 // Name identifies the kind of request carried by the proposal, for logging purposes.
@@ -143,4 +158,10 @@ func (p *proposalsTracker) untrack(id string, result ProposalResult) {
 
 	applied <- result
 	delete(p.pending, id)
+}
+
+func (p *proposalsTracker) pendingCount() int {
+	p.Lock()
+	defer p.Unlock()
+	return len(p.pending)
 }
