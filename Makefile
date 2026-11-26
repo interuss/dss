@@ -275,6 +275,13 @@ local-doc:
 	docker build -f Dockerfile.docs . -t dss-docs
 	docker run --rm -it -p 8888:8000 -v $(CURDIR):/app/:ro dss-docs
 
+# Build the documentation the way it is published, failing on any warning
+# (broken links or anchors, missing pages).
+.PHONY: docs-check
+docs-check:
+	docker build -f Dockerfile.docs . -t dss-docs
+	docker run --rm -v $(CURDIR):/app/:ro dss-docs mkdocs build --strict --site-dir /tmp/site
+
 # Generation of documentation's assets
 SOURCES_GV = $(wildcard docs/assets/*.gv)
 OBJECTS_GV = $(patsubst docs/assets/%.gv, docs/assets/generated/%.png, $(SOURCES_GV))

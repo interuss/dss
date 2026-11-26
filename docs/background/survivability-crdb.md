@@ -1,6 +1,6 @@
 # CockroachDB Pool Survivability
 
-This document describes how to meet the survivability and high-availability objectives of a DSS pool running on CockroachDB (as described in the [Survivability section of the Architecture Overview](./architecture.md#Survivability)).
+This document describes how to meet the survivability and high-availability objectives of a DSS pool running on CockroachDB (as described in the [Survivability section of the Architecture Overview](./architecture.md#survivability)).
 
 For example, in a standard pool of 3 DSS providers running 2 CockroachDB nodes each (6 nodes total):
 * If we do not restrict where data replicas are placed, CockroachDB might place two of the three replicas of a range on nodes belonging to a single DSS provider.

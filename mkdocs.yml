@@ -11,6 +11,13 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/interuss
 docs_dir: docs
+# Fail `mkdocs build --strict` on broken internal links and anchors, instead of finding them after publication.
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
 edit_uri: edit/master/docs/
 theme:
   name: material

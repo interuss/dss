@@ -8,6 +8,8 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Automated hygiene verification (`make hygiene`)
 
+### Validate documentation (`make check-docs`)
+
 ### Shell lint (`make shell-lint`)
 
 ### Go lint (`make go-lint`)
