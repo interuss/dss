@@ -1,7 +1,7 @@
 # Deploy a DSS instance on Amazon Web Services via terraform
 
 This terraform module creates a Kubernetes cluster in Amazon Web Services using the Elastic Kubernetes Service (EKS)
-and generates the tanka files to deploy a DSS instance.
+and generates the Tanka and Helm configurations to deploy a DSS instance.
 
 ## Getting started
 

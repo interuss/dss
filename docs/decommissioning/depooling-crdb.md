@@ -13,6 +13,10 @@ re-creates the node if you delete it with `kubectl delete pod`.  You will need
 to scale down the Statefulset and that removes the last node first (ex:
 `cockroachdb-n` where `n` is the `size of statefulset - 1`, `n` starts at 0)
 
+The commands below use the Tanka names of the CockroachDB pods (`cockroachdb-0`,
+`cockroachdb-1`, ...). With the Helm chart, the pods are named `dss-cockroachdb-0`,
+`dss-cockroachdb-1`, ... instead.
+
 1. Check if all nodes are healthy and there are no
    under-replicated/unavailable ranges:<br>`kubectl exec -it cockroachdb-0 -- cockroach node status --ranges --certs-dir=cockroach-certs/`
 
