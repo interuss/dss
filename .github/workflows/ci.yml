@@ -77,6 +77,8 @@ jobs:
       run: make test-go-units-crdb
     - name: Build dss image
       run: make build-dss
+    - name: Check dss image version
+      run: build/check-image-version.sh interuss-local/dss
     - name: Tear down any pre-existing local DSS instance
       run: make down-locally
     - name: Start local DSS instance
