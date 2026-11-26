@@ -23,7 +23,7 @@ Before beginning services deployment:
 ## Services deployment
 
 This section describes how to deploy services for a DSS instance once the
-prerequisites have been satisified.
+prerequisites have been satisfied.
 
 Depending on [infrastructure deployment](../infrastructure/index.md) method, deploy services:
 
@@ -92,7 +92,7 @@ To change it on an existing deployment, see [Modifying a deployment](../../opera
 ### Verify signature of prebuilt InterUSS Docker images
 
 The prebuilt docker images are signed using [sigstore](https://www.sigstore.dev/).
-The identity of the CI workflow, attested by GitHub, is used so sign the images.
+The identity of the CI workflow, attested by GitHub, is used to sign the images.
 
 The signature may be verified by using [cosign](https://github.com/sigstore/cosign):
 ```shell

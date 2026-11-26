@@ -1,6 +1,6 @@
 # Deploy a DSS instance to Google Cloud Platform with terraform
 
-This guide will help you deploy a DSS instance to Google Cloud Platform with terraform and tanka.
+This guide will help you deploy a DSS instance to Google Cloud Platform with terraform, then Tanka or Helm.
 
 ## Getting started
 
