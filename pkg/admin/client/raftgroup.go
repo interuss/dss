@@ -2,8 +2,11 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"os"
 	"time"
 
 	restapi "github.com/interuss/dss/pkg/api/adminv1"
@@ -25,17 +28,44 @@ type RaftGroup struct {
 	name       restapi.RaftGroupName
 }
 
-func NewRaftGroup(socketPath string, name string, timeout time.Duration) (*RaftGroup, error) {
+// dumpTransport prints the full requests and responses to stderr.
+type dumpTransport struct {
+	next http.RoundTripper
+}
+
+func (t dumpTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqDump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to dump the request")
+	}
+	fmt.Fprintf(os.Stderr, "%s\n", reqDump)
+
+	resp, err := t.next.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	respDump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to dump the response")
+	}
+	fmt.Fprintf(os.Stderr, "%s\n", respDump)
+	return resp, nil
+}
+
+func NewRaftGroup(socketPath string, name string, timeout time.Duration, dumpRequests bool) (*RaftGroup, error) {
 	if socketPath == "" {
 		return nil, stacktrace.NewError("the path of the Unix socket of the admin API is required")
 	}
 
 	// The requests are sent over the Unix socket whatever their URL, whose host is only used in the Host header.
-	transport := &http.Transport{
+	var transport http.RoundTripper = &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			var d net.Dialer
 			return d.DialContext(ctx, "unix", socketPath)
 		},
+	}
+	if dumpRequests {
+		transport = dumpTransport{next: transport}
 	}
 	return &RaftGroup{
 		client:     &restapi.Client{BaseURL: "http://localhost", HTTPClient: &http.Client{Transport: transport, Timeout: timeout}},

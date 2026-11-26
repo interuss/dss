@@ -283,6 +283,7 @@ Common options:
 | `--groups` | Comma-separated list of the Raft groups to act on (`aux`, `rid`, `scd`); all of them if not set. |
 | `--admin_socket` | Path of the admin socket of the node, matching its `--admin_socket`; default `/run/dss/admin.sock`. |
 | `--admin_timeout` | Timeout of each request to the admin API; default 1m. |
+| `--admin_dump_requests` | Print the full admin requests and responses to stderr. |
 
 A command is executed independently for each selected group: it may
 succeed for some groups and fail for others.  When that happens, rerun the

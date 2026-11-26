@@ -435,7 +435,7 @@ func RunHTTPServer(ctx context.Context, ctxCanceler func(), address, locality st
 			}
 			evictions["scd"] = repo
 		}
-		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, raftGroups, evictions)
+		adminServer, err := adminserver.Start(ctx, logger.With(zap.String("component", "admin"), zap.String("socket", *adminSocket)), *adminSocket, *timeout, *adminHandlerTimeout, *dumpRequests, raftGroups, evictions)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to start the admin server")
 		}
