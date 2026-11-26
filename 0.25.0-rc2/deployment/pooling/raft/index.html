@@ -1,0 +1,2969 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://interuss.github.io/dss/0.25.0-rc2/deployment/pooling/raft/">
+      
+      
+        <link rel="prev" href="../yugabyte/">
+      
+      
+        <link rel="next" href="../../services/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>With Raft store (experimental) - DSS User Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/copy-inline-code.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <link href="../../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="light-blue" data-md-color-accent="light-blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pooling-configuration-with-the-raft-store" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden="">
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="DSS User Documentation" class="md-header__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/InterUSS_horizontal.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DSS User Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              With Raft store (experimental)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required="">
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix="">
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/interuss/dss" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    interuss/dss
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="DSS User Documentation" class="md-nav__button md-logo" aria-label="DSS User Documentation" data-md-component="logo">
+      
+  <img src="../../../assets/InterUSS_horizontal.svg" alt="logo">
+
+    </a>
+    DSS User Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/interuss/dss" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    interuss/dss
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked="">
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy a DSS instance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy a DSS instance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2">
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/aws/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Amazon Web Services with terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/google/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Cloud Platform with terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../infrastructure/minikube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minikube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked="">
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Pooling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With CockroachDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../yugabyte/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With YugabyteDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With Raft store (experimental)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    With Raft store (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Certificates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-the-certificates-of-your-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating the certificates of your organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-the-certificates-of-a-new-organization-to-an-existing-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding the certificates of a new organization to an existing pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restarting-the-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restarting the nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forming-the-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forming the pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Forming the pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-the-first-participant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are the first participant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-joining-an-existing-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are joining an existing pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#managing-the-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing the pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing the pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-dssctl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running dssctl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-the-membership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspecting the membership
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removing a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replacing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replacing a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-a-membership-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After a membership change
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4">
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Services
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../services/after-terraform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    After terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../services/to-minikube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    To Minikube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../services/support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5">
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verification
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Verification
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../verification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate a DSS instance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate a DSS instance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/cleanup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database cleanup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/healthchecks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/database-migrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database migrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/modifying-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modifying a deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DSS upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/crdb-upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CockroachDB version upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/kubernetes-upgrades/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes upgrades
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decommission a DSS instance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Decommission a DSS instance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/depooling-crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leaving a CockroachDB pool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/depooling-yugabyte/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leaving a YugabyteDB pool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/depooling-raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leaving a Raft store pool (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/terraform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../decommissioning/minikube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minikube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Background
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sizing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/pooling-yugabyte/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling: YugabyteDB specifics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/pooling-crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling: CRDB specifics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/pooling-raft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pooling: Raft store specifics (experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../background/survivability-crdb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pool Survivability: CRDB specifics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Certificates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-the-certificates-of-your-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating the certificates of your organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-the-certificates-of-a-new-organization-to-an-existing-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding the certificates of a new organization to an existing pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restarting-the-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restarting the nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forming-the-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forming the pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Forming the pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-the-first-participant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are the first participant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-joining-an-existing-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are joining an existing pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#managing-the-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing the pool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing the pool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-dssctl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running dssctl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inspecting-the-membership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspecting the membership
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removing a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replacing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replacing a node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-a-membership-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After a membership change
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation">
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Deploy a DSS instance
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Pooling
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/interuss/dss/edit/master/docs/deployment/pooling/raft.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/interuss/dss/raw/master/docs/deployment/pooling/raft.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
+    </a>
+  
+
+
+<h1 id="pooling-configuration-with-the-raft-store">Pooling configuration with the Raft store<a class="headerlink" href="#pooling-configuration-with-the-raft-store" title="Permanent link">¶</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Experimental</p>
+<p>The Raft store is experimental: its implementation is still in progress and
+the procedures in this page may change.</p>
+</div>
+<p>With the Raft store, there is no external database: each node of the pool
+stores the data on its own disk and replicates it directly with the other
+nodes of the pool through the Raft consensus protocol.  The nodes of the pool
+are the datastore of the pool.</p>
+<p>To pool a set of DSS instances with the Raft store:</p>
+<ol>
+<li><a href="#prerequisites">Prerequisites</a>: the tools and the running
+   <a href="../../infrastructure/">infrastructure</a>.</li>
+<li><a href="#certificates">Certificates</a>: each organization generates its own
+   certificate authority (CA) and its nodes' certificates, and the CAs are
+   exchanged so that every member of the pool trusts every other.</li>
+<li><a href="#forming-the-pool">Forming the pool</a>: the first participant bootstraps
+   the Raft groups with its own nodes; whenever a new node joins the pool, an
+   existing node adds it.</li>
+<li><a href="#managing-the-pool">Managing the pool</a>: the day-2 operations on the
+   pool: adding, removing and replacing nodes.</li>
+</ol>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">¶</a></h2>
+<ul>
+<li>A running Kubernetes platform deployed as
+  <a href="../../infrastructure/">infrastructure</a></li>
+<li>A recent version of python 3 to run the
+  <a href="https://github.com/interuss/dss/blob/master/deploy/operations/certificates-management/dss-certs.py"><code>dss-certs.py</code> script</a>,
+  in the <code>deploy/operations/certificates-management</code> folder of this
+  repository.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When the infrastructure is deployed with Terraform, a <code>dss-certs.sh</code> helper
+is generated in <code>/build/workspace/${cluster_context}</code>. It calls
+<code>dss-certs.py</code> with <code>--name</code>, <code>--organization</code>, <code>--cluster-context</code>,
+<code>--namespace</code>, <code>--nodes-public-address</code> and <code>--nodes-count</code> already set,
+e.g. <code>./dss-certs.sh init</code>.</p>
+</div>
+<p>In the instructions below:</p>
+<ul>
+<li><code>$CLUSTER_CONTEXT</code> is the name of the Kubernetes cluster deployed as
+  <a href="../../infrastructure/">infrastructure</a> onto which <a href="../../services/">services</a> will be deployed.</li>
+<li><code>$NAMESPACE</code> is the namespace for this DSS instance</li>
+<li><code>ENDPOINT</code> is the <code>host:port</code> pair at which the other participants of the
+  pool reach the Raft listener of one node of this instance (e.g.
+  <code>0.raft.dss.example.com:2407</code>). It must be unique in the pool and be
+  reachable by the other participants: the deployment tools expose it with one
+  load balancer (or static IP) per node.</li>
+<li><code>N</code> is the number of DSS nodes of this instance.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All participants of a DSS pool must use the same datastore.  A pool
+cannot mix nodes running the Raft store and nodes running a SQL datastore.</p>
+</div>
+<h2 id="certificates">Certificates<a class="headerlink" href="#certificates" title="Permanent link">¶</a></h2>
+<p>Each participant operates its own certificate authority (CA) and issues one
+certificate per node.  Every node holds the PEM bundle of the CAs of <em>all</em> the
+participants of the pool (including its own) and accepts a Raft connection
+only from a peer whose certificate is signed by one of them.  This bundle
+defines the boundaries of the pool: it must be identical on every node of the
+pool before the nodes can be added to it.</p>
+<h3 id="creating-the-certificates-of-your-organization">Creating the certificates of your organization<a class="headerlink" href="#creating-the-certificates-of-your-organization" title="Permanent link">¶</a></h3>
+<ol>
+<li>
+<p>Initialize the certificates of this DSS instance:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>init
+</code></pre></div></td></tr></tbody></table></div>
+</li>
+<li>
+<p>If this DSS instance joins an existing pool, import the bundle of the CAs
+   of the pool, provided by any one participant of the pool with
+   <code>./dss-certs.py ... get-pool-ca</code>, saved in <code>POOL_CA_FILE</code>:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>add-pool-ca<span class="w"> </span>&lt;<span class="w"> </span>POOL_CA_FILE
+</code></pre></div></td></tr></tbody></table></div>
+</li>
+<li>
+<p>Generate the certificates of the <code>N</code> raft nodes.  <code>--nodes-public-address</code>
+   is the public address of a node, where <code>&lt;ID&gt;</code> is replaced by the node
+   number (0-based, the order of the pods of the deployment):</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
+<span class="normal"><a href="#__codelineno-2-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="w">  </span>--nodes-count<span class="w"> </span>N<span class="w"> </span>--nodes-public-address<span class="w"> </span><span class="s1">'&lt;ID&gt;.raft.dss.example.com'</span><span class="w"> </span>generate-raft-nodes
+</code></pre></div></td></tr></tbody></table></div>
+</li>
+<li>
+<p>Apply the certificates on the cluster to create the <code>dss.raft.certs</code>
+   secret.  It contains, for each node of this instance, its certificate
+   <code>node.raft-&lt;ID&gt;.crt</code> and its private key <code>node.raft-&lt;ID&gt;.key</code>, and the
+   bundle of the CAs of the pool in <code>ca.crt</code>:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>apply
+</code></pre></div></td></tr></tbody></table></div>
+<p>Run <code>apply</code> again after every modification of the certificates (pool CA
+added or removed, new <code>--nodes-count</code>).  The nodes read their certificate
+and the CA bundle only at startup, so after the secret is updated they
+must be <a href="#restarting-the-nodes">restarted</a>.</p>
+</li>
+</ol>
+<h3 id="adding-the-certificates-of-a-new-organization-to-an-existing-pool">Adding the certificates of a new organization to an existing pool<a class="headerlink" href="#adding-the-certificates-of-a-new-organization-to-an-existing-pool" title="Permanent link">¶</a></h3>
+<p>When a DSS instance with its own CA joins a pool, every existing participant
+must accept the CA of this DSS instance.</p>
+<ol>
+<li>
+<p>Get the CA of this DSS instance with
+   <code>./dss-certs.py --name &lt;NAME&gt; --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE get-ca</code>
+   and provide it to each participant of the existing pool.</p>
+</li>
+<li>
+<p>Each existing participant, upon receipt of the CA of this DSS instance,
+   imports it and updates its certificates:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;OTHER_NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span>&lt;OTHER_CLUSTER_CONTEXT&gt;<span class="w"> </span>--namespace<span class="w"> </span>&lt;OTHER_NAMESPACE&gt;<span class="w"> </span>add-pool-ca<span class="w"> </span>&lt;<span class="w"> </span>INSTANCE_CA_FILE
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>./dss-certs.py<span class="w"> </span>--name<span class="w"> </span>&lt;OTHER_NAME&gt;<span class="w"> </span>--cluster-context<span class="w"> </span>&lt;OTHER_CLUSTER_CONTEXT&gt;<span class="w"> </span>--namespace<span class="w"> </span>&lt;OTHER_NAMESPACE&gt;<span class="w"> </span>apply
+</code></pre></div></td></tr></tbody></table></div>
+</li>
+</ol>
+<p>and <a href="#restarting-the-nodes">restarts its nodes</a>:
+   the nodes read the CA bundle only at startup, so they must be restarted to
+   accept the new CA.</p>
+<ol>
+<li>Every participant should then compare the hash of its pool of CAs
+   (displayed by <code>add-pool-ca</code> and by
+   <code>./dss-certs.py ... list-pool-ca</code>) to make sure they work with the same
+   coherent set of certificates.</li>
+</ol>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>Do not proceed until every participant of the existing pool has positively
+confirmed that its DSS instance accepts the CA of this DSS instance.</p>
+</div>
+<h3 id="restarting-the-nodes">Restarting the nodes<a class="headerlink" href="#restarting-the-nodes" title="Permanent link">¶</a></h3>
+<p>The data of a node (its identity, its Raft log and its snapshots) is stored on
+the persistent volume <code>raft-data</code> of its pod, mounted at <code>/raft_data</code>.  A
+restarted node reloads it and rejoins the pool: it replays its log, or
+receives a snapshot from a peer if it has been down too long.</p>
+<p>The nodes of a participant are restarted with a single command; the stateful
+set restarts them one at a time, in reverse pod order (from the highest node
+number to the lowest), waiting for a node to be ready before restarting the
+next one:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span>rollout<span class="w"> </span>restart<span class="w"> </span>statefulset/core-service<span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>(With the helm chart, the statefulset is named <code>&lt;release&gt;-core-service</code>, e.g.
+<code>dss-core-service</code>.)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do not restart the nodes of the pool all at once, for instance with all
+the participants restarting their nodes at the same time after a CA
+update: a group that loses the majority of its voters stops serving reads
+and writes.  Coordinate the restarts so that a majority of the voters of
+each group stays up.</p>
+</div>
+<p>Use this to restart the nodes whenever the <code>dss.raft.certs</code> secret has been
+updated (see <a href="#certificates">certificates</a>).</p>
+<p>If the data directory of a node is lost or corrupted, the node must not be
+started with an empty one: it would regenerate its identity and simply wait to
+be added to the pool, while the pool still remembers its previous one.  Remove
+the old identity from the pool, delete the data directory, restart the node
+and add it back to the pool: see <a href="#replacing-a-node">replacing a node</a>.</p>
+<h2 id="forming-the-pool">Forming the pool<a class="headerlink" href="#forming-the-pool" title="Permanent link">¶</a></h2>
+<h3 id="if-you-are-the-first-participant">If you are the first participant<a class="headerlink" href="#if-you-are-the-first-participant" title="Permanent link">¶</a></h3>
+<p>This DSS instance creates the pool (it is the first instance, or one of the
+instances creating the pool at the same time as other participants).</p>
+<ol>
+<li>
+<p>In the deployment configuration of this instance, enable the
+   automatic bootstrap feature: <code>raft_automatic_bootstrap</code> in the
+   terraform variables, <code>raft.automaticBootstrap</code> in the helm chart, or
+   <code>automaticBootstrap</code> in the <code>raft</code> section of the tanka <code>main.jsonnet</code>
+   (set automatically from the terraform variables).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The automatic bootstrap must be enabled on one participant only:
+if several nodes bootstrap at the same time, independent pools are
+created.  It should be disabled again once the pool is formed: with
+it still enabled, a node that starts with an empty data directory
+would bootstrap a new pool instead of waiting to be added back to
+the existing one.</p>
+</div>
+</li>
+<li>
+<p>If other participants create their instances at the same time, list the
+   <code>ENDPOINT</code> of their nodes in the <code>automaticBootstrapNodes</code> setting of this
+   instance (<code>raft_automatic_bootstrap_nodes</code> in the terraform variables).</p>
+</li>
+<li>
+<p>Deploy the services as described in
+   <a href="../../services/">services deployment</a>.  The other participants
+   deploy normally: their nodes start waiting and are added by this instance
+   as soon as they are reachable.</p>
+</li>
+<li>
+<p>The first node of this instance bootstraps the three Raft groups
+   (<code>aux</code>, <code>rid</code> and <code>scd</code>) with itself as their only member, then adds the
+   other nodes of this instance and the nodes of the other participants, one
+   at a time, retrying until all of them are members.</p>
+</li>
+<li>
+<p>Check that the nodes have joined the pool: <code>dssctl raft node</code> on one of
+   them should report <code>member</code> in every Raft group, and <code>dssctl raft list</code>
+   should list all the nodes of the pool
+   (<a href="#inspecting-the-membership">inspecting the membership</a>).</p>
+</li>
+</ol>
+<p>Alternatively, you can do the bootstrap manually with the <code>dssctl</code> CLI (see
+<a href="#running-dssctl">running dssctl</a> for how to run <code>dssctl</code> against a node of
+the pool):</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
+<span class="normal"><a href="#__codelineno-6-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>bootstrap
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>add<span class="w"> </span>--url<span class="w"> </span>https://&lt;ENDPOINT&gt;
+</code></pre></div></td></tr></tbody></table></div>
+<p><code>bootstrap</code> is run on the first node: it bootstraps the three Raft groups
+with itself as their only member.  <code>add</code> is then run once for each other node
+of the pool, from any member of the pool.</p>
+<h3 id="if-you-are-joining-an-existing-pool">If you are joining an existing pool<a class="headerlink" href="#if-you-are-joining-an-existing-pool" title="Permanent link">¶</a></h3>
+<p>This DSS instance joins a pool that already exists.  Its nodes start with an
+empty data directory and wait to be added to the pool by an existing node.</p>
+<ol>
+<li>
+<p>Keep the automatic bootstrap feature disabled in the deployment
+   configuration of this instance.</p>
+</li>
+<li>
+<p>Complete the <a href="#creating-the-certificates-of-your-organization">certificates of this instance</a>
+   and make sure that the existing participants accept its CA (see
+   <a href="#adding-the-certificates-of-a-new-organization-to-an-existing-pool">adding the certificates of a new organization</a>).</p>
+</li>
+<li>
+<p>Make sure the <code>--raft_cluster_id</code> of this instance is the same as the
+   one of the existing pool: <code>raft_cluster_id</code> in the terraform variables,
+   <code>raft.clusterID</code> in the helm chart values, or <code>clusterID</code> in the <code>raft</code>
+   section of the tanka <code>main.jsonnet</code> (default <code>1</code>).  A node with a
+   different ID cannot join the pool.</p>
+</li>
+<li>
+<p>Deploy the services as described in
+   <a href="../../services/">services deployment</a>.</p>
+</li>
+<li>
+<p>An existing node adds the nodes of this instance to the pool, one at a
+   time: see <a href="#adding-a-node">adding a node</a>.
+   Once a node is added, the change is known to every member of the pool: no
+   other participant has to do anything for the membership.</p>
+</li>
+<li>
+<p>Verify that the new nodes are <code>member</code> in every Raft group on this
+   instance and on the existing instances
+   (<a href="#inspecting-the-membership">inspecting the membership</a>).</p>
+</li>
+</ol>
+<h2 id="managing-the-pool">Managing the pool<a class="headerlink" href="#managing-the-pool" title="Permanent link">¶</a></h2>
+<p>This section describes how to manage the membership of a pool.  A DSS node
+running the Raft store is a member of three Raft groups (one per service:
+<code>aux</code>, <code>rid</code> and <code>scd</code>), each with its own membership.  Adding a node to the
+pool means adding it to the three groups; the same applies to removal.  The
+membership is managed with the <code>dssctl raft</code> commands, which talk to the
+admin API of a node over the Unix socket it serves at <code>--admin_socket</code>
+(default <code>/run/dss/admin.sock</code>).  Any node of the pool can be used: a
+participant may manage the pool through any node it can reach.</p>
+<p>Restarting the nodes, for instance after updating their certificates, is
+described in <a href="#restarting-the-nodes">restarting the nodes</a>.</p>
+<h3 id="running-dssctl">Running dssctl<a class="headerlink" href="#running-dssctl" title="Permanent link">¶</a></h3>
+<p><code>dssctl</code> is in the DSS image, inside every core-service pod:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span><span class="nv">$CLUSTER_CONTEXT</span><span class="w"> </span><span class="nb">exec</span><span class="w"> </span>--namespace<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>-it<span class="w"> </span><span class="nv">$POD</span><span class="w"> </span>--<span class="w"> </span>dssctl<span class="w"> </span>raft<span class="w"> </span>&lt;command&gt;
+</code></pre></div></td></tr></tbody></table></div>
+<p>where <code>$POD</code> is the name of a core-service pod of any node of the pool
+(<code>&lt;release&gt;-core-service-0</code> with the helm chart, e.g. <code>dss-core-service-0</code>, or
+<code>core-service-0</code> with the tanka files).</p>
+<p>Common options:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Option</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>--groups</code></td>
+<td style="text-align: left;">Comma-separated list of the Raft groups to act on (<code>aux</code>, <code>rid</code>, <code>scd</code>); all of them if not set.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>--admin_socket</code></td>
+<td style="text-align: left;">Path of the admin socket of the node, matching its <code>--admin_socket</code>; default <code>/run/dss/admin.sock</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>--admin_timeout</code></td>
+<td style="text-align: left;">Timeout of each request to the admin API; default 1m.</td>
+</tr>
+</tbody>
+</table>
+<p>A command is executed independently for each selected group: it may
+succeed for some groups and fail for others.  When that happens, rerun the
+command with <code>--groups</code> limited to the failed groups.</p>
+<h3 id="inspecting-the-membership">Inspecting the membership<a class="headerlink" href="#inspecting-the-membership" title="Permanent link">¶</a></h3>
+<p><code>dssctl raft node</code> describes the node serving the admin API in each of its
+groups: its state (<code>waiting</code>, <code>member</code> or <code>removed</code>), its ID and its URL.</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span>
+<span class="normal"><a href="#__codelineno-8-2">2</a></span>
+<span class="normal"><a href="#__codelineno-8-3">3</a></span>
+<span class="normal"><a href="#__codelineno-8-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>node
+<a id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="c1"># aux: member (ID 2213958870532660157, https://0.raft.dss.example.com:2407)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3"></a><span class="c1"># rid: member (ID 1263815311569516745, https://0.raft.dss.example.com:2407)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4"></a><span class="c1"># scd: member (ID 4401297763280950187, https://0.raft.dss.example.com:2407)</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p><code>dssctl raft list</code> lists, for each group, the nodes that are or were members
+of it, sorted by URL (so that the groups list the nodes in the same order),
+with the current leader marked:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span>
+<span class="normal"><a href="#__codelineno-9-3">3</a></span>
+<span class="normal"><a href="#__codelineno-9-4">4</a></span>
+<span class="normal"><a href="#__codelineno-9-5">5</a></span>
+<span class="normal"><a href="#__codelineno-9-6">6</a></span>
+<span class="normal"><a href="#__codelineno-9-7">7</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>list
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="c1"># aux:</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="c1">#   ID                    URL                                       ROLE</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="c1">#   2213958870532660157   https://0.raft.dss.example.com:2407       leader</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="c1">#   1263815311569516745   https://1.raft.dss.example.com:2407       voter</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6"></a><span class="c1">#   4401297763280950187   https://2.raft.dss.example.com:2407       voter</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="c1">#   removed IDs: [5740029381146209443]</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>A node has a different ID in each group: the IDs are generated when the node
+starts for the first time with an empty data directory and are stored in it.</p>
+<h3 id="adding-a-node">Adding a node<a class="headerlink" href="#adding-a-node" title="Permanent link">¶</a></h3>
+<p>A node is added to the pool one at a time, from any member of the pool.  The
+node to add must:</p>
+<ul>
+<li>be running and waiting, i.e. started with an empty data directory (a
+  node that was never added to the pool, or whose data directory was deleted);</li>
+<li>have its participant's CA in the CA bundle of every member of the pool,
+  otherwise the TLS handshake between the members and the node fails
+  (see <a href="#certificates">certificates</a>);</li>
+<li>be reachable by the members at its <code>--raft_peer_url</code> (its <code>ENDPOINT</code>);</li>
+<li>use a URL that is not already used by another member of the pool.</li>
+</ul>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1">1</a></span>
+<span class="normal"><a href="#__codelineno-10-2">2</a></span>
+<span class="normal"><a href="#__codelineno-10-3">3</a></span>
+<span class="normal"><a href="#__codelineno-10-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>add<span class="w"> </span>--url<span class="w"> </span>https://&lt;ENDPOINT&gt;
+<a id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="c1"># aux: added node 993958870532660157 (https://3.raft.dss.example.com:2407)</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="c1"># rid: added node 463815311569516745 (https://3.raft.dss.example.com:2407)</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="c1"># scd: added node 2401297763280950187 (https://3.raft.dss.example.com:2407)</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>The member reads the ID of the node to add from the node itself, on its Raft
+listener; the node then learns the configuration and the data of the group
+from the leader.  The added node joins directly as a voter: as soon as the
+command returns, it counts in the quorum of the group.  The command returns
+once the change is adopted by the group.</p>
+<p>Verify the addition with <code>dssctl raft list</code> on the node used and on at least
+one other participant's node: the new node should be <code>member</code> in every group.</p>
+<h3 id="removing-a-node">Removing a node<a class="headerlink" href="#removing-a-node" title="Permanent link">¶</a></h3>
+<p>A node is removed one at a time, from any member of the pool:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span>
+<span class="normal"><a href="#__codelineno-11-2">2</a></span>
+<span class="normal"><a href="#__codelineno-11-3">3</a></span>
+<span class="normal"><a href="#__codelineno-11-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>remove<span class="w"> </span>--url<span class="w"> </span>https://&lt;ENDPOINT&gt;
+<a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="c1"># aux: removed node 993958870532660157</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3"></a><span class="c1"># rid: removed node 463815311569516745</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4"></a><span class="c1"># scd: removed node 2401297763280950187</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>or, for a single group selected with <code>--groups</code>, by its ID in that group:</p>
+<div class="language-shell highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1"></a>dssctl<span class="w"> </span>raft<span class="w"> </span>remove<span class="w"> </span>--groups<span class="w"> </span>aux<span class="w"> </span>--node_id<span class="w"> </span><span class="m">993958870532660157</span>
+</code></pre></div></td></tr></tbody></table></div>
+<p>Properties of a removal:</p>
+<ul>
+<li>A removed node stops itself when the removal is applied and its state
+  becomes <code>removed</code>.  It does not need to be reachable for the removal to
+  succeed.</li>
+<li>The ID of a removed node is retired permanently: it can never be added
+  back to the group.  A node that is removed and re-added comes back with a
+  new ID (see <a href="#replacing-a-node">Replacing a node</a>).</li>
+<li>A voter cannot be removed if the group would be left with fewer than
+  three voters.</li>
+<li>Removing a voter changes the quorum immediately, and removing the current
+  leader triggers an election.</li>
+</ul>
+<p>Verify the removal with <code>dssctl raft list</code>: the node is gone from the members
+and its ID is in the list of removed IDs.</p>
+<h3 id="replacing-a-node">Replacing a node<a class="headerlink" href="#replacing-a-node" title="Permanent link">¶</a></h3>
+<p>If a node must come back at the same URL with a new data directory
+(typically after its data directory was lost or corrupted):</p>
+<ol>
+<li>
+<p>With four voters or more in each group: remove the node
+   (<code>dssctl raft remove --url https://&lt;ENDPOINT&gt;</code>), delete the data directory
+   of the pod (the <code>raft-data</code> persistent volume), restart the pod (it
+   generates new IDs and waits) and add it back (<code>dssctl raft add --url
+   https://&lt;ENDPOINT&gt;</code>).</p>
+</li>
+<li>
+<p>With exactly three voters in a group, the group cannot go below the minimum
+   of three voters, so the node must be restarted with a different
+   <code>--raft_peer_url</code> (a new <code>ENDPOINT</code>) and added to the groups before its
+   old identity is removed.</p>
+</li>
+</ol>
+<p>In both cases the node comes back as a new node, with new IDs in every group:
+it receives a snapshot from the pool and catches up on the entries since.</p>
+<h3 id="after-a-membership-change">After a membership change<a class="headerlink" href="#after-a-membership-change" title="Permanent link">¶</a></h3>
+<ul>
+<li>Verify the membership on at least two participants of the pool: every
+  member of a group holds the same membership once the change is adopted.</li>
+<li>If a participant leaves the pool entirely, the remaining participants
+  should eventually remove its CA from their pool of CAs: see
+  <a href="../../../decommissioning/depooling-raft/">leaving a pool</a>.</li>
+<li>The certificates must be rotated independently of the membership: see
+  <a href="#certificates">certificates</a>.</li>
+</ul>
+<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">¶</a></h2>
+<p>Proceed to <a href="../../services/">services deployment</a>.</p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 24, 2026 09:39:57 UTC">November 24, 2026</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer">
+        
+          
+          <a href="../yugabyte/" class="md-footer__link md-footer__link--prev" aria-label="Previous: With YugabyteDB">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                With YugabyteDB
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../services/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/interuss" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "toc.follow", "search.suggest", "header.autohide", "navigation.footer", "content.action.edit", "content.action.view", "content.tabs.link", "content.code.copy", "admonition", "pymdownx.details", "pymdownx.superfences"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../../assets/checkbox.js"></script>
+      
+        <script src="../../../assets/copy-inline-code.js"></script>
+      
+    
+  
+<script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>

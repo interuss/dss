@@ -1,0 +1,105 @@
+// To render:
+//   dot -Tpng -ogenerated/pool_architecture_raft.png pool_architecture_raft.gv
+digraph G {
+    node [shape=box, colorscheme=paired8];
+    graph [dpi = 300];
+
+    DSSClient [label="DSS client"]
+
+    LoadBalancer1 [label="TLS termination +\nload balancer",color=1]
+    LoadBalancer2 [label="TLS termination +\nload balancer",color=1]
+    LoadBalancer3 [label="TLS termination +\nload balancer",color=1]
+
+    // Core service node with its Raft data (colors 2 and 3 of colorscheme=paired8)
+    CoreService1a [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+    CoreService1b [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+    CoreService2a [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+    CoreService2b [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+    CoreService3a [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+    CoreService3b [color=2, label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BALIGN="center">Core Service</TD></TR>
+            <TR><TD BALIGN="center">
+                <TABLE BORDER="1" COLOR="#b2df8a" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3">
+                    <TR><TD> Raft data </TD></TR>
+                </TABLE>
+            </TD></TR>
+        </TABLE>
+    >];
+
+    { rank=sink; PublicInternet [label="Public Internet"]; }
+
+    subgraph cluster_0 {
+        label="USS1's DSS instance"
+        LoadBalancer1 -> CoreService1a
+        LoadBalancer1 -> CoreService1b
+    }
+
+    subgraph cluster_4 {
+        label="USS2's DSS instance"
+        LoadBalancer2 -> CoreService2a
+        LoadBalancer2 -> CoreService2b
+    }
+
+    subgraph cluster_8 {
+        label="USS3's DSS instance"
+        LoadBalancer3 -> CoreService3a
+        LoadBalancer3 -> CoreService3b
+    }
+
+    DSSClient -> LoadBalancer1;
+    DSSClient -> LoadBalancer2;
+    DSSClient -> LoadBalancer3;
+
+    CoreService1a -> PublicInternet [dir=both];
+    CoreService1b -> PublicInternet [dir=both];
+    CoreService2a -> PublicInternet [dir=both];
+    CoreService2b -> PublicInternet [dir=both];
+    CoreService3a -> PublicInternet [dir=both];
+    CoreService3b -> PublicInternet [dir=both];
+}
