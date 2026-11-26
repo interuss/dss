@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/interuss/dss/pkg/logging"
+	proposalpb "github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/stacktrace"
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
@@ -21,6 +21,7 @@ import (
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 // storage persists the Raft log and snapshots and manages the raft in-memory storage.
@@ -37,12 +38,6 @@ type storage struct {
 	snapper *snap.Snapshotter
 
 	snapshotCatchUpEntries uint64
-}
-
-// identity identifies the node in its Raft group. It is generated and persisted in the metadata of the WAL on the first
-// start, so that the node keeps it across restarts.
-type identity struct {
-	NodeID uint64 `json:"node_id"`
 }
 
 // newStorage initializes the storage by loading the latest snapshot and wal entries from the disk
@@ -75,7 +70,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 		if err != nil {
 			return nil, 0, false, stacktrace.Propagate(err, "failed to generate node ID")
 		}
-		metadata, err := json.Marshal(identity{NodeID: nodeID})
+		metadata, err := proto.Marshal(&proposalpb.Identity{NodeId: nodeID})
 		if err != nil {
 			return nil, 0, false, stacktrace.Propagate(err, "failed to marshal node identity")
 		}
@@ -133,8 +128,8 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 		repaired = true
 	}
 
-	var id identity
-	if err := json.Unmarshal(metadata, &id); err != nil {
+	var id proposalpb.Identity
+	if err := proto.Unmarshal(metadata, &id); err != nil {
 		return nil, 0, false, stacktrace.Propagate(err, "failed to read the node identity from the wal at %s", walPath)
 	}
 
@@ -173,7 +168,7 @@ func newStorage(ctx context.Context, logger *zap.Logger, dataDir string, snapsho
 
 		snapshotCatchUpEntries: snapshotCatchUpEntries,
 		// If existing entries, hard state or snapshot were loaded, the storage holds Raft state.
-	}, id.NodeID, !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
+	}, id.GetNodeId(), !raft.IsEmptySnap(snapshot) || !raft.IsEmptyHardState(state) || len(entries) > 0, nil
 }
 
 // generateNodeID returns a random, non-zero node ID.

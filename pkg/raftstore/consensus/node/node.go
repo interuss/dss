@@ -19,11 +19,10 @@ const (
 )
 
 // Info describes a DSS node in a Raft group.
-// Its JSON form is what the DSS nodes exchange on the Raft listener.
 type Info struct {
-	ID    uint64 `json:"id"`
-	URL   string `json:"url"`
-	State State  `json:"state"`
+	ID    uint64
+	URL   string
+	State State
 }
 
 // NodeState holds the raft node along with the state of this node in the group. It is safe for concurrent use.

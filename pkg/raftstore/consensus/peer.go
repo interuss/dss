@@ -2,19 +2,33 @@ package consensus
 
 import (
 	"context"
-	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 
 	dsserr "github.com/interuss/dss/pkg/errors"
+	proposalpb "github.com/interuss/dss/pkg/pb/raftpb"
 	"github.com/interuss/dss/pkg/raftstore/consensus/node"
 	"github.com/interuss/stacktrace"
 	etcdtransport "go.etcd.io/etcd/client/pkg/v3/transport"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
+
+var nodeStatesToProto = map[node.State]proposalpb.NodeState{
+	node.Waiting: proposalpb.NodeState_NODE_STATE_WAITING,
+	node.Member:  proposalpb.NodeState_NODE_STATE_MEMBER,
+	node.Removed: proposalpb.NodeState_NODE_STATE_REMOVED,
+}
+
+var nodeStatesFromProto = map[proposalpb.NodeState]node.State{
+	proposalpb.NodeState_NODE_STATE_WAITING: node.Waiting,
+	proposalpb.NodeState_NODE_STATE_MEMBER:  node.Member,
+	proposalpb.NodeState_NODE_STATE_REMOVED: node.Removed,
+}
 
 // nodePath is the path at which a node describes itself in a group on the Raft listener.
 // A member reads it to learn the ID of a node before adding it.
@@ -58,8 +72,14 @@ func (e *peerEndpoint) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(info); err != nil {
+	body, err := proto.Marshal(&proposalpb.NodeInfo{Id: info.ID, Url: info.URL, State: nodeStatesToProto[info.State]})
+	if err != nil {
+		http.Error(w, "failed to marshal the description of this node", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-protobuf")
+	if _, err := w.Write(body); err != nil {
 		e.logger.Warn("failed to send the description of this node", zap.Error(err))
 	}
 }
@@ -95,11 +115,15 @@ func (e *peerEndpoint) fetch(ctx context.Context, peerURL string) (node.Info, er
 		return node.Info{}, stacktrace.NewErrorWithCode(dsserr.Unavailable, "unexpected status %d from the node at %s", resp.StatusCode, peerURL)
 	}
 
-	var info node.Info
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return node.Info{}, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "failed to read the response from the node at %s", peerURL)
+	}
+	var info proposalpb.NodeInfo
+	if err := proto.Unmarshal(body, &info); err != nil {
 		return node.Info{}, stacktrace.PropagateWithCode(err, dsserr.Unavailable, "invalid response from the node at %s", peerURL)
 	}
-	return info, nil
+	return node.Info{ID: info.GetId(), URL: info.GetUrl(), State: nodeStatesFromProto[info.GetState()]}, nil
 }
 
 // close releases the connections of the client to the other nodes.
