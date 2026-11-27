@@ -13,13 +13,13 @@ db_hostname_suffix           = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                    = "dss-dev-w6a"
-kubernetes_version              = 1.32
+kubernetes_version              = 1.36
 node_count                      = 3
 google_machine_type             = "e2-medium"
 google_kubernetes_storage_class = "standard"
 
 # DSS configuration
-image             = "docker.io/interuss/dss:latest"
+image             = "docker.io/interuss/dss:v0.25.0" # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
 image_pull_secret = ""
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
