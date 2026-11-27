@@ -14,6 +14,7 @@ OUTPUT_DIR="$RELEASE_DIR/output"
 DATASTORES=(
     "cockroachdb crdb Cockroachdb"
     "yugabyte    ybdb Yugabyte"
+    "raft        raft Raft"
 )
 
 # Extract "v0.22.0" from: image = "docker.io/interuss/dss:v0.22.0"
