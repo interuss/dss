@@ -27,30 +27,7 @@ cleanup() {
 
 # === 1. Install Docker ===
 section "Install Docker (if missing)"
-if ! command -v docker >/dev/null 2>&1; then
-    info "installing from download.docker.com ..."
-    {
-        apt-get update
-        apt-get install -y ca-certificates curl
-        install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-        chmod a+r /etc/apt/keyrings/docker.asc
-        # shellcheck disable=SC1091
-        tee /etc/apt/sources.list.d/docker.sources <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/debian
-Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
-        apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    } >"$LOG_DIR/docker-install.log" 2>&1
-    ok "docker installed"
-else
-    ok "docker already present"
-fi
+ensure_docker
 
 trap cleanup EXIT INT TERM
 
