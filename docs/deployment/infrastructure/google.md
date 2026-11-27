@@ -9,26 +9,26 @@ This guide will help you deploy a DSS instance to Google Cloud Platform with ter
 #### Terraform
 
 1. Install [terraform](https://developer.hashicorp.com/terraform/downloads) to your workstation.
-    1. Verify installation with `terraform version`
+    1. Verify installation with `terraform version`.
 
 #### Kubernetes tools
 
-1. Install kubectl from [Prerequisites](index.md#prerequisites)
-    1. Verify kubectl installation with `kubectl version`
+1. Install kubectl from [Prerequisites](index.md#prerequisites).
+    1. Verify kubectl installation with `kubectl version`.
 
 #### Google Cloud Platform
 
 1. Install and initialize [Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
     1. Confirm successful initialization with `gcloud info`; check "Account".
-2. Ensure a GCP project is available (create one in web UI if needed)
-    1. Consider `$GOOGLE_PROJECT_NAME` to refer to this project
-3. Check that the GCP DSS project is correctly selected: `gcloud config list project`
-    1. Set another one if needed using: `gcloud config set project $GOOGLE_PROJECT_NAME`
+2. Ensure a GCP project is available (create one in web UI if needed).
+    1. Consider `$GOOGLE_PROJECT_NAME` to refer to this project.
+3. Check that the GCP DSS project is correctly selected: `gcloud config list project`.
+    1. Set another one if needed using: `gcloud config set project $GOOGLE_PROJECT_NAME`.
 4. Enable the following API using [Google Cloud CLI](https://cloud.google.com/endpoints/docs/openapi/enable-api#gcloud):
-    1. `gcloud services enable compute.googleapis.com`
-    2. `gcloud services enable container.googleapis.com`
-    3. If you want to manage DNS entries with terraform: `gcloud services enable dns.googleapis.com`
-5. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`
+    1. `gcloud services enable compute.googleapis.com`.
+    2. `gcloud services enable container.googleapis.com`.
+    3. If you want to manage DNS entries with terraform: `gcloud services enable dns.googleapis.com`.
+5. Install the auth plugin to connect to kubernetes: `gcloud components install gke-gcloud-auth-plugin`.
 6. Run `gcloud auth application-default login` to generate credentials to call Google Cloud Platform APIs.
     1. If the result of performing the authorization indicates 404 in the browser, check whether a local dummy-oauth instance is running (using port 8085).  Stop the dummy-oauth instance if it is running.
 
@@ -63,9 +63,11 @@ This guide will help you deploy a DSS instance to Google Cloud Platform with ter
 === "Manual DNS entries setup"
     If DNS entries are managed manually, set them up manually using the following steps:
 
-    1. Retrieve IP addresses and expected hostnames: `terraform output`
-    Example of expected output:
-    ```
+    1. Retrieve IP addresses and expected hostnames: `terraform output`.
+
+        Example of expected output:
+
+        ```
         crdb_addresses = [
             {
                 "address" = "34.65.15.23"
@@ -84,10 +86,11 @@ This guide will help you deploy a DSS instance to Google Cloud Platform with ter
             "address" = "35.186.236.146"
             "expected_dns" = "dss.interuss.example.com"
         }
-    ```
+        ```
+
     2. Create the related DNS A entries to point to the static ips indicated in the output:
-      - `crdb_addresses[*].expected_dns`
-      - `gateway_address.expected_dns`
+        - `crdb_addresses[*].expected_dns`
+        - `gateway_address.expected_dns`
 
 ## Next steps
 

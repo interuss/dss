@@ -10,15 +10,15 @@ and generates the Tanka and Helm configurations to deploy a DSS instance.
 Download & install the following tools to your workstation:
 
 1. Install [terraform](https://developer.hashicorp.com/terraform/downloads).
-2. Install tools from [Prerequisites](index.md)
+2. Install tools from [Prerequisites](index.md).
 3. Install AWS specific tools:
-   1. Install and initialize [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions).
-       1. Confirm successful installation with `aws --version`.
-   2. If you don't have an account, sign-up: https://aws.amazon.com/free/
-   3. Configure terraform to connect to AWS using your account.
-      1. We recommend to create an AWS_PROFILE using for instance `aws configure --profile aws-interuss-dss`
-         Before running `terraform` commands, run once in your shell: `export AWS_PROFILE=aws-interuss-dss`
-         Other methods are described here: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
+    1. If you don't have an account, sign-up: <https://aws.amazon.com/free/>.
+    2. Install and initialize [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions).
+        1. Confirm successful installation with `aws --version`.
+    3. Configure terraform to connect to AWS using your account.
+        1. We recommend to create an AWS_PROFILE using for instance `aws configure --profile aws-interuss-dss`.
+        2. Before running `terraform` commands, run once in your shell: `export AWS_PROFILE=aws-interuss-dss`.
+        3. Other methods are described here: <https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration>.
 
 
 ### Deployment of the Kubernetes cluster
