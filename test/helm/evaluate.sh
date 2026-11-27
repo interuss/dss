@@ -21,16 +21,17 @@ CHART="deploy/services/helm-charts/dss"
 EXAMPLE="${CHART}/values.example.yaml"
 
 helm dependency update "${CHART}"
-helm lint "${CHART}" -f "${EXAMPLE}"
 
 for provider in google aws minikube; do
 	for datastore in cockroachdb yugabyte raft; do
-		helm template dss "${CHART}" -f "${EXAMPLE}" \
-			--set "global.cloudProvider=${provider}" \
-			--set "cockroachdb.enabled=$([[ ${datastore} == cockroachdb ]] && echo true || echo false)" \
-			--set "yugabyte.enabled=$([[ ${datastore} == yugabyte ]] && echo true || echo false)" \
-			--set "raft.enabled=$([[ ${datastore} == raft ]] && echo true || echo false)" \
-			>/dev/null
+		# TODO: Use an example file per datastore
+		args=(-f "${EXAMPLE}"
+			--set "global.cloudProvider=${provider}"
+			--set "cockroachdb.enabled=$([[ ${datastore} == cockroachdb ]] && echo true || echo false)"
+			--set "yugabyte.enabled=$([[ ${datastore} == yugabyte ]] && echo true || echo false)"
+			--set "raft.enabled=$([[ ${datastore} == raft ]] && echo true || echo false)")
+		helm lint "${CHART}" "${args[@]}" >/dev/null
+		helm template dss "${CHART}" "${args[@]}" >/dev/null
 		echo "Rendered: cloudProvider=${provider} datastore=${datastore}"
 	done
 done
