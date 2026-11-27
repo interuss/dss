@@ -33,3 +33,14 @@ States.
 1. Using 8-vCPU virtual machines (like n2-standard-8), this means each instance needs 2 of these virtual machines
 1. Assuming that 5 days' worth of flights are occupying space on disk at any given time and that each flight record on disk is 100k, approximately 83 GB of storage is required
     1. Note that Cockroach Labs recommends 4,000 read IO/s and 4,000 write IO/s, and some cloud providers scale storage speed with storage size, so 83 GB of storage may be far less than is necessary to achieve these speed numbers
+
+## Raft store
+
+!!! warning "Experimental"
+    The Raft store is experimental: its implementation is still in progress and
+    the estimates in this section have not been measured yet.
+
+With the Raft store, every DSS node holds the data of the pool in memory,
+and its Raft log and snapshots on its own disk. Every node applies every write, so the resources below are required by each node.
+The pool's capacity is bounded by its smallest node. We recommend 16GB of RAM, 100 GB of disk space and 4 vCPUs per node.
+Note that there are no safeguards on resources limitations yet and that the WAL and snapshot files are not cleaned up yet (see https://github.com/interuss/dss/issues/2028).
