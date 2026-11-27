@@ -13,13 +13,13 @@ db_hostname_suffix = "db.interuss.example.com"
 
 # Kubernetes configuration
 cluster_name                 = "dss-dev-ew1"
-kubernetes_version           = 1.32
+kubernetes_version           = 1.36
 node_count                   = 3
 aws_instance_type            = "t3.medium"
 aws_kubernetes_storage_class = "gp3"
 
 # DSS configuration
-image = "docker.io/interuss/dss:latest"
+image = "docker.io/interuss/dss:v0.25.0" # See https://hub.docker.com/r/interuss/dss/tags for official image releases.
 authorization = {
   public_key_pem_path = "/test-certs/auth2.pem"
 }
