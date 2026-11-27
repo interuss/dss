@@ -19,8 +19,20 @@ cd "${BASEDIR}/../.." || exit 1
 
 CHART="deploy/services/helm-charts/dss"
 EXAMPLE="${CHART}/values.example.yaml"
+HELM_IMAGE="${HELM_IMAGE:-alpine/helm:3.22.1}"
 
-helm dependency update "${CHART}"
+helm_cmd() {
+	docker run --rm \
+		-u "$(id -u):$(id -g)" \
+		-e HELM_CACHE_HOME=/tmp/.helm/cache \
+		-e HELM_CONFIG_HOME=/tmp/.helm/config \
+		-e HELM_DATA_HOME=/tmp/.helm/data \
+		-v "$(pwd):/workspace" \
+		-w /workspace \
+		"${HELM_IMAGE}" "$@"
+}
+
+helm_cmd dependency update "${CHART}"
 
 for provider in google aws minikube; do
 	for datastore in cockroachdb yugabyte raft; do
@@ -30,8 +42,8 @@ for provider in google aws minikube; do
 			--set "cockroachdb.enabled=$([[ ${datastore} == cockroachdb ]] && echo true || echo false)"
 			--set "yugabyte.enabled=$([[ ${datastore} == yugabyte ]] && echo true || echo false)"
 			--set "raft.enabled=$([[ ${datastore} == raft ]] && echo true || echo false)")
-		helm lint "${CHART}" "${args[@]}" >/dev/null
-		helm template dss "${CHART}" "${args[@]}" >/dev/null
+		helm_cmd lint "${CHART}" "${args[@]}" >/dev/null
+		helm_cmd template dss "${CHART}" "${args[@]}" >/dev/null
 		echo "Rendered: cloudProvider=${provider} datastore=${datastore}"
 	done
 done

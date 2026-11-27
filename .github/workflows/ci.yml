@@ -65,11 +65,7 @@ jobs:
       run: make terraform-lint
     - name: Lint and render Tanka
       run: make evaluate-tanka
-    - name: Install helm
-      uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
-      with:
-        version: v3.19.5
-    - name: Lint and render helm
+    - name: Lint and render Helm
       run: make evaluate-helm
 
   dss-tests:
