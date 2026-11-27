@@ -33,3 +33,47 @@ States.
 1. Using 8-vCPU virtual machines (like n2-standard-8), this means each instance needs 2 of these virtual machines
 1. Assuming that 5 days' worth of flights are occupying space on disk at any given time and that each flight record on disk is 100k, approximately 83 GB of storage is required
     1. Note that Cockroach Labs recommends 4,000 read IO/s and 4,000 write IO/s, and some cloud providers scale storage speed with storage size, so 83 GB of storage may be far less than is necessary to achieve these speed numbers
+
+## Raft store
+
+!!! warning "Experimental"
+    The Raft store is experimental: its implementation is still in progress and
+    the estimates in this section have not been measured yet.
+
+With the Raft store, every DSS node holds the data of the pool in memory,
+and its Raft log and snapshots on its own disk. Every node applies every write, so the resources below are required by each node.
+The pool's capacity is bounded by its smallest node.
+
+### Memory
+1. Assume 1.6 million flights per day, each lasting at most 20 minutes
+    - Therefore, 23,000 flights are active on average, and 80,500 with a peak-average ratio of 3.5
+2. Assume 1 ISA, 1 RID subscription, 1 operational intent and 1 SCD subscription per flight, over an area of at most 100 km²: 2 kB + 2 kB + 4 kB + 2 kB = 10 kB per flight
+    - Therefore, 805 MB, rounded up to 1 GB, for the active flights
+3. Double it for the metadata and the garbage collector, and double it again for the in-memory snapshot
+    - Therefore, 4 GB for the data
+4. The Raft log kept in memory holds at most `--raft_snapshot_interval_entries` + `--raft_snapshot_catchup_entries` entries per Raft group (15,000 by default), at about 3 kB per entry
+    - Therefore, less than 50 MB per Raft group
+5. With a margin of about 3x for the Go runtime, the operating system and traffic exceeding these assumptions, each node requires 16 GB of memory
+
+### Disk
+1. Assume the following Raft log entries per flight, with the same assumptions as for the memory and up to 100 conflicting flights:
+    - Create and delete the ISA: 2 kB + 1 kB
+    - Create and delete the RID subscription: 2 kB + 1 kB
+    - 3.4 strategic deconfliction queries: 14 kB
+    - Create and delete the SCD subscription: 2 kB + 1 kB
+    - Therefore, about 30 kB per flight, with some margin
+2. Assuming the log is compacted every hour, with 250,000 flights in the busiest hour, the write-ahead log takes up to 10 GB
+3. The snapshots take up to 1 GB each, as the serialized data of the active flights
+4. With a margin for the snapshots and traffic exceeding these assumptions, each node requires 100 GB of storage
+    - The write-ahead log is written to disk before each write is acknowledged, so the disk latency is on the path of every write: use a local disk, or a network disk with a low fsync latency
+
+!!! note
+    Old write-ahead log files and snapshots are not deleted automatically yet:
+    until they are, the disk usage keeps growing by about 30 kB per flight, so
+    about 48 GB per day at 1.6 million flights per day.
+
+### CPU
+Each node requires 4 vCPUs. Every node applies every write, and the leader of each Raft group also replicates the log to the other nodes
+
+### Network
+Each node requires a 1 Gbps network. Each write is sent to every node, and a node catching up from a snapshot receives the whole data once
