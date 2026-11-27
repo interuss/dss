@@ -32,8 +32,6 @@ jobs:
       run: make shell-lint
     - name: Go lint
       run: make go-lint
-    - name: Terraform lint
-      run: make terraform-lint
     - name: Ensure files don't change when generating apis
       run: |
         git diff --exit-code -- '*.gen.go'  # Should not have been changed by previous steps
@@ -47,6 +45,28 @@ jobs:
     - name: Ensure files don't change when running hygiene
       run: |
         git diff --exit-code
+
+  infra-hygiene-tests:
+    name: Infrastructure hygiene tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job information
+      run: |
+        echo "Job information"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Host: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${GITHUB_REF}"
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Terraform lint
+      run: make terraform-lint
+    - name: Lint and render Tanka
+      run: make evaluate-tanka
+    - name: Lint and render Helm
+      run: make evaluate-helm
 
   dss-tests:
     name: DSS tests
@@ -69,8 +89,6 @@ jobs:
       with:
         submodules: true
         persist-credentials: false
-    - name: Deployment infrastructure tests
-      run: make evaluate-tanka
     - name: Go unit tests
       run: make test-go-units
     - name: Go unit tests with CockroachDB

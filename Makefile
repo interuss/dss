@@ -260,6 +260,11 @@ down-locally:
 .PHONY: dss-tests
 dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss down-locally start-locally probe-locally collect-local-logs down-locally
 
+# Lint the Helm chart and render it for every datastore and cloud provider (requires helm)
+.PHONY: evaluate-helm
+evaluate-helm:
+	test/helm/evaluate.sh
+
 .PHONY: evaluate-tanka
 evaluate-tanka:
 	docker container run --rm -v $(CURDIR)/deploy/services/tanka:/deploy/services/tanka grafana/tanka show --dangerous-allow-redirect /deploy/services/tanka/examples/minimum
