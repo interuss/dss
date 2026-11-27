@@ -261,9 +261,9 @@ down-locally:
 dss-tests: evaluate-tanka test-go-units test-go-units-crdb build-dss down-locally start-locally probe-locally collect-local-logs down-locally
 
 # Lint the Helm chart and render it for every datastore and cloud provider (requires helm)
-.PHONY: check-helm-chart
-check-helm-chart:
-	test/helm/check_chart.sh
+.PHONY: evaluate-helm
+evaluate-helm:
+	test/helm/evaluate.sh
 
 .PHONY: evaluate-tanka
 evaluate-tanka:

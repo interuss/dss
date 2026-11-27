@@ -12,7 +12,13 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Go lint (`make go-lint`)
 
+## Infrastructure hygiene tests
+
 ### Terraform lint (`make terraform-lint`)
+
+### Evaluate tanka (`make evaluate-tanka`)
+
+### Validate Helm (`make check-helm-chart`)
 
 ## DSS tests (`make check-dss`)
 
