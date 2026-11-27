@@ -89,18 +89,16 @@ func newISA(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, v
 	}
 
 	return &ridmodels.IdentificationServiceArea{
-		ID:      id,
-		Owner:   owner,
-		URL:     url,
-		Writer:  writer,
-		Version: version,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  extents.StartTime,
-			EndTime:    extents.EndTime,
-			AltitudeLo: extents.SpatialVolume.AltitudeLo,
-			AltitudeHi: extents.SpatialVolume.AltitudeHi,
-		},
+		ID:         id,
+		Owner:      owner,
+		URL:        url,
+		Writer:     writer,
+		Version:    version,
+		Cells:      cells,
+		StartTime:  extents.StartTime,
+		EndTime:    extents.EndTime,
+		AltitudeLo: extents.SpatialVolume.AltitudeLo,
+		AltitudeHi: extents.SpatialVolume.AltitudeHi,
 	}, nil
 }
 

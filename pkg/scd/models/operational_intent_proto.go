@@ -49,9 +49,6 @@ func (o *OperationalIntent) ToProto() (*scdpb.UpsertOperationalIntentRepoCall_Op
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid OperationalIntent ID")
 	}
-	if o.CellsVolume4D == nil {
-		return nil, stacktrace.NewError("missing volume of OperationalIntent %s", o.ID)
-	}
 	var subscriptionID []byte
 	if o.SubscriptionID != nil {
 		subscriptionID, err = o.SubscriptionID.ToProto()
@@ -100,7 +97,6 @@ func (o *OperationalIntent) FromProto(pb *scdpb.UpsertOperationalIntentRepoCall_
 		Version:        VersionNumber(pb.GetVersion()),
 		USSBaseURL:     pb.GetUssBaseUrl(),
 		SubscriptionID: subscriptionID,
-		CellsVolume4D:  new(dssmodels.CellsVolume4D),
 	}
 	if err := decoded.State.FromProto(pb.GetState()); err != nil {
 		return err

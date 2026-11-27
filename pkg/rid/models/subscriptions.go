@@ -28,7 +28,7 @@ type Subscription struct {
 	Owner             dssmodels.Owner
 	Version           *dssmodels.Version
 	Writer            string
-	*dssmodels.CellsVolume4D
+	dssmodels.CellsVolume4D
 }
 
 // SetCells is a convenience function that accepts an int64 array and converts

@@ -64,7 +64,7 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 	for rows.Next() {
 		var (
 			c         = new(scdmodels.Constraint)
-			volume    = new(dssmodels.CellsVolume4D)
+			volume    dssmodels.CellsVolume4D
 			updatedAt time.Time
 		)
 		err := rows.Scan(
@@ -205,7 +205,7 @@ func (c *repo) DeleteConstraint(ctx context.Context, id dssmodels.ID) error {
 }
 
 // Implements scd.repos.Constraint.SearchConstraints
-func (c *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
+func (c *repo) SearchConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error) {
 	var (
 		query = fmt.Sprintf(`
 			SELECT

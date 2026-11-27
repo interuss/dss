@@ -99,7 +99,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if volume == nil {
 			return nil, stacktrace.NewError("missing volume")
 		}
-		cellsVolume := new(dssmodels.CellsVolume4D)
+		var cellsVolume dssmodels.CellsVolume4D
 		cellsVolume.FromProto(volume)
 		return r.Store.GetRepo().SearchConstraints(ctx, cellsVolume)
 
@@ -172,7 +172,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if volume == nil {
 			return nil, stacktrace.NewError("missing volume")
 		}
-		cellsVolume := new(dssmodels.CellsVolume4D)
+		var cellsVolume dssmodels.CellsVolume4D
 		cellsVolume.FromProto(volume)
 		return r.Store.GetRepo().SearchOperationalIntents(ctx, cellsVolume)
 
@@ -208,7 +208,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if volume == nil {
 			return nil, stacktrace.NewError("missing volume")
 		}
-		cellsVolume := new(dssmodels.CellsVolume4D)
+		var cellsVolume dssmodels.CellsVolume4D
 		cellsVolume.FromProto(volume)
 		return r.Store.GetRepo().SearchSubscriptions(ctx, cellsVolume)
 
@@ -240,7 +240,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if volume == nil {
 			return nil, stacktrace.NewError("missing volume")
 		}
-		cellsVolume := new(dssmodels.CellsVolume4D)
+		var cellsVolume dssmodels.CellsVolume4D
 		cellsVolume.FromProto(volume)
 		return r.Store.GetRepo().IncrementNotificationIndicesForOperationalIntents(ctx, cellsVolume)
 
@@ -249,7 +249,7 @@ func (r *repo) Apply(ctx context.Context, proposal consensus.Proposal) (any, err
 		if volume == nil {
 			return nil, stacktrace.NewError("missing volume")
 		}
-		cellsVolume := new(dssmodels.CellsVolume4D)
+		var cellsVolume dssmodels.CellsVolume4D
 		cellsVolume.FromProto(volume)
 		return r.Store.GetRepo().IncrementNotificationIndicesForConstraints(ctx, cellsVolume)
 

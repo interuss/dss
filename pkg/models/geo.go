@@ -44,8 +44,8 @@ type Geometry interface {
 }
 
 // UnionCellsVolumes4D unions cells volumes and returns a volume that covers all the individual volumes in space (cells) and time.
-func UnionCellsVolumes4D(volumes ...*CellsVolume4D) *CellsVolume4D {
-	result := &CellsVolume4D{}
+func UnionCellsVolumes4D(volumes ...CellsVolume4D) CellsVolume4D {
+	result := CellsVolume4D{}
 	unbounded := struct{ startTime, endTime, altitudeLo, altitudeHi bool }{}
 	cellUnions := make([]s2.CellUnion, 0, len(volumes))
 
@@ -120,11 +120,8 @@ type CellsVolume4D struct {
 }
 
 // Clone returns a deep copy of v
-func (v *CellsVolume4D) Clone() *CellsVolume4D {
-	if v == nil {
-		return nil
-	}
-	return &CellsVolume4D{
+func (v CellsVolume4D) Clone() CellsVolume4D {
+	return CellsVolume4D{
 		Cells:      slices.Clone(v.Cells),
 		StartTime:  utils.ClonePtr(v.StartTime),
 		EndTime:    utils.ClonePtr(v.EndTime),

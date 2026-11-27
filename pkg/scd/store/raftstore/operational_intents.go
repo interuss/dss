@@ -46,11 +46,7 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	}}))
 }
 
-func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
-	if cellsVolume == nil {
-		return nil, stacktrace.NewError("missing volume")
-	}
-
+func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	return r.consensus.HandleReadPayload[[]*scdmodels.OperationalIntent](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SearchOperationalIntentsRepoCall{
 		SearchOperationalIntentsRepoCall: &scdpb.SearchOperationalIntentsRepoCall{Volume: cellsVolume.ToProto()},
 	}}))

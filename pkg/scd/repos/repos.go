@@ -29,7 +29,7 @@ type OperationalIntent interface {
 	UpsertOperationalIntent(ctx context.Context, operation *scdmodels.OperationalIntent) (*scdmodels.OperationalIntent, error)
 
 	// SearchOperationalIntents returns all operations intersecting "cellsVolume".
-	SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error)
+	SearchOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error)
 
 	// GetDependentOperationalIntents returns IDs of all operations dependent on
 	// subscription identified by "subscriptionID".
@@ -50,7 +50,7 @@ type OperationalIntent interface {
 // Subscription abstracts subscription-specific interactions with the backing repository.
 type Subscription interface {
 	// SearchSubscriptions returns all Subscriptions in "cellsVolume".
-	SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
+	SearchSubscriptions(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
 
 	// GetSubscription returns the Subscription referenced by id, or nil and no
 	// error if the Subscription doesn't exist
@@ -68,12 +68,12 @@ type Subscription interface {
 	// IncrementNotificationIndicesForOperationalIntents finds the Subscriptions in
 	// cellsVolume that want operational intent notifications, increments their notification
 	// index and returns them with the new index.
-	IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
+	IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
 
 	// IncrementNotificationIndicesForConstraints finds the Subscriptions in
 	// cellsVolume that want constraint notifications, increments their notification
 	// index and returns them with the new index.
-	IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
+	IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error)
 
 	// LockSubscriptionsOnCells locks the subscriptions of interest on specific cells and, optionnaly, specific subscriptions via their IDs
 	LockSubscriptionsOnCells(ctx context.Context, cells s2.CellUnion, subscriptionIds []dssmodels.ID, startTime *time.Time, endTime *time.Time) error
@@ -100,7 +100,7 @@ type UssAvailability interface {
 // repos.Constraint abstracts constraint-specific interactions with the backing store.
 type Constraint interface {
 	// SearchConstraints returns all Constraints in "cellsVolume".
-	SearchConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error)
+	SearchConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Constraint, error)
 
 	// GetConstraint returns the Constraint referenced by id, or
 	// (nil, ErrNotFound) if the Constraint doesn't exist.

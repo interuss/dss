@@ -128,7 +128,7 @@ func (r *repo) UpsertOperationalIntent(ctx context.Context, operation *scdmodels
 	return built[0], nil
 }
 
-func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
+func (r *repo) SearchOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.OperationalIntent, error) {
 	if len(cellsVolume.Cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "Missing cell IDs for query")
 	}

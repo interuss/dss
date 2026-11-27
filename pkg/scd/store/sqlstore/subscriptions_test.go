@@ -27,11 +27,9 @@ var (
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime: &start1,
-			EndTime:   &end1,
-			Cells:     cells,
-		},
+		StartTime:                   &start1,
+		EndTime:                     &end1,
+		Cells:                       cells,
 	}
 	sub2 = &scdmodels.Subscription{
 		ID:                          sub2ID,
@@ -41,11 +39,9 @@ var (
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime: &start2,
-			EndTime:   &end2,
-			Cells:     cells,
-		},
+		StartTime:                   &start2,
+		EndTime:                     &end2,
+		Cells:                       cells,
 	}
 	sub3 = &scdmodels.Subscription{
 		ID:                          sub3ID,
@@ -55,11 +51,9 @@ var (
 		NotifyForOperationalIntents: true,
 		NotifyForConstraints:        false,
 		ImplicitSubscription:        true,
-		CellsVolume4D: &models.CellsVolume4D{
-			StartTime: &start3,
-			EndTime:   &end3,
-			Cells:     cells,
-		},
+		StartTime:                   &start3,
+		EndTime:                     &end3,
+		Cells:                       cells,
 	}
 )
 

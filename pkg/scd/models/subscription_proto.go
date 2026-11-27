@@ -14,9 +14,6 @@ func (s *Subscription) ToProto() (*scdpb.Subscription, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "invalid Subscription ID")
 	}
-	if s.CellsVolume4D == nil {
-		return nil, stacktrace.NewError("missing volume of Subscription %s", s.ID)
-	}
 	return &scdpb.Subscription{
 		Id:                          id,
 		Manager:                     s.Manager.String(),
@@ -39,9 +36,6 @@ func (s *Subscription) FromProto(pb *scdpb.Subscription) error {
 	if pb.GetVolume() == nil {
 		return stacktrace.NewError("missing volume of Subscription %s", id)
 	}
-	volume := new(dssmodels.CellsVolume4D)
-	volume.FromProto(pb.GetVolume())
-
 	*s = Subscription{
 		ID:                          id,
 		Manager:                     dssmodels.Manager(pb.GetManager()),
@@ -49,7 +43,7 @@ func (s *Subscription) FromProto(pb *scdpb.Subscription) error {
 		NotifyForOperationalIntents: pb.GetNotifyForOperationalIntents(),
 		NotifyForConstraints:        pb.GetNotifyForConstraints(),
 		ImplicitSubscription:        pb.GetImplicitSubscription(),
-		CellsVolume4D:               volume,
 	}
+	s.CellsVolume4D.FromProto(pb.GetVolume())
 	return nil
 }

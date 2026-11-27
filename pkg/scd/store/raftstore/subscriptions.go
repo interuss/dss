@@ -13,11 +13,7 @@ import (
 	"github.com/interuss/stacktrace"
 )
 
-func (r *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	if cellsVolume == nil {
-		return nil, stacktrace.NewError("missing volume")
-	}
-
+func (r *repo) SearchSubscriptions(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	return r.consensus.HandleReadPayload[[]*scdmodels.Subscription](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_SearchSubscriptionsRepoCall{
 		SearchSubscriptionsRepoCall: &scdpb.SearchSubscriptionsRepoCall{Volume: cellsVolume.ToProto()},
 	}}))
@@ -57,21 +53,13 @@ func (r *repo) DeleteSubscription(ctx context.Context, id dssmodels.ID) error {
 	return err
 }
 
-func (r *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	if cellsVolume == nil {
-		return nil, stacktrace.NewError("missing volume")
-	}
-
+func (r *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	return r.consensus.HandleWritePayload[[]*scdmodels.Subscription](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_IncrementNotificationIndicesForOperationalIntentsRepoCall{
 		IncrementNotificationIndicesForOperationalIntentsRepoCall: &scdpb.IncrementNotificationIndicesForOperationalIntentsRepoCall{Volume: cellsVolume.ToProto()},
 	}}))
 }
 
-func (r *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume *dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
-	if cellsVolume == nil {
-		return nil, stacktrace.NewError("missing volume")
-	}
-
+func (r *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, cellsVolume dssmodels.CellsVolume4D) ([]*scdmodels.Subscription, error) {
 	return r.consensus.HandleWritePayload[[]*scdmodels.Subscription](ctx, operations.ProposalPayload(&scdpb.Payload{Payload: &scdpb.Payload_IncrementNotificationIndicesForConstraintsRepoCall{
 		IncrementNotificationIndicesForConstraintsRepoCall: &scdpb.IncrementNotificationIndicesForConstraintsRepoCall{Volume: cellsVolume.ToProto()},
 	}}))

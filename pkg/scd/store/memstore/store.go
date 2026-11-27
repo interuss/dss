@@ -47,7 +47,7 @@ type constraintRecord struct {
 	Manager    dssmodels.Manager
 	Version    scdmodels.VersionNumber
 	USSBaseURL string
-	Volume     *dssmodels.CellsVolume4D
+	Volume     dssmodels.CellsVolume4D
 	UpdatedAt  time.Time
 }
 
@@ -80,7 +80,7 @@ type operationalIntentRecord struct {
 	USSRequestedOVN string
 	PastOVNs        []scdmodels.OVN
 	UpdatedAt       time.Time
-	CellsVolume4D   *dssmodels.CellsVolume4D
+	CellsVolume4D   dssmodels.CellsVolume4D
 }
 
 // availabilityRecord is the in-memory representation of a
@@ -136,7 +136,7 @@ func overlaps(cells s2.CellUnion, set map[s2.CellID]struct{}) bool {
 
 // overlapsTime reports whether the [start, end] interval of a record intersects the one of cellsVolume
 // (equivalent to the SQL "COALESCE(starts_at <= $end, true) AND COALESCE(ends_at >= $start, true)").
-func overlapsTime(start, end time.Time, cellsVolume *dssmodels.CellsVolume4D) bool {
+func overlapsTime(start, end time.Time, cellsVolume dssmodels.CellsVolume4D) bool {
 	if cellsVolume.EndTime != nil && start.After(*cellsVolume.EndTime) {
 		return false
 	}

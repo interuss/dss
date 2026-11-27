@@ -59,7 +59,7 @@ func TestCellsVolume4DProtoRoundTrip(t *testing.T) {
 	end := start.Add(time.Hour)
 	lo, hi := float32(10.5), float32(120)
 
-	for name, volume := range map[string]*CellsVolume4D{
+	for name, volume := range map[string]CellsVolume4D{
 		"all fields": {
 			Cells:      s2.CellUnion{s2.CellIDFromToken("89c25"), s2.CellIDFromToken("89c27"), s2.CellIDFromToken("89c3")},
 			StartTime:  &start,
@@ -78,12 +78,10 @@ func TestCellsVolume4DProtoRoundTrip(t *testing.T) {
 
 			var decoded CellsVolume4D
 			decoded.FromProto(&pb)
-			require.Equal(t, volume, &decoded)
+			require.Equal(t, volume, decoded)
 		})
 	}
 
-	var volume *CellsVolume4D
-	require.Nil(t, volume.ToProto())
 	var decoded CellsVolume4D
 	decoded.FromProto(nil)
 	require.Equal(t, CellsVolume4D{}, decoded)

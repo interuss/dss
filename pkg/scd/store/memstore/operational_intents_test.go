@@ -79,7 +79,7 @@ func TestSearchOperationalIntents(t *testing.T) {
 	require.Empty(t, res)
 
 	// Missing cells is a bad request.
-	_, err = r.SearchOperationalIntents(ctx, &dssmodels.CellsVolume4D{})
+	_, err = r.SearchOperationalIntents(ctx, dssmodels.CellsVolume4D{})
 	require.Error(t, err)
 }
 
@@ -119,13 +119,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub1ID,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  &start1,
-			EndTime:    &end1,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-		},
+		Cells:          cells,
+		StartTime:      &start1,
+		EndTime:        &end1,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
 	}
 	oi2 = &scdmodels.OperationalIntent{
 		ID:             oi2ID,
@@ -134,13 +132,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub2ID,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  &start2,
-			EndTime:    &end2,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-		},
+		Cells:          cells,
+		StartTime:      &start2,
+		EndTime:        &end2,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
 	}
 	oi3 = &scdmodels.OperationalIntent{
 		ID:             oi3ID,
@@ -149,13 +145,11 @@ var (
 		State:          scdmodels.OperationalIntentStateAccepted,
 		USSBaseURL:     "https://dummy.uss",
 		SubscriptionID: &sub3ID,
-		CellsVolume4D: &dssmodels.CellsVolume4D{
-			Cells:      cells,
-			StartTime:  &start3,
-			EndTime:    &end3,
-			AltitudeLo: &altLow,
-			AltitudeHi: &altHigh,
-		},
+		Cells:          cells,
+		StartTime:      &start3,
+		EndTime:        &end3,
+		AltitudeLo:     &altLow,
+		AltitudeHi:     &altHigh,
 	}
 )
 

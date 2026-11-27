@@ -70,10 +70,7 @@ func CellUnionFromProto(ids []uint64) s2.CellUnion {
 	return cells
 }
 
-func (v *CellsVolume4D) ToProto() *modelspb.CellsVolume4D {
-	if v == nil {
-		return nil
-	}
+func (v CellsVolume4D) ToProto() *modelspb.CellsVolume4D {
 	return &modelspb.CellsVolume4D{
 		Cells:      CellUnionToProto(v.Cells),
 		StartTime:  TimeToProto(v.StartTime),

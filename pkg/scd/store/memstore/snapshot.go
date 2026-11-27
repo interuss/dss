@@ -181,11 +181,8 @@ func (r *repo) RestoreFromSnapshot(s *raftpb.Snapshot) error {
 	return nil
 }
 
-func volumeFromProto(pb *modelspb.CellsVolume4D) *dssmodels.CellsVolume4D {
-	if pb == nil {
-		return nil
-	}
-	volume := new(dssmodels.CellsVolume4D)
+func volumeFromProto(pb *modelspb.CellsVolume4D) dssmodels.CellsVolume4D {
+	var volume dssmodels.CellsVolume4D
 	volume.FromProto(pb)
 	return volume
 }

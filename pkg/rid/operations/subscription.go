@@ -38,7 +38,7 @@ type SubscriptionResult struct {
 
 // NewInsertSubscriptionPayload performs the request validation that can be done ahead of the
 // transaction for a Subscription creation request.
-func NewInsertSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, extents *dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
+func NewInsertSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, extents dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
 	sub, err := newSubscription(id, owner, url, writer, nil, extents, allowHTTPBaseUrls)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func NewInsertSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url st
 
 // NewUpdateSubscriptionPayload performs the request validation that can be done ahead of the
 // transaction for a Subscription update request.
-func NewUpdateSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents *dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
+func NewUpdateSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (dssstore.OperationRequest, error) {
 	sub, err := newSubscription(id, owner, url, writer, version, extents, allowHTTPBaseUrls)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewUpdateSubscriptionPayload(id dssmodels.ID, owner dssmodels.Owner, url st
 }
 
 // newSubscription performs the request validation that can be done ahead of the transaction.
-func newSubscription(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents *dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (*ridmodels.Subscription, error) {
+func newSubscription(id dssmodels.ID, owner dssmodels.Owner, url string, writer string, version *dssmodels.Version, extents dssmodels.CellsVolume4D, allowHTTPBaseUrls bool) (*ridmodels.Subscription, error) {
 	if !allowHTTPBaseUrls {
 		if err := ridmodels.ValidateURL(url); err != nil {
 			return nil, stacktrace.PropagateWithCode(err, dsserr.BadRequest, "Failed to validate Subscription URL")

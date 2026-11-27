@@ -80,49 +80,49 @@ func TestUnionCellsVolumes4D_Time(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		volumes       []*CellsVolume4D
+		volumes       []CellsVolume4D
 		wantStartTime *time.Time
 		wantEndTime   *time.Time
 	}{
 		{
 			name:          "unbounded",
-			volumes:       []*CellsVolume4D{{}},
+			volumes:       []CellsVolume4D{{}},
 			wantStartTime: nil,
 			wantEndTime:   nil,
 		},
 		{
 			name:          "single bounded",
-			volumes:       []*CellsVolume4D{{StartTime: &start, EndTime: &end}},
+			volumes:       []CellsVolume4D{{StartTime: &start, EndTime: &end}},
 			wantStartTime: &start,
 			wantEndTime:   &end,
 		},
 		{
 			name:          "single unbounded start",
-			volumes:       []*CellsVolume4D{{EndTime: &end}},
+			volumes:       []CellsVolume4D{{EndTime: &end}},
 			wantStartTime: nil,
 			wantEndTime:   &end,
 		},
 		{
 			name:          "single unbounded end",
-			volumes:       []*CellsVolume4D{{StartTime: &start}},
+			volumes:       []CellsVolume4D{{StartTime: &start}},
 			wantStartTime: &start,
 			wantEndTime:   nil,
 		},
 		{
 			name:          "multiple bounded",
-			volumes:       []*CellsVolume4D{{StartTime: &start, EndTime: &end}, {StartTime: &nextStart, EndTime: &nextEnd}},
+			volumes:       []CellsVolume4D{{StartTime: &start, EndTime: &end}, {StartTime: &nextStart, EndTime: &nextEnd}},
 			wantStartTime: &start,
 			wantEndTime:   &nextEnd,
 		},
 		{
 			name:          "multiple unbounded",
-			volumes:       []*CellsVolume4D{{StartTime: &start, EndTime: &end}, {}},
+			volumes:       []CellsVolume4D{{StartTime: &start, EndTime: &end}, {}},
 			wantStartTime: nil,
 			wantEndTime:   nil,
 		},
 		{
 			name:          "multiple unbounded combination",
-			volumes:       []*CellsVolume4D{{StartTime: &start}, {EndTime: &nextEnd}},
+			volumes:       []CellsVolume4D{{StartTime: &start}, {EndTime: &nextEnd}},
 			wantStartTime: nil,
 			wantEndTime:   nil,
 		},
@@ -147,49 +147,49 @@ func TestUnionCellsVolumes4D_Altitude(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		volumes []*CellsVolume4D
+		volumes []CellsVolume4D
 		wantLo  *float32
 		wantHi  *float32
 	}{
 		{
 			name:    "unbounded",
-			volumes: []*CellsVolume4D{{}},
+			volumes: []CellsVolume4D{{}},
 			wantLo:  nil,
 			wantHi:  nil,
 		},
 		{
 			name:    "single bounded",
-			volumes: []*CellsVolume4D{{AltitudeLo: &low, AltitudeHi: &high}},
+			volumes: []CellsVolume4D{{AltitudeLo: &low, AltitudeHi: &high}},
 			wantLo:  &low,
 			wantHi:  &high,
 		},
 		{
 			name:    "single unbounded low",
-			volumes: []*CellsVolume4D{{AltitudeHi: &high}},
+			volumes: []CellsVolume4D{{AltitudeHi: &high}},
 			wantLo:  nil,
 			wantHi:  &high,
 		},
 		{
 			name:    "single unbounded high",
-			volumes: []*CellsVolume4D{{AltitudeLo: &low}},
+			volumes: []CellsVolume4D{{AltitudeLo: &low}},
 			wantLo:  &low,
 			wantHi:  nil,
 		},
 		{
 			name:    "multiple bounded",
-			volumes: []*CellsVolume4D{{AltitudeLo: &lower, AltitudeHi: &low}, {AltitudeLo: &high, AltitudeHi: &higher}},
+			volumes: []CellsVolume4D{{AltitudeLo: &lower, AltitudeHi: &low}, {AltitudeLo: &high, AltitudeHi: &higher}},
 			wantLo:  &lower,
 			wantHi:  &higher,
 		},
 		{
 			name:    "multiple unbounded",
-			volumes: []*CellsVolume4D{{AltitudeLo: &lower, AltitudeHi: &low}, {}},
+			volumes: []CellsVolume4D{{AltitudeLo: &lower, AltitudeHi: &low}, {}},
 			wantLo:  nil,
 			wantHi:  nil,
 		},
 		{
 			name:    "multiple unbounded combination",
-			volumes: []*CellsVolume4D{{AltitudeLo: &low}, {AltitudeHi: &high}},
+			volumes: []CellsVolume4D{{AltitudeLo: &low}, {AltitudeHi: &high}},
 			wantLo:  nil,
 			wantHi:  nil,
 		},
@@ -210,8 +210,8 @@ func TestUnionCellsVolumes4D_Cells(t *testing.T) {
 	c := s2.CellIDFromToken("808fb754").Parent(geo.DefaultMinimumCellLevel)
 
 	got := UnionCellsVolumes4D(
-		&CellsVolume4D{Cells: s2.CellUnion{b, a}},
-		&CellsVolume4D{Cells: s2.CellUnion{c, a}},
+		CellsVolume4D{Cells: s2.CellUnion{b, a}},
+		CellsVolume4D{Cells: s2.CellUnion{c, a}},
 	)
 
 	want := s2.CellUnion{a, b, c}
@@ -225,8 +225,8 @@ func TestUnionCellsVolumes4D_LevelifiesMergedCells(t *testing.T) {
 	siblings := parent.Children()
 
 	got := UnionCellsVolumes4D(
-		&CellsVolume4D{Cells: s2.CellUnion{siblings[0], siblings[1]}},
-		&CellsVolume4D{Cells: s2.CellUnion{siblings[2], siblings[3]}},
+		CellsVolume4D{Cells: s2.CellUnion{siblings[0], siblings[1]}},
+		CellsVolume4D{Cells: s2.CellUnion{siblings[2], siblings[3]}},
 	)
 
 	want := s2.CellUnion{siblings[0], siblings[1], siblings[2], siblings[3]}
