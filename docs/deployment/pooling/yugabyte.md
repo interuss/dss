@@ -8,7 +8,7 @@ The `dss-certs.py` helps you manage the set of certificates used for your DSS de
 
 Should this DSS beeing part of a pool, the script also provide some helpers to manage the set of CA certificates in the pool.
 
-To run the script, just run `./dss-certs.py`. The python script don't require any dependencies, just a recent version of python 3.
+To run the script, just run `./dss-certs.py`. The python script don't require any dependencies, just a recent version of python 3 and [OpenSSL](https://www.openssl.org/), used to generate the certificates.
 
 !!! note
     When the infrastructure is deployed with Terraform, a `dss-certs.sh` helper
