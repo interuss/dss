@@ -65,7 +65,7 @@ pool before the nodes can be added to it.
 
 ### Creating the certificates of your organization
 
-1. Initialize the certificates of this DSS instance:
+1. Initialize the certificates of this participant:
 
     ```shell
     ./dss-certs.py --name <NAME> --cluster-context $CLUSTER_CONTEXT --namespace $NAMESPACE init
