@@ -40,6 +40,8 @@ jobs:
         run: mike deploy --push dev
         name: Deploy 'dev' deployment documentation from 'master' branch
       - if: ${{ github.ref_type == 'tag' }}
+        env:
+          DOCS_GIT_REF: ${{ github.ref_name }}
         run: |
           VERSION=$(echo ${GITHUB_REF_NAME} | sed -e "s/^interuss\/dss\/v//")
           mike deploy --push --update-aliases $VERSION latest
