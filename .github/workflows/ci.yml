@@ -32,8 +32,6 @@ jobs:
       run: make shell-lint
     - name: Go lint
       run: make go-lint
-    - name: Terraform lint
-      run: make terraform-lint
     - name: Ensure files don't change when generating apis
       run: |
         git diff --exit-code -- '*.gen.go'  # Should not have been changed by previous steps
@@ -47,6 +45,33 @@ jobs:
     - name: Ensure files don't change when running hygiene
       run: |
         git diff --exit-code
+
+  infra-hygiene-tests:
+    name: Infrastructure hygiene tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job information
+      run: |
+        echo "Job information"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Host: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${GITHUB_REF}"
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Terraform lint
+      run: make terraform-lint
+    - name: Deployment infrastructure tests
+      run: make evaluate-tanka
+    - name: Install helm
+      uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
+      with:
+        version: v3.19.5
+    - name: Lint and render the chart for every datastore and cloud provider
+      run: make check-helm-chart
+
 
   dss-tests:
     name: DSS tests
@@ -69,8 +94,6 @@ jobs:
       with:
         submodules: true
         persist-credentials: false
-    - name: Deployment infrastructure tests
-      run: make evaluate-tanka
     - name: Go unit tests
       run: make test-go-units
     - name: Go unit tests with CockroachDB
@@ -200,28 +223,6 @@ jobs:
         persist-credentials: false
     - name: Tests
       run: cd test/certificates-management/ && python test.py
-
-  helm-tests:
-    name: Helm chart
-    runs-on: ubuntu-latest
-    steps:
-    - name: Job information
-      run: |
-        echo "Job information"
-        echo "Trigger: ${{ github.event_name }}"
-        echo "Host: ${{ runner.os }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${GITHUB_REF}"
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      with:
-        persist-credentials: false
-    - name: Install helm
-      uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
-      with:
-        version: v3.19.5
-    - name: Lint and render the chart for every datastore and cloud provider
-      run: make check-helm-chart
 
   db-tests:
     name: Database tests
