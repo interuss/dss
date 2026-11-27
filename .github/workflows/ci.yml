@@ -181,8 +181,8 @@ jobs:
       - name: Bring down local DSS instance
         run: make down-locally
 
-  docs-tests:
-    name: Documentation build
+  check-docs:
+    name: Documentation build and validation
     runs-on: ubuntu-latest
     steps:
     - name: Job information
@@ -197,8 +197,8 @@ jobs:
       with:
         fetch-depth: 0 # the git-revision-date-localized plugin needs the history
         persist-credentials: false
-    - name: Build documentation in strict mode
-      run: make docs-check
+    - name: Build and validate documentation in strict mode
+      run: make check-docs
 
   certificates-management-tests:
     name: Certificate management tests

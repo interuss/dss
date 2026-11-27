@@ -8,8 +8,6 @@ Before a pull request can be merged into the master branch, it must pass all aut
 
 ### Automated hygiene verification (`make hygiene`)
 
-### Validate documentation (`make check-docs`)
-
 ### Shell lint (`make shell-lint`)
 
 ### Go lint (`make go-lint`)
@@ -33,3 +31,5 @@ Before a pull request can be merged into the master branch, it must pass all aut
 ### Probe local DSS instance (`make probe-locally`)
 
 ### Bring down local DSS instance (`make down-locally`)
+
+## Documentation build and validation (`make check-docs`)

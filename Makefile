@@ -269,17 +269,20 @@ evaluate-tanka:
 .PHONY: presubmit
 presubmit: hygiene-tests dss-tests
 
+# Build documentation
+.PHONY: build-docs
+build-docs:
+	docker build -f Dockerfile.docs . -t dss-docs
+
 # Serve documentation locally
 .PHONY: local-doc
-local-doc:
-	docker build -f Dockerfile.docs . -t dss-docs
+local-doc: build-docs
 	docker run --rm -it -p 8888:8000 -v $(CURDIR):/app/:ro dss-docs
 
 # Build the documentation the way it is published, failing on any warning
 # (broken links or anchors, missing pages).
-.PHONY: docs-check
-docs-check:
-	docker build -f Dockerfile.docs . -t dss-docs
+.PHONY: check-docs
+check-docs: build-docs
 	docker run --rm -v $(CURDIR):/app/:ro dss-docs mkdocs build --strict --site-dir /tmp/site
 
 # Generation of documentation's assets
