@@ -2253,7 +2253,9 @@
 <ol>
 <li>Create a new folder in <code>/deploy/infrastructure/personal/</code> for the deployment named for example: <code>terraform-google-dss-dev</code></li>
 <li>From <code>/deploy/infrastructure/modules/terraform-google-dss</code>, copy <code>main.tf</code>, <code>output.tf</code>, <code>variables.gen.tf</code> and <code>terraform.dev.example.tfvars</code> to the infrastructure personal folder.</li>
-<li>In the infrastructure personal folder:<ol>
+<li>
+<p>In the infrastructure personal folder:</p>
+<ol>
 <li>Rename <code>terraform.dev.example.tfvars</code> to <code>terraform.tfvars</code>.</li>
 <li>Check that the directory contains the following files:<ol>
 <li>main.tf</li>
@@ -2262,7 +2264,26 @@
 <li>variables.gen.tf</li>
 </ol>
 </li>
-<li>Set the variables in <code>terraform.tfvars</code> according to your environment.<ol>
+<li>
+<p>Decide how the DNS entries resolving to the public ip addresses will be managed, either with terraform or manually:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="terraform-managed-dns-entries" name="__tabbed_1" type="radio"><input id="manual-dns-entries-setup" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="terraform-managed-dns-entries">Terraform managed DNS entries</label><label for="manual-dns-entries-setup">Manual DNS entries setup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
+it with the rest of the infrastructure.</p>
+<ul>
+<li><strong>For Google Cloud Platform</strong>, configure the zone in your google account and set the <code>google_dns_managed_zone_name</code> variable the zone name in the next step. Zones can be listed by running <code>gcloud dns managed-zones list</code>. Entries will be automatically created by terraform.</li>
+</ul>
+</div>
+<div class="tabbed-block">
+<p>Set the <code>google_dns_managed_zone_name</code> variable to <code>""</code> in the next step. The entries will be created manually once the cluster is deployed.</p>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>Set the variables in <code>terraform.tfvars</code> according to your environment.</p>
+<ol>
 <li>See <a href="https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-google-dss/TFVARS.gen.md">TFVARS.gen.md</a> for variables descriptions.</li>
 <li>See <a href="../../../background/authentication/">authentication documentation</a> for additional information.</li>
 </ol>
@@ -2272,19 +2293,8 @@
 <li>Run <code>terraform apply</code> to deploy the cluster. (This operation may take up to 15 min.)</li>
 </ol>
 </li>
-<li>Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:</li>
-</ol>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="terraform-managed-dns-entries" name="__tabbed_1" type="radio"><input id="manual-dns-entries-setup" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="terraform-managed-dns-entries">Terraform managed DNS entries</label><label for="manual-dns-entries-setup">Manual DNS entries setup</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p>If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
-it with the rest of the infrastructure.</p>
-<ul>
-<li><strong>For Google Cloud Platform</strong>, configure the zone in your google account and set the <code>google_dns_managed_zone_name</code> variable the zone name. Zones can be listed by running <code>gcloud dns managed-zones list</code>. Entries will be automatically created by terraform.</li>
-</ul>
-</div>
-<div class="tabbed-block">
-<p>If DNS entries are managed manually, set them up manually using the following steps:</p>
+<li>
+<p>If DNS entries are managed manually, set them up using the following steps:</p>
 <ol>
 <li>
 <p>Retrieve IP addresses and expected hostnames: <code>terraform output</code>.</p>
@@ -2334,9 +2344,8 @@ it with the rest of the infrastructure.</p>
 </ul>
 </li>
 </ol>
-</div>
-</div>
-</div>
+</li>
+</ol>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">¶</a></h2>
 <p>Proceed to <a href="../../pooling/">pooling configuration</a>.</p>
 
@@ -2359,7 +2368,7 @@ it with the rest of the infrastructure.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 27, 2026 13:03:57 UTC">November 27, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 27, 2026 13:48:10 UTC">November 27, 2026</span>
   </span>
 
     
