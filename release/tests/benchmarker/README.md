@@ -46,7 +46,7 @@ The release clusters must be deployed and their services healthy (see [release/R
     The script:
     * installs Docker if missing,
     * starts a dummy OAuth server,
-    * runs the pools in parallel, and the configurations of a pool sequentially; a pool stops at its first failed configuration.
+    * runs the pools in parallel, and the configurations of a pool sequentially; a pool stops at its first failed benchmarker test configuration.
 
 6. Retrieve the results, e.g. from your computer:
 
