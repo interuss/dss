@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/geo"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -52,7 +53,12 @@ func init() {
 	)
 }
 
-func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.Constraint, error) {
+// limitRows appends LIMIT MaxResultLimit+1 (plain SELECT only) and turns overflow into a BadRequest.
+func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, limitRows bool, query string, args ...any) ([]*scdmodels.Constraint, error) {
+	if limitRows {
+		query = fmt.Sprintf("%s LIMIT %d", query, dssmodels.MaxResultLimit+1)
+	}
+
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -90,11 +96,16 @@ func (c *repo) fetchConstraints(ctx context.Context, q dsssql.Queryable, query s
 	if err := rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
+
+	if limitRows && len(payload) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d constraints match", dssmodels.MaxResultLimit)
+	}
+
 	return payload, nil
 }
 
 func (c *repo) fetchConstraint(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.Constraint, error) {
-	constraints, err := c.fetchConstraints(ctx, q, query, args...)
+	constraints, err := c.fetchConstraints(ctx, q, false, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -218,7 +229,6 @@ func (c *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.Cel
 				COALESCE(starts_at <= $3, true)
 			AND
 				COALESCE(ends_at >= $2, true)
-			LIMIT $4
 			`, constraintFieldsWithoutPrefix)
 	)
 
@@ -227,7 +237,7 @@ func (c *repo) SearchConstraints(ctx context.Context, cellsVolume *dssmodels.Cel
 	}
 
 	constraints, err := c.fetchConstraints(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime, dssmodels.MaxResultLimit)
+		ctx, c.q, true, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Constraints")
 	}

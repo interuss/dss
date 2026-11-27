@@ -49,6 +49,8 @@ The release notes should contain at least the following sections:
 
 ## Important information
 
+* Searching identification service areas, RID subscriptions, operational intents, constraints or SCD subscriptions now fails with a 400 error when more than 10000 entries match, instead of silently returning a truncated list (see issue [#1120](https://github.com/interuss/dss/issues/1120)). Operations that run one of these searches fail the same way. Clients that hit this must reduce the size of the requested area or time range.
+
 ## Minimal database schema version
 
 | Schema | CockroachDB | Yugabyte |

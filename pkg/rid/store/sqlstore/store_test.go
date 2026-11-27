@@ -3,10 +3,13 @@ package sqlstore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/golang/geo/s2"
 	"github.com/google/uuid"
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	ridmodels "github.com/interuss/dss/pkg/rid/models"
@@ -14,6 +17,7 @@ import (
 	"github.com/interuss/dss/pkg/sqlstore"
 	"github.com/interuss/dss/pkg/sqlstore/params"
 	dssstore "github.com/interuss/dss/pkg/store"
+	"github.com/interuss/stacktrace"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -245,4 +249,51 @@ func TestBasicTxn(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, subs, 1)
+}
+
+func TestSearchMoreThanMaxResultLimit(t *testing.T) {
+	var (
+		ctx                  = context.Background()
+		store, tearDownStore = setUpStore(ctx, t)
+		cell                 = s2.CellID(17106221850767130624)
+		cells                = s2.CellUnion{cell}
+		now                  = fakeClock.Now()
+	)
+	defer tearDownStore()
+
+	repo, err := store.Interact(ctx)
+	require.NoError(t, err)
+
+	// Inserting this many rows through the repo one at a time takes minutes.
+	insert := func(count int) {
+		for _, table := range []string{"identification_service_areas", "subscriptions"} {
+			_, err := store.Pool.Exec(ctx, fmt.Sprintf(`
+				INSERT INTO %s (id, owner, url, cells, starts_at, ends_at, updated_at)
+				SELECT gen_random_uuid(), 'me', 'https://uss', ARRAY[$1::INT8], $2, $3, $2
+				FROM generate_series(1, $4)`, table),
+				int64(cell), now, now.Add(time.Hour), count)
+			require.NoError(t, err)
+		}
+	}
+
+	// Exactly MaxResultLimit matches are returned in full.
+	insert(dssmodels.MaxResultLimit)
+	isas, err := repo.SearchISAs(ctx, cells, &now, nil)
+	require.NoError(t, err)
+	require.Len(t, isas, dssmodels.MaxResultLimit)
+	subscriptions, err := repo.SearchSubscriptions(ctx, cells)
+	require.NoError(t, err)
+	require.Len(t, subscriptions, dssmodels.MaxResultLimit)
+	subscriptions, err = repo.SearchSubscriptionsByOwner(ctx, cells, "me")
+	require.NoError(t, err)
+	require.Len(t, subscriptions, dssmodels.MaxResultLimit)
+
+	// One more is an error rather than a truncated list.
+	insert(1)
+	_, err = repo.SearchISAs(ctx, cells, &now, nil)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+	_, err = repo.SearchSubscriptions(ctx, cells)
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
+	_, err = repo.SearchSubscriptionsByOwner(ctx, cells, "me")
+	require.Equal(t, dsserr.BadRequest, stacktrace.GetCode(err))
 }

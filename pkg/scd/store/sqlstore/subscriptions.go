@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	dsserr "github.com/interuss/dss/pkg/errors"
 	"github.com/interuss/dss/pkg/logging"
 	dssmodels "github.com/interuss/dss/pkg/models"
 	scdmodels "github.com/interuss/dss/pkg/scd/models"
@@ -59,7 +60,12 @@ func init() {
 	)
 }
 
-func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.Subscription, error) {
+// limitRows appends LIMIT MaxResultLimit+1 (plain SELECT only) and turns overflow into a BadRequest.
+func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, limitRows bool, query string, args ...any) ([]*scdmodels.Subscription, error) {
+	if limitRows {
+		query = fmt.Sprintf("%s LIMIT %d", query, dssmodels.MaxResultLimit+1)
+	}
+
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -106,11 +112,15 @@ func (c *repo) fetchSubscriptions(ctx context.Context, q dsssql.Queryable, query
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
+	if limitRows && len(payload) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d subscriptions match", dssmodels.MaxResultLimit)
+	}
+
 	return payload, nil
 }
 
 func (c *repo) fetchSubscription(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.Subscription, error) {
-	subs, err := c.fetchSubscriptions(ctx, q, query, args...)
+	subs, err := c.fetchSubscriptions(ctx, q, false, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,8 +280,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.C
 				AND
 					COALESCE(starts_at <= $3, true)
 				AND
-					COALESCE(ends_at >= $2, true)
-				LIMIT $4`, subscriptionFieldsWithPrefix)
+					COALESCE(ends_at >= $2, true)`, subscriptionFieldsWithPrefix)
 	)
 
 	if len(cellsVolume.Cells) == 0 {
@@ -279,7 +288,7 @@ func (c *repo) SearchSubscriptions(ctx context.Context, cellsVolume *dssmodels.C
 	}
 
 	subscriptions, err := c.fetchSubscriptions(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime, dssmodels.MaxResultLimit)
+		ctx, c.q, true, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to fetch Subscriptions")
 	}
@@ -332,7 +341,7 @@ func (c *repo) IncrementNotificationIndicesForOperationalIntents(ctx context.Con
 	if len(cellsVolume.Cells) == 0 {
 		return nil, nil
 	}
-	return c.fetchSubscriptions(ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
+	return c.fetchSubscriptions(ctx, c.q, false, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 
 }
 
@@ -383,7 +392,7 @@ func (c *repo) IncrementNotificationIndicesForConstraints(ctx context.Context, c
 	}
 
 	return c.fetchSubscriptions(
-		ctx, c.q, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
+		ctx, c.q, false, query, dsssql.CellUnionToCellIds(cellsVolume.Cells), cellsVolume.StartTime, cellsVolume.EndTime)
 }
 
 // lockStripes is the number of rows of the scd_locks table used by the hash lock option, cells

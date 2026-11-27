@@ -51,7 +51,12 @@ func init() {
 	)
 }
 
-func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, query string, args ...any) ([]*scdmodels.OperationalIntent, error) {
+// limitRows appends LIMIT MaxResultLimit+1 (plain SELECT only) and turns overflow into a BadRequest.
+func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, limitRows bool, query string, args ...any) ([]*scdmodels.OperationalIntent, error) {
+	if limitRows {
+		query = fmt.Sprintf("%s LIMIT %d", query, dssmodels.MaxResultLimit+1)
+	}
+
 	rows, err := q.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -118,11 +123,15 @@ func (s *repo) fetchOperationalIntents(ctx context.Context, q dsssql.Queryable, 
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
+	if limitRows && len(payload) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d operational intents match", dssmodels.MaxResultLimit)
+	}
+
 	return payload, nil
 }
 
 func (s *repo) fetchOperationalIntent(ctx context.Context, q dsssql.Queryable, query string, args ...any) (*scdmodels.OperationalIntent, error) {
-	operations, err := s.fetchOperationalIntents(ctx, q, query, args...)
+	operations, err := s.fetchOperationalIntents(ctx, q, false, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -289,8 +298,7 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 			AND
 				COALESCE(scd_operations.ends_at >= $4, true)
 			AND
-				COALESCE(scd_operations.starts_at <= $5, true)
-			LIMIT $6`, operationFieldsWithPrefix)
+				COALESCE(scd_operations.starts_at <= $5, true)`, operationFieldsWithPrefix)
 	)
 
 	if len(cellsVolume.Cells) == 0 {
@@ -298,13 +306,12 @@ func (s *repo) searchOperationalIntents(ctx context.Context, q dsssql.Queryable,
 	}
 
 	result, err := s.fetchOperationalIntents(
-		ctx, q, operationsIntersectingVolumeQuery,
+		ctx, q, true, operationsIntersectingVolumeQuery,
 		dsssql.CellUnionToCellIds(cellsVolume.Cells),
 		cellsVolume.AltitudeLo,
 		cellsVolume.AltitudeHi,
 		cellsVolume.StartTime,
 		cellsVolume.EndTime,
-		dssmodels.MaxResultLimit,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error fetching Operations")

@@ -21,7 +21,12 @@ const (
 	updateISAFields = "id, url, cells, starts_at, ends_at, writer, updated_at"
 )
 
-func (r *repo) fetchISAs(ctx context.Context, query string, args ...any) ([]*ridmodels.IdentificationServiceArea, error) {
+// limitRows appends LIMIT MaxResultLimit+1 (plain SELECT only) and turns overflow into a BadRequest.
+func (r *repo) fetchISAs(ctx context.Context, limitRows bool, query string, args ...any) ([]*ridmodels.IdentificationServiceArea, error) {
+	if limitRows {
+		query = fmt.Sprintf("%s LIMIT %d", query, dssmodels.MaxResultLimit+1)
+	}
+
 	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -59,11 +64,15 @@ func (r *repo) fetchISAs(ctx context.Context, query string, args ...any) ([]*rid
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
 
+	if limitRows && len(payload) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d ISAs match", dssmodels.MaxResultLimit)
+	}
+
 	return payload, nil
 }
 
 func (r *repo) fetchISA(ctx context.Context, query string, args ...any) (*ridmodels.IdentificationServiceArea, error) {
-	isas, err := r.fetchISAs(ctx, query, args...)
+	isas, err := r.fetchISAs(ctx, false, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -195,8 +204,7 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 			AND
 				COALESCE(starts_at <= $2, true)
 			AND
-				cells && $3
-			LIMIT $4`, isaFields)
+				cells && $3`, isaFields)
 	)
 
 	if len(cells) == 0 {
@@ -207,7 +215,7 @@ func (r *repo) SearchISAs(ctx context.Context, cells s2.CellUnion, earliest *tim
 		return nil, stacktrace.NewError("Earliest start time is missing")
 	}
 
-	return r.fetchISAs(ctx, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells), dssmodels.MaxResultLimit)
+	return r.fetchISAs(ctx, true, isasInCellsQuery, earliest, latest, dssql.CellUnionToCellIds(cells))
 }
 
 // ListExpiredISAs lists the IDs of all expired ISAs.

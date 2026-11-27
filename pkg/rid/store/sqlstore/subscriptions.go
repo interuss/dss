@@ -21,7 +21,12 @@ const (
 )
 
 // process a query that should return one or many subscriptions.
-func (r *repo) process(ctx context.Context, query string, args ...any) ([]*ridmodels.Subscription, error) {
+// limitRows appends LIMIT MaxResultLimit+1 (plain SELECT only) and turns overflow into a BadRequest.
+func (r *repo) process(ctx context.Context, limitRows bool, query string, args ...any) ([]*ridmodels.Subscription, error) {
+	if limitRows {
+		query = fmt.Sprintf("%s LIMIT %d", query, dssmodels.MaxResultLimit+1)
+	}
+
 	rows, err := r.Query(ctx, query, args...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in query: %s", query)
@@ -65,12 +70,17 @@ func (r *repo) process(ctx context.Context, query string, args ...any) ([]*ridmo
 	if err := rows.Err(); err != nil {
 		return nil, stacktrace.Propagate(err, "Error in rows query result")
 	}
+
+	if limitRows && len(payload) > dssmodels.MaxResultLimit {
+		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "More than %d subscriptions match", dssmodels.MaxResultLimit)
+	}
+
 	return payload, nil
 }
 
 // processOne processes a query that should return exactly a single subscription.
 func (r *repo) processOne(ctx context.Context, query string, args ...any) (*ridmodels.Subscription, error) {
-	subs, err := r.process(ctx, query, args...)
+	subs, err := r.process(ctx, false, query, args...)
 	if err != nil {
 		return nil, err // No need to Propagate this error as this stack layer does not add useful information
 	}
@@ -245,7 +255,7 @@ func (r *repo) UpdateNotificationIdxsInCells(ctx context.Context, cells s2.CellU
 	}
 
 	return r.process(
-		ctx, updateQuery, dssql.CellUnionToCellIds(cells), r.clock.Now())
+		ctx, false, updateQuery, dssql.CellUnionToCellIds(cells), r.clock.Now())
 }
 
 // SearchSubscriptions returns all subscriptions in "cells".
@@ -259,15 +269,14 @@ func (r *repo) SearchSubscriptions(ctx context.Context, cells s2.CellUnion) ([]*
 			WHERE
 				cells && $1
 			AND
-				ends_at >= $2
-			LIMIT $3`, subscriptionFields)
+				ends_at >= $2`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), r.clock.Now(), dssmodels.MaxResultLimit)
+	return r.process(ctx, true, query, dssql.CellUnionToCellIds(cells), r.clock.Now())
 }
 
 // SearchSubscriptionsByOwner returns all subscriptions in "cells".
@@ -283,15 +292,14 @@ func (r *repo) SearchSubscriptionsByOwner(ctx context.Context, cells s2.CellUnio
 			AND
 				subscriptions.owner = $2
 			AND
-				ends_at >= $3
-			LIMIT $4`, subscriptionFields)
+				ends_at >= $3`, subscriptionFields)
 	)
 
 	if len(cells) == 0 {
 		return nil, stacktrace.NewErrorWithCode(dsserr.BadRequest, "no location provided")
 	}
 
-	return r.process(ctx, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now(), dssmodels.MaxResultLimit)
+	return r.process(ctx, true, query, dssql.CellUnionToCellIds(cells), owner, r.clock.Now())
 }
 
 // ListExpiredSubscriptions lists the IDs of all expired Subscriptions.
