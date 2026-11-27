@@ -31,3 +31,5 @@ Before a pull request can be merged into the master branch, it must pass all aut
 ### Probe local DSS instance (`make probe-locally`)
 
 ### Bring down local DSS instance (`make down-locally`)
+
+## Documentation build and validation (`make check-docs`)

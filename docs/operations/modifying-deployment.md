@@ -1,14 +1,14 @@
 # Modifying a deployment
 
 This page describes how to apply a configuration change to a deployed DSS instance, for instance to tune the
-[regular cleanup](cleanup.md#regular-cleanup) or the [CPU and memory allocation](performance.md#cpu-and-memory-allocation).
+[regular cleanup](cleanup.md#automated-regular-cleanup-via-kubernetes-cronjob) or the [CPU and memory allocation](performance.md#cpu-and-memory-allocation).
 
 Some changes require a specific procedure:
 
 - Flags listed in [flags compatibility](upgrades.md#flags-compatibility) must be changed using the [Zero-Traffic upgrade procedure](upgrades.md#zero-traffic-upgrade-procedure).
 - Kubernetes version changes are described in [Kubernetes upgrades](kubernetes-upgrades.md).
 - CockroachDB version changes are described in [CockroachDB version upgrades](crdb-upgrades.md).
-- The [regular cleanup](cleanup.md#regular-cleanup) applies to the whole pool and should be coordinated with the other members of the pool.
+- The [regular cleanup](cleanup.md#automated-regular-cleanup-via-kubernetes-cronjob) applies to the whole pool and should be coordinated with the other members of the pool.
 
 ## Applying a change
 
