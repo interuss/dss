@@ -150,10 +150,10 @@ func (gc *GeoCircle) CalculateCovering() (s2.CellUnion, error) {
 	}
 
 	// Cover the whole circle, including its boundary.
-	return geo.RegionCoverer.Covering(s2.CapFromCenterAngle(
+	return geo.CapCovering(s2.CapFromCenterAngle(
 		s2.PointFromLatLng(s2.LatLngFromDegrees(gc.Center.Lat, gc.Center.Lng)),
 		geo.DistanceMetersToAngle(float64(gc.RadiusMeter)),
-	)), nil
+	))
 }
 
 // GeoPolygon models an enclosed area on the earth.
