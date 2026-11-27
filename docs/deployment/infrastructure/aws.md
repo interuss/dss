@@ -35,25 +35,29 @@ Download & install the following tools to your workstation:
         2. output.tf
         3. terraform.tfvars
         4. variables.gen.tf
-    3. Set the variables in `terraform.tfvars` according to your environment.
+    3. Decide how the DNS entries will be managed:
+
+        === "Terraform managed"
+            If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage it with the rest of the infrastructure.
+
+            **For Elastic Kubernetes Service (AWS)**, create the zone in your aws account and set the `aws_route53_zone_id`
+            variable with the zone id in the next step. Entries will be automatically created by terraform.
+            Note that the domain or the sub-domain managed by the zone must be properly delegated by the parent domain.
+            See instructions for [subdomains delegation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html#UpdateDNSParentDomain)
+
+        === "Manual setup"
+            Set the `aws_route53_zone_id` variable to `""` in the next step. The entries will be created manually once the cluster is deployed.
+
+    4. Set the variables in `terraform.tfvars` according to your environment.
         1. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-aws-dss/TFVARS.gen.md) for variables descriptions.
         2. See [authentication documentation](../../background/authentication.md) for additional information.
-    4. Initialize terraform: `terraform init`.
-    5. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
-    6. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-4. Configure the DNS resolution according to these instructions:
+    5. Initialize terraform: `terraform init`.
+    6. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
+    7. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
 
-=== "Terraform managed"
-    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage it with the rest of the infrastructure.
+4. If DNS entries are managed manually, set them up using the following steps:
+    1. Retrieve IP addresses and expected hostnames: `terraform output`.
 
-    **For Elastic Kubernetes Service (AWS)**, create the zone in your aws account and set the `aws_route53_zone_id`
-    variable with the zone id. Entries will be automatically created by terraform.
-    Note that the domain or the sub-domain managed by the zone must be properly delegated by the parent domain.
-    See instructions for [subdomains delegation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html#UpdateDNSParentDomain)
-
-=== "Manual setup"
-    If DNS entries are managed manually, set them up manually using the following steps:
-    1. Retrieve IP addresses and expected hostnames: `terraform output`
         Example of expected output:
            ```
            crdb_addresses = [
