@@ -46,23 +46,25 @@ This guide will help you deploy a DSS instance to Google Cloud Platform with ter
         2. output.tf
         3. terraform.tfvars
         4. variables.gen.tf
-    3. Set the variables in `terraform.tfvars` according to your environment.
+    3. Decide how the DNS entries resolving to the public ip addresses will be managed, either with terraform or manually:
+
+        === "Terraform managed DNS entries"
+            If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
+            it with the rest of the infrastructure.
+
+            - **For Google Cloud Platform**, configure the zone in your google account and set the `google_dns_managed_zone_name` variable the zone name in the next step. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be automatically created by terraform.
+
+        === "Manual DNS entries setup"
+            Set the `google_dns_managed_zone_name` variable to `""` in the next step. The entries will be created manually once the cluster is deployed.
+
+    4. Set the variables in `terraform.tfvars` according to your environment.
         1. See [TFVARS.gen.md](https://github.com/interuss/dss/blob/master/deploy/infrastructure/modules/terraform-google-dss/TFVARS.gen.md) for variables descriptions.
         2. See [authentication documentation](../../background/authentication.md) for additional information.
-    4. Initialize terraform: `terraform init`.
-    5. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
-    6. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
-4. Configure the DNS resolution to the public ip addresses. DNS entries can be either managed with terraform or managed manually:
+    5. Initialize terraform: `terraform init`.
+    6. Run `terraform plan` to check that the configuration is valid. It will display the resources which will be provisioned.
+    7. Run `terraform apply` to deploy the cluster. (This operation may take up to 15 min.)
 
-=== "Terraform managed DNS entries"
-    If your DNS zone is managed on the same account, it is possible to instruct terraform to create and manage
-    it with the rest of the infrastructure.
-
-    - **For Google Cloud Platform**, configure the zone in your google account and set the `google_dns_managed_zone_name` variable the zone name. Zones can be listed by running `gcloud dns managed-zones list`. Entries will be automatically created by terraform.
-
-=== "Manual DNS entries setup"
-    If DNS entries are managed manually, set them up manually using the following steps:
-
+4. If DNS entries are managed manually, set them up using the following steps:
     1. Retrieve IP addresses and expected hostnames: `terraform output`.
 
         Example of expected output:
