@@ -30,6 +30,8 @@ To pool a set of DSS instances with the Raft store:
   [`dss-certs.py` script](https://github.com/interuss/dss/blob/master/deploy/operations/certificates-management/dss-certs.py),
   in the `deploy/operations/certificates-management` folder of this
   repository.
+* [OpenSSL](https://www.openssl.org/), used by `dss-certs.py` to generate the
+  certificates.
 
 !!! note
     When the infrastructure is deployed with Terraform, a `dss-certs.sh` helper
