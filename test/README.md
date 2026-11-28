@@ -41,7 +41,7 @@ an option is to:
 
 
 ### Running a subset of tests
-To run a specific test in the [prober](../monitoring/prober) test suite,
+To run a specific test in the [prober](https://github.com/interuss/monitoring/tree/main/monitoring/prober) test suite,
 simply add its name as the first argument to the script to run prober locally
 (this is the same script `make probe-locally` uses).  For example:
 ```shell script
